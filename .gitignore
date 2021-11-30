@@ -127,3 +127,27 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#################################
+# End python gitignore template #
+#################################
+
+# Images #
+*.jpg
+*.gif
+*.png
+*.svg
+*.ico
+
+# Others #
+*.pyc
+*~
+*.pyo
+*.tmp
+requirements.txt
+
+# Paths to be ignored #
+Description_of_compontnts\**\ # Input files
+\Simulation_results\**\ # code output directory
+opensc2\**\ # virtual environment
+GUI_icons\**\ # graphical user interface images
