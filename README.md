@@ -53,4 +53,5 @@ To contribute please refer to [contribution](CONTRIBUTION.md).
 
 # Code of Conduct
 
-Our **Code of Conduct** is reported [here](CODE_OF_CONDUCT.md).
+The developing team agreed to embrace the [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) **Code of Conduct**.
+ 
