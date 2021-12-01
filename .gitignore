@@ -251,3 +251,4 @@ Description_of_components\**\ # Input files
 Simulation_results\**\ # code output directory
 opensc2\**\ # virtual environment
 GUI_icons\**\ # graphical user interface images
+TDD_examples\**\ # input files template for the three selected cases used whitin the Test Driven Development approach
