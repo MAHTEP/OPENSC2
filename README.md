@@ -10,8 +10,8 @@ Currently is developed mainly in [Python](https://www.python.org/) but future ve
 
 The software is built based on well-established numerical models and assumptions, re-arranged in an object-oriented framework to be user-friendly and easily coupled to a GUI. The input set is to be prescribed through self-explanatory excel files.
 The developing team includes Prof. L. Savoldi[^1], Prof. F. Freschi, D. Placido[^2], S. Viarengo[^2]  @ Dipartimento Energia “Galileo Ferraris” @ [Politecnico di Torino](https://www.polito.it/). Please, contact us at:
-* laura.savoldi@polito.it,
-* fabio.freschi@polito.it, 
+* laura.savoldi@polito.it
+* fabio.freschi@polito.it 
 * daniele.placido@polito.it 
 * sofia.viarengo@polito.it.
 
@@ -28,11 +28,11 @@ Users can benefit from several test cases to check the software functionalities:
 2.	Heat slug propagation in a stacked-HTS slotted-core CICC for fusion applications
 3.	Steady state operation for a double-cryostat HVDC cable for power transmission
 
-To run a simulation with one of the above test cases, download the repository and install the requirements (more informations in section [Install requirements](user-content-intall-requirements)). After you have installed all the requirements you can run the software (the starting file is _simulation_starter.py_) and from the GUI you can navigate through the folder three until you enter directory _TDD_examples_ and then select one of the three folders contained with pre-compiled inpuput files. In the GUI window select **Add solution path** to select where to locate the results (by default they are all collected in the directory _Simulation_results_ that is created if does not already exist. User can create a new folder in this directory or open an existing one: the output (both .tsv files and .eps figures) will be saved in this folder.
+To run a simulation with one of the above test cases, download the repository and install the requirements (more informations in section [Install requirements](user-content-intall-requirements)). After you have installed all the requirements you can run the software (the starting file is _simulation_starter.py_) and from the GUI you can navigate through the folder three until you enter directory _TDD_examples_ and then select one of the three folders contained with pre-compiled inpuput files. In the GUI window select **Add solution path** to select where to locate the results (by default they are all collected in the directory _Simulation_results_ that is created if does not already exist). User can create a new folder in this directory or open an existing one: the output (both .tsv files and .eps figures) will be saved in this folder.
 
 ## Install requirements
 
-The selected Python version is [3.8.9](https://www.python.org/downloads/release/python-3810/). To install the requirements, create a virtual environment (suggested name _opensc2_) and activate it. In your terminal run the following command
+The selected Python version is [3.8.10](https://www.python.org/downloads/release/python-3810/). To install the requirements, create a virtual environment (suggested name _opensc2_) and activate it. In your terminal run the following command
 
 python -m pip install --upgrade pip \\\ to update pip to the last version  
 python -m pip install -r requirements.txt \\\ to install the requirements  
