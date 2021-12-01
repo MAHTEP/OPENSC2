@@ -55,3 +55,5 @@ To contribute please refer to [contribution](CONTRIBUTION.md).
 
 The developing team agreed to embrace the [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) **Code of Conduct**.
  
+ # License
+ OPENSC2 is licensed under [![AGPL](https://www.gnu.org/graphics/agplv3-with-text-100x42.png)](LICENSE) or any other version of it.
