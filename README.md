@@ -49,7 +49,7 @@ The development team apologizes for the inconvenience and is committed to fixing
 # Contribution
 
 The developing team wish to receive help form the users in the definition and test of new test cases, in the benchmark against other established software, in the inclusion of other functionalities.
-To contribute please refer to [contribuon](CONTRIBUTION.md)
+To contribute please refer to [contribution](CONTRIBUTION.md)
 
 # Code of Conduct
 
