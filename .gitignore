@@ -246,6 +246,9 @@ $RECYCLE.BIN/
 # Temporary files #
 *.~
 
+# Markdown #
+*.md
+
 # Paths to be ignored #
 Description_of_components\**\ # Input files
 Simulation_results\**\ # code output directory
