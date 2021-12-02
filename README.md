@@ -1,6 +1,6 @@
 # OPENSC2 in a nutshell
 
-Object-oriented software for multiphisics simulations of Superconducting cables. 
+Object-oriented software for multiphysics simulations of Superconducting cables. 
 
 ## Features
 
