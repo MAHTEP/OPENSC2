@@ -1,6 +1,6 @@
-# OPENSC2 in nutshell
+# OPENSC2 in a nutshell
 
-Open-source object-oriented software for the multi-physical analysis of thermal-hydraulic and electro-dynamic transients in Superconducting cables for magnetic-confinement and power transmission applications. 
+Object-oriented software for multiphisics simulations of Superconducting cables. 
 
 ## Features
 
@@ -32,10 +32,10 @@ To run a simulation with one of the above test cases, download the repository an
 
 ## Install requirements
 
-The selected Python version is [3.8.10](https://www.python.org/downloads/release/python-3810/). To install the requirements, create a virtual environment (suggested name _opensc2_) and activate it. In your terminal run the following command
+The selected Python version is [3.8.10](https://www.python.org/downloads/release/python-3810/). To install the requirements, create a virtual environment (suggested name _opensc2_) and activate it. In your terminal run the following command:
 
-python -m pip install --upgrade pip \\\ to update pip to the last version  
-python -m pip install -r requirements.txt \\\ to install the requirements  
+    python -m pip install --upgrade pip \\ to update pip to the last version  
+    python -m pip install -r requirements.txt \\ to install the requirements  
 
 Among the dependences there is [CoolProp](http://www.coolprop.org/) that according to the operative system you use may require some other dependences and/or packages. To deal with this, please follow the [documentation](http://www.coolprop.org/coolprop/wrappers/Python/index.html) and [prerequisites](http://www.coolprop.org/coolprop/wrappers/index.html#wrapper-common-prereqs).
 
@@ -43,7 +43,7 @@ Among the dependences there is [CoolProp](http://www.coolprop.org/) that accordi
 
 Software documentation is under development but being the project at its initial stages it is not easy to develop it since things changes quickly. Detailed documentation will be provided as soon as we get a stable version of the software where many of the main features will be well established.
 For the time being feel free to send an e-mail to daniele.placido@polito.it if you need any help with your simulations.
- Being currently an embryonic software, some of the possibilities provided in the input files may not yet be fully implemented or tested and you may get incorrect results or unexpected errors. 
+Being currently an embryonic software, some of the possibilities provided in the input files may not yet be fully implemented or tested and you may get incorrect results or unexpected errors. 
 The development team apologizes for the inconvenience and is committed to fixing them as soon as possible.
 
 # Contribution
