@@ -15,8 +15,8 @@ The developing team includes Prof. L. Savoldi[^1], Prof. F. Freschi, D. Placido[
 * daniele.placido@polito.it 
 * sofia.viarengo@polito.it.
 
-[^1]: Head of the [**MAHTEP** research group](http://www.mahtep.polito.it/research_topics).
-[^2]: PhD students @ the [**MAHTEP** research group](http://www.mahtep.polito.it/research_topics).
+[^1]: Head of the [**MAHTEP** research group](http://www.mahtep.polito.it/).
+[^2]: PhD students @ the [**MAHTEP** research group](http://www.mahtep.polito.it/).
 ## Goals
 
 The software is useful for steady state and transient analyses of CICC in operating conditions. It can deal with cables assemled with Low Temperatures (LTS) strands (both Nb3Sn and NbTi), and High Temperature Superconductors (HTS) tapes of different materials. Different coolants can be selected, together with very different cooling configurations. The software is useful to study the steady state operating conditions under environmental parasitic load, as well as transient operation such as: current variation in time, coolant flow variation in time, AC losses, quench, fast discharges, fault currents. The software is useful to assist the research for optimal configurations, subject to a set of constraints, and allows evaluating the temperature margin to current sharing along cables in any pre-defined operating scenarios.
