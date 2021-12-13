@@ -3,7 +3,7 @@
 
 :fireworks::grinning:**Thanks for spending some time to contribute to the project**:grinning::fireworks:  
 
-The following is a set of guidelines for contributing to <>, which is hosted in the [MAHTEP Organization](https://github.com/MAHTEP) on GitHub. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
+The following is a set of guidelines for contributing to [OPENSC2](https://github.com/MAHTEP/OPENSC2), which is hosted in the [MAHTEP Organization](https://github.com/MAHTEP) on GitHub. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
 ## How to Contribute?
 
