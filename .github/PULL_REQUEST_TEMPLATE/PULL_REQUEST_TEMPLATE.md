@@ -1,4 +1,4 @@
-⚛👋 Hello there! Welcome. Please follow the steps below to tell us about your contribution.
+👋 Hello there! Welcome. Please follow the steps below to tell us about your contribution.
 
 1. Copy the correct template for your contribution
   - 🐛 Are you fixing a bug? Copy the [bugfix template](https://github.com/MAHTEP/OPENSC2/new/Contributions/.github/PULL_REQUEST_TEMPLATE/bugfix.md)
