@@ -22,7 +22,9 @@ To contribute to the project, please follow the following steps:
 To open an issue:
 
 * Clik the repository link
-* Select the most suitable template from the [Issue](https://github.com/MAHTEP/OPENSC2/issues) section between _bug report_, _feature request_ and _custom template_. Please, keep in mind that blank issues are not allowed.
+* Go to the [Issue](https://github.com/MAHTEP/OPENSC2/issues) section
+* Search for you issue in the search toolbar
+* If you do not find anthing related to your problem, please open a new issue selecting the most suitable template between _bug report_, _feature request_ and _custom template_. **Remember that blank issues are not allowed**.
 * Fill the template
 * Submit the issue
 
