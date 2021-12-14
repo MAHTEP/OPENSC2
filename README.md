@@ -43,7 +43,7 @@ Among the dependences there is [CoolProp](http://www.coolprop.org/) that, accord
 
 Software documentation is under development, being the project at its initial stages. Detailed documentation will be provided as soon as an established version of the software is available.
 For the time being feel free to send an e-mail to daniele.placido@polito.it if you need any help with your simulations.
-Being currently an embryonic software, some of the possibilities provided in the input files may not yet be fully implemented or tested and you may get incorrect results or unexpected errors. A (not exhaustive) [list of known issues](https://github.com/MAHTEP/OPENSC2/tree/main/.github/list_of_known_issues.md) is available. To open a new issue, please [follow the procedure](https://github.com/MAHTEP/OPENSC2/blob/main/CONTRIBUTION.md).  
+Being currently an embryonic software, some of the possibilities provided in the input files may not yet be fully implemented or tested and you may get incorrect results or unexpected errors. A (not exhaustive) list of known issues is available in the [Issue](https://github.com/MAHTEP/OPENSC2/issues) section. To open a new issue, please [follow the procedure](https://github.com/MAHTEP/OPENSC2/blob/main/CONTRIBUTION.md).  
 The development team apologizes for the inconvenience and is committed to fixing them as soon as possible.
 
 # Contribution
