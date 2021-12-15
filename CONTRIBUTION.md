@@ -197,7 +197,7 @@ To do this:
 - read carefully and sign it
 - send the signed document to laura.savoldi@polito.it (cc daniele.placido@polito.it)
 
-If you have any question about CLA or the abuve procedure, write to daniele.placido@polito.it or laura.savoldi@polito.it.
+If you have any question about CLA or the above procedure, write to daniele.placido@polito.it or laura.savoldi@polito.it.
 
 <sub>The above procedure will be improved as soon as possible.<sub>
 
