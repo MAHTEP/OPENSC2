@@ -10,7 +10,7 @@ The following is a set of guidelines for contributing to [OPENSC2](https://githu
 To contribute to the project, please follow the following steps:
 
 * Make a fork of the repositoty
-* Clone your on forked repository
+* Clone your own forked repository
 * Create a new brach
 * Do your changes
 * Test your changes
@@ -191,4 +191,13 @@ The content of the commit message body should contain:
 If someting about contribution is not clear, please feel free to contact daniele.placido@polito.it. 
 
 ## Contributors License Agreement
-Before sending pull request, you are encouraged to sign our [Contributors License Agreement (CLA)](https://github.com/MAHTEP/OPENSC2/blob/Contributions/CONTRIBUTOR_LICENSE_AGREEMENT.md). For any code changes to be accepted, the CLA must be signed.
+Before sending pull request, you are encouraged to sign our [Contributors License Agreement (CLA)](https://github.com/MAHTEP/OPENSC2/blob/Contributions/CONTRIBUTOR_LICENSE_AGREEMENT.md). For any code changes to be accepted, the CLA must be signed. 
+To do this:
+- send an email to daniele.placido@polito.it to get the pdf version of the CLA
+- read carefully and sign it
+- send the signed document to laura.savoldi@polito.it (cc daniele.placido@polito.it)
+
+If you have any question about CLA or the abuve procedure, write to daniele.placido@polito.it or laura.savoldi@polito.it.
+
+<sub>The above procedure will be improved as soon as possible.<sub>
+
