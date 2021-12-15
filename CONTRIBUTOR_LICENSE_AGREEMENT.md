@@ -6,9 +6,9 @@ based on the
 
 ## (including the Traditional Patent License OPTION)
 
-Thank you for your interest in contributing to MAHTEP's OPENSC2 ("We" or "Us").
+Thank you for your interest in contributing to MHATEP's OPENSC2 ("We" or "Us").
 
-The purpose of this contributor agreement ("Agreement") is to clarify and document the rights granted by contributors to Us. To make this document effective, please follow the instructions at https://github.com/MAHTEP/OPENSC2/CONTRIBUTORS_LICENSE_AGREEMENT.md.
+The purpose of this contributor agreement ("Agreement") is to clarify and document the rights granted by contributors to Us. To make this document effective, please follow the instructions at \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_.
 
 ### 0\. Preamble
 
@@ -24,7 +24,7 @@ This process only serves for the transfer of economic rights. So-called moral ri
 
 ### How to use this FLA
 
-If You are an employee and have created the Contribution as part of your employment, You need to have Your employer approve this Agreement or sign the Entity version of this document. If You do not own the Copyright in the entire work of authorship, any other author of the Contribution should also sign this – in any event, please contact Us at laura.savoldi@polito.it
+If You are an employee and have created the Contribution as part of your employment, You need to have Your employer approve this Agreement or sign the Entity version of this document. If You do not own the Copyright in the entire work of authorship, any other author of the Contribution should also sign this – in any event, please contact Us at laura.savoldi@polito.it; daniele.placido@polito.it
 
 ### 1\. Definitions
 
@@ -134,11 +134,11 @@ Address:
 
 ### Us
 
-Date: 13/12/2021
+Date: 15/12/2021
 
 Name: Laura Savoldi
 
-Title: Head of the MAHTEP group
+Title:
 
-Address: Corso Duca degli Abruzzi 24 Torino (To) 10129, Italy.
+Address: Corso Duca degli Abruzzi 24, 10129 Torino (TO), Italy
 
