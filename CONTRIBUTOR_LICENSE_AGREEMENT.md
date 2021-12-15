@@ -6,7 +6,7 @@ based on the
 
 ## (including the Traditional Patent License OPTION)
 
-Thank you for your interest in contributing to MHATEP's OPENSC2 ("We" or "Us").
+Thank you for your interest in contributing to MAHTEP's OPENSC2 ("We" or "Us").
 
 The purpose of this contributor agreement ("Agreement") is to clarify and document the rights granted by contributors to Us. To make this document effective, please follow the instructions at \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_.
 
@@ -134,11 +134,11 @@ Address:
 
 ### Us
 
-Date: 15/12/2021
+Date: December 15, 2021
 
 Name: Laura Savoldi
 
-Title:
+Title: Professor
 
-Address: Corso Duca degli Abruzzi 24, 10129 Torino (TO), Italy
-
+Address: Dipartimento Energia "Galileo Ferraris", Politecnico di Torino  
+laura.savoldi@polito.it
