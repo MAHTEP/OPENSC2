@@ -159,15 +159,16 @@ def save_simulation_space(conductor, f_path, n_digit):
         pd.DataFrame.from_dict(conductor.heat_rad_jk, dtype=float).to_csv(
             f_path_heat_rad, sep="\t", index=False, header=True
         )
-
-    # Build path to save temporary file with the spatial distribution of the heat exchanged by convection and/or radiation between outer surface of the conductor and the environment at each required time step.
-    f_path_ex_jk_env = os.path.join(
-        f_path, f"Heat_exch_env_({conductor.cond_num_step})_sd.tsv"
-    )
-    # Build the dataframe from dictionary and save it as tsv file.
-    pd.DataFrame.from_dict(conductor.heat_exchange_jk_env, dtype=float).to_csv(
-        f_path_ex_jk_env, sep="\t", index=False, header=True
-    )
+    
+    if bool(conductor.heat_exchange_jk_env):
+        # Build path to save temporary file with the spatial distribution of the heat exchanged by convection and/or radiation between outer surface of the conductor and the environment at each required time step.
+        f_path_ex_jk_env = os.path.join(
+            f_path, f"Heat_exch_env_({conductor.cond_num_step})_sd.tsv"
+        )
+        # Build the dataframe from dictionary and save it as tsv file.
+        pd.DataFrame.from_dict(conductor.heat_exchange_jk_env, dtype=float).to_csv(
+            f_path_ex_jk_env, sep="\t", index=False, header=True
+        )
 
     # Save the actual times at which the simulation spatial distributions are \
     # saved (cdp, 01/2021)
