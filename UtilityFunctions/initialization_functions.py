@@ -82,34 +82,37 @@ def conductor_spatial_discretization(simulation, conductor):
         elif dx_ref > SIZMAX:
             raise ValueError("ERROR: GRID0 dx in refined zone > sizemax!!!\n")
 
-        # Discretization of coarse region left to refined zone
-        dx_try = (XBREFI - 0.0) / NELLEFT
-        dx1 = dx_ref  # dummy to not overwrite dx_ref
-        ii = 0
-        while (dx_try / dx1 > DXINCRE) and (ii <= NELLEFT):
-            ii = ii + 1
-            dx = dx1 * DXINCRE
-            xcoord[NELLEFT - ii] = xcoord[NELLEFT + 1 - ii] - dx
-            dx1 = dx
-            dx_try = (xcoord[NELLEFT - ii] - 0.0) / (NELLEFT - ii)
+        if NELLEFT > 0:
+            # Discretization of coarse region left to refined zone
+            dx_try = (XBREFI - 0.0) / NELLEFT
+            dx1 = dx_ref  # dummy to not overwrite dx_ref
+            ii = 0
+            while (dx_try / dx1 > DXINCRE) and (ii <= NELLEFT):
+                ii = ii + 1
+                dx = dx1 * DXINCRE
+                xcoord[NELLEFT - ii] = xcoord[NELLEFT + 1 - ii] - dx
+                dx1 = dx
+                dx_try = (xcoord[NELLEFT - ii] - 0.0) / (NELLEFT - ii)
 
-        xcoord[0 : NELLEFT - ii + 1] = np.linspace(
-            0.0, xcoord[NELLEFT - ii], NELLEFT - ii + 1
-        )
-        # Discretization of coarse region right to refined zone
-        dx_try = (XLENGTH - XEREFI) / NELRIGHT
-        dx1 = dx_ref  # dummy to not overwrite dx_ref
-        ii = 0
-        while (dx_try / dx1 > DXINCRE) and (ii <= NELRIGHT):
-            ii = ii + 1
-            dx = dx1 * DXINCRE
-            xcoord[NELLEFT + NELREF + ii] = xcoord[NELLEFT + NELREF + ii - 1] + dx
-            dx1 = dx
-            dx_try = (XLENGTH - xcoord[NELLEFT + NELREF + ii]) / (NELRIGHT - ii)
+            xcoord[0 : NELLEFT - ii + 1] = np.linspace(
+                0.0, xcoord[NELLEFT - ii], NELLEFT - ii + 1
+            )
 
-        xcoord[NELLEFT + NELREF + ii : NELEMS + 1] = np.linspace(
-            xcoord[NELLEFT + NELREF + ii], XLENGTH, NELRIGHT - ii + 1
-        )
+        if NELRIGHT > 0:
+            # Discretization of coarse region right to refined zone
+            dx_try = (XLENGTH - XEREFI) / NELRIGHT
+            dx1 = dx_ref  # dummy to not overwrite dx_ref
+            ii = 0
+            while (dx_try / dx1 > DXINCRE) and (ii <= NELRIGHT):
+                ii = ii + 1
+                dx = dx1 * DXINCRE
+                xcoord[NELLEFT + NELREF + ii] = xcoord[NELLEFT + NELREF + ii - 1] + dx
+                dx1 = dx
+                dx_try = (XLENGTH - xcoord[NELLEFT + NELREF + ii]) / (NELRIGHT - ii)
+
+            xcoord[NELLEFT + NELREF + ii : NELEMS + 1] = np.linspace(
+                xcoord[NELLEFT + NELREF + ii], XLENGTH, NELRIGHT - ii + 1
+            )
 
     if len(xcoord) > MAXNOD:
         warnings.warn(
