@@ -248,7 +248,7 @@ $RECYCLE.BIN/
 *.~
 
 # Paths to be ignored #
-source_code\Description_of_components\**\ # Input files
+source_code\Description_of_Components\**\ # Input files
 Simulations_results\**\ # code output directory
 source_code\opensc2\**\ # virtual environment
 source_code\GUI_icons\**\ # graphical user interface images
