@@ -41,7 +41,7 @@ class OPENSC2_GUI:
         Constructor method of class OPENSC2_GUI (cdp, 12/2020).
         """
 
-        self.current_dir = os.path.abspath("")
+        self.current_dir = os.path.abspath(os.getcwd())
         icons_dir = os.path.join(self.current_dir, "GUI_icons")
         self.root_window = tk.Tk()
         self.root_window.option_add("*tearOff", False)
