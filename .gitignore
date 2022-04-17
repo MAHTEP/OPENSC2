@@ -243,6 +243,7 @@ $RECYCLE.BIN/
 *.dat
 *.csv
 *.xlsx
+*.ods
 
 # Temporary files #
 *.~
