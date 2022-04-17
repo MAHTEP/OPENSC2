@@ -215,7 +215,7 @@ class Conductors:
         # Check on spatial distribution diagnostic.
         if self.Space_save.max() > simulation.transient_input["TEND"]:
             raise ValueError(
-                f"File {self.file_input['OUTPUT']}, sheet Space, conductor {self.ID}: impossible to save spatial distributions at time {self.Space_save.max()} s since it is larger than the end time of the simulation {simulation.transitory_input['TEND']} s.\n"
+                f"File {self.file_input['OUTPUT']}, sheet Space, conductor {self.ID}: impossible to save spatial distributions at time {self.Space_save.max()} s since it is larger than the end time of the simulation {simulation.transient_input['TEND']} s.\n"
             )
         # End if self.Space_save.max() > simulation.transient_input["TEND"]
         # index pointer to save solution spatial distribution (cdp, 12/2020)
