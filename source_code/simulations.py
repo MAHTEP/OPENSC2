@@ -39,7 +39,7 @@ class Simulations:
         # Ask User the name of the cable. (cdp, 10/2020)
         self.dict_path = dict(
             Current_work_dir=self.CWD,
-            Results_dir=os.path.join(self.CWD, "Simulations_results"),
+            Results_dir=os.path.join(self.CWD,"..","Simulations_results"),
         )
         # Create directory Simulations_results if it does not exist yet
         os.makedirs(self.dict_path["Results_dir"], exist_ok=True)
