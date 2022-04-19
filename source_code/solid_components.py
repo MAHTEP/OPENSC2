@@ -79,6 +79,13 @@ from Properties_of_materials.aluminium import (
     electrical_resistivity_al,
 )
 
+# Magnesium diboride (MgB2) properties
+from Properties_of_materials.magnesium_diboride import (
+    thermal_conductivity_mgb2,
+    isobaric_specific_heat_mgb2,
+    density_mgb2,
+)
+
 
 class SolidComponents:
     def __init__(self, simulation, s_comp):
@@ -324,6 +331,16 @@ class SolidComponents:
                             + electrical_resistivity_ag(dict_dummy["temperature"])
                             * Ar_ag
                         )
+                    # superconductor properties evaluation (cdp, 07/2020)
+                    elif self.dict_input["ISUPERCONDUCTOR"] == "MgB2":
+                        # HTS: MgB2
+                        rho_num = rho_num + density_mgb2()
+                        cp_num = cp_num + density_mgb2() * isobaric_specific_heat_mgb2(
+                            dict_dummy["temperature"]
+                        )
+                        kk_num = kk_num + thermal_conductivity_mgb2(
+                            dict_dummy["temperature"]
+                        )
                     elif self.dict_input["ISUPERCONDUCTOR"] == "scaling.dat":
                         # user defined scaling
                         # not implemented
@@ -443,6 +460,19 @@ class SolidComponents:
                         + electrical_resistivity_ag(dict_dummy["temperature"]) * Ar_ag
                     )
                     / Ar_tot
+                )
+            elif self.dict_input["ISUPERCONDUCTOR"] == "MgB2":
+                # HTS: MgB2
+                dict_dummy.update(total_density=density_mgb2())
+                dict_dummy.update(
+                    total_isobaric_specific_heat=isobaric_specific_heat_mgb2(
+                        dict_dummy["temperature"]
+                    )
+                )
+                dict_dummy.update(
+                    total_thermal_conductivity=thermal_conductivity_mgb2(
+                        dict_dummy["temperature"]
+                    )
                 )
             elif self.dict_input["ISUPERCONDUCTOR"] == "scaling.dat":
                 # user defined scaling
