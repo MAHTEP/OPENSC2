@@ -1,3 +1,5 @@
+*.conf
+
 # Paths to be ignored #
 Description_of_Components/**/ # Input files
 GUI_icons/**/ # graphical user interface images
