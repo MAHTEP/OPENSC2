@@ -1,4 +1,13 @@
 # Paths to be ignored #
 Description_of_Components/**/ # Input files
-opensc2/**/ # virtual environment
 GUI_icons/**/ # graphical user interface images
+
+# virtual environment
+# this does not work opensc2/**/ # virtual environment
+opensc2/**/*.exe
+opensc2/Scripts/*.exe
+opensc2/Scripts/*.bat
+opensc2/Scripts/*.ps1
+opensc2/Scripts/activate
+opensc2/share/**/*.gz
+opensc2/*.cfg
