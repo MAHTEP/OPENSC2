@@ -1,0 +1,4 @@
+# Paths to be ignored #
+Description_of_Components/**/ # Input files
+opensc2/**/ # virtual environment
+GUI_icons/**/ # graphical user interface images
