@@ -83,7 +83,7 @@ def check_object_number(object, path_1, path_2, sheet_1, sheet_2):
         ValueError: [description]
     """
     dict_method = dict(
-        Simulation="conductor_instance", Conductors="conductor_components_instance"
+        Simulations="conductor_instance", Conductors="conductor_components_instance"
     )
     if int(sheet_1.cell(row=1, column=2).value) != int(
         sheet_2.cell(row=1, column=2).value
