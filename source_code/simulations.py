@@ -651,6 +651,10 @@ class Simulations:
         # Create subfolders path invocking method _subfolders_paths
         self._subfolders_paths(list_folder, list_f_names, dict_make, dict_benchmark)
 
+        # Path to save the input files of the simulation in read olny mode as 
+        # metadata for the simulation itself.
+        self.dict_path["Save_input"] = os.path.join(self.dict_path["Sub_dir"], self.transient_input["SIMULATION"], self.basePath.split("\\")[-1])
+
     # End method Simulation_folders_manager.
 
     ##############################################################################
