@@ -459,6 +459,8 @@ class OPENSC2_GUI:
         # Create the whole tree of folders to store the simulation data invoking \
         # method Simulation_result_manager (cdp, 10/2020)
         self.simulation.simulation_folders_manager()
+        # Save the input files in read only as metadata of the simulation outcome.
+        self.simulation.save_input_files()
         # Initialize each user defined conductor (cdp, 08/2020)
         self.simulation.conductor_initialization(self)
         # Solve the linear system of equations at each time steps (cdp, 08/2020)
