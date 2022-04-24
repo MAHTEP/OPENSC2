@@ -52,7 +52,7 @@ def plot_properties(simulation, cond, what="initialization"):
             ind = p_name.find(" ")
             y_name, units = plot_nomenclature_y(p_name[:ind])
             # path to save figures (cdp, 07/2020)
-            save_fig_path_eps = os.path.join(folder_save, f"{p_name[:ind]}.eps")
+            save_fig_path_svg = os.path.join(folder_save, f"{p_name[:ind]}.svg")
             # save_fig_path_pdf = os.path.join(folder_save, f"{p_name[:ind]}.pdf")
             Figure, ax = plt.subplots(
                 num=(
@@ -69,7 +69,7 @@ def plot_properties(simulation, cond, what="initialization"):
                 ylabel=f"{y_name} {units}",
                 title=f"{cond.ID}, {fluid_comp.ID}: {p_name[:ind]}",
             )
-            plt.savefig(save_fig_path_eps, orientation="portrait", transparent=False)
+            plt.savefig(save_fig_path_svg, orientation="portrait", transparent=False)
             # plt.savefig(save_fig_path_pdf, orientation = "portrait", \
             # 																										transparent = False)
             plt.close()
@@ -95,7 +95,7 @@ def plot_properties(simulation, cond, what="initialization"):
             ind = p_name.find(" ")
             y_name, units = plot_nomenclature_y(p_name[:ind])
             # path to save figures (cdp, 07/2020)
-            save_fig_path_eps = os.path.join(folder_save, f"{p_name[:ind]}.eps")
+            save_fig_path_svg = os.path.join(folder_save, f"{p_name[:ind]}.svg")
             # save_fig_path_pdf = os.path.join(folder_save, f"{p_name[:ind]}.pdf")
             Figure, ax = plt.subplots(
                 num=(
@@ -114,7 +114,7 @@ def plot_properties(simulation, cond, what="initialization"):
                 ylabel=f"{y_name} {units}",
                 title=f"{cond.ID}, {s_comp.ID}: {p_name[:ind]}",
             )
-            plt.savefig(save_fig_path_eps, orientation="portrait", transparent=False)
+            plt.savefig(save_fig_path_svg, orientation="portrait", transparent=False)
             # plt.savefig(save_fig_path_pdf, orientation = "portrait", \
             # 																								transparent = False)
             plt.close()
@@ -538,7 +538,7 @@ def make_plots_sd_actually(
         # Path to save figures (cdp, 10/2020)
         if figures > 1:
             dict_save_fig_path = dict(
-                eps=os.path.join(folder_save, f"{p_name}_{nn+1}.eps"),
+                eps=os.path.join(folder_save, f"{p_name}_{nn+1}.svg"),
                 pdf=os.path.join(folder_save, f"{p_name}_{nn+1}.pdf"),
             )
             # extract the header from header_full to correctly build the lengend and \
@@ -552,7 +552,7 @@ def make_plots_sd_actually(
             # end if nn (cdp, 01/2021)
         else:
             dict_save_fig_path = dict(
-                eps=os.path.join(folder_save, f"{p_name}.eps"),
+                eps=os.path.join(folder_save, f"{p_name}.svg"),
                 pdf=os.path.join(folder_save, f"{p_name}.pdf"),
             )
             header = header_full
@@ -807,7 +807,7 @@ def make_plots_te_actually(
         # Path to save figures (cdp, 10/2020)
         if figures > 1:
             dict_save_fig_path = dict(
-                eps=os.path.join(folder_save, f"{p_name}_{nn+1}.eps"),
+                eps=os.path.join(folder_save, f"{p_name}_{nn+1}.svg"),
                 pdf=os.path.join(folder_save, f"{p_name}_{nn+1}.pdf"),
             )
             # extract the header from header_full to correctly build the lengend and \
@@ -823,7 +823,7 @@ def make_plots_te_actually(
             # end if nn (cdp, 01/2021)
         else:
             dict_save_fig_path = dict(
-                eps=os.path.join(folder_save, f"{p_name}.eps"),
+                eps=os.path.join(folder_save, f"{p_name}.svg"),
                 pdf=os.path.join(folder_save, f"{p_name}.pdf"),
             )
             if p_name != "mass_flow_rate":

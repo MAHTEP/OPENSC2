@@ -2,6 +2,7 @@ from openpyxl import load_workbook
 import numpy as np
 import pandas as pd
 import os
+from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
 import warnings
 
 from conductors import Conductors
@@ -651,9 +652,101 @@ class Simulations:
         # Create subfolders path invocking method _subfolders_paths
         self._subfolders_paths(list_folder, list_f_names, dict_make, dict_benchmark)
 
+        # Path to save the input files of the simulation in read olny mode as 
+        # metadata for the simulation itself.
+        self.dict_path["Save_input"] = os.path.join(self.dict_path["Sub_dir"], self.transient_input["SIMULATION"], self.basePath.split("/")[-1])
+        os.makedirs(self.dict_path["Save_input"], exist_ok=True)
+
     # End method Simulation_folders_manager.
 
-    ##############################################################################
+    def save_input_files(self):
+        """Method that saves the input file of the simulation as .xlsx files in read only mode. These files are metadata for the simulation output.
+        """
+        load_paths = list()
+        save_paths = list()
+        filenames = list()
+
+        # Load and save paths for transitory_input file.
+        load_transient_input = os.path.join(self.basePath, self.starter_file)
+        load_paths.append(os.path.join(self.basePath, self.starter_file))
+        filenames.append(self.starter_file)
+        
+        # Load file transitory_input.
+        transient_input = pd.read_excel(
+            load_transient_input,
+            sheet_name="TRANSIENT",
+            skiprows=1,
+            header=0,
+            index_col=0,
+        )
+
+        # Load paths of environment_input and conductor_definition files.
+        for index in ["ENVIRONMENT", "MAGNET"]:
+            load_paths.append(os.path.join(self.basePath, transient_input.loc[index,"Value"]))
+            filenames.append(transient_input.loc[index,"Value"])
+
+        # Load file conductor_definition
+        conductors = pd.read_excel(
+            load_paths[-1],
+            sheet_name=None,
+            header=0,
+            index_col=0,
+            skiprows=2,
+        )
+
+        # Get all the other input file names.
+        # -3 and not -4 since one column of the input file becomes the index of 
+        # the data frame and should not be considered.
+        n_cond = conductors["CONDUCTOR_files"].shape[1] - 3
+        other_files = pd.Series(np.zeros((12*n_cond),dtype=object))
+
+        for ii in range(n_cond):
+            other_files.iloc[ii*12:12*(ii+1)] = conductors["CONDUCTOR_files"].iloc[:,ii+3]
+
+        del conductors, transient_input
+        # Remove repeated file names (if more than one conductor is defined, 
+        # some input files can be shared by the conductors).
+        other_files = other_files.unique()
+        # Remove not defined file names.
+        other_files = other_files[other_files != "none"]
+
+        # Complete load_paths list
+        for fname in other_files:
+            load_paths.append(os.path.join(self.basePath, fname))
+            filenames.append(fname)
+
+        for ii, fname in enumerate(filenames):
+            # Build save_paths from load_paths.
+            save_paths.append(os.path.join(self.dict_path["Save_input"], fname))
+            if os.path.exists(save_paths[-1]):
+                # Makes the file read/write for the owner if the file 
+                # already exists
+                os.chmod(save_paths[-1], S_IWUSR|S_IREAD)
+            
+            if ("coupling" in fname or "environment_input" in fname or "transitory_input" in fname):
+                skip_rows = 1
+            else:
+                skip_rows = 2
+            # Load input file
+            dff = pd.read_excel(
+                    load_paths[ii],
+                    sheet_name=None,
+                    header=0,
+                    index_col=0,
+                    skiprows=skip_rows,
+                )
+            # Save input file
+            with pd.ExcelWriter(save_paths[-1]) as writer:
+                for key, df in dff.items():
+                    df.to_excel(writer, sheet_name=key)
+
+        # Convert saved files to read only mode.
+        for path in save_paths:
+            os.chmod(path, S_IREAD|S_IRGRP|S_IROTH)
+
+    # End method save_input_files
+
+##############################################################################
 
     ## This code was part of the old version of method Simulation_folders_manager, may be useful in future so I do not delete it. ##
 
