@@ -653,11 +653,12 @@ class Simulations:
 
         # Path to save the input files of the simulation in read olny mode as 
         # metadata for the simulation itself.
-        self.dict_path["Save_input"] = os.path.join(self.dict_path["Sub_dir"], self.transient_input["SIMULATION"], self.basePath.split("\\")[-1])
+        self.dict_path["Save_input"] = os.path.join(self.dict_path["Sub_dir"], self.transient_input["SIMULATION"], self.basePath.split("/")[-1])
+        os.makedirs(self.dict_path["Save_input"], exist_ok=True)
 
     # End method Simulation_folders_manager.
 
-    ##############################################################################
+        ##############################################################################
 
     ## This code was part of the old version of method Simulation_folders_manager, may be useful in future so I do not delete it. ##
 
