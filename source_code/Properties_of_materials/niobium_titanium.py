@@ -1,5 +1,9 @@
 # Importing python libraries and other funcions
 import numpy as np
+import pandas as pd
+from scipy import optimize
+import warnings
+
 
 # Function CONDNBTI starts here
 def thermal_conductivity_nbti(TT):
@@ -214,3 +218,232 @@ def density_nbti():
 
 
 # end function rho_NbTi (cdp, 01/2021)
+
+def reduced_temperature_nbti(temperature, T_c0):
+
+    return temperature / T_c0
+
+
+# End function reduced_temperature_nbti
+
+
+def _convert_to_nparray(value):
+
+    if isinstance(value, (np.ndarray, pd.DataFrame, pd.Series)):
+        return value
+    else:
+        # Necessary to deal with scalar: conversion to numpy array
+        return np.array([value])
+
+
+# End function convert_to_nparray
+
+
+def critical_magnetic_field_nbti(temperature, B_c20, T_c0, nn=1.7):
+
+    temperature = _convert_to_nparray(temperature)
+    critical_mag_field = np.zeros(temperature.shape)
+    # Find index such that temperature <= maximum critical temperature
+    ind = temperature <= T_c0
+    # Evaluate critical magnetic field only for those values of temperature, elsewhere critical magnetic field is 0 by initialization.
+    critical_mag_field[ind] = B_c20 * (
+        1.0 - reduced_temperature_nbti(temperature[ind], T_c0) ** nn
+    )
+    return critical_mag_field
+
+
+# End function critical_magnetic_field_nbti
+
+
+def reduced_magnetic_field_nbti(magnetic_field, temperature, B_c20, T_c0, nn=1.7):
+
+    return magnetic_field / critical_magnetic_field_nbti(temperature, B_c20, T_c0, nn=nn)
+
+
+# End function reduced_magnetic_field_nbti
+
+
+def critical_temperature_nbti(magnetic_field, B_c20, T_c0, nn=1.7):
+
+    magnetic_field = _convert_to_nparray(magnetic_field)
+
+    critical_temp = np.zeros(magnetic_field.shape)
+    # Find index such that magnetic field <= maximum critical magnetic field
+    ind = magnetic_field <= B_c20
+    # Evaluate critical temperature only for those values of magnetic field, elsewhere critical temperature is 0 by initialization.
+    critical_temp[ind] = T_c0 * (1 - magnetic_field[ind] / B_c20) ** (1 / nn)
+    return critical_temp
+
+
+# End function critical_temperature_nbti
+
+
+def g_func(alpha, beta):
+
+    return ((alpha / (alpha + beta)) ** alpha) * ((beta / (alpha + beta)) ** beta)
+
+
+# End function g_func
+
+
+def critical_current_density_nbti(
+    temperature,
+    magnetic_field,
+    B_c20,
+    C_0,
+    T_c0,
+    alpha=[3.2, 0.65],
+    beta=[2.43, 2],
+    gamma=1.8,
+    delta=0.45,
+    nn=1.7,
+):
+
+    """
+    Critical current density scaling of niobium titanium.
+
+    For reference:
+        Muzzi, L., De Marzi, G., Zignani, C.F., Affinito, L., Napolitano, M., Viola, R., Domínguez, C.O., Bottura, L., Le Naour, S., Richter, D. and Della Corte, A., 2010. Pinning properties of commercial Nb-Ti wires described by a 2-components model. IEEE Transactions on Applied Superconductivity, 20(3), pp.1496-1499.
+
+    Returns:
+        _type_: _description_
+    """
+
+    bb = reduced_magnetic_field_nbti(magnetic_field, temperature, B_c20, T_c0, nn=nn)
+    tau = reduced_temperature_nbti(temperature, T_c0)
+
+    # Compute critical current density:
+    return (
+        C_0
+        / magnetic_field
+        * (1.0 - tau**nn) ** gamma
+        * (
+            delta * bb ** alpha[0] * (1.0 - bb) ** beta[0] / g_func(alpha[0], beta[0])
+            + (1.0 - delta)
+            * bb ** alpha[1]
+            * (1.0 - bb) ** beta[1]
+            / g_func(alpha[1], beta[1])
+        )
+    )
+
+
+# End function critical_current_density_nbti
+
+
+def critical_current_density_bisection_nbti(
+    temperature,
+    magnetic_field,
+    operative_current_density,
+    B_c20,
+    C_0,
+    T_c0,
+    alpha=[3.2, 0.65],
+    beta=[2.43, 2],
+    gamma=1.8,
+    delta=0.45,
+    nn=1.7,
+):
+
+    return operative_current_density - critical_current_density_nbti(
+        temperature, magnetic_field, B_c20, C_0, T_c0, alpha, beta, gamma, delta, nn=nn
+    )
+
+
+# End function critical_current_density_bisection_nbti
+
+
+def current_sharing_temperature_nbti(
+    magnetic_field,
+    op_current_density,
+    B_c20,
+    C_0,
+    T_c0,
+    alpha=[3.2, 0.65],
+    beta=[2.43, 2],
+    gamma=1.8,
+    delta=0.45,
+    nn=1.7,
+    temp_lb=3.5,
+):
+
+    magnetic_field = _convert_to_nparray(magnetic_field)
+    op_current_density = _convert_to_nparray(op_current_density[: magnetic_field.size])
+
+    # Initialize with the original shape of the magnetic field.
+    curr_shar_temp = np.zeros(magnetic_field.shape)
+    current_density = np.zeros(magnetic_field.shape)
+    critical_temp = np.zeros(magnetic_field.shape)
+
+    # Find element index in magnetic_field such that magnetic_field < B_c20
+    B_ind = magnetic_field < B_c20  # this is a boolean array
+    # Check that the magnetic field is below the maximum critical magnetic field.
+    if all(B_ind) == False:
+        warnings.warn(
+            "Magnetic field must be lower than maximum critical magnetic field!"
+        )
+        return curr_shar_temp
+
+    # Evaluate current_density @ T = 0 only for elements corresponding to B_ind, elsewere current_density = 0.0 by initialization.
+    current_density[B_ind] = critical_current_density_nbti(
+        np.zeros(magnetic_field[B_ind].shape),
+        magnetic_field[B_ind],
+        B_c20,
+        C_0,
+        T_c0,
+        alpha,
+        beta,
+        gamma,
+        delta,
+        nn=nn,
+    )
+    # Find element index in JC[B_ind] such that op_current_density[B_ind] < JC[B_ind] (boolean array)
+    op_ind = op_current_density[B_ind] < current_density[B_ind]
+    # Check that the operating current density is below the critical current density.
+    if all(op_ind) == False:
+        warnings.warn(
+            "Operating current density must be below the critical current density!"
+        )
+        return curr_shar_temp
+
+    critical_temp = critical_temperature_nbti(magnetic_field[op_ind], B_c20, T_c0, nn=nn)
+    # Find index in op_current_density[op_ind] such that op_current_density[op_ind] > 0.0 (boolean array).
+    op_ind_0 = op_current_density[op_ind] > 0.0
+    if all(op_ind_0) == False:
+        return critical_temp[not op_ind_0]
+
+    magnetic_field[op_ind_0] = np.maximum(magnetic_field[op_ind_0], 0.01)
+    temp_ub = critical_temp[op_ind_0]
+    root_result_obj = list()
+
+    # Convert boolean array to an array of index.
+    ind = np.nonzero(op_ind_0 == True)[0]
+    for ii in range(ind.size):
+
+        ex_args = (
+            magnetic_field[ind[ii]],
+            op_current_density[ind[ii]],
+            B_c20,
+            C_0,
+            T_c0,
+            alpha,
+            beta,
+            gamma,
+            delta,
+            nn,
+        )
+        # Evaluate current sharing temperature with bisection method.
+        curr_shar_temp[ind[ii]], rr_obj = optimize.bisect(
+            critical_current_density_bisection_nbti,
+            temp_lb,
+            temp_ub[ii],
+            ex_args,
+            xtol=1e-5,
+            full_output=True,
+        )
+        root_result_obj.append(rr_obj)
+    # End for ii.
+
+    return curr_shar_temp
+
+
+# End function current_sharing_temperature_nbti.
