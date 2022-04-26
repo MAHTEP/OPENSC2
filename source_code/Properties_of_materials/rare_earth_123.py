@@ -240,9 +240,9 @@ def critical_current_density_re123(T, B, TC0M, BC20M, c0):
     T = np.array(T)
     B = np.array(B)
 
-    if len(T) == 1:
+    if T.size == 1:
         T = T * np.ones(B.shape)
-    if len(B) == 1:
+    if B.size == 1:
         B = B * np.ones(T.shape)
 
     # JCRE123 initialization
@@ -266,18 +266,18 @@ def critical_current_density_re123(T, B, TC0M, BC20M, c0):
     TLCASE = T / TC0M
 
     # Find element index in TLCASE such that TLCASE < 1.0 (cdp, 06/2020)
-    TLCASE_ind = np.nonzero(TLCASE < 1.0)  # this is a tuple (cdp, 06/2020)
-    if TLCASE_ind[0].size == 0:  # empty index array (cdp, 06/2020)
+    TLCASE_ind = np.nonzero(TLCASE < 1.0)[0]  # this is a numpy array (cdp, 06/2020)
+    if TLCASE_ind.size == 0:  # empty index array (cdp, 06/2020)
         return JCRE123
 
     # * NORMALISED FIELD B/BC0
-    BLCASE[TLCASE_ind[0]] = BLIM[TLCASE_ind[0]] / (
-        critical_magnetic_field_re123(T[TLCASE_ind[0]], TC0M, BC20M, alpha)
+    BLCASE[TLCASE_ind] = BLIM[TLCASE_ind] / (
+        critical_magnetic_field_re123(T[TLCASE_ind], TC0M, BC20M, alpha)
     )
 
-    # Find element index such that BLCASE[TLCASE_ind[0]] < 1.0, only for those index JCRE123 will be evaluated, elsewere JCRE123 = 0.0 by initialization (cdp, 06/2020)
-    ind = np.nonzero(BLCASE[TLCASE_ind[0]] < 1.0)  # this is a tuple (cdp, 06/2020)
-    BLCASE_ind = TLCASE_ind[0][ind[0]]  # this is an array (cdp, 06/2020)
+    # Find element index such that BLCASE[TLCASE_ind] < 1.0, only for those index JCRE123 will be evaluated, elsewere JCRE123 = 0.0 by initialization (cdp, 06/2020)
+    ind = np.nonzero(BLCASE[TLCASE_ind] < 1.0)[0]  # this is a numpy array (cdp, 06/2020)
+    BLCASE_ind = TLCASE_ind[ind]  # this is an array (cdp, 06/2020)
     if BLCASE_ind.size == 0:  # empty index array (cdp, 06/2020)
         return JCRE123
 
@@ -292,8 +292,8 @@ def critical_current_density_re123(T, B, TC0M, BC20M, c0):
 
     # * CHECK THAT JCRE123 > 0
     # Find element index such that JCRE123[BLCASE_ind] < 0, for these index JCRE123 = 0.0 (cdp, 2020)
-    ind = np.nonzero(JCRE123[BLCASE_ind] < 0.0)  # this is a tuple (cdp, 06/2020)
-    JC_ind = BLCASE_ind[ind[0]]  # this is an array (cdp, 06/2020)
+    ind = np.nonzero(JCRE123[BLCASE_ind] < 0.0)[0]  # this is a numpy array (cdp, 06/2020)
+    JC_ind = BLCASE_ind[ind]  # this is an array (cdp, 06/2020)
     JCRE123[JC_ind] = 0.0
 
     return JCRE123
@@ -385,17 +385,17 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
     Bstar = BLIM / BC20M
     # *CHECK THAT THE FIELD IS BELOW THE UPPER CRITICAL VALUE
     # Find element index in such that Bstar < 1.0 (cdp, 06/2020)
-    Bstar_ind = np.nonzero(Bstar < 1.0)  # this is a tuple (cdp, 06/2020)
-    if Bstar_ind[0].size == 0:  # empty index array (cdp, 06/2020)
+    Bstar_ind = np.nonzero(Bstar < 1.0)[0]  # this is a numpy array (cdp, 06/2020)
+    if Bstar_ind.size == 0:  # empty index array (cdp, 06/2020)
         return TCSRE123
 
-    JC[Bstar_ind[0]] = critical_current_density_re123(
-        np.zeros(B[Bstar_ind].shape), B[Bstar_ind[0]], TC0M, BC20M, c0
+    JC[Bstar_ind] = critical_current_density_re123(
+        np.zeros(B[Bstar_ind].shape), B[Bstar_ind], TC0M, BC20M, c0
     )
     # *CHECK THAT JOP IS BELOW THE UPPER CRITICAL VALUE
     # Find element index such that JC[Bstar_ind] < JOP (cdp, 06/2020)
-    ind = np.nonzero(JC[Bstar_ind[0]] > JOP)  # this is a tuple (cdp, 06/2020)
-    JC_ind = Bstar_ind[0][ind[0]]  # this is an array (cdp, 06/2020)
+    ind = np.nonzero(JC[Bstar_ind] > JOP)[0]  # this is a numpy array (cdp, 06/2020)
+    JC_ind = Bstar_ind[ind]  # this is an array (cdp, 06/2020)
     if JC_ind.size == 0:
         return TCSRE123
 
