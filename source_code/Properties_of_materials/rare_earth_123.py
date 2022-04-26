@@ -1,5 +1,6 @@
 # Importing python libraries and other funcions
 import numpy as np
+from scipy import optimize
 
 # Function BCRE123 starts here
 def critical_magnetic_field_re123(T, TC0M, BC20M, alpha):
@@ -341,26 +342,30 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
     ##############################################################################
     """
 
-    def BL(TT, BB, TC0M, BC20M, alpha):
-        BL = BB / (BC20M * (1 - TT / TC0M) ** alpha)
-        return BL
+    # def BL(TT, BB, TC0M, BC20M, alpha):
+    #     BL = BB / (BC20M * (1 - TT / TC0M) ** alpha)
+    #     return BL
 
-    def RSDL(TT, BB, JJ, TC0M, BC20M, c0, ppp, qqq, alpha, beta):
+    # def RSDL(TT, BB, JJ, TC0M, BC20M, c0, ppp, qqq, alpha, beta):
 
-        RSDL = (
-            c0
-            / BB ** (1 - beta)
-            * BL(TT, BB, TC0M, BC20M, alpha) ** (ppp - beta)
-            * (1 - BL(TT, BB, TC0M, BC20M, alpha)) ** qqq
-            - JJ
-        )
-        return RSDL
+    #     RSDL = (
+    #         c0
+    #         / BB ** (1 - beta)
+    #         * BL(TT, BB, TC0M, BC20M, alpha) ** (ppp - beta)
+    #         * (1 - BL(TT, BB, TC0M, BC20M, alpha)) ** qqq
+    #         - JJ
+    #     )
+    #     return RSDL
 
-    ppp = 5.875e-1
-    qqq = 1.7
+
+    def critical_current_density_bisection_re123(TT, BB, JOP, TC0M, BC20M, C):
+        return critical_current_density_re123([TT], [BB], TC0M, BC20M, C) - JOP
+
+    # ppp = 5.875e-1
+    # qqq = 1.7
     BLOW = 0.01
-    alpha = 1.54121
-    beta = 1.96679
+    # alpha = 1.54121
+    # beta = 1.96679
 
     if TC0M < 1.0e-6:
         raise ValueError("ERROR> From TcsRe123\nTc0m = 0\nSTOP TcsRe123#")
@@ -378,7 +383,7 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
     JC = np.zeros(B.shape)
     # BLCASE = np.zeros(B.shape)
     # TLCASE = np.zeros(B.shape)
-    TCST = np.zeros(B.shape)
+    # TCST = np.zeros(B.shape)
 
     # *SET THE LOWER LIMIT FOR THE FIELD
     BLIM = np.maximum(B, BLOW)
@@ -393,48 +398,67 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
         np.zeros(B[Bstar_ind].shape), B[Bstar_ind], TC0M, BC20M, c0
     )
     # *CHECK THAT JOP IS BELOW THE UPPER CRITICAL VALUE
-    # Find element index such that JC[Bstar_ind] < JOP (cdp, 06/2020)
-    ind = np.nonzero(JC[Bstar_ind] > JOP)[0]  # this is a numpy array (cdp, 06/2020)
+    # Find element index such that JOP < JC[Bstar_ind] (cdp, 06/2020)
+    ind = np.nonzero(JOP < JC[Bstar_ind])[0]  # this is a numpy array (cdp, 06/2020)
     JC_ind = Bstar_ind[ind]  # this is an array (cdp, 06/2020)
     if JC_ind.size == 0:
         return TCSRE123
 
-    # *FIND THE NORMALISED TEMPERATURE TCS/TC0 BY "GRAND-MOTHER MODIFIED" OR "AUNT" METHOD #crb (January 29, 2018)
-    for ii in range(len(JC_ind)):
+    # FIND CURRENT SHARING TEMPERATURE WITH BISECTION
 
-        NEXT = 0
-        NITER = 1
-        DELTAT = 0.25e0
+    for _, vv in enumerate(JC_ind):
 
-        while (NEXT < 3) and (NITER < 1000):
+        T_lower = np.array([3.5])
+        # T_upper = np.array([40.0])
+        T_upper = np.array([TC0M])
 
-            R = RSDL(
-                TCST[JC_ind[ii]],
-                B[JC_ind[ii]],
-                JOP,
-                TC0M,
-                BC20M,
-                c0,
-                ppp,
-                qqq,
-                alpha,
-                beta,
-            )
-            if NITER == 1:
-                ROLD = R
-            PROD = R * ROLD
+        ex_args = (B[vv], JOP[vv], TC0M, BC20M, c0)
+        # Evaluate current sharing temperature with bisection method.
+        TCSRE123[vv] = optimize.bisect(
+            critical_current_density_bisection_re123,
+            T_lower,
+            T_upper,
+            ex_args,
+            xtol=1e-5,
+        )
+    # End for ii.
 
-            if PROD < 0.0:
-                NEXT = NEXT + 1
-                TCST[JC_ind[ii]] = TCST[JC_ind[ii]] - DELTAT
-                DELTAT = DELTAT / 10.0
-            else:
-                ROLD = R
-            NITER = NITER + 1
-            TCST[JC_ind[ii]] = TCST[JC_ind[ii]] + DELTAT
-        # end while
-        TCSRE123[JC_ind[ii]] = TCST[JC_ind[ii]] - 2.0 * DELTAT
-    # end for #crb End (January 29, 2018)
+    # # *FIND THE NORMALISED TEMPERATURE TCS/TC0 BY "GRAND-MOTHER MODIFIED" OR "AUNT" METHOD #crb (January 29, 2018)
+    # for ii in range(len(JC_ind)):
+
+    #     NEXT = 0
+    #     NITER = 1
+    #     DELTAT = 0.25e0
+
+    #     while (NEXT < 3) and (NITER < 1000):
+
+    #         R = RSDL(
+    #             TCST[JC_ind[ii]],
+    #             B[JC_ind[ii]],
+    #             JOP,
+    #             TC0M,
+    #             BC20M,
+    #             c0,
+    #             ppp,
+    #             qqq,
+    #             alpha,
+    #             beta,
+    #         )
+    #         if NITER == 1:
+    #             ROLD = R
+    #         PROD = R * ROLD
+
+    #         if PROD < 0.0:
+    #             NEXT = NEXT + 1
+    #             TCST[JC_ind[ii]] = TCST[JC_ind[ii]] - DELTAT
+    #             DELTAT = DELTAT / 10.0
+    #         else:
+    #             ROLD = R
+    #         NITER = NITER + 1
+    #         TCST[JC_ind[ii]] = TCST[JC_ind[ii]] + DELTAT
+    #     # end while
+    #     TCSRE123[JC_ind[ii]] = TCST[JC_ind[ii]] - 2.0 * DELTAT
+    # # end for #crb End (January 29, 2018)
 
     return TCSRE123
 
