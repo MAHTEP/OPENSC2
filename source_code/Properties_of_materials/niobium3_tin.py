@@ -527,11 +527,6 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
     ######################################################################
     """
 
-    def RSDL(TT, BB, JJ, TC0M, BC20M, C, ppp, qqq):
-
-        RS = C / BC20M * (1.0 - TT ** 2.0) * BB ** (ppp - 1.0) * (1.0 - BB) ** qqq - JJ
-        return RS  # end of the function
-
     def critical_current_density_bisection_nb3sn(TT, BB, EPSLON, JOP, TC0M, BC20M, C):
         return critical_current_density_nb3sn([TT], [BB], [EPSLON], TC0M, BC20M, C) - JOP
 
@@ -540,8 +535,8 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
     # ppp = 0.63
     # qqq = 2.1
     # Actual used values
-    ppp = 0.556
-    qqq = 1.698
+    # ppp = 0.556
+    # qqq = 1.698
 
     # from file scaling_input.dat (cdp, 10/2020)
     # ppp = 0.84 # [] real - low field exponent of the pinning force (ppp~0.5)
@@ -555,9 +550,6 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
     # variable initialization
     TCS = np.zeros(B.shape)
     JC = np.zeros(B.shape)
-    BLCASE = np.zeros(B.shape)
-    TLCASE = np.zeros(B.shape)
-    TCST = np.zeros(B.shape)
     # * SET THE LOWER LIMIT FOR THE FIELD
     BLIM = np.maximum(B, BLOW)
 
@@ -583,38 +575,6 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
     if JC_ind.size == 0:
         return TCS
 
-    # * FIND THE NORMALISED TEMPERATURE TCS/TC0 BY "GRAND-MOTHER" METHOD !crb(August 19, 2011)
-    # T_dummy = TCNBSN(B[JC_ind], EPSLON[JC_ind], TC0M, BC20M)
-    #
-    # for ii in range(len(JC_ind)):
-    # 	CONVER = 0
-    # 	NITER = 1
-    # 	DELTAT = 0.25
-    # 	while CONVER < 3:
-    # 		TLCASE[JC_ind[ii]] = TCST[JC_ind[ii]]/TCNBSN([0.0], \
-    # 												 [EPSLON[JC_ind[ii]]], TC0M, BC20M)
-    # 		BLCASE[JC_ind[ii]] = BLIM[JC_ind[ii]]/(BCNBSN(TLCASE[JC_ind[ii]]*\
-    # 												 TCNBSN([0.0], [EPSLON[JC_ind[ii]]], TC0M, BC20M), \
-    # 												 [EPSLON[JC_ind[ii]]], TC0M, BC20M))
-    # 		R = RSDL(TLCASE[JC_ind[ii]], BLCASE[JC_ind[ii]], JOP, TC0M, BC20M, C, \
-    # 				ppp, qqq)
-    # 		if NITER == 1:
-    # 			ROLD = R
-    #
-    # 		PROD = R*ROLD
-    # 		if (PROD <= 0.0) or (TCST[JC_ind[ii]] >= T_dummy[ii]):
-    # 			CONVER = CONVER + 1
-    # 			TCST[JC_ind[ii]] = TCST[JC_ind[ii]] - DELTAT
-    # 			DELTAT = DELTAT/10.0
-    # 		else:
-    # 			ROLD = R
-    #
-    # 		NITER = NITER + 1
-    # 		TCST[JC_ind[ii]] = TCST[JC_ind[ii]] + DELTAT
-    # 	# end while
-    # 	TCS[JC_ind[ii]] = TCST[JC_ind[ii]] - 2*DELTAT
-    ## end for
-
     # FIND CURRENT SHARING TEMPERATURE WITH BISECTION (cdp, 09/2020)
 
     T_upper = critical_temperature_nb3sn(B[JC_ind], EPSLON[JC_ind], TC0M, BC20M)
@@ -636,62 +596,6 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
         )
     # End for ii.
 
-    # T_lower = np.array([3.5])
-    # max_iter = 1000
-    # tol = 9e-16
-    # residual = np.zeros(len(JC_ind))
-    # iteration = np.zeros(len(JC_ind), dtype=int)
-    # inter = (T_upper - T_lower) / 2.0
-
-    # F_upper_v = FF(T_upper, B[JC_ind], EPSLON[JC_ind], JOP, TC0M, BC20M, C)
-    # F_lower = FF(T_lower, B[JC_ind], EPSLON[JC_ind], JOP, TC0M, BC20M, C)
-    # F_prod = F_upper_v * F_lower
-    # ind_F_prod = np.nonzero(F_prod > 0.0)[0]
-    # if ind_F_prod.size > 0:
-    #     raise ValueError(
-    #         "ERROR! The sign of the function at the boundary of the \
-    # interval [A,B] must be different!\n"
-    #     )
-    # ind_F_upper_v = np.nonzero(F_upper_v == 0.0)[0]
-    # if ind_F_upper_v.size > 0:
-    #     TCS[JC_ind[ind_F_upper_v]] = T_upper[ind_F_upper_v]
-    # ind_F_lower = np.nonzero(F_lower == 0.0)[0]
-    # if ind_F_lower.size > 0:
-    #     TCS[JC_ind[ind_F_lower]] = T_lower
-
-    # ind_still = np.nonzero(TCS[JC_ind] == 0.0)[0]
-    # for ii in range(len(ind_still)):
-    #     xx = np.array(
-    #         [float(T_lower), float((T_lower + T_upper[ii]) / 2.0), T_upper[ii]]
-    #     )
-    #     BB = np.array([B[ind_still[ii]]])
-    #     EPS = np.array([EPSLON[ind_still[ii]]])
-    #     F_xx = FF(xx, BB, EPS, JOP, TC0M, BC20M, C)
-    #     while inter[ii] >= tol and iteration[ii] < max_iter:
-    #         iteration[ii] = iteration[ii] + 1
-    #         if F_xx[0] * F_xx[1] < 0:
-    #             xx[2] = xx[1]
-    #             xx[1] = (xx[0] + xx[2]) / 2.0
-    #             F_xx = FF(xx, BB, EPS, JOP, TC0M, BC20M, C)
-    #             inter[ii] = (xx[2] - xx[0]) / 2.0
-    #         elif F_xx[1] * F_xx[2] < 0:
-    #             xx[0] = xx[1]
-    #             xx[1] = (xx[0] + xx[2]) / 2.0
-    #             F_xx = FF(xx, BB, EPS, JOP, TC0M, BC20M, C)
-    #             inter[ii] = (xx[2] - xx[0]) / 2.0
-    #         else:
-    #             xx[1] = xx[np.nonzero(F_xx == 0.0)[0]]
-    #             inter[ii] = 0.0
-    #         # end if
-    #     # end while
-    #     if iteration[ii] == max_iter and inter[ii] > tol:
-    #         warnings.warn(
-    #             f"The bisection method stopped without satisfying the required tolerance {tol}, having reached the maximum number of iterations {max_iter}.\n"
-    #         )
-    #     TCS[ind_still[ii]] = xx[1]
-    #     xx = np.array([xx[1]])
-    #     residual[ii] = FF(xx, BB, EPS, JOP, TC0M, BC20M, C)
-    # # end for
     return TCS  # end of the function
 
 
