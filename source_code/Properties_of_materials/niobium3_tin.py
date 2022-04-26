@@ -579,7 +579,7 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
 
     T_upper = critical_temperature_nb3sn(B[JC_ind], EPSLON[JC_ind], TC0M, BC20M)
 
-    for ii, vv in enumerate(ind):
+    for ii, vv in enumerate(JC_ind):
 
         T_lower = np.array([3.5])
 
