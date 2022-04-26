@@ -342,22 +342,6 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
     ##############################################################################
     """
 
-    # def BL(TT, BB, TC0M, BC20M, alpha):
-    #     BL = BB / (BC20M * (1 - TT / TC0M) ** alpha)
-    #     return BL
-
-    # def RSDL(TT, BB, JJ, TC0M, BC20M, c0, ppp, qqq, alpha, beta):
-
-    #     RSDL = (
-    #         c0
-    #         / BB ** (1 - beta)
-    #         * BL(TT, BB, TC0M, BC20M, alpha) ** (ppp - beta)
-    #         * (1 - BL(TT, BB, TC0M, BC20M, alpha)) ** qqq
-    #         - JJ
-    #     )
-    #     return RSDL
-
-
     def critical_current_density_bisection_re123(TT, BB, JOP, TC0M, BC20M, C):
         return critical_current_density_re123([TT], [BB], TC0M, BC20M, C) - JOP
 
@@ -381,9 +365,6 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
     # variable initialization
     TCSRE123 = np.zeros(B.shape)
     JC = np.zeros(B.shape)
-    # BLCASE = np.zeros(B.shape)
-    # TLCASE = np.zeros(B.shape)
-    # TCST = np.zeros(B.shape)
 
     # *SET THE LOWER LIMIT FOR THE FIELD
     BLIM = np.maximum(B, BLOW)
@@ -423,42 +404,6 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
         )
     # End for ii.
 
-    # # *FIND THE NORMALISED TEMPERATURE TCS/TC0 BY "GRAND-MOTHER MODIFIED" OR "AUNT" METHOD #crb (January 29, 2018)
-    # for ii in range(len(JC_ind)):
-
-    #     NEXT = 0
-    #     NITER = 1
-    #     DELTAT = 0.25e0
-
-    #     while (NEXT < 3) and (NITER < 1000):
-
-    #         R = RSDL(
-    #             TCST[JC_ind[ii]],
-    #             B[JC_ind[ii]],
-    #             JOP,
-    #             TC0M,
-    #             BC20M,
-    #             c0,
-    #             ppp,
-    #             qqq,
-    #             alpha,
-    #             beta,
-    #         )
-    #         if NITER == 1:
-    #             ROLD = R
-    #         PROD = R * ROLD
-
-    #         if PROD < 0.0:
-    #             NEXT = NEXT + 1
-    #             TCST[JC_ind[ii]] = TCST[JC_ind[ii]] - DELTAT
-    #             DELTAT = DELTAT / 10.0
-    #         else:
-    #             ROLD = R
-    #         NITER = NITER + 1
-    #         TCST[JC_ind[ii]] = TCST[JC_ind[ii]] + DELTAT
-    #     # end while
-    #     TCSRE123[JC_ind[ii]] = TCST[JC_ind[ii]] - 2.0 * DELTAT
-    # # end for #crb End (January 29, 2018)
 
     return TCSRE123
 
