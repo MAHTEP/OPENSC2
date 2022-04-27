@@ -154,28 +154,40 @@ def build_interpolator(df, interpolation_kind="linear"):
     if strand_time_points.size == 1 and strand_space_points.size > 1:
         # Values are constant in time but not in space.
         known_val = known_val.reshape(known_val.shape[0])
-        return interpolate.interp1d(
-            strand_space_points,
-            known_val,
-            bounds_error=False,
-            fill_value=known_val[-1],
-            kind=interpolation_kind,
+        return (
+            interpolate.interp1d(
+                strand_space_points,
+                known_val,
+                bounds_error=False,
+                fill_value=known_val[-1],
+                kind=interpolation_kind,
+            ),
+            "space_only",
         )
 
     elif strand_time_points.size > 1 and strand_space_points.size == 1:
         # Values are constant in space but not in time.
         known_val = known_val.reshape(known_val.shape[1])
-        return interpolate.interp1d(
-            strand_time_points,
-            known_val,
-            bounds_error=False,
-            fill_value=known_val[-1],
-            kind=interpolation_kind,
+        return (
+            interpolate.interp1d(
+                strand_time_points,
+                known_val,
+                bounds_error=False,
+                fill_value=known_val[-1],
+                kind=interpolation_kind,
+            ),
+            "time_only",
         )
 
     elif strand_time_points.size > 1 and strand_space_points.size > 1:
-        return interpolate.interp2d(
-            strand_time_points, strand_space_points, known_val, kind=interpolation_kind
+        return (
+            interpolate.interp2d(
+                strand_time_points,
+                strand_space_points,
+                known_val,
+                kind=interpolation_kind,
+            ),
+            "space_and_time",
         )
 
 
