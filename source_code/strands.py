@@ -218,12 +218,12 @@ class Strands(SolidComponents):
 
         # Current sharing temperature evaluation in each nodal point
         if nodal:
-            self.dict_node_pt = self.eval_tsc(self.dict_node_pt)
+            self.dict_node_pt = self.eval_tcs(self.dict_node_pt)
         # Current sharing temperature evaluation in each Gauss point
         elif nodal == False:
-            self.dict_Gauss_pt = self.eval_tsc(self.dict_Gauss_pt)
+            self.dict_Gauss_pt = self.eval_tcs(self.dict_Gauss_pt)
 
-    # End method get_tsc
+    # End method get_tcs
 
     def eval_tcs(self, dict_dummy):
 
