@@ -1,3 +1,4 @@
+import warnings
 from solid_components import SolidComponents
 from openpyxl import load_workbook
 import numpy as np
@@ -274,6 +275,68 @@ class Strands(SolidComponents):
             self.dict_Gauss_pt = self.eval_tsc(self.dict_Gauss_pt)
 
     # End method get_tsc
+
+    def eval_tcs(self, dict_dummy):
+
+        jop = np.abs(self.dict_node_pt["IOP"][0]) / (
+            self.ASC / self.dict_input["COSTETA"]
+        ) * np.ones(dict_dummy["B_field"].shape)
+
+        bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
+        if self.dict_input["ISUPERCONDUCTOR"] == "NbTi":
+            dict_dummy["T_cur_sharing"] = current_sharing_temperature_nbti(
+                dict_dummy["B_field"],
+                jop,
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+                self.dict_input["Tc0m"],
+            )
+            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nbti(
+                bmax,
+                jop,
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+                self.dict_input["Tc0m"],
+            )
+        elif self.dict_input["ISUPERCONDUCTOR"] == "Nb3Sn":
+            dict_dummy["T_cur_sharing"] = current_sharing_temperature_nb3sn(
+                dict_dummy["B_field"],
+                dict_dummy["Epsilon"],
+                jop,
+                self.dict_input["Tc0m"],
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+            )
+            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nb3sn(
+                bmax,
+                dict_dummy["Epsilon"],
+                jop,
+                self.dict_input["Tc0m"],
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+            )
+        elif self.dict_input["ISUPERCONDUCTOR"] == "HTS":
+            dict_dummy["T_cur_sharing"] = current_sharing_temperature_re123(
+                dict_dummy["B_field"],
+                jop,
+                self.dict_input["Tc0m"],
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+            )
+            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_re123(
+                bmax,
+                jop,
+                self.dict_input["Tc0m"],
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+            )
+        elif self.dict_input["ISUPERCONDUCTOR"] == "scaling.dat":
+
+            warnings.warn("Still to be understood what to do here!!")
+
+        return dict_dummy
+
+    # End method eval_tcs
 
     def get_eps(self, conductor, nodal=True):
         # For each strand of type MixSCStabilizer or SuperConductor (cdp, 06/2020)
