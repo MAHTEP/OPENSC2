@@ -163,13 +163,6 @@ class Strands(SolidComponents):
 
     def eval_critical_properties(self, dict_dummy):
 
-        self.JOP = np.abs(self.dict_node_pt["IOP"][0]) / (
-            self.ASC / self.dict_input["COSTETA"]
-        ) * np.ones(dict_dummy["B_field"].shape)
-
-        # bmax moved here since it is not dependent on flag ISUPERCONDUCTOR \
-        # (cdp, 07/2020)
-        bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
         if self.dict_input["ISUPERCONDUCTOR"] == "NbTi":
             dict_dummy["T_critical"] = critical_temperature_nbti(
                 dict_dummy["B_field"], self.dict_input["Bc20m"], self.dict_input["Tc0m"]
@@ -177,20 +170,6 @@ class Strands(SolidComponents):
             dict_dummy["J_critical"] = critical_current_density_nbti(
                 dict_dummy["temperature"],
                 dict_dummy["B_field"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-                self.dict_input["Tc0m"],
-            )
-            dict_dummy["T_cur_sharing"] = current_sharing_temperature_nbti(
-                dict_dummy["B_field"],
-                self.JOP,
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-                self.dict_input["Tc0m"],
-            )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nbti(
-                bmax,
-                self.JOP,
                 self.dict_input["Bc20m"],
                 self.dict_input["c0"],
                 self.dict_input["Tc0m"],
@@ -210,22 +189,6 @@ class Strands(SolidComponents):
                 self.dict_input["Bc20m"],
                 self.dict_input["c0"],
             )
-            dict_dummy["T_cur_sharing"] = current_sharing_temperature_nb3sn(
-                dict_dummy["B_field"],
-                dict_dummy["Epsilon"],
-                self.JOP,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nb3sn(
-                bmax,
-                dict_dummy["Epsilon"],
-                self.JOP,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
         elif self.dict_input["ISUPERCONDUCTOR"] == "HTS":
             dict_dummy["T_critical"] = self.dict_input["Tc0m"] * np.ones(
                 dict_dummy["temperature"].shape
@@ -233,20 +196,6 @@ class Strands(SolidComponents):
             dict_dummy["J_critical"] = critical_current_density_re123(
                 dict_dummy["temperature"],
                 dict_dummy["B_field"],
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
-            dict_dummy["T_cur_sharing"] = current_sharing_temperature_re123(
-                dict_dummy["B_field"],
-                self.JOP,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_re123(
-                bmax,
-                self.JOP,
                 self.dict_input["Tc0m"],
                 self.dict_input["Bc20m"],
                 self.dict_input["c0"],
