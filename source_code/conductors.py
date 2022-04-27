@@ -1720,6 +1720,12 @@ class Conductors:
                 # storage of current sharing temperature time evolution values in \
                 # user defined nodal points (cdp, 08/2020)
                 strand.get_superconductor_critical_prop(self)
+                if (strand.dict_operation["TCS_EVALUATION"] == False and self.cond_num_step == 0):
+                    # Evaluate current sharing temperature only at the first time step.
+                    strand.get_tcs()
+                elif strand.dict_operation["TCS_EVALUATION"] == True:
+                    # Evaluate current sharing temperature at each time step.
+                    strand.get_tcs()
             # end if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"] \
             # (cdp, 08/2020)
             if self.cond_num_step == 0 and strand.dict_operation["IQFUN"] == 0:
@@ -1881,6 +1887,12 @@ class Conductors:
                 # Call get_superconductor_critical_prop to evaluate MixSCStabilizer \
                 # and/or SuperConductor properties in the Gauss point (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self, nodal=False)
+                if (strand.dict_operation["TCS_EVALUATION"] == False and self.cond_num_step == 0):
+                    # Evaluate current sharing temperature only at the first time step.
+                    strand.get_tcs(nodal=False)
+                elif strand.dict_operation["TCS_EVALUATION"] == True:
+                    # Evaluate current sharing temperature at each time step.
+                    strand.get_tcs(nodal=False)
             # end if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"] \
             # (cdp, 08/2020)
             # Evaluate SolidComponents properties
@@ -1925,6 +1937,9 @@ class Conductors:
                 # Call get_superconductor_critical_prop to evaluate MixSCStabilizer \
                 # and/or SuperConductor properties in nodal points (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self)
+                # Evaluate current sharing temperature
+                strand.get_tcs()
+
             # end if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"] \
             # (cdp, 08/2020)
 
