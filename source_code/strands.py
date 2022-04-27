@@ -259,6 +259,22 @@ class Strands(SolidComponents):
 
     # end method Eval_critical_properties (cdp, 10/2020)
 
+    def get_tcs(self, nodal = True):
+        """Method that allows the evaluation of the current sharing temperature in nodal points or in Gauss points, according to flag nodal.
+
+        Args:
+            nodal (bool, optional): Flag to evaluate the current sharing temperature in proper location. If True evaluation is on the nodal points, if False evaluation is on the Gauss points. Defaults to True.
+        """
+
+        # Current sharing temperature evaluation in each nodal point
+        if nodal:
+            self.dict_node_pt = self.eval_tsc(self.dict_node_pt)
+        # Current sharing temperature evaluation in each Gauss point
+        elif nodal == False:
+            self.dict_Gauss_pt = self.eval_tsc(self.dict_Gauss_pt)
+
+    # End method get_tsc
+
     def get_eps(self, conductor, nodal=True):
         # For each strand of type MixSCStabilizer or SuperConductor (cdp, 06/2020)
         if nodal:
