@@ -127,10 +127,13 @@ def load_auxiliary_files(file_path, sheetname):
     Returns:
         _type_: _description_
     """
-    return pd.read_excel(file_path, sheet_name=sheetname,header=0,index_col=0)
+    return pd.read_excel(file_path, sheet_name=sheetname, header=0, index_col=0)
+
+
 # End function load_auxiliary_files
 
-def build_interpolator(df, interpolation_kind = "linear"):
+
+def build_interpolator(df, interpolation_kind="linear"):
     """Function that builds the interpolator for the data loaded from auxiliary input files. If data are costant in time or in space 1D interpolate.interp1d is used, if values describe a dependence in both time and space interpolate.interp1d is used.
 
     Args:
@@ -148,19 +151,34 @@ def build_interpolator(df, interpolation_kind = "linear"):
 
     known_val = df.to_numpy()
 
-    if (strand_time_points.size == 1 and strand_space_points.size > 1):
+    if strand_time_points.size == 1 and strand_space_points.size > 1:
         # Values are constant in time but not in space.
         known_val = known_val.reshape(known_val.shape[0])
-        return interpolate.interp1d(strand_space_points,known_val, bounds_error=False, fill_value=known_val[-1],kind = interpolation_kind)
+        return interpolate.interp1d(
+            strand_space_points,
+            known_val,
+            bounds_error=False,
+            fill_value=known_val[-1],
+            kind=interpolation_kind,
+        )
 
-    elif (strand_time_points.size > 1 and strand_space_points.size == 1):
+    elif strand_time_points.size > 1 and strand_space_points.size == 1:
         # Values are constant in space but not in time.
         known_val = known_val.reshape(known_val.shape[1])
-        return interpolate.interp1d(strand_time_points, known_val, bounds_error=False, fill_value=known_val[-1], kind=interpolation_kind)
+        return interpolate.interp1d(
+            strand_time_points,
+            known_val,
+            bounds_error=False,
+            fill_value=known_val[-1],
+            kind=interpolation_kind,
+        )
 
-    elif (strand_time_points.size > 1 and strand_space_points.size > 1):
-        return interpolate.interp2d(strand_time_points,strand_space_points,known_val,kind=interpolation_kind)
-    
+    elif strand_time_points.size > 1 and strand_space_points.size > 1:
+        return interpolate.interp2d(
+            strand_time_points, strand_space_points, known_val, kind=interpolation_kind
+        )
+
+
 # End function build_interpolator
 
 
@@ -186,9 +204,11 @@ def do_interpolation(interpolator, zcoord, time_step, kind):
         return interpolator(time_step)
 
     elif kind == "space_and_time":
-        return interpolator(zcoord,time_step)
+        return interpolator(zcoord, time_step)
+
 
 # End function do_interpolation
+
 
 def with_read_csv(fname, col_name, delimiter=";"):
     """[summary]
