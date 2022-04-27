@@ -116,6 +116,20 @@ def set_diagnostic(vv, **kwargs):
 # End function set_diagnostic.
 
 
+def load_auxiliary_files(file_path, sheetname):
+    """Function that load the auxiliary input file as a data frame
+
+    Args:
+        file_path (_type_): _description_
+        sheetname (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    return pd.read_excel(file_path, sheet_name=sheetname,header=0,index_col=0)
+# End function load_auxiliary_files
+
+
 def with_read_csv(fname, col_name, delimiter=";"):
     """[summary]
 
