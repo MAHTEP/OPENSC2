@@ -163,6 +163,33 @@ def build_interpolator(df, interpolation_kind = "linear"):
     
 # End function build_interpolator
 
+
+def do_interpolation(interpolator, zcoord, time_step, kind):
+    """Functin that makes the interpolation of the data loaded from auxiliary input files accorting to the kind flag.
+
+    Args:
+        interpolator (_type_): _description_
+        zcoord (_type_): _description_
+        time_step (_type_): _description_
+        kind (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    if kind == "space_only":
+        # Values are constant in time but not in space.
+        return interpolator(zcoord)
+
+    elif kind == "time_only":
+        # Values are constant in space but not in time.
+        return interpolator(time_step)
+
+    elif kind == "space_and_time":
+        return interpolator(zcoord,time_step)
+
+# End function do_interpolation
+
 def with_read_csv(fname, col_name, delimiter=";"):
     """[summary]
 
