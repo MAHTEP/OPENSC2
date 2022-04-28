@@ -757,16 +757,31 @@ class SolidComponents:
 
     # end Get_I
 
-    def get_magnetic_field(self, simulation, conductor, nodal=True):
+    def get_magnetic_field(self, conductor, nodal=True):
         if nodal:
             # compute B_field in each node (cdp, 07/2020)
-            if self.dict_operation["IBIFUN"] < 0:  # cza to enable other negative \
+            if self.dict_operation["IBIFUN"] < 0:  
+                # cza to enable other negative \
                 # (read from file) flags -> ibifun.eq.-3, see below (August 29, 2018)
+
+                if conductor.cond_time[-1] == 0:
+                    # Build file path.
+                    file_path = os.path.join(
+                        conductor.BASE_PATH, conductor.file_input["EXTERNAL_BFIELD"]
+                    )
+                    # Load auxiliary input file.
+                    bfield_df = load_auxiliary_files(file_path, sheetname=self.ID)
+                    # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                    self.bfield_interpolator, self.bfield_interp_flag = build_interpolator(
+                        bfield_df, self.dict_operation["B_INTERPOLATION"]
+                    )
+
                 # call load_user_defined_quantity on the component.
-                self.dict_node_pt["B_field"], _ = conductor.load_user_defined_quantity(
-                    simulation,
-                    "EXTERNAL_BFIELD",
-                    f"B_{conductor.name} [{self.dict_operation['B_field_units']}]",
+                self.dict_node_pt["B_field"] = do_interpolation(
+                    self.bfield_interpolator,
+                    conductor.dict_discretization["xcoord"],
+                    conductor.cond_time[-1],
+                    self.bfield_interp_flag,
                 )
                 if self.dict_operation["B_field_units"] == "T/A":
                     # BFIELD is per unit of current
