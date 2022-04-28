@@ -1706,7 +1706,7 @@ class Conductors:
             strand.get_current(self)
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
-            strand.get_magnetic_field(simulation, self)
+            strand.get_magnetic_field(self)
             # call method get_magnetic_field_gradient for each Strands object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self)
             if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"]:
@@ -1750,7 +1750,7 @@ class Conductors:
             jacket.get_current(self)
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
-            jacket.get_magnetic_field(simulation, self)
+            jacket.get_magnetic_field(self)
             if self.cond_num_step == 0 and jacket.dict_operation["IQFUN"] == 0:
                 # call method get_heat only once to initialize key EXTFLX of dictionary \
                 # dict_node_pt to zeros (cdp, 11/2020)
@@ -1816,7 +1816,7 @@ class Conductors:
                 )
                 / 2.0
             )
-            jacket.get_magnetic_field(simulation, self, nodal=False)
+            jacket.get_magnetic_field(self, nodal=False)
 
             jacket.dict_Gauss_pt["Q1"] = (
                 jacket.dict_node_pt["JHTFLX"][:-1] + jacket.dict_node_pt["EXTFLX"][:-1]
@@ -1868,7 +1868,7 @@ class Conductors:
                 )
                 / 2.0
             )
-            strand.get_magnetic_field(simulation, self, nodal=False)
+            strand.get_magnetic_field(self, nodal=False)
             strand.dict_Gauss_pt["Q1"] = (
                 strand.dict_node_pt["JHTFLX"][:-1] + strand.dict_node_pt["EXTFLX"][:-1]
             )
@@ -1920,7 +1920,7 @@ class Conductors:
             jacket.get_current(self)
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
-            jacket.get_magnetic_field(simulation, self)
+            jacket.get_magnetic_field(self)
         # end for jacket (cdp, 07/2020)
         # Loop on Strands (cdp, 07/2020)
         for strand in self.dict_obj_inventory["Strands"]["Objects"]:
