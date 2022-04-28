@@ -3,7 +3,7 @@ from solid_components import SolidComponents
 from openpyxl import load_workbook
 import numpy as np
 import os
-from UtilityFunctions.auxiliary_functions import get_from_xlsx
+from UtilityFunctions.auxiliary_functions import get_from_xlsx, load_auxiliary_files, build_interpolator, do_interpolation
 
 # from UtilityFunctions.InitializationFunctions import Read_input_file
 # NbTi properties
@@ -292,13 +292,27 @@ class Strands(SolidComponents):
         if nodal:
             # compute Epsilon in each node (cdp, 07/2020)
             if self.dict_operation["IEPS"] < 0:  # strain from file strain.dat
-                path = os.path.join(
-                    conductor.BASE_PATH, conductor.file_input["EXTERNAL_STRAIN"]
+
+                if conductor.cond_time[-1] == 0:
+                    # Build file path.
+                    file_path = os.path.join(
+                        conductor.BASE_PATH, conductor.file_input["EXTERNAL_STRAIN"]
+                    )
+                    # Load auxiliary input file.
+                    eps_df = load_auxiliary_files(file_path, sheetname=self.ID)
+                    # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                    self.eps_interpolator, self.esp_interp_flag = build_interpolator(
+                        eps_df, self.dict_operation["IOP_INTERPOLATION"]
+                    )
+
+                # call load_user_defined_quantity on the component.
+                self.dict_node_pt["Epsilon"] = do_interpolation(
+                    self.eps_interpolator,
+                    conductor.dict_discretization["xcoord"],
+                    conductor.cond_time[-1],
+                    self.eps_interp_flag,
                 )
-                # call Get_from_xlsx on the component
-                [self.dict_node_pt["Epsilon"], flagSpecfield] = get_from_xlsx(
-                    conductor, path, self, "IEPS"
-                )
+
                 if flagSpecfield == 1:
                     print("still to be decided what to do here\n")
             elif self.dict_operation["IEPS"] == 0:  # no strain (cdp, 06/2020)
