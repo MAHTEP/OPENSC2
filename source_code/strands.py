@@ -3,7 +3,12 @@ from solid_components import SolidComponents
 from openpyxl import load_workbook
 import numpy as np
 import os
-from UtilityFunctions.auxiliary_functions import get_from_xlsx, load_auxiliary_files, build_interpolator, do_interpolation
+from UtilityFunctions.auxiliary_functions import (
+    get_from_xlsx,
+    load_auxiliary_files,
+    build_interpolator,
+    do_interpolation,
+)
 
 # from UtilityFunctions.InitializationFunctions import Read_input_file
 # NbTi properties
@@ -107,9 +112,14 @@ class Strands(SolidComponents):
                         conductor.BASE_PATH, conductor.file_input["EXTERNAL_ALPHAB"]
                     )
                     # Load auxiliary input file.
-                    alphab_df = load_auxiliary_files(file_path, sheetname=self.ID)
+                    alphab_df, flagSpecfield = load_auxiliary_files(
+                        file_path, sheetname=self.ID
+                    )
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
-                    self.alphab_interpolator, self.alphab_interp_flag = build_interpolator(
+                    (
+                        self.alphab_interpolator,
+                        self.alphab_interp_flag,
+                    ) = build_interpolator(
                         alphab_df, self.dict_operation["ALPHAB_INTERPOLATION"]
                     )
 
@@ -120,7 +130,7 @@ class Strands(SolidComponents):
                     conductor.cond_time[-1],
                     self.alphab_interp_flag,
                 )
-                
+
                 # leggi un file come del campo magnetico
                 # controlla se e' per unita' di corrente
                 # in caso affermatico moltiplica per IOP_TOT
@@ -222,7 +232,7 @@ class Strands(SolidComponents):
 
     # end method Eval_critical_properties (cdp, 10/2020)
 
-    def get_tcs(self, nodal = True):
+    def get_tcs(self, nodal=True):
         """Method that allows the evaluation of the current sharing temperature in nodal points or in Gauss points, according to flag nodal.
 
         Args:
@@ -240,9 +250,11 @@ class Strands(SolidComponents):
 
     def eval_tcs(self, dict_dummy):
 
-        jop = np.abs(self.dict_node_pt["IOP"][0]) / (
-            self.ASC / self.dict_input["COSTETA"]
-        ) * np.ones(dict_dummy["B_field"].shape)
+        jop = (
+            np.abs(self.dict_node_pt["IOP"][0])
+            / (self.ASC / self.dict_input["COSTETA"])
+            * np.ones(dict_dummy["B_field"].shape)
+        )
 
         bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
         if self.dict_input["ISUPERCONDUCTOR"] == "NbTi":
@@ -312,9 +324,11 @@ class Strands(SolidComponents):
                         conductor.BASE_PATH, conductor.file_input["EXTERNAL_STRAIN"]
                     )
                     # Load auxiliary input file.
-                    eps_df = load_auxiliary_files(file_path, sheetname=self.ID)
+                    eps_df, flagSpecfield = load_auxiliary_files(
+                        file_path, sheetname=self.ID
+                    )
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
-                    self.eps_interpolator, self.esp_interp_flag = build_interpolator(
+                    self.eps_interpolator, self.eps_interp_flag = build_interpolator(
                         eps_df, self.dict_operation["IOP_INTERPOLATION"]
                     )
 

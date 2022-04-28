@@ -127,7 +127,9 @@ def load_auxiliary_files(file_path, sheetname):
     Returns:
         _type_: _description_
     """
-    return pd.read_excel(file_path, sheet_name=sheetname, header=0, index_col=0)
+    wb = load_workbook(file_path, data_only=True)
+    sheet = wb[sheetname]
+    return (pd.read_excel(file_path, sheet_name=sheetname, header=0, index_col=0), sheet.cell(1, 1).value)
 
 
 # End function load_auxiliary_files

@@ -726,7 +726,7 @@ class SolidComponents:
                     conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
                 )
                 # Load auxiliary input file.
-                current_df = load_auxiliary_files(file_path, sheetname=self.ID)
+                current_df, flagSpecfield = load_auxiliary_files(file_path, sheetname=self.ID)
                 # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                 self.current_interpolator, self.current_interp_flag = build_interpolator(
                     current_df, self.dict_operation["IOP_INTERPOLATION"]
@@ -784,7 +784,7 @@ class SolidComponents:
                         conductor.BASE_PATH, conductor.file_input["EXTERNAL_BFIELD"]
                     )
                     # Load auxiliary input file.
-                    bfield_df = load_auxiliary_files(file_path, sheetname=self.ID)
+                    bfield_df,_ = load_auxiliary_files(file_path, sheetname=self.ID)
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                     self.bfield_interpolator, self.bfield_interp_flag = build_interpolator(
                         bfield_df, self.dict_operation["B_INTERPOLATION"]
@@ -900,7 +900,7 @@ class SolidComponents:
                     conductor.BASE_PATH, conductor.file_input["EXTERNAL_HEAT"]
                 )
                 # Load auxiliary input file.
-                heat_df = load_auxiliary_files(file_path, sheetname=self.ID)
+                heat_df,_ = load_auxiliary_files(file_path, sheetname=self.ID)
                 # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                 self.heat_interpolator, self.heat_interp_flag = build_interpolator(
                     heat_df, self.dict_operation["Q_INTERPOLATION"]
