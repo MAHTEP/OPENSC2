@@ -101,16 +101,29 @@ class Strands(SolidComponents):
         if nodal:
             # compute alpha_B in each node (cdp, 07/2020)
             if self.dict_operation["IALPHAB"] <= -1:  # read from file
-                # call Get_from_xlsx on the component
-                path = os.path.join(
-                    conductor.BASE_PATH, conductor.file_input["EXTERNAL_ALPHAB"]
+                if conductor.cond_time[-1] == 0:
+                    # Build file path.
+                    file_path = os.path.join(
+                        conductor.BASE_PATH, conductor.file_input["EXTERNAL_ALPHAB"]
+                    )
+                    # Load auxiliary input file.
+                    alphab_df = load_auxiliary_files(file_path, sheetname=self.ID)
+                    # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                    self.alphab_interpolator, self.alphab_interp_flag = build_interpolator(
+                        alphab_df, self.dict_operation["ALPHAB_INTERPOLATION"]
+                    )
+
+                # call load_user_defined_quantity on the component.
+                self.dict_node_pt["IOP"] = do_interpolation(
+                    self.alphab_interpolator,
+                    conductor.dict_discretization["xcoord"],
+                    conductor.cond_time[-1],
+                    self.alphab_interp_flag,
                 )
+                
                 # leggi un file come del campo magnetico
                 # controlla se e' per unita' di corrente
                 # in caso affermatico moltiplica per IOP_TOT
-                [self.dict_node_pt["alpha_B"], flagSpecfield] = get_from_xlsx(
-                    conductor, path, self, "IALPHAB"
-                )
                 if flagSpecfield == 2:  # alphaB is per unit of current
                     self.dict_node_pt["alpha_B"] = (
                         self.dict_node_pt["alpha_B"] * conductor.IOP_TOT
