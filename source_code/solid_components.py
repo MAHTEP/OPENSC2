@@ -719,13 +719,27 @@ class SolidComponents:
         """
 
         if conductor.dict_input["IOPFUN"] == -1:
-            # call Get_from_xlsx on the component
-            path = os.path.join(
-                conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
+
+            if conductor.cond_time[-1] == 0:
+                # Build file path.
+                file_path = os.path.join(
+                    conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
+                )
+                # Load auxiliary input file.
+                current_df = load_auxiliary_files(file_path, sheetname=self.ID)
+                # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                self.current_interpolator, self.current_interp_flag = build_interpolator(
+                    current_df, self.dict_operation["IOP_INTERPOLATION"]
+                )
+
+            # call load_user_defined_quantity on the component.
+            self.dict_node_pt["IOP"] = do_interpolation(
+                self.current_interpolator,
+                conductor.dict_discretization["xcoord"],
+                conductor.cond_time[-1],
+                self.current_interp_flag,
             )
-            [self.dict_node_pt["IOP"], flagSpecfield] = get_from_xlsx(
-                conductor, path, self, "IOPFUN"
-            )
+
             # evaluate IOP_TOT as the sum of first value of current vector \
             # self.dict_node_pt["IOP"] of each SolidComponent. This is because there \
             # is no current redistribution along the conductor \
