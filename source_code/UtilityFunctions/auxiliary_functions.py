@@ -216,7 +216,7 @@ def do_interpolation(interpolator, zcoord, time_step, kind):
         return interpolator(time_step)
 
     elif kind == "space_and_time":
-        return interpolator(zcoord, time_step)
+        return interpolator(time_step,zcoord).reshape(zcoord.shape)
 
 
 # End function do_interpolation
