@@ -1731,11 +1731,11 @@ class Conductors:
             if self.cond_num_step == 0 and strand.dict_operation["IQFUN"] == 0:
                 # call method get_heat only once to initialize key EXTFLX of dictionary \
                 # dict_node_pt to zeros (cdp, 11/2020)
-                strand.get_heat(simulation, self)
+                strand.get_heat(self)
             elif strand.dict_operation["IQFUN"] != 0:
                 # call method get_heat to evaluate external heating only if heating is on \
                 # (cdp, 10/2020)
-                strand.get_heat(simulation, self)
+                strand.get_heat(self)
             # end if strand.dict_operation["IQFUN"] (cdp, 10/2020)
             # call method jhtflx_new_0 to initialize JHTFLX to zeros for each \
             # conductor solid components (cdp, 06/2020)
@@ -1754,11 +1754,11 @@ class Conductors:
             if self.cond_num_step == 0 and jacket.dict_operation["IQFUN"] == 0:
                 # call method get_heat only once to initialize key EXTFLX of dictionary \
                 # dict_node_pt to zeros (cdp, 11/2020)
-                jacket.get_heat(simulation, self)
+                jacket.get_heat(self)
             elif jacket.dict_operation["IQFUN"] != 0:
                 # call method get_heat to evaluate external heating only if heating is on\
                 # (cdp, 10/2020)
-                jacket.get_heat(simulation, self)
+                jacket.get_heat(self)
             # end if jacket.dict_operation["IQFUN"] (cdp, 10/2020)
             # call method jhtflx_new_0 to initialize JHTFLX to zeros for each \
             # conductor solid components (cdp, 06/2020)

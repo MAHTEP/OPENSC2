@@ -810,7 +810,7 @@ class SolidComponents:
     # HERE STARTS THE DEFINITION OF MODULES USEFUL TO INITIALIZE THE DRIVERS FOR \
     # THE EXTERNAL HEATING. D. Placido (06/2020)
 
-    def get_heat(self, simulation, conductor):
+    def get_heat(self, conductor):
 
         """
         Method that evaluates the external heating according to the value of flag IQUFN, thaing unto account the chosen solution method (cdp, 11/2020)
