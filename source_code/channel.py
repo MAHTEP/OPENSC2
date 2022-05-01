@@ -908,19 +908,19 @@ class Channel(FluidComponentsInput):
         """
         # Define the dictionary of coefficients.
         dict_coeff = {206: (19.6e-9, 2.42, 5.80), 209: (20.9e-9, 19.1, 4.23)}
-        # Evaluate kk.
-        kk = (
-            dict_coeff[self.dict_input["IFRICTION"]][0]
-            * (self.dict_input["VOID_FRACTION"] ** 3)
-            / ((1 - self.dict_input["VOID_FRACTION"]) ** 2)
-        )
         # Evaluate jj.
         jj = (
             dict_coeff[self.dict_input["IFRICTION"]][1]
             / self.dict_input["VOID_FRACTION"]
             ** dict_coeff[self.dict_input["IFRICTION"]][2]
         )
-        return kk, jj
+        # Evaluate kk.
+        kk = (
+            dict_coeff[self.dict_input["IFRICTION"]][0]
+            * (self.dict_input["VOID_FRACTION"] ** 3)
+            / ((1 - self.dict_input["VOID_FRACTION"]) ** 2)
+        )
+        return jj, kk
 
     # End method _eval_jj_and_kk
 
