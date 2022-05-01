@@ -172,6 +172,9 @@ class Channel(FluidComponentsInput):
         # Define the dictionary for the evaluation of nusselt number of the channel in nodal (key True) and Gauss (key False) points.
         self.dict_nusselt = {True: None, False: None}
 
+        # For time evolution plots.
+        self.time_evol = dict(friction_factor = dict())
+
     # End method __init__.
 
     def __repr__(self):
@@ -250,9 +253,8 @@ class Channel(FluidComponentsInput):
             nodal (bool, optional): [description]. Defaults to True.
         """
         # User should write here friction factor value or correlation. Keep in mind that correlation should be array smart if function of reynolds; it must be an array).
-        self.dict_friction_factor[nodal]["total"] = self.dict_input[
-            "FRICTION_MULTIPLIER"
-        ] * np.ones(reynolds.shape)
+        # If constant multiplication by Friction_multiplayer is done in method eval_friction_factor.
+        self.dict_friction_factor[nodal]["total"] = np.ones(reynolds.shape)
 
     # End method user_defined_friction_factor.
 

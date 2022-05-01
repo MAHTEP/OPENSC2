@@ -153,6 +153,7 @@ def plot_nomenclature_y(prop):
         Heat_exch=("Q_exch", "(W/m)"),
         isobaric_expansion_coefficient=(r"$\alpha_L$", "(1/K)"),
         isothermal_compressibility=(r"$\beta$", "(1/Pa)"),
+        friction_factor=("f","(~)"),
     )
     return dict_nomenclature[prop]
 

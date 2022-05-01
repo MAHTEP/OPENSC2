@@ -14,6 +14,7 @@ def save_properties(conductor, f_path):
             0
         ].coolant.dict_node_pt.keys()
     )
+    list_prop_chan.append("friction_factor")
     list_units = [
         "(Pa)",
         "(K)",
@@ -31,6 +32,7 @@ def save_properties(conductor, f_path):
         "(~)",
         "(~)",
         "(kg/s)",
+        "(~)",
     ]
     header_chan = "xcoord (m)"
     for jj in range(len(list_prop_chan)):
@@ -42,15 +44,15 @@ def save_properties(conductor, f_path):
         A_chan = np.zeros(
             (
                 conductor.dict_discretization["N_nod"],
-                len(fluid_comp.coolant.dict_node_pt) + 1,
+                len(fluid_comp.coolant.dict_node_pt) + 2,
             )
         )
         file_path = os.path.join(f_path, f"{fluid_comp.ID}.tsv")
         A_chan[:, 0] = conductor.dict_discretization["xcoord"]
-        ii = 0
-        for prop_value in fluid_comp.coolant.dict_node_pt.values():
-            ii = ii + 1
+        for ii, prop_value in enumerate(fluid_comp.coolant.dict_node_pt.values(),1):
             A_chan[:, ii] = prop_value
+        # Save total friction factor
+        A_chan[:, -1] = fluid_comp.channel.dict_friction_factor[True]["total"]
         with open(file_path, "w") as writer:
             np.savetxt(writer, A_chan, delimiter="\t", header=header_chan, comments="")
     for strand in conductor.dict_obj_inventory["Strands"]["Objects"]:
@@ -105,9 +107,9 @@ def save_simulation_space(conductor, f_path, n_digit):
     time = round(conductor.Space_save[conductor.i_save], n_digit)
     conductor.num_step_save[conductor.i_save] = conductor.cond_num_step
     # end if len(tt[0]) (cdp, 12/2020)
-    prop_chan = ["xcoord", "velocity", "pressure", "temperature", "total_density"]
+    prop_chan = ["xcoord", "velocity", "pressure", "temperature", "total_density", "friction_factor"]
     header_chan = (
-        "xcoord (m)	velocity (m/s)	pressure (Pa)	temperature (K)	total_density (kg/m^3)"
+        "xcoord (m)	velocity (m/s)	pressure (Pa)	temperature (K)	total_density (kg/m^3)\tfriction_factor (~)"
     )
     for fluid_comp in conductor.dict_obj_inventory["FluidComponents"]["Objects"]:
         file_path = os.path.join(
@@ -117,8 +119,12 @@ def save_simulation_space(conductor, f_path, n_digit):
         for ii in range(len(prop_chan)):
             if prop_chan[ii] == "xcoord":
                 A_chan[:, ii] = conductor.dict_discretization[prop_chan[ii]]
-            else:
+            elif prop_chan[ii] != "friction_factor":
                 A_chan[:, ii] = fluid_comp.coolant.dict_node_pt[prop_chan[ii]]
+            else:
+                # Save friction factor
+                A_chan[:, ii] = fluid_comp.channel.dict_friction_factor[True]["total"]
+
             # end if prop_chan[ii] (cdp, 01/2021)
         # end for ii (cdp, 01/2021)
         with open(file_path, "w") as writer:
@@ -200,7 +206,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
     """
     Function that reorganizes the files of the spatial distribution collecting in a single file for each property the spatial distribution at user defined times. In this way the file format is like the ones of the time evolution and this should simplify plots and furter data analysis. (cdp, 11/2020)
     """
-    list_ch_key = ["velocity", "pressure", "temperature", "total_density"]
+    list_ch_key = ["velocity", "pressure", "temperature", "total_density", "friction_factor"]
     # list_sol_key = ["temperature", "total_density", "total_isobaric_specific_heat", "total_thermal_conductivity", \
     # 							 "EXTFLX", "JHTFLX"]
     list_sol_key = ["temperature"]
@@ -466,6 +472,20 @@ def save_simulation_time(simulation, conductor):
                     header=True,
                 )
             # End for key.
+            # Inizialize dictionary corresponding to key to a dictionary of empty lists for the first time.
+            f_comp.channel.time_evol["friction_factor"] = initialize_dictionaty_te(
+                f_comp.channel.time_evol["friction_factor"], ind_xcoord
+            )
+            # Save the headings only ones.
+            pd.DataFrame(columns=headers).to_csv(
+                os.path.join(
+                    simulation.dict_path[f"Output_Time_evolution_{conductor.ID}_dir"],
+                    f"{f_comp.ID}_friction_factor_te.tsv",
+                ),
+                sep="\t",
+                index=False,
+                header=True,
+            )
             # Save the headings only ones.
             pd.DataFrame(columns=headers_inl_out).to_csv(
                 os.path.join(
@@ -520,6 +540,30 @@ def save_simulation_time(simulation, conductor):
             )
         # End for key.
 
+        # Save friction factor time evolution.
+        # Update the contend of the dictionary of lists with propertiy values at selected xcoord and current time.
+        fluid_comp.channel.time_evol["friction_factor"] = update_values(
+            fluid_comp.channel.time_evol["friction_factor"], fluid_comp.channel.dict_friction_factor[True]["total"], time, ind_xcoord
+        )
+        # Write the content of the dictionary to file, if conditions are satisfied.
+        fluid_comp.channel.time_evol["friction_factor"] = save_te_on_file(
+            conductor,
+            fluid_comp.channel.time_evol["friction_factor"],
+            os.path.join(
+                simulation.dict_path[f"Output_Time_evolution_{conductor.ID}_dir"],
+                f"{fluid_comp.ID}_friction_factor_te.tsv",
+            ),
+            simulation.transient_input["TEND"],
+            ind_xcoord,
+        )
+
+        if fluid_comp.channel.flow_dir[0] == "forward":
+            index_inl = 0
+            index_out = -1
+        elif fluid_comp.channel.flow_dir[0] == "backward":
+            index_inl = -1
+            index_out = 0
+
         # Inlet and outlet quantities (cdp, 08/2020)
         file_name_io = os.path.join(
             simulation.dict_path[f"Output_Time_evolution_{conductor.ID}_dir"],
@@ -530,7 +574,7 @@ def save_simulation_time(simulation, conductor):
         dict.update(
             {
                 key: value.append(
-                    fluid_comp.coolant.dict_node_pt[key.split("_inl")[0]][0]
+                    fluid_comp.coolant.dict_node_pt[key.split("_inl")[0]][index_inl]
                 )
                 for key, value in fluid_comp.coolant.time_evol_io.items()
                 if "inl" in key
@@ -540,7 +584,7 @@ def save_simulation_time(simulation, conductor):
         dict.update(
             {
                 key: value.append(
-                    fluid_comp.coolant.dict_node_pt[key.split("_out")[0]][-1]
+                    fluid_comp.coolant.dict_node_pt[key.split("_out")[0]][index_out]
                 )
                 for key, value in fluid_comp.coolant.time_evol_io.items()
                 if "out" in key
