@@ -204,7 +204,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
     # list_sol_key = ["temperature", "total_density", "total_isobaric_specific_heat", "total_thermal_conductivity", \
     # 							 "EXTFLX", "JHTFLX"]
     list_sol_key = ["temperature"]
-    # lists all the file .tsv in subfolder Space (cdp, 11/2020)
+    # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
     # Round the time to save to n_digit digits only once
     time = np.around(cond.Space_save, n_digit)
     # loop on FluidComponents (cdp, 11/2020)
@@ -458,7 +458,7 @@ def save_simulation_time(simulation, conductor):
                 # Save the headings only ones.
                 pd.DataFrame(columns=headers).to_csv(
                     os.path.join(
-                        simulation.dict_path[f"Output_Time_{conductor.ID}_dir"],
+                        simulation.dict_path[f"Output_Time_evolution_{conductor.ID}_dir"],
                         f"{f_comp.ID}_{key}_te.tsv",
                     ),
                     sep="\t",
@@ -469,7 +469,7 @@ def save_simulation_time(simulation, conductor):
             # Save the headings only ones.
             pd.DataFrame(columns=headers_inl_out).to_csv(
                 os.path.join(
-                    simulation.dict_path[f"Output_Time_{conductor.ID}_dir"],
+                    simulation.dict_path[f"Output_Time_evolution_{conductor.ID}_dir"],
                     f"{f_comp.ID}_inlet_outlet_te.tsv",
                 ),
                 sep="\t",
@@ -485,7 +485,7 @@ def save_simulation_time(simulation, conductor):
                 # Save the headings only ones.
                 pd.DataFrame(columns=headers).to_csv(
                     os.path.join(
-                        simulation.dict_path[f"Output_Time_{conductor.ID}_dir"],
+                        simulation.dict_path[f"Output_Time_evolution_{conductor.ID}_dir"],
                         f"{s_comp.ID}_{key}_te.tsv",
                     ),
                     sep="\t",
@@ -512,7 +512,7 @@ def save_simulation_time(simulation, conductor):
                 conductor,
                 fluid_comp.coolant.time_evol[key],
                 os.path.join(
-                    simulation.dict_path[f"Output_Time_{conductor.ID}_dir"],
+                    simulation.dict_path[f"Output_Time_evolution_{conductor.ID}_dir"],
                     f"{fluid_comp.ID}_{key}_te.tsv",
                 ),
                 simulation.transient_input["TEND"],
@@ -522,7 +522,7 @@ def save_simulation_time(simulation, conductor):
 
         # Inlet and outlet quantities (cdp, 08/2020)
         file_name_io = os.path.join(
-            simulation.dict_path[f"Output_Time_{conductor.ID}_dir"],
+            simulation.dict_path[f"Output_Time_evolution_{conductor.ID}_dir"],
             f"{fluid_comp.ID}_inlet_outlet_te.tsv",
         )
         fluid_comp.coolant.time_evol_io["time (s)"].append(time)
@@ -596,7 +596,7 @@ def save_simulation_time(simulation, conductor):
                 conductor,
                 s_comp.time_evol[key],
                 os.path.join(
-                    simulation.dict_path[f"Output_Time_{conductor.ID}_dir"],
+                    simulation.dict_path[f"Output_Time_evolution_{conductor.ID}_dir"],
                     f"{s_comp.ID}_{key}_te.tsv",
                 ),
                 simulation.transient_input["TEND"],
@@ -613,7 +613,7 @@ def save_simulation_time(simulation, conductor):
         # TEND is reached: save the conductor time in file Time.tsv exploiting pandas series
         pd.Series(conductor.cond_time, name="time (s)", dtype=float).to_csv(
             os.path.join(
-                simulation.dict_path[f"Output_Time_{conductor.ID}_dir"], "Time.tsv"
+                simulation.dict_path[f"Output_Time_evolution_{conductor.ID}_dir"], "Time.tsv"
             ),
             sep="\t",
             header=True,

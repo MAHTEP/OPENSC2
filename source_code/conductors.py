@@ -198,7 +198,7 @@ class Conductors:
         self.Space_save = (
             pd.read_excel(
                 path_diagnostic,
-                sheet_name="Space",
+                sheet_name="Spatial_distribution",
                 skiprows=2,
                 header=0,
                 usecols=[self.ID],
@@ -226,7 +226,7 @@ class Conductors:
         self.Time_save = (
             pd.read_excel(
                 path_diagnostic,
-                sheet_name="Time",
+                sheet_name="Time_evolution",
                 skiprows=2,
                 header=0,
                 usecols=[self.ID],
