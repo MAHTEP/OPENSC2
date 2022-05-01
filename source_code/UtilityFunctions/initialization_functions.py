@@ -43,10 +43,9 @@ def conductor_spatial_discretization(simulation, conductor):
 
     if ITYMSH == -1:
         # User defined mesh
-        xcoord = conductor.load_user_defined_quantity(
+        xcoord, nnodes = conductor.load_user_defined_quantity(
             simulation, "EXTERNAL_GRID", f"x_{conductor.name} [m]"
         )
-        nnodes = xcoord.shape[0]
         # Evaluate the number of elements from the number of nodes
         conductor.dict_discretization["Grid_input"]["NELEMS"] = nnodes - 1
 
