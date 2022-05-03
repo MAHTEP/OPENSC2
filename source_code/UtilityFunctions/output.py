@@ -182,41 +182,44 @@ def save_simulation_space(conductor, f_path, n_digit):
             f_path_ex_jk_env, sep="\t", index=False, header=True
         )
 
-    # Path to save temporary file with the open heat transfer coefficients between fluid components.
-    f_path_htc_ch_ch_o = os.path.join(
-        f_path, f"HTC_ch_ch_o_({conductor.cond_num_step})_sd.tsv"
-    )
-    # Build the dataframe from dictionary and save it as tsv file.
-    pd.DataFrame.from_dict(
-        conductor.dict_node_pt["HTC"]["ch_ch"]["Open"],
-        dtype=float,
-    ).to_csv(f_path_htc_ch_ch_o, sep="\t", index=False, header=True)
+    if bool(conductor.dict_node_pt["HTC"]["ch_ch"]["Open"]):
+        # Path to save temporary file with the open heat transfer coefficients between fluid components.
+        f_path_htc_ch_ch_o = os.path.join(
+            f_path, f"HTC_ch_ch_o_({conductor.cond_num_step})_sd.tsv"
+        )
+        # Build the dataframe from dictionary and save it as tsv file.
+        pd.DataFrame.from_dict(
+            conductor.dict_node_pt["HTC"]["ch_ch"]["Open"],
+            dtype=float,
+        ).to_csv(f_path_htc_ch_ch_o, sep="\t", index=False, header=True)
 
-    # Path to save temporary file with the close heat transfer coefficients between fluid components.
-    f_path_htc_ch_ch_c = os.path.join(
-        f_path, f"HTC_ch_ch_c_({conductor.cond_num_step})_sd.tsv"
-    )
-    # Build the dataframe from dictionary and save it as tsv file.
-    pd.DataFrame.from_dict(
-        conductor.dict_node_pt["HTC"]["ch_ch"]["Close"],
-        dtype=float,
-    ).to_csv(f_path_htc_ch_ch_c, sep="\t", index=False, header=True)
+    if conductor.dict_node_pt["HTC"]["ch_ch"]["Close"]:
+        # Path to save temporary file with the close heat transfer coefficients between fluid components.
+        f_path_htc_ch_ch_c = os.path.join(
+            f_path, f"HTC_ch_ch_c_({conductor.cond_num_step})_sd.tsv"
+        )
+        # Build the dataframe from dictionary and save it as tsv file.
+        pd.DataFrame.from_dict(
+            conductor.dict_node_pt["HTC"]["ch_ch"]["Close"],
+            dtype=float,
+        ).to_csv(f_path_htc_ch_ch_c, sep="\t", index=False, header=True)
 
-    # Path to save temporary file with the heat transfer coefficients between fluid and solid components.
-    f_path_htc_ch_sol = os.path.join(
-        f_path, f"HTC_ch_sol_({conductor.cond_num_step})_sd.tsv"
-    )
-    # Build the dataframe from dictionary and save it as tsv file.
-    pd.DataFrame.from_dict(
-        conductor.dict_node_pt["HTC"]["ch_sol"],
-        dtype=float,
-    ).to_csv(f_path_htc_ch_sol, sep="\t", index=False, header=True)
-    
+    if conductor.dict_node_pt["HTC"]["ch_sol"]:
+        # Path to save temporary file with the heat transfer coefficients between fluid and solid components.
+        f_path_htc_ch_sol = os.path.join(
+            f_path, f"HTC_ch_sol_({conductor.cond_num_step})_sd.tsv"
+        )
+        # Build the dataframe from dictionary and save it as tsv file.
+        pd.DataFrame.from_dict(
+            conductor.dict_node_pt["HTC"]["ch_sol"],
+            dtype=float,
+        ).to_csv(f_path_htc_ch_sol, sep="\t", index=False, header=True)
+
     conduction = dict()
     radiation = dict()
-    # Build temporary dictionary to save conductivie and radiative heat 
-    # transfer coefficients between solid components. This is necessary since 
-    # dictionary dict_node_pt["HTC"]["sol_sol"] has a different structure with 
+    # Build temporary dictionary to save conductivie and radiative heat
+    # transfer coefficients between solid components. This is necessary since
+    # dictionary dict_node_pt["HTC"]["sol_sol"] has a different structure with
     # respect to the others.
     # for ii, scomp_i in enumerate(conductor.dict_obj_inventory["SolidComponents"]["Objects"]):
     #     for _, scomp_j in enumerate(conductor.dict_obj_inventory["SolidComponents"]["Objects"][ii+1:]):
@@ -224,23 +227,26 @@ def save_simulation_space(conductor, f_path, n_digit):
     #         conduction[name] = conductor.dict_node_pt["HTC"]["sol_sol"][name]["cond"]
     #         radiation[name] = conductor.dict_node_pt["HTC"]["sol_sol"][name]["rad"]
 
-    # Path to save temporary file with the conductive heat transfer coefficients between solid components.
-    f_path_htc_sol_sol_cond = os.path.join(
-        f_path, f"HTC_sol_sol_cond_({conductor.cond_num_step})_sd.tsv"
-    )
-    # Build the dataframe from dictionary and save it as tsv file.
-    pd.DataFrame.from_dict(
-        conductor.dict_node_pt["HTC"]["sol_sol"]["cond"], dtype=float,
-    ).to_csv(f_path_htc_sol_sol_cond, sep="\t", index=False, header=True)
-
-    # Path to save temporary file with the radiative heat transfer coefficients between solid components.
-    f_path_htc_sol_sol_rad = os.path.join(
-        f_path, f"HTC_sol_sol_rad_({conductor.cond_num_step})_sd.tsv"
-    )
-    # Build the dataframe from dictionary and save it as tsv file.
-    pd.DataFrame.from_dict(
-        conductor.dict_node_pt["HTC"]["sol_sol"]["rad"], dtype=float,
-    ).to_csv(f_path_htc_sol_sol_rad, sep="\t", index=False, header=True)
+    if conductor.dict_node_pt["HTC"]["sol_sol"]["cond"]:
+        # Path to save temporary file with the conductive heat transfer coefficients between solid components.
+        f_path_htc_sol_sol_cond = os.path.join(
+            f_path, f"HTC_sol_sol_cond_({conductor.cond_num_step})_sd.tsv"
+        )
+        # Build the dataframe from dictionary and save it as tsv file.
+        pd.DataFrame.from_dict(
+            conductor.dict_node_pt["HTC"]["sol_sol"]["cond"],
+            dtype=float,
+        ).to_csv(f_path_htc_sol_sol_cond, sep="\t", index=False, header=True)
+    if conductor.dict_node_pt["HTC"]["sol_sol"]["rad"]:
+        # Path to save temporary file with the radiative heat transfer coefficients between solid components.
+        f_path_htc_sol_sol_rad = os.path.join(
+            f_path, f"HTC_sol_sol_rad_({conductor.cond_num_step})_sd.tsv"
+        )
+        # Build the dataframe from dictionary and save it as tsv file.
+        pd.DataFrame.from_dict(
+            conductor.dict_node_pt["HTC"]["sol_sol"]["rad"],
+            dtype=float,
+        ).to_csv(f_path_htc_sol_sol_rad, sep="\t", index=False, header=True)
 
     # Save the actual times at which the simulation spatial distributions are \
     # saved (cdp, 01/2021)
