@@ -215,18 +215,6 @@ def save_simulation_space(conductor, f_path, n_digit):
             dtype=float,
         ).to_csv(f_path_htc_ch_sol, sep="\t", index=False, header=True)
 
-    conduction = dict()
-    radiation = dict()
-    # Build temporary dictionary to save conductivie and radiative heat
-    # transfer coefficients between solid components. This is necessary since
-    # dictionary dict_node_pt["HTC"]["sol_sol"] has a different structure with
-    # respect to the others.
-    # for ii, scomp_i in enumerate(conductor.dict_obj_inventory["SolidComponents"]["Objects"]):
-    #     for _, scomp_j in enumerate(conductor.dict_obj_inventory["SolidComponents"]["Objects"][ii+1:]):
-    #         name = f"{scomp_i.ID}_{scomp_j.ID}"
-    #         conduction[name] = conductor.dict_node_pt["HTC"]["sol_sol"][name]["cond"]
-    #         radiation[name] = conductor.dict_node_pt["HTC"]["sol_sol"][name]["rad"]
-
     if conductor.dict_node_pt["HTC"]["sol_sol"]["cond"]:
         # Path to save temporary file with the conductive heat transfer coefficients between solid components.
         f_path_htc_sol_sol_cond = os.path.join(
