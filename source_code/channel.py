@@ -83,7 +83,7 @@ class Channel(FluidComponentsInput):
                 207: self.lhc_poncet_correlation_bundle,
                 208: self.iter_cs_correlation_bundle,
                 209: self.dtt_correlation_bundle,
-                210: self.demo_tf_hts_corrrelation_bundle,
+                210: self.demo_tf_hts_correlation_bundle,
                 211: self.hts_cl_correlation_bundle,
             }
         )
@@ -1029,7 +1029,7 @@ class Channel(FluidComponentsInput):
 
     # End method dtt_correlation_bundle.
 
-    def demo_tf_hts_corrrelation_bundle(self, reynolds, nodal=True):
+    def demo_tf_hts_correlation_bundle(self, reynolds, nodal=True):
         """[summary]
 
         Args:
@@ -1051,7 +1051,7 @@ class Channel(FluidComponentsInput):
         ind = reynolds > 2e5
         self.dict_friction_factor[nodal]["turbulent"][ind] = 0.0377 / 4.0
 
-    # End method demo_tf_hts_corrrelation_bundle.
+    # End method demo_tf_hts_correlation_bundle.
 
     def hts_cl_correlation_bundle(self, reynolds, nodal=True):
         """[summary]
