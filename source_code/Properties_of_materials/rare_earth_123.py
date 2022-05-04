@@ -1,5 +1,6 @@
 # Importing python libraries and other funcions
 import numpy as np
+from scipy import optimize
 
 # Function BCRE123 starts here
 def critical_magnetic_field_re123(T, TC0M, BC20M, alpha):
@@ -240,9 +241,9 @@ def critical_current_density_re123(T, B, TC0M, BC20M, c0):
     T = np.array(T)
     B = np.array(B)
 
-    if len(T) == 1:
+    if T.size == 1:
         T = T * np.ones(B.shape)
-    if len(B) == 1:
+    if B.size == 1:
         B = B * np.ones(T.shape)
 
     # JCRE123 initialization
@@ -266,18 +267,18 @@ def critical_current_density_re123(T, B, TC0M, BC20M, c0):
     TLCASE = T / TC0M
 
     # Find element index in TLCASE such that TLCASE < 1.0 (cdp, 06/2020)
-    TLCASE_ind = np.nonzero(TLCASE < 1.0)  # this is a tuple (cdp, 06/2020)
-    if TLCASE_ind[0].size == 0:  # empty index array (cdp, 06/2020)
+    TLCASE_ind = np.nonzero(TLCASE < 1.0)[0]  # this is a numpy array (cdp, 06/2020)
+    if TLCASE_ind.size == 0:  # empty index array (cdp, 06/2020)
         return JCRE123
 
     # * NORMALISED FIELD B/BC0
-    BLCASE[TLCASE_ind[0]] = BLIM[TLCASE_ind[0]] / (
-        critical_magnetic_field_re123(T[TLCASE_ind[0]], TC0M, BC20M, alpha)
+    BLCASE[TLCASE_ind] = BLIM[TLCASE_ind] / (
+        critical_magnetic_field_re123(T[TLCASE_ind], TC0M, BC20M, alpha)
     )
 
-    # Find element index such that BLCASE[TLCASE_ind[0]] < 1.0, only for those index JCRE123 will be evaluated, elsewere JCRE123 = 0.0 by initialization (cdp, 06/2020)
-    ind = np.nonzero(BLCASE[TLCASE_ind[0]] < 1.0)  # this is a tuple (cdp, 06/2020)
-    BLCASE_ind = TLCASE_ind[0][ind[0]]  # this is an array (cdp, 06/2020)
+    # Find element index such that BLCASE[TLCASE_ind] < 1.0, only for those index JCRE123 will be evaluated, elsewere JCRE123 = 0.0 by initialization (cdp, 06/2020)
+    ind = np.nonzero(BLCASE[TLCASE_ind] < 1.0)[0]  # this is a numpy array (cdp, 06/2020)
+    BLCASE_ind = TLCASE_ind[ind]  # this is an array (cdp, 06/2020)
     if BLCASE_ind.size == 0:  # empty index array (cdp, 06/2020)
         return JCRE123
 
@@ -292,8 +293,8 @@ def critical_current_density_re123(T, B, TC0M, BC20M, c0):
 
     # * CHECK THAT JCRE123 > 0
     # Find element index such that JCRE123[BLCASE_ind] < 0, for these index JCRE123 = 0.0 (cdp, 2020)
-    ind = np.nonzero(JCRE123[BLCASE_ind] < 0.0)  # this is a tuple (cdp, 06/2020)
-    JC_ind = BLCASE_ind[ind[0]]  # this is an array (cdp, 06/2020)
+    ind = np.nonzero(JCRE123[BLCASE_ind] < 0.0)[0]  # this is a numpy array (cdp, 06/2020)
+    JC_ind = BLCASE_ind[ind]  # this is an array (cdp, 06/2020)
     JCRE123[JC_ind] = 0.0
 
     return JCRE123
@@ -341,26 +342,14 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
     ##############################################################################
     """
 
-    def BL(TT, BB, TC0M, BC20M, alpha):
-        BL = BB / (BC20M * (1 - TT / TC0M) ** alpha)
-        return BL
+    def critical_current_density_bisection_re123(TT, BB, JOP, TC0M, BC20M, C):
+        return critical_current_density_re123([TT], [BB], TC0M, BC20M, C) - JOP
 
-    def RSDL(TT, BB, JJ, TC0M, BC20M, c0, ppp, qqq, alpha, beta):
-
-        RSDL = (
-            c0
-            / BB ** (1 - beta)
-            * BL(TT, BB, TC0M, BC20M, alpha) ** (ppp - beta)
-            * (1 - BL(TT, BB, TC0M, BC20M, alpha)) ** qqq
-            - JJ
-        )
-        return RSDL
-
-    ppp = 5.875e-1
-    qqq = 1.7
+    # ppp = 5.875e-1
+    # qqq = 1.7
     BLOW = 0.01
-    alpha = 1.54121
-    beta = 1.96679
+    # alpha = 1.54121
+    # beta = 1.96679
 
     if TC0M < 1.0e-6:
         raise ValueError("ERROR> From TcsRe123\nTc0m = 0\nSTOP TcsRe123#")
@@ -376,65 +365,45 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
     # variable initialization
     TCSRE123 = np.zeros(B.shape)
     JC = np.zeros(B.shape)
-    # BLCASE = np.zeros(B.shape)
-    # TLCASE = np.zeros(B.shape)
-    TCST = np.zeros(B.shape)
 
     # *SET THE LOWER LIMIT FOR THE FIELD
     BLIM = np.maximum(B, BLOW)
     Bstar = BLIM / BC20M
     # *CHECK THAT THE FIELD IS BELOW THE UPPER CRITICAL VALUE
     # Find element index in such that Bstar < 1.0 (cdp, 06/2020)
-    Bstar_ind = np.nonzero(Bstar < 1.0)  # this is a tuple (cdp, 06/2020)
-    if Bstar_ind[0].size == 0:  # empty index array (cdp, 06/2020)
+    Bstar_ind = np.nonzero(Bstar < 1.0)[0]  # this is a numpy array (cdp, 06/2020)
+    if Bstar_ind.size == 0:  # empty index array (cdp, 06/2020)
         return TCSRE123
 
-    JC[Bstar_ind[0]] = critical_current_density_re123(
-        np.zeros(B[Bstar_ind].shape), B[Bstar_ind[0]], TC0M, BC20M, c0
+    JC[Bstar_ind] = critical_current_density_re123(
+        np.zeros(B[Bstar_ind].shape), B[Bstar_ind], TC0M, BC20M, c0
     )
     # *CHECK THAT JOP IS BELOW THE UPPER CRITICAL VALUE
-    # Find element index such that JC[Bstar_ind] < JOP (cdp, 06/2020)
-    ind = np.nonzero(JC[Bstar_ind[0]] > JOP)  # this is a tuple (cdp, 06/2020)
-    JC_ind = Bstar_ind[0][ind[0]]  # this is an array (cdp, 06/2020)
+    # Find element index such that JOP < JC[Bstar_ind] (cdp, 06/2020)
+    ind = np.nonzero(JOP < JC[Bstar_ind])[0]  # this is a numpy array (cdp, 06/2020)
+    JC_ind = Bstar_ind[ind]  # this is an array (cdp, 06/2020)
     if JC_ind.size == 0:
         return TCSRE123
 
-    # *FIND THE NORMALISED TEMPERATURE TCS/TC0 BY "GRAND-MOTHER MODIFIED" OR "AUNT" METHOD #crb (January 29, 2018)
-    for ii in range(len(JC_ind)):
+    # FIND CURRENT SHARING TEMPERATURE WITH BISECTION
 
-        NEXT = 0
-        NITER = 1
-        DELTAT = 0.25e0
+    for _, vv in enumerate(JC_ind):
 
-        while (NEXT < 3) and (NITER < 1000):
+        T_lower = np.array([3.5])
+        # T_upper = np.array([40.0])
+        T_upper = np.array([TC0M])
 
-            R = RSDL(
-                TCST[JC_ind[ii]],
-                B[JC_ind[ii]],
-                JOP,
-                TC0M,
-                BC20M,
-                c0,
-                ppp,
-                qqq,
-                alpha,
-                beta,
-            )
-            if NITER == 1:
-                ROLD = R
-            PROD = R * ROLD
+        ex_args = (B[vv], JOP[vv], TC0M, BC20M, c0)
+        # Evaluate current sharing temperature with bisection method.
+        TCSRE123[vv] = optimize.bisect(
+            critical_current_density_bisection_re123,
+            T_lower,
+            T_upper,
+            ex_args,
+            xtol=1e-5,
+        )
+    # End for ii.
 
-            if PROD < 0.0:
-                NEXT = NEXT + 1
-                TCST[JC_ind[ii]] = TCST[JC_ind[ii]] - DELTAT
-                DELTAT = DELTAT / 10.0
-            else:
-                ROLD = R
-            NITER = NITER + 1
-            TCST[JC_ind[ii]] = TCST[JC_ind[ii]] + DELTAT
-        # end while
-        TCSRE123[JC_ind[ii]] = TCST[JC_ind[ii]] - 2.0 * DELTAT
-    # end for #crb End (January 29, 2018)
 
     return TCSRE123
 

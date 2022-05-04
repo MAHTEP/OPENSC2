@@ -198,7 +198,7 @@ class Conductors:
         self.Space_save = (
             pd.read_excel(
                 path_diagnostic,
-                sheet_name="Space",
+                sheet_name="Spatial_distribution",
                 skiprows=2,
                 header=0,
                 usecols=[self.ID],
@@ -226,7 +226,7 @@ class Conductors:
         self.Time_save = (
             pd.read_excel(
                 path_diagnostic,
-                sheet_name="Time",
+                sheet_name="Time_evolution",
                 skiprows=2,
                 header=0,
                 usecols=[self.ID],
@@ -1706,7 +1706,7 @@ class Conductors:
             strand.get_current(self)
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
-            strand.get_magnetic_field(simulation, self)
+            strand.get_magnetic_field(self)
             # call method get_magnetic_field_gradient for each Strands object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self)
             if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"]:
@@ -1720,16 +1720,25 @@ class Conductors:
                 # storage of current sharing temperature time evolution values in \
                 # user defined nodal points (cdp, 08/2020)
                 strand.get_superconductor_critical_prop(self)
+                if (
+                    strand.dict_operation["TCS_EVALUATION"] == False
+                    and self.cond_num_step == 0
+                ):
+                    # Evaluate current sharing temperature only at the first time step.
+                    strand.get_tcs()
+                elif strand.dict_operation["TCS_EVALUATION"] == True:
+                    # Evaluate current sharing temperature at each time step.
+                    strand.get_tcs()
             # end if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"] \
             # (cdp, 08/2020)
             if self.cond_num_step == 0 and strand.dict_operation["IQFUN"] == 0:
                 # call method get_heat only once to initialize key EXTFLX of dictionary \
                 # dict_node_pt to zeros (cdp, 11/2020)
-                strand.get_heat(simulation, self)
+                strand.get_heat(self)
             elif strand.dict_operation["IQFUN"] != 0:
                 # call method get_heat to evaluate external heating only if heating is on \
                 # (cdp, 10/2020)
-                strand.get_heat(simulation, self)
+                strand.get_heat(self)
             # end if strand.dict_operation["IQFUN"] (cdp, 10/2020)
             # call method jhtflx_new_0 to initialize JHTFLX to zeros for each \
             # conductor solid components (cdp, 06/2020)
@@ -1744,15 +1753,15 @@ class Conductors:
             jacket.get_current(self)
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
-            jacket.get_magnetic_field(simulation, self)
+            jacket.get_magnetic_field(self)
             if self.cond_num_step == 0 and jacket.dict_operation["IQFUN"] == 0:
                 # call method get_heat only once to initialize key EXTFLX of dictionary \
                 # dict_node_pt to zeros (cdp, 11/2020)
-                jacket.get_heat(simulation, self)
+                jacket.get_heat(self)
             elif jacket.dict_operation["IQFUN"] != 0:
                 # call method get_heat to evaluate external heating only if heating is on\
                 # (cdp, 10/2020)
-                jacket.get_heat(simulation, self)
+                jacket.get_heat(self)
             # end if jacket.dict_operation["IQFUN"] (cdp, 10/2020)
             # call method jhtflx_new_0 to initialize JHTFLX to zeros for each \
             # conductor solid components (cdp, 06/2020)
@@ -1810,7 +1819,7 @@ class Conductors:
                 )
                 / 2.0
             )
-            jacket.get_magnetic_field(simulation, self, nodal=False)
+            jacket.get_magnetic_field(self, nodal=False)
 
             jacket.dict_Gauss_pt["Q1"] = (
                 jacket.dict_node_pt["JHTFLX"][:-1] + jacket.dict_node_pt["EXTFLX"][:-1]
@@ -1862,7 +1871,7 @@ class Conductors:
                 )
                 / 2.0
             )
-            strand.get_magnetic_field(simulation, self, nodal=False)
+            strand.get_magnetic_field(self, nodal=False)
             strand.dict_Gauss_pt["Q1"] = (
                 strand.dict_node_pt["JHTFLX"][:-1] + strand.dict_node_pt["EXTFLX"][:-1]
             )
@@ -1881,6 +1890,15 @@ class Conductors:
                 # Call get_superconductor_critical_prop to evaluate MixSCStabilizer \
                 # and/or SuperConductor properties in the Gauss point (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self, nodal=False)
+                if (
+                    strand.dict_operation["TCS_EVALUATION"] == False
+                    and self.cond_num_step == 0
+                ):
+                    # Evaluate current sharing temperature only at the first time step.
+                    strand.get_tcs(nodal=False)
+                elif strand.dict_operation["TCS_EVALUATION"] == True:
+                    # Evaluate current sharing temperature at each time step.
+                    strand.get_tcs(nodal=False)
             # end if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"] \
             # (cdp, 08/2020)
             # Evaluate SolidComponents properties
@@ -1908,7 +1926,7 @@ class Conductors:
             jacket.get_current(self)
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
-            jacket.get_magnetic_field(simulation, self)
+            jacket.get_magnetic_field(self)
         # end for jacket (cdp, 07/2020)
         # Loop on Strands (cdp, 07/2020)
         for strand in self.dict_obj_inventory["Strands"]["Objects"]:
@@ -1925,6 +1943,9 @@ class Conductors:
                 # Call get_superconductor_critical_prop to evaluate MixSCStabilizer \
                 # and/or SuperConductor properties in nodal points (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self)
+                # Evaluate current sharing temperature
+                strand.get_tcs()
+
             # end if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"] \
             # (cdp, 08/2020)
 
@@ -2049,6 +2070,8 @@ class Conductors:
         dict_dummy["HTC"]["ch_ch"]["Close"] = dict()
         dict_dummy["HTC"]["ch_sol"] = dict()
         dict_dummy["HTC"]["sol_sol"] = dict()
+        dict_dummy["HTC"]["sol_sol"]["cond"] = dict()
+        dict_dummy["HTC"]["sol_sol"]["rad"] = dict()
         dict_dummy["HTC"]["env_sol"] = dict()
         # Counters to check the number of the different possible kinds of interfaces (cdp, 09/2020)
         htc_len = 0
@@ -2244,16 +2267,13 @@ class Conductors:
                     ]
                     == 1
                 ):
-                    dict_dummy["HTC"]["sol_sol"][
+                    dict_dummy["HTC"]["sol_sol"]["cond"][
                         self.dict_topology["sol_sol"][s_comp_r.ID][s_comp_c.ID]
-                    ] = dict(
-                        cond=np.zeros(
-                            dict_dummy_comp_r[flag_nodal]["temperature"].shape
-                        ),
-                        rad=np.zeros(
-                            dict_dummy_comp_r[flag_nodal]["temperature"].shape
-                        ),
-                    )
+                    ] = np.zeros(dict_dummy_comp_r[flag_nodal]["temperature"].shape)
+                    dict_dummy["HTC"]["sol_sol"]["rad"][
+                        self.dict_topology["sol_sol"][s_comp_r.ID][s_comp_c.ID]
+                    ] = np.zeros(dict_dummy_comp_r[flag_nodal]["temperature"].shape)
+
                     # New solid-solid interface (cdp, 09/2020)
                     htc_len = htc_len + 1
                     if (
@@ -2265,9 +2285,9 @@ class Conductors:
                         mlt = self.dict_df_coupling["HTC_multiplier"].at[
                             s_comp_r.ID, s_comp_c.ID
                         ]
-                        dict_dummy["HTC"]["sol_sol"][
+                        dict_dummy["HTC"]["sol_sol"]["cond"][
                             self.dict_topology["sol_sol"][s_comp_r.ID][s_comp_c.ID]
-                        ]["cond"] = (
+                        ] = (
                             mlt
                             * htc_solid
                             * np.ones(
@@ -2279,9 +2299,9 @@ class Conductors:
                         == -1
                     ):
                         # Thermal contact.
-                        dict_dummy["HTC"]["sol_sol"][
+                        dict_dummy["HTC"]["sol_sol"]["cond"][
                             self.dict_topology["sol_sol"][s_comp_r.ID][s_comp_c.ID]
-                        ]["cond"] = self.dict_df_coupling["contact_HTC"].at[
+                        ] = self.dict_df_coupling["contact_HTC"].at[
                             s_comp_r.ID, s_comp_c.ID
                         ] * np.ones(
                             dict_dummy_comp_r[flag_nodal]["temperature"].shape
@@ -2315,11 +2335,11 @@ class Conductors:
                                 self.dict_df_coupling["contact_perimeter"].at[
                                     s_comp_r.ID, s_comp_c.ID
                                 ] = s_comp_r.dict_input["Outer_perimeter"]
-                                dict_dummy["HTC"]["sol_sol"][
+                                dict_dummy["HTC"]["sol_sol"]["rad"][
                                     self.dict_topology["sol_sol"][s_comp_r.ID][
                                         s_comp_c.ID
                                     ]
-                                ]["rad"] = self._inner_radiative_htc(
+                                ] = self._inner_radiative_htc(
                                     s_comp_r,
                                     s_comp_c,
                                     dict_dummy_comp_r[flag_nodal]["temperature"],
@@ -2334,11 +2354,11 @@ class Conductors:
                                 self.dict_df_coupling["contact_perimeter"].at[
                                     s_comp_r.ID, s_comp_c.ID
                                 ] = s_comp_c.dict_input["Outer_perimeter"]
-                                dict_dummy["HTC"]["sol_sol"][
+                                dict_dummy["HTC"]["sol_sol"]["rad"][
                                     self.dict_topology["sol_sol"][s_comp_r.ID][
                                         s_comp_c.ID
                                     ]
-                                ]["rad"] = self._inner_radiative_htc(
+                                ] = self._inner_radiative_htc(
                                     s_comp_c,
                                     s_comp_r,
                                     dict_dummy_comp_c[flag_nodal]["temperature"],
@@ -2352,9 +2372,9 @@ class Conductors:
                         == -3
                     ):
                         # Radiative heat transfer from sheet contact_HTC of file conductor_coupling.xlsx.
-                        dict_dummy["HTC"]["sol_sol"][
+                        dict_dummy["HTC"]["sol_sol"]["rad"][
                             self.dict_topology["sol_sol"][s_comp_r.ID][s_comp_c.ID]
-                        ]["rad"] = self.dict_df_coupling["contact_HTC"].at[
+                        ] = self.dict_df_coupling["contact_HTC"].at[
                             s_comp_r.ID, s_comp_c.ID
                         ] * np.ones(
                             dict_dummy_comp_r[flag_nodal]["temperature"].shape
@@ -2701,9 +2721,9 @@ class Conductors:
                     self.heat_rad_jk[f"{jk_r.ID}_{jk_c.ID}"] = (
                         self.dict_df_coupling["contact_perimeter"].at[jk_r.ID, jk_c.ID]
                         * self.dict_discretization["Delta_x"]
-                        * self.dict_Gauss_pt["HTC"]["sol_sol"][
+                        * self.dict_Gauss_pt["HTC"]["sol_sol"]["rad"][
                             self.dict_topology["sol_sol"][jk_r.ID][jk_c.ID]
-                        ]["rad"]
+                        ]
                         * (
                             jk_r.dict_Gauss_pt["temperature"]
                             - jk_c.dict_Gauss_pt["temperature"]

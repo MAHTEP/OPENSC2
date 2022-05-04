@@ -1008,18 +1008,18 @@ def step(conductor, environment, qsource, num_step):
                         SMAT[neq, neq] = (
                             SMAT[neq, neq]
                             + conductor.dict_interf_peri["sol_sol"][s_comp_topology]
-                            * conductor.dict_Gauss_pt["HTC"]["sol_sol"][
+                            * conductor.dict_Gauss_pt["HTC"]["sol_sol"]["cond"][
                                 s_comp_topology
-                            ]["cond"][ii]
+                            ][ii]
                         )
                         # solid components conduction equation: above/below main diagonal \
                         # elements construction (cdp, 07/2020)
                         # (l + dict_N_equation["FluidComponents"],m + dict_N_equation["FluidComponents"]) [Temp_m] (cdp, 07/2020)
                         SMAT[neq, mm + conductor.dict_N_equation["FluidComponents"]] = (
                             -conductor.dict_interf_peri["sol_sol"][s_comp_topology]
-                            * conductor.dict_Gauss_pt["HTC"]["sol_sol"][
+                            * conductor.dict_Gauss_pt["HTC"]["sol_sol"]["cond"][
                                 s_comp_topology
-                            ]["cond"][ii]
+                            ][ii]
                         )
                     # end if flag_sol_sol_contact (cdp, 09/2020)
                 # end if mm != ll (cdp, 07/2020)

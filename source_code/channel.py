@@ -83,7 +83,7 @@ class Channel(FluidComponentsInput):
                 207: self.lhc_poncet_correlation_bundle,
                 208: self.iter_cs_correlation_bundle,
                 209: self.dtt_correlation_bundle,
-                210: self.demo_tf_hts_corrrelation_bundle,
+                210: self.demo_tf_hts_correlation_bundle,
                 211: self.hts_cl_correlation_bundle,
             }
         )
@@ -172,6 +172,9 @@ class Channel(FluidComponentsInput):
         # Define the dictionary for the evaluation of nusselt number of the channel in nodal (key True) and Gauss (key False) points.
         self.dict_nusselt = {True: None, False: None}
 
+        # For time evolution plots.
+        self.time_evol = dict(friction_factor = dict())
+
     # End method __init__.
 
     def __repr__(self):
@@ -250,9 +253,8 @@ class Channel(FluidComponentsInput):
             nodal (bool, optional): [description]. Defaults to True.
         """
         # User should write here friction factor value or correlation. Keep in mind that correlation should be array smart if function of reynolds; it must be an array).
-        self.dict_friction_factor[nodal]["total"] = self.dict_input[
-            "FRICTION_MULTIPLIER"
-        ] * np.ones(reynolds.shape)
+        # If constant multiplication by Friction_multiplayer is done in method eval_friction_factor.
+        self.dict_friction_factor[nodal]["total"] = np.ones(reynolds.shape)
 
     # End method user_defined_friction_factor.
 
@@ -906,19 +908,19 @@ class Channel(FluidComponentsInput):
         """
         # Define the dictionary of coefficients.
         dict_coeff = {206: (19.6e-9, 2.42, 5.80), 209: (20.9e-9, 19.1, 4.23)}
-        # Evaluate kk.
-        kk = (
-            dict_coeff[self.dict_input["IFRICTION"]][0]
-            * (self.dict_input["VOID_FRACTION"] ** 3)
-            / ((1 - self.dict_input["VOID_FRACTION"]) ** 2)
-        )
         # Evaluate jj.
         jj = (
             dict_coeff[self.dict_input["IFRICTION"]][1]
             / self.dict_input["VOID_FRACTION"]
             ** dict_coeff[self.dict_input["IFRICTION"]][2]
         )
-        return kk, jj
+        # Evaluate kk.
+        kk = (
+            dict_coeff[self.dict_input["IFRICTION"]][0]
+            * (self.dict_input["VOID_FRACTION"] ** 3)
+            / ((1 - self.dict_input["VOID_FRACTION"]) ** 2)
+        )
+        return jj, kk
 
     # End method _eval_jj_and_kk
 
@@ -1027,7 +1029,7 @@ class Channel(FluidComponentsInput):
 
     # End method dtt_correlation_bundle.
 
-    def demo_tf_hts_corrrelation_bundle(self, reynolds, nodal=True):
+    def demo_tf_hts_correlation_bundle(self, reynolds, nodal=True):
         """[summary]
 
         Args:
@@ -1049,7 +1051,7 @@ class Channel(FluidComponentsInput):
         ind = reynolds > 2e5
         self.dict_friction_factor[nodal]["turbulent"][ind] = 0.0377 / 4.0
 
-    # End method demo_tf_hts_corrrelation_bundle.
+    # End method demo_tf_hts_correlation_bundle.
 
     def hts_cl_correlation_bundle(self, reynolds, nodal=True):
         """[summary]

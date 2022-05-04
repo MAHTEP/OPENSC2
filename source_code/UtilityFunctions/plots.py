@@ -153,6 +153,7 @@ def plot_nomenclature_y(prop):
         Heat_exch=("Q_exch", "(W/m)"),
         isobaric_expansion_coefficient=(r"$\alpha_L$", "(1/K)"),
         isothermal_compressibility=(r"$\beta$", "(1/Pa)"),
+        friction_factor=("f","(~)"),
     )
     return dict_nomenclature[prop]
 
@@ -209,9 +210,9 @@ def make_plots(simulation, kind="Space_distr"):
         if kind == "Space_distr":
             # unify the array (cdp, 11/2020)
             kind_save = np.around(cond.Space_save, simulation.n_digit)
-            root_load_path = simulation.dict_path[f"Output_Space_{cond.ID}_dir"]
+            root_load_path = simulation.dict_path[f"Output_Spatial_distribution_{cond.ID}_dir"]
             des = "sd"
-            root_save_path = simulation.dict_path[f"Figures_Space_{cond.ID}_dir"]
+            root_save_path = simulation.dict_path[f"Figures_Spatial_distribution_{cond.ID}_dir"]
             abscissa = pd.read_csv(
                 os.path.join(root_load_path, "xcoord.tsv"), delimiter="\t"
             )
@@ -227,9 +228,9 @@ def make_plots(simulation, kind="Space_distr"):
         elif kind == "Time_evol":
             # unify the array (cdp, 11/2020)
             kind_save = cond.Time_save
-            root_load_path = simulation.dict_path[f"Output_Time_{cond.ID}_dir"]
+            root_load_path = simulation.dict_path[f"Output_Time_evolution_{cond.ID}_dir"]
             des = "te"
-            root_save_path = simulation.dict_path[f"Figures_Time_{cond.ID}_dir"]
+            root_save_path = simulation.dict_path[f"Figures_Time_evolution_{cond.ID}_dir"]
             # plot features (cdp, 01/2021)
             # unify the array (cdp, 11/2020)
             # uni_label = cond.Time_save

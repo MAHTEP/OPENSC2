@@ -1,8 +1,14 @@
+import warnings
 from solid_components import SolidComponents
 from openpyxl import load_workbook
 import numpy as np
 import os
-from UtilityFunctions.auxiliary_functions import get_from_xlsx
+from UtilityFunctions.auxiliary_functions import (
+    get_from_xlsx,
+    load_auxiliary_files,
+    build_interpolator,
+    do_interpolation,
+)
 
 # from UtilityFunctions.InitializationFunctions import Read_input_file
 # NbTi properties
@@ -100,16 +106,34 @@ class Strands(SolidComponents):
         if nodal:
             # compute alpha_B in each node (cdp, 07/2020)
             if self.dict_operation["IALPHAB"] <= -1:  # read from file
-                # call Get_from_xlsx on the component
-                path = os.path.join(
-                    conductor.BASE_PATH, conductor.file_input["EXTERNAL_ALPHAB"]
+                if conductor.cond_time[-1] == 0:
+                    # Build file path.
+                    file_path = os.path.join(
+                        conductor.BASE_PATH, conductor.file_input["EXTERNAL_ALPHAB"]
+                    )
+                    # Load auxiliary input file.
+                    alphab_df, flagSpecfield = load_auxiliary_files(
+                        file_path, sheetname=self.ID
+                    )
+                    # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                    (
+                        self.alphab_interpolator,
+                        self.alphab_interp_flag,
+                    ) = build_interpolator(
+                        alphab_df, self.dict_operation["ALPHAB_INTERPOLATION"]
+                    )
+
+                # call load_user_defined_quantity on the component.
+                self.dict_node_pt["IOP"] = do_interpolation(
+                    self.alphab_interpolator,
+                    conductor.dict_discretization["xcoord"],
+                    conductor.cond_time[-1],
+                    self.alphab_interp_flag,
                 )
+
                 # leggi un file come del campo magnetico
                 # controlla se e' per unita' di corrente
                 # in caso affermatico moltiplica per IOP_TOT
-                [self.dict_node_pt["alpha_B"], flagSpecfield] = get_from_xlsx(
-                    conductor, path, self, "IALPHAB"
-                )
                 if flagSpecfield == 2:  # alphaB is per unit of current
                     self.dict_node_pt["alpha_B"] = (
                         self.dict_node_pt["alpha_B"] * conductor.IOP_TOT
@@ -162,37 +186,16 @@ class Strands(SolidComponents):
 
     def eval_critical_properties(self, dict_dummy):
 
-        self.JOP = np.abs(self.dict_node_pt["IOP"][0]) / (
-            self.ASC * self.dict_input["COSTETA"]
-        )
-
-        # bmax moved here since it is not dependent on flag ISUPERCONDUCTOR \
-        # (cdp, 07/2020)
-        bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
         if self.dict_input["ISUPERCONDUCTOR"] == "NbTi":
             dict_dummy["T_critical"] = critical_temperature_nbti(
-                dict_dummy["B_field"], self.dict_input["Tc0m"], self.dict_input["Bc20m"]
+                dict_dummy["B_field"], self.dict_input["Bc20m"], self.dict_input["Tc0m"]
             )
             dict_dummy["J_critical"] = critical_current_density_nbti(
                 dict_dummy["temperature"],
                 dict_dummy["B_field"],
-                self.dict_input["Tc0m"],
                 self.dict_input["Bc20m"],
                 self.dict_input["c0"],
-            )
-            dict_dummy["T_cur_sharing"] = current_sharing_temperature_nbti(
-                dict_dummy["B_field"],
-                self.JOP,
                 self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nbti(
-                bmax,
-                self.JOP,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
             )
         elif self.dict_input["ISUPERCONDUCTOR"] == "Nb3Sn":
             dict_dummy["T_critical"] = critical_temperature_nb3sn(
@@ -209,22 +212,6 @@ class Strands(SolidComponents):
                 self.dict_input["Bc20m"],
                 self.dict_input["c0"],
             )
-            dict_dummy["T_cur_sharing"] = current_sharing_temperature_nb3sn(
-                dict_dummy["B_field"],
-                dict_dummy["Epsilon"],
-                self.JOP,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nb3sn(
-                bmax,
-                dict_dummy["Epsilon"],
-                self.JOP,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
         elif self.dict_input["ISUPERCONDUCTOR"] == "HTS":
             dict_dummy["T_critical"] = self.dict_input["Tc0m"] * np.ones(
                 dict_dummy["temperature"].shape
@@ -232,20 +219,6 @@ class Strands(SolidComponents):
             dict_dummy["J_critical"] = critical_current_density_re123(
                 dict_dummy["temperature"],
                 dict_dummy["B_field"],
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
-            dict_dummy["T_cur_sharing"] = current_sharing_temperature_re123(
-                dict_dummy["B_field"],
-                self.JOP,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_re123(
-                bmax,
-                self.JOP,
                 self.dict_input["Tc0m"],
                 self.dict_input["Bc20m"],
                 self.dict_input["c0"],
@@ -259,18 +232,114 @@ class Strands(SolidComponents):
 
     # end method Eval_critical_properties (cdp, 10/2020)
 
+    def get_tcs(self, nodal=True):
+        """Method that allows the evaluation of the current sharing temperature in nodal points or in Gauss points, according to flag nodal.
+
+        Args:
+            nodal (bool, optional): Flag to evaluate the current sharing temperature in proper location. If True evaluation is on the nodal points, if False evaluation is on the Gauss points. Defaults to True.
+        """
+
+        # Current sharing temperature evaluation in each nodal point
+        if nodal:
+            self.dict_node_pt = self.eval_tcs(self.dict_node_pt)
+        # Current sharing temperature evaluation in each Gauss point
+        elif nodal == False:
+            self.dict_Gauss_pt = self.eval_tcs(self.dict_Gauss_pt)
+
+    # End method get_tcs
+
+    def eval_tcs(self, dict_dummy):
+
+        jop = (
+            np.abs(self.dict_node_pt["IOP"][0])
+            / (self.ASC / self.dict_input["COSTETA"])
+            * np.ones(dict_dummy["B_field"].shape)
+        )
+
+        bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
+        if self.dict_input["ISUPERCONDUCTOR"] == "NbTi":
+            dict_dummy["T_cur_sharing"] = current_sharing_temperature_nbti(
+                dict_dummy["B_field"],
+                jop,
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+                self.dict_input["Tc0m"],
+            )
+            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nbti(
+                bmax,
+                jop,
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+                self.dict_input["Tc0m"],
+            )
+        elif self.dict_input["ISUPERCONDUCTOR"] == "Nb3Sn":
+            dict_dummy["T_cur_sharing"] = current_sharing_temperature_nb3sn(
+                dict_dummy["B_field"],
+                dict_dummy["Epsilon"],
+                jop,
+                self.dict_input["Tc0m"],
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+            )
+            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nb3sn(
+                bmax,
+                dict_dummy["Epsilon"],
+                jop,
+                self.dict_input["Tc0m"],
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+            )
+        elif self.dict_input["ISUPERCONDUCTOR"] == "HTS":
+            dict_dummy["T_cur_sharing"] = current_sharing_temperature_re123(
+                dict_dummy["B_field"],
+                jop,
+                self.dict_input["Tc0m"],
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+            )
+            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_re123(
+                bmax,
+                jop,
+                self.dict_input["Tc0m"],
+                self.dict_input["Bc20m"],
+                self.dict_input["c0"],
+            )
+        elif self.dict_input["ISUPERCONDUCTOR"] == "scaling.dat":
+
+            warnings.warn("Still to be understood what to do here!!")
+
+        return dict_dummy
+
+    # End method eval_tcs
+
     def get_eps(self, conductor, nodal=True):
         # For each strand of type MixSCStabilizer or SuperConductor (cdp, 06/2020)
         if nodal:
             # compute Epsilon in each node (cdp, 07/2020)
             if self.dict_operation["IEPS"] < 0:  # strain from file strain.dat
-                path = os.path.join(
-                    conductor.BASE_PATH, conductor.file_input["EXTERNAL_STRAIN"]
+
+                if conductor.cond_time[-1] == 0:
+                    # Build file path.
+                    file_path = os.path.join(
+                        conductor.BASE_PATH, conductor.file_input["EXTERNAL_STRAIN"]
+                    )
+                    # Load auxiliary input file.
+                    eps_df, flagSpecfield = load_auxiliary_files(
+                        file_path, sheetname=self.ID
+                    )
+                    # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                    self.eps_interpolator, self.eps_interp_flag = build_interpolator(
+                        eps_df, self.dict_operation["IOP_INTERPOLATION"]
+                    )
+
+                # call load_user_defined_quantity on the component.
+                self.dict_node_pt["Epsilon"] = do_interpolation(
+                    self.eps_interpolator,
+                    conductor.dict_discretization["xcoord"],
+                    conductor.cond_time[-1],
+                    self.eps_interp_flag,
                 )
-                # call Get_from_xlsx on the component
-                [self.dict_node_pt["Epsilon"], flagSpecfield] = get_from_xlsx(
-                    conductor, path, self, "IEPS"
-                )
+
                 if flagSpecfield == 1:
                     print("still to be decided what to do here\n")
             elif self.dict_operation["IEPS"] == 0:  # no strain (cdp, 06/2020)

@@ -1,7 +1,12 @@
 import numpy as np
 import os
 
-from UtilityFunctions.auxiliary_functions import get_from_xlsx
+from UtilityFunctions.auxiliary_functions import (
+    get_from_xlsx,
+    load_auxiliary_files,
+    build_interpolator,
+    do_interpolation,
+)
 
 # Cu properties
 from Properties_of_materials.copper import (
@@ -714,13 +719,27 @@ class SolidComponents:
         """
 
         if conductor.dict_input["IOPFUN"] == -1:
-            # call Get_from_xlsx on the component
-            path = os.path.join(
-                conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
+
+            if conductor.cond_time[-1] == 0:
+                # Build file path.
+                file_path = os.path.join(
+                    conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
+                )
+                # Load auxiliary input file.
+                current_df, flagSpecfield = load_auxiliary_files(file_path, sheetname=self.ID)
+                # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                self.current_interpolator, self.current_interp_flag = build_interpolator(
+                    current_df, self.dict_operation["IOP_INTERPOLATION"]
+                )
+
+            # call load_user_defined_quantity on the component.
+            self.dict_node_pt["IOP"] = do_interpolation(
+                self.current_interpolator,
+                conductor.dict_discretization["xcoord"],
+                conductor.cond_time[-1],
+                self.current_interp_flag,
             )
-            [self.dict_node_pt["IOP"], flagSpecfield] = get_from_xlsx(
-                conductor, path, self, "IOPFUN"
-            )
+
             # evaluate IOP_TOT as the sum of first value of current vector \
             # self.dict_node_pt["IOP"] of each SolidComponent. This is because there \
             # is no current redistribution along the conductor \
@@ -752,16 +771,31 @@ class SolidComponents:
 
     # end Get_I
 
-    def get_magnetic_field(self, simulation, conductor, nodal=True):
+    def get_magnetic_field(self, conductor, nodal=True):
         if nodal:
             # compute B_field in each node (cdp, 07/2020)
-            if self.dict_operation["IBIFUN"] < 0:  # cza to enable other negative \
+            if self.dict_operation["IBIFUN"] < 0:  
+                # cza to enable other negative \
                 # (read from file) flags -> ibifun.eq.-3, see below (August 29, 2018)
+
+                if conductor.cond_time[-1] == 0:
+                    # Build file path.
+                    file_path = os.path.join(
+                        conductor.BASE_PATH, conductor.file_input["EXTERNAL_BFIELD"]
+                    )
+                    # Load auxiliary input file.
+                    bfield_df,_ = load_auxiliary_files(file_path, sheetname=self.ID)
+                    # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                    self.bfield_interpolator, self.bfield_interp_flag = build_interpolator(
+                        bfield_df, self.dict_operation["B_INTERPOLATION"]
+                    )
+
                 # call load_user_defined_quantity on the component.
-                self.dict_node_pt["B_field"], _ = conductor.load_user_defined_quantity(
-                    simulation,
-                    "EXTERNAL_BFIELD",
-                    f"B_{conductor.name} [{self.dict_operation['B_field_units']}]",
+                self.dict_node_pt["B_field"] = do_interpolation(
+                    self.bfield_interpolator,
+                    conductor.dict_discretization["xcoord"],
+                    conductor.cond_time[-1],
+                    self.bfield_interp_flag,
                 )
                 if self.dict_operation["B_field_units"] == "T/A":
                     # BFIELD is per unit of current
@@ -805,7 +839,7 @@ class SolidComponents:
     # HERE STARTS THE DEFINITION OF MODULES USEFUL TO INITIALIZE THE DRIVERS FOR \
     # THE EXTERNAL HEATING. D. Placido (06/2020)
 
-    def get_heat(self, simulation, conductor):
+    def get_heat(self, conductor):
 
         """
         Method that evaluates the external heating according to the value of flag IQUFN, thaing unto account the chosen solution method (cdp, 11/2020)
@@ -860,41 +894,41 @@ class SolidComponents:
                 self.flag_heating = "Off"
             # end if (cdp, 10/2020)
         elif self.dict_operation["IQFUN"] < 0:
-            if (
-                conductor.cond_time[-1] > self.dict_operation["TQBEG"]
-                and conductor.cond_time[-1] <= self.dict_operation["TQEND"]
-            ):
-                # External heating comes from external file. It is not necessary to \
-                # distinguish according to "Method" options at this point (cdp, 10/2020)
-                if conductor.cond_num_step == 0:
-                    # compute external heating at conductor initialization calling function load_user_defined_quantity.
-                    (
-                        self.dict_node_pt["EXTFLX"][:, 0],
-                        _,
-                    ) = conductor.load_user_defined_quantity(
-                        simulation, "EXTERNAL_HEAT", f"q_{conductor.name} [W/m]"
-                    )
-                elif conductor.cond_num_step > 0:
-                    if conductor.cond_num_step == 1:
-                        # Store the old values only immediately after the initializzation, since after that the whole SYSLOD array is saved and there is no need to compute twice the same values.
-                        self.dict_node_pt["EXTFLX"][:, 1] = self.dict_node_pt["EXTFLX"][
-                            :, 0
-                        ].copy()
-                    # end if conductor.cond_num_step (cdp, 10/2020)
-                    # call method load_user_defined_quantity to compute heat and overwrite the previous values.
-                    (
-                        self.dict_node_pt["EXTFLX"][:, 0],
-                        _,
-                    ) = conductor.load_user_defined_quantity(
-                        simulation, "EXTERNAL_HEAT", f"q_{conductor.name} [W/m]"
-                    )
+            if conductor.cond_time[-1] == 0:
+                # Build file path.
+                file_path = os.path.join(
+                    conductor.BASE_PATH, conductor.file_input["EXTERNAL_HEAT"]
+                )
+                # Load auxiliary input file.
+                heat_df,_ = load_auxiliary_files(file_path, sheetname=self.ID)
+                # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                self.heat_interpolator, self.heat_interp_flag = build_interpolator(
+                    heat_df, self.dict_operation["Q_INTERPOLATION"]
+                )
+
+                # compute external heating at conductor initialization calling function do_interpolation.
+
+                self.dict_node_pt["EXTFLX"][:, 0] = do_interpolation(
+                    self.heat_interpolator,
+                    conductor.dict_discretization["xcoord"],
+                    conductor.cond_time[-1],
+                    self.heat_interp_flag,
+                )
+            elif conductor.cond_num_step > 0:
+                if conductor.cond_num_step == 1:
+                    # Store the old values only immediately after the initializzation, since after that the whole SYSLOD array is saved and there is no need to compute twice the same values.
+                    self.dict_node_pt["EXTFLX"][:, 1] = self.dict_node_pt["EXTFLX"][
+                        :, 0
+                    ].copy()
                 # end if conductor.cond_num_step (cdp, 10/2020)
-                if (
-                    conductor.cond_time[-1] > self.dict_operation["TQEND"]
-                    and self.flag_heating == "On"
-                ):
-                    self.dict_node_pt["EXTFLX"][:, 0] = 0.0
-                    self.flag_heating = "Off"
+                # call method load_user_defined_quantity to compute heat and overwrite the previous values.
+                self.dict_node_pt["EXTFLX"][:, 0] = do_interpolation(
+                    self.heat_interpolator,
+                    conductor.dict_discretization["xcoord"],
+                    conductor.cond_time[-1],
+                    self.heat_interp_flag,
+                )
+            # end if conductor.cond_num_step (cdp, 10/2020)
         # end self.dict_operation["IQFUN"] (cdp, 10/2020)
 
     # end Get_Q

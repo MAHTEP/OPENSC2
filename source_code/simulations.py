@@ -101,8 +101,8 @@ class Simulations:
             if "grid" in f_name:
                 dict_file["GRID"] = os.path.join(self.basePath, f_name)
             elif "diagnostic" in f_name:
-                dict_file["Space"] = os.path.join(self.basePath, f_name)
-                dict_file["Time"] = os.path.join(self.basePath, f_name)
+                dict_file["Spatial_distribution"] = os.path.join(self.basePath, f_name)
+                dict_file["Time_evolution"] = os.path.join(self.basePath, f_name)
             # End if "grid".
         # End for f_name.
         # Load workbook conductor_definition.xlsx.
@@ -115,7 +115,7 @@ class Simulations:
         # Load the workbook in file conductor_grid.xlsx.
         gridCond = load_workbook(dict_file["GRID"], data_only=True)
         # Load the workbook in file conductor_diagnostic.xlsx.
-        wb_diagno = load_workbook(dict_file["Space"], data_only=True)
+        wb_diagno = load_workbook(dict_file["Spatial_distribution"], data_only=True)
         # Loop to check if user define conductors with the same identifier.
         for sheet in list_conductor_sheet:
             check_repeated_headings(conductor_defn, sheet)
@@ -124,12 +124,12 @@ class Simulations:
         check_repeated_headings(dict_file["GRID"], gridCond["GRID"])
         for sheet in wb_diagno:
             # Check if user define conductors with the same identifier in file conductor_diagnostic.xlsx.
-            check_repeated_headings(dict_file["Space"], sheet)
+            check_repeated_headings(dict_file["Spatial_distribution"], sheet)
         # End for sheet.
         # Check if the number of defined conductors is consited in file conductor_definition.xlsx and in file conductor_gri.xlsx.
 
         for cond_sheet in list_conductor_sheet:
-            for sheet in [gridCond["GRID"], wb_diagno["Space"], wb_diagno["Time"]]:
+            for sheet in [gridCond["GRID"], wb_diagno["Spatial_distribution"], wb_diagno["Time_evolution"]]:
                 check_object_number(
                     self,
                     self.transient_input["MAGNET"],
@@ -247,7 +247,7 @@ class Simulations:
             # Save of the solution spatial distribution at 0.0 s (cdp, 12/2020)
             save_simulation_space(
                 conductor,
-                self.dict_path[f"Output_Space_{conductor.ID}_dir"],
+                self.dict_path[f"Output_Spatial_distribution_{conductor.ID}_dir"],
                 abs(self.n_digit),
             )
         # end for ii (cdp, 10/2020)
@@ -370,7 +370,7 @@ class Simulations:
                     # (cdp, 08/2020)
                     save_simulation_space(
                         conductor,
-                        self.dict_path[f"Output_Space_{conductor.ID}_dir"],
+                        self.dict_path[f"Output_Spatial_distribution_{conductor.ID}_dir"],
                         abs(self.n_digit),
                     )
                 # end if isave
@@ -386,7 +386,7 @@ class Simulations:
                 # 		# reached time values to save the solution and plot it \
                 # 			# cdp, 08/2020)
                 # 			flag_rename = Save_simulation_space(conductor, \
-                # 									self.dict_path[f"Output_Space_{conductor.ID}_dir"], \
+                # 									self.dict_path[f"Output_Spatial_distribution_{conductor.ID}_dir"], \
                 # 									Who = "User")
                 # 			# Saved the solution, this time is no longer considered \
                 # 			# (cdp, 08/2020)
@@ -409,7 +409,7 @@ class Simulations:
         for cond in self.list_of_Conductors:
             # save simulation spatial distribution at TEND (cdp, 01/2021)
             save_simulation_space(
-                cond, self.dict_path[f"Output_Space_{cond.ID}_dir"], abs(self.n_digit)
+                cond, self.dict_path[f"Output_Spatial_distribution_{cond.ID}_dir"], abs(self.n_digit)
             )
             # Call function Save_properties to save the conductor final solution \
             # (cdp, 12/2020)
@@ -427,7 +427,7 @@ class Simulations:
         for cond in self.list_of_Conductors:
             cond.post_processing(self)
             reorganize_spatial_distribution(
-                cond, self.dict_path[f"Output_Space_{cond.ID}_dir"], self.n_digit
+                cond, self.dict_path[f"Output_Spatial_distribution_{cond.ID}_dir"], self.n_digit
             )
             # Plot conductor solution spatial distribution (cdp, 12/2020)
             plot_properties(self, cond, what="solution")
@@ -540,7 +540,7 @@ class Simulations:
             dict_make ([type]): [description]
             dict_benchmark ([type]): [description]
         """
-        # Loop to create sub folders initialization, Space, Time and Benchmark in Output and Figures directories; each folder in f_names_list, will contain folder conductor.ID.
+        # Loop to create sub folders initialization, Spatial_distribution, Time_evolution and Benchmark in Output and Figures directories; each folder in f_names_list, will contain folder conductor.ID.
         for f_name in list_f_names:
             for conductor in self.list_of_Conductors:
                 # Build list_key_val exploiting list comprehension. List of tuples: index [0] is the key of the dictionary, index [1] is the corresponding value that is the path to Output or Figures sub directories.
@@ -568,7 +568,7 @@ class Simulations:
                 dict_make[os.path.exists(self.dict_path[list_key_val[0][0]])](
                     list_key_val
                 )
-                # Create benchmark directory if f_name is "Space" ot "Time"
+                # Create benchmark directory if f_name is "Spatial_distribution" or "Time_evolution"
                 dict_benchmark[f_name](conductor, list_folder, f_name)
             # End for conductor.
         # End for f_name.
@@ -642,11 +642,11 @@ class Simulations:
         self._time_convergence_paths(list_folder)
         # Print a warning if os.path.exists() returns True, build the directories if returns False.
         dict_make = {True: self._make_warnings, False: self._make_directories}
-        list_f_names = ["Initialization", "Space", "Time", "Solution"]
+        list_f_names = ["Initialization", "Spatial_distribution", "Time_evolution", "Solution"]
         dict_benchmark = dict(
             Initialization=self._do_nothing,
-            Space=self._benchmark_paths,
-            Time=self._benchmark_paths,
+            Spatial_distribution=self._benchmark_paths,
+            Time_evolution=self._benchmark_paths,
             Solution=self._do_nothing,
         )
         # Create subfolders path invocking method _subfolders_paths

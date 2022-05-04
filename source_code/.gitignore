@@ -12,4 +12,5 @@ opensc2/Scripts/*.bat
 opensc2/Scripts/*.ps1
 opensc2/Scripts/activate
 opensc2/share/**/*.gz
+opensc2/share/**/*.1
 opensc2/*.cfg
