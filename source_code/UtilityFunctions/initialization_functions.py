@@ -30,8 +30,8 @@ def conductor_spatial_discretization(simulation, conductor):
     ##############################################################################
     """
 
-    XLENGTH = conductor.dict_input["XLENGTH"]
-    MAXNOD = conductor.dict_input["MAXNOD"]
+    XLENGTH = conductor.inputs["XLENGTH"]
+    MAXNOD = conductor.inputs["MAXNOD"]
     ITYMSH = conductor.dict_discretization["Grid_input"]["ITYMSH"]
     NELEMS = conductor.dict_discretization["Grid_input"]["NELEMS"]
     XBREFI = conductor.dict_discretization["Grid_input"]["XBREFI"]

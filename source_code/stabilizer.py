@@ -31,7 +31,7 @@ class Stabilizer(Strands):
         self.ID = sheet.cell(row=3, column=4 + icomp).value
 
         # dictionary declaration (cdp, 11/2020)
-        self.dict_input = dict()
+        self.inputs = dict()
         self.dict_operation = dict()
         self.dict_node_pt = dict()
         self.dict_Gauss_pt = dict()
@@ -39,8 +39,8 @@ class Stabilizer(Strands):
         # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
         self.time_evol = dict(temperature=dict(), B_field=dict())
         self.dict_scaling_input = dict()
-        # Dictionary initialization: dict_input.
-        self.dict_input = pd.read_excel(
+        # Dictionary initialization: inputs.
+        self.inputs = pd.read_excel(
             dict_file_path["input"],
             sheet_name=sheet.title,
             skiprows=2,
@@ -61,9 +61,9 @@ class Stabilizer(Strands):
         # Call SolidComponents class constructor to deal with Stabilizer time \
         # steps for current, external heating and so on (cdp, 11/2020)
         SolidComponents(simulation, self)
-        if self.dict_input["ISTABILIZER"] != "Cu":
-            # remove key RRR from dict_input if stabilizer is not Cu (cdp, 07/2020)
-            self.dict_input.pop("RRR")
+        if self.inputs["ISTABILIZER"] != "Cu":
+            # remove key RRR from inputs if stabilizer is not Cu (cdp, 07/2020)
+            self.inputs.pop("RRR")
         if self.dict_operation["IBIFUN"] != -1:
             # Remove key B_field_units.
             del self.dict_operation["B_field_units"]

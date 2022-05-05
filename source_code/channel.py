@@ -23,9 +23,9 @@ class Channel(FluidComponentsInput):
         # Identifier of the channel.
         self.identifier = f"{self.KIND}_{identifier.split('_')[1]}"
         # Assign the type of channel (hole or bundle) to the attribute self.kind
-        self.type = self.dict_input["CHANNEL_TYPE"]
-        # Delete key/value pair "CHANNEL_TYPE" from self.dict_input
-        del self.dict_input["CHANNEL_TYPE"]
+        self.type = self.inputs["CHANNEL_TYPE"]
+        # Delete key/value pair "CHANNEL_TYPE" from self.inputs
+        del self.inputs["CHANNEL_TYPE"]
         sign = dict(forward=1.0, backward=-1.0)
         flow_dir = self.dict_operation["FLOWDIR"].lower()
         # Assign the direction of the flow to the attribute self.flow_dir
@@ -34,7 +34,7 @@ class Channel(FluidComponentsInput):
             raise ValueError(
                 f"{self.dict_operation['FLOWDIR']} is not a valid alias for the flag FLOWDIR.\nPlease, check {self.identifier} in sheet CHANNEL of input file conductor_operation.xlsx.\n"
             )
-        # Delete key/value pair "FLOWDIR" from self.dict_input
+        # Delete key/value pair "FLOWDIR" from self.inputs
         del self.dict_operation["FLOWDIR"]
 
         # FRICTION FACTOR COEFFICIENT
@@ -135,14 +135,14 @@ class Channel(FluidComponentsInput):
         )
         # Assign to attribute self.turbulent_friction_factor_correlation the correlation to be used to evaluyate the turbulent friction factor of the channel.
         self.turbulent_friction_factor_correlation = turbulent_friction_factor_methods[
-            self.dict_input["IFRICTION"]
+            self.inputs["IFRICTION"]
         ]
         # Assign to attribute self.laminar_friction_factor_correlation the correlation to be used to evaluyate the laminar friction factor of the channel.
         self.laminar_friction_factor_correlation = laminar_friction_factor_methods[
-            self.dict_input["IFRICTION"]
+            self.inputs["IFRICTION"]
         ]
         self.total_friction_factor_correlation = total_friction_factor_methods[
-            self.dict_input["IFRICTION"]
+            self.inputs["IFRICTION"]
         ]
         # Define the list of keys and dummy values to build dictionary self.dict_friction_factor[nodal]. total is set to 0. an not to None to avoid error in multiplication between float and None in method _quantities_initialization.
         list_keys_vals = [("laminar", None), ("turbulent", None), ("total", 0.0)]
@@ -165,7 +165,7 @@ class Channel(FluidComponentsInput):
         )
         # Assign to attribute self.nusselt_correlation the correlation to be used to evaluyate the steady state heat transfer coefficient of the channel.
         self.nusselt_correlation = htc_steady_methods[
-            self.dict_input["Flag_htc_steady_corr"]
+            self.inputs["Flag_htc_steady_corr"]
         ]
         # Define the dictionary for the evaluation of steady heat transfer coefficient of the channel in nodal (key True) and Gauss (key False) points.
         self.dict_htc_steady = {True: None, False: None}
@@ -297,7 +297,7 @@ class Channel(FluidComponentsInput):
         }
         # Evaluate laminar friction factor.
         self.dict_friction_factor[nodal]["laminar"][ind] = dict_correlation[
-            self.dict_input["IFRICTION"] != 9
+            self.inputs["IFRICTION"] != 9
         ]
 
     # End method general_laminar_correlation.
@@ -311,9 +311,9 @@ class Channel(FluidComponentsInput):
         Returns:
             [type]: [description]
         """
-        doutct = self.dict_input["HYDIAMETER"] + 2 * tthick
+        doutct = self.inputs["HYDIAMETER"] + 2 * tthick
         # cdb correction for scaling from inner diameter to outer diameter (hole only)
-        corr_diam = doutct / self.dict_input["HYDIAMETER"]
+        corr_diam = doutct / self.inputs["HYDIAMETER"]
         return doutct, corr_diam
 
     # End method _eval_correction_diameter_hole.
@@ -337,12 +337,12 @@ class Channel(FluidComponentsInput):
         # Compute turbulent friction factor.
         self.dict_friction_factor[nodal]["turbulent"] = (
             (
-                dict_coeff[self.dict_input["IFRICTION"]]["aa"]
+                dict_coeff[self.inputs["IFRICTION"]]["aa"]
                 * (reynolds / corr_diam)
-                ** (dict_coeff[self.dict_input["IFRICTION"]]["bb"])
+                ** (dict_coeff[self.inputs["IFRICTION"]]["bb"])
             )
-            / dict_coeff[self.dict_input["IFRICTION"]]["cc"]
-            / (corr_diam ** dict_coeff[self.dict_input["IFRICTION"]]["dd"])
+            / dict_coeff[self.inputs["IFRICTION"]]["cc"]
+            / (corr_diam ** dict_coeff[self.inputs["IFRICTION"]]["dd"])
         )
 
     # End method iter_conductor_hole.
@@ -370,22 +370,22 @@ class Channel(FluidComponentsInput):
             109: dict(aa=11.88, bb=0.039, cc=-0.299, gg=5.30e-3, tthick1=1e-3),
         }
         goverh = (
-            dict_coeff[self.dict_input["IFRICTION"]]["gg"]
-            / dict_coeff[self.dict_input["IFRICTION"]]["tthick1"]
+            dict_coeff[self.inputs["IFRICTION"]]["gg"]
+            / dict_coeff[self.inputs["IFRICTION"]]["tthick1"]
         )
         hp = (
-            dict_coeff[self.dict_input["IFRICTION"]]["tthick1"]
-            / self.dict_input["HYDIAMETER"]
+            dict_coeff[self.inputs["IFRICTION"]]["tthick1"]
+            / self.inputs["HYDIAMETER"]
             * reynolds
         )
         hd2 = (
             2.0
-            * dict_coeff[self.dict_input["IFRICTION"]]["tthick1"]
-            / self.dict_input["HYDIAMETER"]
+            * dict_coeff[self.inputs["IFRICTION"]]["tthick1"]
+            / self.inputs["HYDIAMETER"]
         )
         # Compute turbulent friction factor calling method self._eval_ft_newton
         self._eval_ft_newton(
-            hp, dict_coeff[self.dict_input["IFRICTION"]], hd2, goverh, nodal
+            hp, dict_coeff[self.inputs["IFRICTION"]], hd2, goverh, nodal
         )
 
     # End method turbulent_friction_with_newton_hole.
@@ -488,7 +488,7 @@ class Channel(FluidComponentsInput):
             nodal (bool, optional): [description]. Defaults to True.
         """
         # Evaluate correction diameter: different formulation wrt the one in method self._eval_correction_diameter_hole
-        corr_diam = 3.18e-3 / self.dict_input["HYDIAMETER"]
+        corr_diam = 3.18e-3 / self.inputs["HYDIAMETER"]
         # Evaluate turbulent friction factor.
         self.dict_friction_factor[nodal]["turbulent"] = (
             0.25 * 0.3164 * (reynolds / corr_diam) ** -0.25 / corr_diam
@@ -528,20 +528,20 @@ class Channel(FluidComponentsInput):
         Returns:
             [type]: [description]
         """
-        # Define dictionary for the geometry evaluation. If flag self.dict_input["ISRECTANGULAR"] is True TTHICK1 = SIDE1 and DOUTCT = SIDE2, else use default values.
+        # Define dictionary for the geometry evaluation. If flag self.inputs["ISRECTANGULAR"] is True TTHICK1 = SIDE1 and DOUTCT = SIDE2, else use default values.
         dict_geometry = {
             True: dict(
-                TTHICK1=self.dict_input["SIDE1"], DOUTCT=self.dict_input["SIDE2"]
+                TTHICK1=self.inputs["SIDE1"], DOUTCT=self.inputs["SIDE2"]
             ),
             False: dict(
                 TTHICK1=tthick1,
                 DOUTCT=self._eval_correction_diameter_hole(tthick=tthick1)[0],
             ),
         }
-        # Evaluate ggg as TTHICK1/DOUTCT, values of TTHICK1 and DOUTCT according to the boolean value of flag self.dict_input["ISRECTANGULAR"].
+        # Evaluate ggg as TTHICK1/DOUTCT, values of TTHICK1 and DOUTCT according to the boolean value of flag self.inputs["ISRECTANGULAR"].
         ggg = (
-            dict_geometry[self.dict_input["ISRECTANGULAR"]]["TTHICK1"]
-            / dict_geometry[self.dict_input["ISRECTANGULAR"]]["DOUTCT"]
+            dict_geometry[self.inputs["ISRECTANGULAR"]]["TTHICK1"]
+            / dict_geometry[self.inputs["ISRECTANGULAR"]]["DOUTCT"]
         )
         # Define dictionary that correct the value of ggg: key True if ggg > 1.
         dict_ggg = {True: ggg ** -1, False: ggg}
@@ -609,7 +609,7 @@ class Channel(FluidComponentsInput):
             117: self._incropera_rectangular_duct_demo_cs_coeff_hole,
         }
         # Evaluate coefficnets for the correlations.
-        re_rect, CCC = dict_methods[self.dict_input["IFRICTION"]](reynolds)
+        re_rect, CCC = dict_methods[self.inputs["IFRICTION"]](reynolds)
         # Evaluate laminar friction factor.
         self.dict_friction_factor[nodal]["laminar"] = CCC / re_rect / 4.0
 
@@ -628,7 +628,7 @@ class Channel(FluidComponentsInput):
             117: self._incropera_rectangular_duct_demo_cs_coeff_hole,
         }
         # Evaluate coefficients for the correlations.
-        re_rect = dict_methods[self.dict_input["IFRICTION"]](
+        re_rect = dict_methods[self.inputs["IFRICTION"]](
             reynolds, flag_eval_ccc=False
         )
         # Evaluate turbulent friction factor.
@@ -673,7 +673,7 @@ class Channel(FluidComponentsInput):
             reynolds ([type]): [description]
             nodal (bool, optional): [description]. Defaults to True.
         """
-        alpha = self.dict_input["SIDE2"] / self.dict_input["SIDE1"]
+        alpha = self.inputs["SIDE2"] / self.inputs["SIDE1"]
         # Evaluate laminar friction factor.
         self.dict_friction_factor[nodal]["laminar"] = (
             24.0
@@ -714,7 +714,7 @@ class Channel(FluidComponentsInput):
             (
                 -1.8
                 * np.log10(
-                    (self.dict_input["Roughness"] / self.dict_input["HYDIAMETER"] / 3.7)
+                    (self.inputs["Roughness"] / self.inputs["HYDIAMETER"] / 3.7)
                     ** 1.11
                     + (6.9 / reynolds)
                 )
@@ -747,8 +747,8 @@ class Channel(FluidComponentsInput):
                     -2.0
                     * np.log10(
                         (
-                            self.dict_input["Roughness"]
-                            / self.dict_input["HYDIAMETER"]
+                            self.inputs["Roughness"]
+                            / self.inputs["HYDIAMETER"]
                             / 3.7
                         )
                         + (2.51 / reynolds / np.sqrt(fric_old))
@@ -818,11 +818,11 @@ class Channel(FluidComponentsInput):
         # Evaluate turbulent friction factor.
         self.dict_friction_factor[nodal]["turbulent"] = (
             2.46
-            * (reynolds / self.dict_input["HYDIAMETER"] * 0.25e-3) ** -0.52
-            * self.dict_input["HYDIAMETER"]
+            * (reynolds / self.inputs["HYDIAMETER"] * 0.25e-3) ** -0.52
+            * self.inputs["HYDIAMETER"]
             / 0.25e-3
             * (
-                self.dict_input["CROSSECTION"]
+                self.inputs["CROSSECTION"]
                 / (0.3 * (39.8e-3 ** 2 - doutct ** 2) * 0.25 * np.pi)
             )
             ** 2
@@ -843,7 +843,7 @@ class Channel(FluidComponentsInput):
         # Evaluate turbulent friction factor.
         self.dict_friction_factor[nodal]["turbulent"] = (
             (0.0231 + 19.5 / (reynolds / corr_peri) ** 0.7953)
-            / (self.dict_input["VOID_FRACTION"] ** 0.742)
+            / (self.inputs["VOID_FRACTION"] ** 0.742)
             / 4.0
         )
 
@@ -890,10 +890,10 @@ class Channel(FluidComponentsInput):
         # Divided by 4 by rb to obtain the Fanning friction factor
         # Evaluate turbulent friction factor.
         self.dict_friction_factor[nodal]["turbulent"] = (
-            self.dict_input["VOID_FRACTION"] ** 0.72
+            self.inputs["VOID_FRACTION"] ** 0.72
             * (
-                19.5 / reynolds ** dict_coeff[self.dict_input["IFRICTION"]]["aa"]
-                + dict_coeff[self.dict_input["IFRICTION"]]["bb"]
+                19.5 / reynolds ** dict_coeff[self.inputs["IFRICTION"]]["aa"]
+                + dict_coeff[self.inputs["IFRICTION"]]["bb"]
             )
             / 4.0
         )
@@ -910,15 +910,15 @@ class Channel(FluidComponentsInput):
         dict_coeff = {206: (19.6e-9, 2.42, 5.80), 209: (20.9e-9, 19.1, 4.23)}
         # Evaluate jj.
         jj = (
-            dict_coeff[self.dict_input["IFRICTION"]][1]
-            / self.dict_input["VOID_FRACTION"]
-            ** dict_coeff[self.dict_input["IFRICTION"]][2]
+            dict_coeff[self.inputs["IFRICTION"]][1]
+            / self.inputs["VOID_FRACTION"]
+            ** dict_coeff[self.inputs["IFRICTION"]][2]
         )
         # Evaluate kk.
         kk = (
-            dict_coeff[self.dict_input["IFRICTION"]][0]
-            * (self.dict_input["VOID_FRACTION"] ** 3)
-            / ((1 - self.dict_input["VOID_FRACTION"]) ** 2)
+            dict_coeff[self.inputs["IFRICTION"]][0]
+            * (self.inputs["VOID_FRACTION"] ** 3)
+            / ((1 - self.inputs["VOID_FRACTION"]) ** 2)
         )
         return jj, kk
 
@@ -937,12 +937,12 @@ class Channel(FluidComponentsInput):
         jj, kk = self._eval_jj_and_kk()
         # Evaluate turbulent friction factor.
         self.dict_friction_factor[nodal]["turbulent"] = (
-            self.dict_input["HYDIAMETER"] ** 2
-            * self.dict_input["VOID_FRACTION"]
+            self.inputs["HYDIAMETER"] ** 2
+            * self.inputs["VOID_FRACTION"]
             / 2.0
             / kk
             / reynolds
-            + (self.dict_input["HYDIAMETER"] * self.dict_input["VOID_FRACTION"] ** 2)
+            + (self.inputs["HYDIAMETER"] * self.inputs["VOID_FRACTION"] ** 2)
             / 2.0
             * jj
         )
@@ -992,7 +992,7 @@ class Channel(FluidComponentsInput):
         # Evaluate turbulent friction factor.
         self.dict_friction_factor[nodal]["turbulent"] = (
             (0.047 + 19.5 / (reynolds / corr_peri) ** 0.857)
-            / (self.dict_input["VOID_FRACTION"] ** 0.742)
+            / (self.inputs["VOID_FRACTION"] ** 0.742)
             / 4.0
             * corr_peri
         )
@@ -1010,17 +1010,17 @@ class Channel(FluidComponentsInput):
         jj, kk = self._eval_jj_and_kk()
         # Evaluate turbulent friction factor.
         self.dict_friction_factor[nodal]["turbulent"] = (
-            self.dict_input["HYDIAMETER"] ** 2
-            * self.dict_input["VOID_FRACTION"]
+            self.inputs["HYDIAMETER"] ** 2
+            * self.inputs["VOID_FRACTION"]
             / 2.0
             / kk
             / reynolds
-            + (self.dict_input["HYDIAMETER"] * self.dict_input["VOID_FRACTION"] ** 2)
+            + (self.inputs["HYDIAMETER"] * self.inputs["VOID_FRACTION"] ** 2)
             / 2.0
             * jj
             * (
-                self.dict_input["HYDIAMETER"]
-                / self.dict_input["VOID_FRACTION"]
+                self.inputs["HYDIAMETER"]
+                / self.inputs["VOID_FRACTION"]
                 / np.sqrt(kk)
             )
             ** 0.14
@@ -1078,7 +1078,7 @@ class Channel(FluidComponentsInput):
         )  # (1-0.09) errorbar up.
         # N.B FL = FT in such a way to use max function.
         # forced to be 1 bto avoid problem from input.
-        self.dict_input["FRICTION_MULTIPLIER"] = 1.0
+        self.inputs["FRICTION_MULTIPLIER"] = 1.0
 
     # End method hts_cl_correlation_bundle.
 
@@ -1151,7 +1151,7 @@ class Channel(FluidComponentsInput):
         # Multiply the total friction factor by the friction multiplier
         self.dict_friction_factor[nodal]["total"] = (
             self.dict_friction_factor[nodal]["total"]
-            * self.dict_input["FRICTION_MULTIPLIER"]
+            * self.inputs["FRICTION_MULTIPLIER"]
         )
 
     # End method eval_friction_factor.
@@ -1205,8 +1205,8 @@ class Channel(FluidComponentsInput):
         # Correct the Nusselt number with the lower limit value.
         self.dict_nusselt[nodal][
             self.dict_nusselt[nodal]
-            < dict_nusselt_lower_limit[self.dict_input["Flag_htc_steady_corr"]]
-        ] = dict_nusselt_lower_limit[self.dict_input["Flag_htc_steady_corr"]]
+            < dict_nusselt_lower_limit[self.inputs["Flag_htc_steady_corr"]]
+        ] = dict_nusselt_lower_limit[self.inputs["Flag_htc_steady_corr"]]
 
     # End method dittus_boelter_nusselt_lower_limit.
 
@@ -1216,9 +1216,9 @@ class Channel(FluidComponentsInput):
         Returns:
             [type]: [description]
         """
-        # Called if self.dict_input["Flag_htc_steady_corr"] = 119
-        alpha = self.dict_input["HYDIAMETER"] / (
-            self.dict_input["HYDIAMETER"] + 2 * 1e-3
+        # Called if self.inputs["Flag_htc_steady_corr"] = 119
+        alpha = self.inputs["HYDIAMETER"] / (
+            self.inputs["HYDIAMETER"] + 2 * 1e-3
         )
         NuTemp = 7.541 * (
             1.0
@@ -1288,7 +1288,7 @@ class Channel(FluidComponentsInput):
         self.dict_htc_steady[nodal] = (
             self.dict_nusselt[nodal]
             * dict_prop["total_thermal_conductivity"]
-            / self.dict_input["HYDIAMETER"]
+            / self.inputs["HYDIAMETER"]
         )
 
     # End method eval_steady_state_htc.

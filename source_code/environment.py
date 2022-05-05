@@ -18,18 +18,18 @@ class Environment:
             f_path ([type]): [description]
         """
         # Dictionary declaration (cdp, 11/2020)
-        self.dict_input = dict()
+        self.inputs = dict()
         # self.dict_node_pt = dict()
         # self.dict_Gauss_pt = dict()
-        # Dictionary initialization: dict_input.
-        self.dict_input = pd.read_excel(
+        # Dictionary initialization: inputs.
+        self.inputs = pd.read_excel(
             f_path,
             sheet_name="ENVIRONMENT",
             header=0,
             index_col=0,
             usecols=["Variable name", "Value"],
         )["Value"].to_dict()
-        self.type = self.dict_input["Medium"].lower()
+        self.type = self.inputs["Medium"].lower()
         # Declare the dictionary with methods used to evaluate nusselt number.
         self.dict_nusselt_correlations = dict(
             vertical_plate=self._vertical_plate,
@@ -84,19 +84,19 @@ class Environment:
             vertical_plate_churchill_chu_accurate=conductor.dict_discretization[
                 "Delta_x"
             ],  # to be checked
-            long_horziontal_cylinder_morgan=conductor.dict_input["Diameter"],
-            long_horziontal_cylinder_churchill_chu=conductor.dict_input["Diameter"],
+            long_horziontal_cylinder_morgan=conductor.inputs["Diameter"],
+            long_horziontal_cylinder_churchill_chu=conductor.inputs["Diameter"],
         )
 
         # Define the film temperature.
-        film_temperature = (self.dict_input["Temperature"] + T_s) / 2.0  # K
+        film_temperature = (self.inputs["Temperature"] + T_s) / 2.0  # K
         # Evaluate air propreties.
         dict_air_properties = self.eval_prop(film_temperature)
         # Evaluate Nusselt dimensionless number.
-        if conductor.dict_input["Is_rectangular"]:
+        if conductor.inputs["Is_rectangular"]:
             # Evaluate Grashof dimensionless number for vertical side.
             grashof_side = self.grashof_number(
-                dict_air_properties, T_s, conductor.dict_input["Height"]
+                dict_air_properties, T_s, conductor.inputs["Height"]
             )
             # Evaluate Rayleigh dimensionless number for vertical side.
             rayleigh_side = self.rayleigh_number(
@@ -108,11 +108,11 @@ class Environment:
             )
             # L = A_s/P
             characteristic_length = (
-                conductor.dict_input["XLENGHT"]
-                * conductor.dict_input["Width"]
+                conductor.inputs["XLENGHT"]
+                * conductor.inputs["Width"]
                 / (
                     2
-                    * (conductor.dict_input["XLENGHT"] + conductor.dict_input["Width"])
+                    * (conductor.inputs["XLENGHT"] + conductor.inputs["Width"])
                 )
             )
             # Evaluate Grashof dimensionless number lower/upper cold plate.
@@ -135,7 +135,7 @@ class Environment:
             return (
                 nusselt_side
                 * dict_air_properties["thermal_conductivity"]
-                / conductor.dict_input["Height"],
+                / conductor.inputs["Height"],
                 nusselt_bottom
                 * dict_air_properties["thermal_conductivity"]
                 / characteristic_length,
@@ -147,7 +147,7 @@ class Environment:
             # Non rectangular duct (cylinder).
             # Get the characterisctic length needed to evaluare Grashof and Rayleigh dimensionless numbers according to the selected external free convection correlation.
             characteristic_length = dict_characterisctic_length[
-                conductor.dict_input["external_free_convection_correlation"]
+                conductor.inputs["external_free_convection_correlation"]
             ]
             # Evaluate Grashof dimensionless numbers.
             grashof = self.grashof_number(
@@ -156,7 +156,7 @@ class Environment:
             # Evaluate Rayleigh number.
             rayleigh = self.rayleigh_number(grashof, dict_air_properties["prandtl"])
             nusselt = self.dict_nusselt_correlations[
-                conductor.dict_input["external_free_convection_correlation"]
+                conductor.inputs["external_free_convection_correlation"]
             ](rayleigh, dict_air_properties["prandtl"], grashof, conductor)
             # Evaluate external free convection heat transfer coefficient.
             return (
@@ -164,7 +164,7 @@ class Environment:
                 * dict_air_properties["thermal_conductivity"]
                 / characteristic_length
             )
-        # End if conductor.dict_input["Is_rectangular"]
+        # End if conductor.inputs["Is_rectangular"]
 
     # End method eval_heat_transfer_coefficient.
 
@@ -183,7 +183,7 @@ class Environment:
                 "T",
                 film_temperature,
                 "P",
-                self.dict_input["Pressure"],
+                self.inputs["Pressure"],
                 self.type,
             )
             for prop_name, alias in self.fluid_prop_aliases.items()
@@ -208,7 +208,7 @@ class Environment:
             constants.g
             * dict_air_prop["density"] ** 2
             * dict_air_prop["volumetric_thermal_expansion_coefficient"]
-            * (T_s - self.dict_input["Temperature"])
+            * (T_s - self.inputs["Temperature"])
             * characteristic_length ** 3
             * np.reciprocal(dict_air_prop["dynamic_viscosity"] ** 2)
         )
@@ -366,11 +366,11 @@ class Environment:
         """
         dict_check = {True: self._do_nothing, False: warnings.warn}
         check = any(
-            conductor.dict_input["Diameter"] / conductor.dict_discretization["Delta_x"]
+            conductor.inputs["Diameter"] / conductor.dict_discretization["Delta_x"]
             > 35.0 / grashof ** (1.0 / 4.0)
         )
         dict_check[check](
-            f"External free convection heat transfer coefficient may be inaccurate since the selected correlation for its evaluation {conductor.dict_input['external_free_convection_correlation']} can not be applied to the case of a vertical cylinder!\n"
+            f"External free convection heat transfer coefficient may be inaccurate since the selected correlation for its evaluation {conductor.inputs['external_free_convection_correlation']} can not be applied to the case of a vertical cylinder!\n"
         )
 
     # End method check_validity_vertical_cylinder.
@@ -500,14 +500,14 @@ class Environment:
         Returns:
             [type]: [description]
         """
-        # Declare dictionary to decide if evaluate dry or humid properties according to flag self.dict_input["Use_humidity"].
+        # Declare dictionary to decide if evaluate dry or humid properties according to flag self.inputs["Use_humidity"].
         dict_eval_air_properties = {
             True: self._eval_humid_air_properties,
             False: self._eval_dry_air_properties,
         }
 
         # Evaluate air volumetric thermal expansion coefficient, kinematic viscosity and Prandtl number at film temperature.
-        return dict_eval_air_properties[self.dict_input["Use_humidity"]](
+        return dict_eval_air_properties[self.inputs["Use_humidity"]](
             film_temperature
         )
 
@@ -525,7 +525,7 @@ class Environment:
         # Evaluate dry air thermal conductivity, volumetric thermal expansion coefficient, kinematic viscosity and Prandtl number.
         return eval_air_properties(
             temperature,
-            self.dict_input["Pressure"],
+            self.inputs["Pressure"],
             thermal_conductivity=True,
             volumetric_thermal_expansion_coefficient=True,
             kinematic_viscosity=True,
@@ -546,7 +546,7 @@ class Environment:
         # Evaluate humid air thermal conductivity, volumetric thermal expansion coefficient kinematic viscosity and Prandtl number.
         return eval_air_properties(
             temperature,
-            self.dict_input["Pressure"],
+            self.inputs["Pressure"],
             self.ict_input["Relative_humidity"],
             thermal_conductivity=True,
             volumetric_thermal_expansion_coefficient=True,

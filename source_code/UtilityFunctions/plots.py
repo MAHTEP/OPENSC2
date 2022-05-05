@@ -1125,11 +1125,11 @@ def create_real_time_plots(simulation, conductor):
         # When the GUI works add the default to true.
 
         # If flag Show_fig is set to TRUE define the required attributes to make the real time plot of maximum f_comp temperature (invoke function create_real_time_plots_max_temperature); else does nothing.
-        f_comp.create_rtp_max_temperature[f_comp.coolant.dict_input["Show_fig"]](
+        f_comp.create_rtp_max_temperature[f_comp.coolant.inputs["Show_fig"]](
             simulation, conductor, f_comp
         )
         # If flag Show_fig is set to TRUE define the required attributes to make the real time plot of inlet and outlet f_comp mass flow rate (invoke function create_real_time_plots_inlet_outlet_mfr); else does nothing.
-        f_comp.create_rtp_io_mfr[f_comp.coolant.dict_input["Show_fig"]](
+        f_comp.create_rtp_io_mfr[f_comp.coolant.inputs["Show_fig"]](
             simulation, conductor, f_comp
         )
     # End for f_comp.
@@ -1144,7 +1144,7 @@ def create_real_time_plots(simulation, conductor):
             False: do_nothing,
         }
         # If flag Show_fig is set to TRUE define the required attributes to make the real time plot of maximum s_comp temperature (invoke function create_real_time_plots_max_temperature); else does nothing.
-        s_comp.create_rtp_max_temperature[s_comp.dict_input["Show_fig"]](
+        s_comp.create_rtp_max_temperature[s_comp.inputs["Show_fig"]](
             simulation, conductor, s_comp
         )
     # End for s_comp.
@@ -1229,18 +1229,18 @@ def update_real_time_plots(conductor):
         # When the GUI works add the default to true.
 
         # If flag Show_fig is set to TRUE update the real time plot of maximum f_comp temperature (invoke function update_real_time_plots_max_temperature); else does nothing.
-        f_comp.update_rtp_max_temperature[f_comp.coolant.dict_input["Show_fig"]](
+        f_comp.update_rtp_max_temperature[f_comp.coolant.inputs["Show_fig"]](
             conductor, f_comp
         )
         # If flag Show_fig is set to TRUE update the real time plot of inlet and outlet f_comp mass flow rate (invoke function update_real_time_plots_inlet_outlet_mfr); else does nothing.
-        f_comp.update_rtp_io_mfr[f_comp.coolant.dict_input["Show_fig"]](
+        f_comp.update_rtp_io_mfr[f_comp.coolant.inputs["Show_fig"]](
             conductor, f_comp
         )
     # End for f_comp.
 
     for s_comp in conductor.dict_obj_inventory["SolidComponents"]["Objects"]:
         # If flag Show_fig is set to TRUE update the real time plot of maximum s_comp temperature (invoke function update_real_time_plots_max_temperature); else does nothing.
-        s_comp.update_rtp_max_temperature[s_comp.dict_input["Show_fig"]](
+        s_comp.update_rtp_max_temperature[s_comp.inputs["Show_fig"]](
             conductor, s_comp
         )
         # End for s_comp.
@@ -1305,7 +1305,7 @@ def create_legend_rtp(conductor):
     """
     for f_comp in conductor.dict_obj_inventory["FluidComponents"]["Objects"]:
         # If flag Show_fig is set to TRUE create the legend in the time plot of inlet and outlet f_comp mass flow rate (invoke function add_legend_mfr); else does nothing.
-        f_comp.add_legend_rtp_io_mfr[f_comp.coolant.dict_input["Show_fig"]](f_comp)
+        f_comp.add_legend_rtp_io_mfr[f_comp.coolant.inputs["Show_fig"]](f_comp)
     # End for create_legend_rtp.
 
 

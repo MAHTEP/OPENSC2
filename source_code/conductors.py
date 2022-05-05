@@ -75,8 +75,8 @@ class Conductors:
         self.number = int(self.ID.split("_")[1])
         # file_input dictionary initialization (cdp, 06/2020)
         self.file_input = dict()
-        # dict_input dictionary initialization (cdp, 06/2020)
-        self.dict_input = dict()
+        # inputs dictionary initialization (cdp, 06/2020)
+        self.inputs = dict()
         # Load the sheet CONDUCTOR_files form file conducor_definition.xlsx as a disctionary.
         self.file_input = pd.read_excel(
             os.path.join(self.BASE_PATH, simulation.transient_input["MAGNET"]),
@@ -87,7 +87,7 @@ class Conductors:
             usecols=["Variable name", self.ID],
         )[self.ID].to_dict()
         # Load the sheet CONDUCTOR_input form file conducor_definition.xlsx as a disctionary.
-        self.dict_input = pd.read_excel(
+        self.inputs = pd.read_excel(
             os.path.join(self.BASE_PATH, simulation.transient_input["MAGNET"]),
             sheet_name=sheetConductorsList[1].title,
             skiprows=2,
@@ -96,9 +96,9 @@ class Conductors:
             usecols=["Variable name", self.ID],
         )[self.ID].to_dict()
         # Get the user defined name of the conductor (default is ID)
-        self.name = self.dict_input["NAME"]
-        # Delete key NAME from dictionary self.dict_input
-        del self.dict_input["NAME"]
+        self.name = self.inputs["NAME"]
+        # Delete key NAME from dictionary self.inputs
+        del self.inputs["NAME"]
 
         _ = dict(BE=1.0, CE=0.5)
         self.electric_theta = _[self.inputs["ELECTRIC_METHOD"]]
@@ -156,13 +156,13 @@ class Conductors:
 
         # **NUMERICS**
         # evaluate value of theta_method according to flag METHOD (cdo, 08/2020)
-        if self.dict_input["METHOD"] == "BE":
+        if self.inputs["METHOD"] == "BE":
             # Backward Euler (cdp, 10/2020)
             self.theta_method = 1.0
-        elif self.dict_input["METHOD"] == "CN":
+        elif self.inputs["METHOD"] == "CN":
             # Crank-Nicolson (cdp, 10/2020)
             self.theta_method = 0.5
-        elif self.dict_input["METHOD"] == "AM4":
+        elif self.inputs["METHOD"] == "AM4":
             # Adams-Moulton 4 (cdp, 10/2020)
             # questo valore è provvisorio e sicuramente poco corretto, da ragionare e approfondire
             self.theta_method = 1.0 / 24.0
@@ -259,14 +259,14 @@ class Conductors:
         )
         # Adjust the user defined diagnostic.
         self.Time_save = set_diagnostic(
-            self.Time_save, lb=0.0, ub=self.dict_input["XLENGTH"]
+            self.Time_save, lb=0.0, ub=self.inputs["XLENGTH"]
         )
         # Check on time evolution diagnostic.
-        if self.Time_save.max() > self.dict_input["XLENGTH"]:
+        if self.Time_save.max() > self.inputs["XLENGTH"]:
             raise ValueError(
-                f"File {self.file_input['OUTPUT']}, sheet Time, conductor {self.ID}: impossible to save time evolutions at axial coordinate {self.Time_save.max()} s since it is ouside the computational domain of the simulation [0, {self.dict_input['XLENGTH']}] m.\n"
+                f"File {self.file_input['OUTPUT']}, sheet Time, conductor {self.ID}: impossible to save time evolutions at axial coordinate {self.Time_save.max()} s since it is ouside the computational domain of the simulation [0, {self.inputs['XLENGTH']}] m.\n"
             )
-        # End if self.Time_save.max() > self.dict_input["XLENGTH"]
+        # End if self.Time_save.max() > self.inputs["XLENGTH"]
 
         # declare dictionaries to store Figure and axes objects to constructi real \
         # time figures (cdp, 10/2020)
@@ -732,8 +732,8 @@ class Conductors:
                 == 1
             ):
                 if (
-                    s_comp_r.dict_input["Jacket_kind"] == "outer_insulation"
-                    or s_comp_r.dict_input["Jacket_kind"] == "whole_enclosure"
+                    s_comp_r.inputs["Jacket_kind"] == "outer_insulation"
+                    or s_comp_r.inputs["Jacket_kind"] == "whole_enclosure"
                 ):
                     # There is an interface between environment and s_comp_r.
                     self.dict_interf_peri["env_sol"][
@@ -744,9 +744,9 @@ class Conductors:
                 else:
                     # Raise error
                     raise os.error(
-                        f"Jacket of kind {s_comp_r.dict_input['Jacket_kind']} can not have and interface with the environment.\n"
+                        f"Jacket of kind {s_comp_r.inputs['Jacket_kind']} can not have and interface with the environment.\n"
                     )
-                # End if s_comp_r.dict_input["Jacket_kind"]
+                # End if s_comp_r.inputs["Jacket_kind"]
         # end for rr (cdp, 09/2020)
         self.dict_topology.update(sol_sol=dict_topology_dummy_sol)
 
@@ -1563,7 +1563,7 @@ class Conductors:
         # End for rr.
 
         #### INITIAL OPERATING CURRENT
-        self.IOP_TOT = self.dict_input["IOP0_TOT"]
+        self.IOP_TOT = self.inputs["IOP0_TOT"]
         # IOP=IOP0(icond)
 
         # call functions get_current, get_magnetic_field, get_magnetic_field_gradient, \
@@ -1593,7 +1593,7 @@ class Conductors:
         # N.B. questo loop si potrebbe fare usando map.
         for s_comp in self.dict_obj_inventory["SolidComponents"]["Objects"]:
             # N.B. queste istruzioni posso inserirle in un metodo della classe.
-            self.E_sol_ini = self.E_sol_ini + s_comp.dict_input["CROSSECTION"] * np.sum(
+            self.E_sol_ini = self.E_sol_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                 (
                     self.dict_discretization["xcoord"][
                         1 : self.dict_discretization["N_nod"]
@@ -1605,7 +1605,7 @@ class Conductors:
                 * s_comp.dict_Gauss_pt["temperature"]
             )
             if s_comp.NAME != "Z_JACKET":
-                self.E_str_ini = self.E_str_ini + s_comp.dict_input[
+                self.E_str_ini = self.E_str_ini + s_comp.inputs[
                     "CROSSECTION"
                 ] * np.sum(
                     (
@@ -1619,7 +1619,7 @@ class Conductors:
                     * s_comp.dict_Gauss_pt["temperature"]
                 )
             else:
-                self.E_jk_ini = self.E_jk_ini + s_comp.dict_input[
+                self.E_jk_ini = self.E_jk_ini + s_comp.inputs[
                     "CROSSECTION"
                 ] * np.sum(
                     (
@@ -1636,13 +1636,13 @@ class Conductors:
 
         # Construct and initialize dictionary dict_Step to correctly apply the \
         # method that solves the transient (cdp, 10/2020)
-        if self.dict_input["METHOD"] == "BE" or self.dict_input["METHOD"] == "CN":
+        if self.inputs["METHOD"] == "BE" or self.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson (cdp, 10/2020)
             self.dict_Step = dict(
                 SYSLOD=np.zeros((self.dict_N_equation["Total"], 2)),
                 SYSVAR=np.zeros((self.dict_N_equation["Total"], 1)),
             )
-        elif self.dict_input["METHOD"] == "AM4":
+        elif self.inputs["METHOD"] == "AM4":
             # Adams-Moulton order 4 (cdp, 10/2020)
             self.dict_Step = dict(
                 SYSLOD=np.zeros((self.dict_N_equation["Total"], 4)),
@@ -1651,7 +1651,7 @@ class Conductors:
                     (self.dict_band["Full"], self.dict_N_equation["Total"], 4)
                 ),
             )
-        # end if self.dict_input
+        # end if self.inputs
 
         # Assign initial values to key SYSVAR (cdp, 10/2020)
         for jj in range(self.dict_obj_inventory["FluidComponents"]["Number"]):
@@ -1731,11 +1731,11 @@ class Conductors:
             # call method get_magnetic_field_gradient for each Strands object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self)
             if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"]:
-                if strand.dict_input["ISUPERCONDUCTOR"] == "Nb3Sn":
+                if strand.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
                     strand.get_eps(self)
-                # end if strand.dict_input["ISUPERCONDUCTOR"] (cdp, 08/2020)
+                # end if strand.inputs["ISUPERCONDUCTOR"] (cdp, 08/2020)
                 # Call get_superconductor_critical_prop to evaluate MixSCStabilizer \
                 # and/or SuperConductor properties in nodal points. Added to allow \
                 # storage of current sharing temperature time evolution values in \
@@ -1903,11 +1903,11 @@ class Conductors:
             strand.get_magnetic_field_gradient(self, nodal=False)
             # only for MixSCStabilizer and SuperConductor objects (cdp, 07/2020)
             if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"]:
-                if strand.dict_input["ISUPERCONDUCTOR"] == "Nb3Sn":
+                if strand.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
                     strand.get_eps(self, nodal=False)
-                # end if strand.dict_input["ISUPERCONDUCTOR"] (cdp, 08/2020)
+                # end if strand.inputs["ISUPERCONDUCTOR"] (cdp, 08/2020)
                 # Call get_superconductor_critical_prop to evaluate MixSCStabilizer \
                 # and/or SuperConductor properties in the Gauss point (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self, nodal=False)
@@ -1956,11 +1956,11 @@ class Conductors:
             # questa è la parte che credo sia rilevante
             # only for MixSCStabilizer and SuperConductor objects (cdp, 07/2020)
             if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"]:
-                if strand.dict_input["ISUPERCONDUCTOR"] == "Nb3Sn":
+                if strand.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
                     strand.get_eps(self)
-                # end if strand.dict_input["ISUPERCONDUCTOR"] (cdp, 08/2020)
+                # end if strand.inputs["ISUPERCONDUCTOR"] (cdp, 08/2020)
                 # Call get_superconductor_critical_prop to evaluate MixSCStabilizer \
                 # and/or SuperConductor properties in nodal points (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self)
@@ -1974,7 +1974,7 @@ class Conductors:
         # SolidComponents, used to check the imposition of SolidComponents \
         # temperature initial spatial distribution (cdp, 12/2020)
         for s_comp in self.dict_obj_inventory["SolidComponents"]["Objects"]:
-            self.E_sol_fin = self.E_sol_fin + s_comp.dict_input["CROSSECTION"] * np.sum(
+            self.E_sol_fin = self.E_sol_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                 (
                     self.dict_discretization["xcoord"][
                         1 : self.dict_discretization["N_nod"]
@@ -1986,7 +1986,7 @@ class Conductors:
                 * s_comp.dict_Gauss_pt["temperature"]
             )
             if s_comp.NAME != "Z_JACKET":
-                self.E_str_fin = self.E_str_fin + s_comp.dict_input[
+                self.E_str_fin = self.E_str_fin + s_comp.inputs[
                     "CROSSECTION"
                 ] * np.sum(
                     (
@@ -2000,7 +2000,7 @@ class Conductors:
                     * s_comp.dict_Gauss_pt["temperature"]
                 )
             else:
-                self.E_jk_fin = self.E_jk_fin + s_comp.dict_input[
+                self.E_jk_fin = self.E_jk_fin + s_comp.inputs[
                     "CROSSECTION"
                 ] * np.sum(
                     (
@@ -2333,8 +2333,8 @@ class Conductors:
                     ):
                         # Radiative heat transfer.
                         if (
-                            s_comp_r.dict_input["Emissivity"] > 0.0
-                            and s_comp_c.dict_input["Emissivity"] > 0.0
+                            s_comp_r.inputs["Emissivity"] > 0.0
+                            and s_comp_c.inputs["Emissivity"] > 0.0
                             and self.dict_df_coupling["view_factors"].at[
                                 s_comp_r.ID, s_comp_c.ID
                             ]
@@ -2349,13 +2349,13 @@ class Conductors:
                                 ]
                             )
                             if (
-                                s_comp_r.dict_input["Outer_perimeter"]
-                                < s_comp_c.dict_input["Inner_perimeter"]
+                                s_comp_r.inputs["Outer_perimeter"]
+                                < s_comp_c.inputs["Inner_perimeter"]
                             ):
                                 # Set the contact perimeter to the correct value (overwrite the value assigned in input file conductor_coupling.xlsx)
                                 self.dict_df_coupling["contact_perimeter"].at[
                                     s_comp_r.ID, s_comp_c.ID
-                                ] = s_comp_r.dict_input["Outer_perimeter"]
+                                ] = s_comp_r.inputs["Outer_perimeter"]
                                 dict_dummy["HTC"]["sol_sol"]["rad"][
                                     self.dict_topology["sol_sol"][s_comp_r.ID][
                                         s_comp_c.ID
@@ -2368,13 +2368,13 @@ class Conductors:
                                     view_factor_rec,
                                 )
                             elif (
-                                s_comp_c.dict_input["Outer_perimeter"]
-                                < s_comp_r.dict_input["Inner_perimeter"]
+                                s_comp_c.inputs["Outer_perimeter"]
+                                < s_comp_r.inputs["Inner_perimeter"]
                             ):
                                 # Set the contact perimeter to the correct value (overwrite the value assigned in input file conductor_coupling.xlsx)
                                 self.dict_df_coupling["contact_perimeter"].at[
                                     s_comp_r.ID, s_comp_c.ID
-                                ] = s_comp_c.dict_input["Outer_perimeter"]
+                                ] = s_comp_c.inputs["Outer_perimeter"]
                                 dict_dummy["HTC"]["sol_sol"]["rad"][
                                     self.dict_topology["sol_sol"][s_comp_r.ID][
                                         s_comp_c.ID
@@ -2386,7 +2386,7 @@ class Conductors:
                                     dict_dummy_comp_r[flag_nodal]["temperature"],
                                     view_factor_rec,
                                 )
-                            # End if s_comp_r.dict_input["Outer_perimeter"].
+                            # End if s_comp_r.inputs["Outer_perimeter"].
                         # End if emissivity.
                     elif (
                         self.dict_df_coupling["HTC_choice"].at[s_comp_r.ID, s_comp_c.ID]
@@ -2413,8 +2413,8 @@ class Conductors:
                 # New environment-solid interface
                 htc_len = htc_len + 1
                 if (
-                    s_comp_r.dict_input["Jacket_kind"] == "outer_insulation"
-                    or s_comp_r.dict_input["Jacket_kind"] == "whole_enclosure"
+                    s_comp_r.inputs["Jacket_kind"] == "outer_insulation"
+                    or s_comp_r.inputs["Jacket_kind"] == "whole_enclosure"
                 ):
                     # Heat transfer with the environment by radiation and/or by convection.
                     # Initialize dictionary.
@@ -2431,7 +2431,7 @@ class Conductors:
                         == 2
                     ):
                         # Heat transfer by convection: heat transfer coefficient evaluated from air properties.
-                        if self.dict_input["Is_rectangular"]:
+                        if self.inputs["Is_rectangular"]:
                             # Rectangular conductor
                             dict_dummy["HTC"]["env_sol"][key]["conv"] = dict(
                                 side=np.zeros(
@@ -2461,7 +2461,7 @@ class Conductors:
                                         self,
                                         dict_dummy_comp_r[flag_nodal]["temperature"],
                                     )
-                                    * self.dict_input["Phi_conv"]
+                                    * self.inputs["Phi_conv"]
                                 )
                     elif (
                         self.dict_df_coupling["HTC_choice"].at[
@@ -2474,7 +2474,7 @@ class Conductors:
                             self.dict_df_coupling["contact_HTC"].at[
                                 simulation.environment.KIND, s_comp_r.ID
                             ]
-                            * self.dict_input["Phi_conv"]
+                            * self.inputs["Phi_conv"]
                             * np.ones(
                                 dict_dummy_comp_r[flag_nodal]["temperature"].shape
                             )
@@ -2505,7 +2505,7 @@ class Conductors:
                             self.dict_df_coupling["contact_HTC"].at[
                                 simulation.environment.KIND, s_comp_r.ID
                             ]
-                            * self.dict_input["Phi_rad"]
+                            * self.inputs["Phi_rad"]
                             * np.ones(
                                 dict_dummy_comp_r[flag_nodal]["temperature"].shape
                             )
@@ -2521,7 +2521,7 @@ class Conductors:
                             simulation.environment.eval_heat_transfer_coefficient(
                                 self, dict_dummy_comp_r[flag_nodal]["temperature"]
                             )
-                            * self.dict_input["Phi_conv"]
+                            * self.inputs["Phi_conv"]
                         )
 
                         dict_dummy["HTC"]["env_sol"][key][
@@ -2550,9 +2550,9 @@ class Conductors:
                 else:
                     # Raise error
                     raise os.error(
-                        f"Jacket of kind {s_comp_r.dict_input['Jacket_kind']} can not exchange heat by radiation and/or convection with the environment.\n"
+                        f"Jacket of kind {s_comp_r.inputs['Jacket_kind']} can not exchange heat by radiation and/or convection with the environment.\n"
                     )
-                # End if s_comp_r.dict_input["Jacket_kind"]
+                # End if s_comp_r.inputs["Jacket_kind"]
             # End if self.dict_df_coupling["contact_perimeter_flag"].at[simulation.environment.KIND, s_comp_r.ID]
         # end for loop rr
 
@@ -2570,21 +2570,21 @@ class Conductors:
 
     def eval_weighted_radiative_htc(self, simulation, s_comp, temperature_jk):
         # Evaluate the weighted external radiative heat transfer coefficient: htc_rad*Phi_rad
-        if s_comp.dict_input["Emissivity"] <= 0.0:
+        if s_comp.inputs["Emissivity"] <= 0.0:
             # Set the radiative heat transfer coefficient to zero: no radiative heat transfer.
             return np.zeros(temperature_jk.shape)  # W/m^2/K
         else:
             return (
                 constants.Stefan_Boltzmann
-                * s_comp.dict_input["Emissivity"]
+                * s_comp.inputs["Emissivity"]
                 * (
                     temperature_jk ** 2
-                    + simulation.environment.dict_input["Temperature"] ** 2
+                    + simulation.environment.inputs["Temperature"] ** 2
                 )
-                * (temperature_jk + simulation.environment.dict_input["Temperature"])
-                * self.dict_input["Phi_rad"]
+                * (temperature_jk + simulation.environment.inputs["Temperature"])
+                * self.inputs["Phi_rad"]
             )  # W/m^2/K
-        # End if s_comp_r.dict_input["Emissivity"] <= 0.
+        # End if s_comp_r.inputs["Emissivity"] <= 0.
 
     # End method eval_weighted_radiative_htc.
 
@@ -2595,13 +2595,13 @@ class Conductors:
             * (temp_i ** 2 + temp_j ** 2)
             * (temp_i + temp_j)
             / (
-                (1.0 - jk_i.dict_input["Emissivity"]) / jk_i.dict_input["Emissivity"]
+                (1.0 - jk_i.inputs["Emissivity"]) / jk_i.inputs["Emissivity"]
                 + view_factor_rec
-                + (1.0 - jk_j.dict_input["Emissivity"])
-                / jk_j.dict_input["Emissivity"]
+                + (1.0 - jk_j.inputs["Emissivity"])
+                / jk_j.inputs["Emissivity"]
                 * (
-                    jk_i.dict_input["Outer_perimeter"]
-                    / jk_j.dict_input["Inner_perimeter"]
+                    jk_i.inputs["Outer_perimeter"]
+                    / jk_j.inputs["Inner_perimeter"]
                 )
             )
         )  # W/m^2/K
@@ -2683,7 +2683,7 @@ class Conductors:
                 self.energy_balance = (
                     self.energy_balance
                     + self.time_step
-                    * jacket.dict_input["Outer_perimeter"]
+                    * jacket.inputs["Outer_perimeter"]
                     * np.sum(
                         (
                             self.dict_Gauss_pt["HTC"]["env_sol"][key]["conv"]
@@ -2691,12 +2691,12 @@ class Conductors:
                         )
                         * self.dict_discretization["Delta_x"]
                         * (
-                            simulation.environment.dict_input["Temperature"]
+                            simulation.environment.inputs["Temperature"]
                             - jacket.dict_Gauss_pt["temperature"]
                         )
                     )
                 )
-                self.inner_pow = self.inner_pow + jacket.dict_input[
+                self.inner_pow = self.inner_pow + jacket.inputs[
                     "Outer_perimeter"
                 ] * np.sum(
                     (
@@ -2705,7 +2705,7 @@ class Conductors:
                     )
                     * self.dict_discretization["Delta_x"]
                     * (
-                        simulation.environment.dict_input["Temperature"]
+                        simulation.environment.inputs["Temperature"]
                         - jacket.dict_Gauss_pt["temperature"]
                     )
                 )
@@ -2780,7 +2780,7 @@ class Conductors:
                         + self.dict_Gauss_pt["HTC"]["env_sol"][key]["rad"]
                     )
                     * (
-                        environment.dict_input["Temperature"]
+                        environment.inputs["Temperature"]
                         - jk.dict_Gauss_pt["temperature"]
                     )
                 )  # W

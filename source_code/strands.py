@@ -91,7 +91,7 @@ class Strands(SolidComponents):
         #
         ############################################################################
         # * xcoord, IOPFUN, IOP_TOT, IOP0_TOT, BASE_PATH and External_current_path
-        # are given by conductor.xcoord, conductor.dict_input["IOPFUN"], conductor.IOP_TOT, conductor.dict_input["IOP0_TOT"],
+        # are given by conductor.xcoord, conductor.inputs["IOPFUN"], conductor.IOP_TOT, conductor.inputs["IOP0_TOT"],
         # conductor.BASE_PATH and conductor.file_input["EXTERNAL_CURRENT"].
         # § IALPHAB and alphaB are component attributes: self.IALPHAB, self.dict_node_pt["alpha_B"].
         # N.B. alphaB is a Strands attribute so its value can be assigned
@@ -138,11 +138,11 @@ class Strands(SolidComponents):
                     self.dict_node_pt["alpha_B"] = (
                         self.dict_node_pt["alpha_B"] * conductor.IOP_TOT
                     )
-                if conductor.dict_input["IOPFUN"] < 0:
+                if conductor.inputs["IOPFUN"] < 0:
                     self.dict_node_pt["alpha_B"] = (
                         self.dict_node_pt["alpha_B"]
                         * conductor.IOP_TOT
-                        / conductor.dict_input["IOP0_TOT"]
+                        / conductor.inputs["IOP0_TOT"]
                     )
             elif self.dict_operation["IALPHAB"] == 0:
                 self.dict_node_pt["alpha_B"] = np.zeros(
@@ -186,44 +186,44 @@ class Strands(SolidComponents):
 
     def eval_critical_properties(self, dict_dummy):
 
-        if self.dict_input["ISUPERCONDUCTOR"] == "NbTi":
+        if self.inputs["ISUPERCONDUCTOR"] == "NbTi":
             dict_dummy["T_critical"] = critical_temperature_nbti(
-                dict_dummy["B_field"], self.dict_input["Bc20m"], self.dict_input["Tc0m"]
+                dict_dummy["B_field"], self.inputs["Bc20m"], self.inputs["Tc0m"]
             )
             dict_dummy["J_critical"] = critical_current_density_nbti(
                 dict_dummy["temperature"],
                 dict_dummy["B_field"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-                self.dict_input["Tc0m"],
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
+                self.inputs["Tc0m"],
             )
-        elif self.dict_input["ISUPERCONDUCTOR"] == "Nb3Sn":
+        elif self.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
             dict_dummy["T_critical"] = critical_temperature_nb3sn(
                 dict_dummy["B_field"],
                 dict_dummy["Epsilon"],
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
+                self.inputs["Tc0m"],
+                self.inputs["Bc20m"],
             )
             dict_dummy["J_critical"] = critical_current_density_nb3sn(
                 dict_dummy["temperature"],
                 dict_dummy["B_field"],
                 dict_dummy["Epsilon"],
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
+                self.inputs["Tc0m"],
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
             )
-        elif self.dict_input["ISUPERCONDUCTOR"] == "HTS":
-            dict_dummy["T_critical"] = self.dict_input["Tc0m"] * np.ones(
+        elif self.inputs["ISUPERCONDUCTOR"] == "HTS":
+            dict_dummy["T_critical"] = self.inputs["Tc0m"] * np.ones(
                 dict_dummy["temperature"].shape
             )
             dict_dummy["J_critical"] = critical_current_density_re123(
                 dict_dummy["temperature"],
                 dict_dummy["B_field"],
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
+                self.inputs["Tc0m"],
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
             )
-        elif self.dict_input["ISUPERCONDUCTOR"] == "scaling.dat":
+        elif self.inputs["ISUPERCONDUCTOR"] == "scaling.dat":
             # Get user defined scaling invoking method User_scaling_margin \
             # (cdp, 10/2020)
             self.user_scaling_margin()
@@ -252,59 +252,59 @@ class Strands(SolidComponents):
 
         jop = (
             np.abs(self.dict_node_pt["IOP"][0])
-            / (self.ASC / self.dict_input["COSTETA"])
+            / (self.ASC / self.inputs["COSTETA"])
             * np.ones(dict_dummy["B_field"].shape)
         )
 
         bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
-        if self.dict_input["ISUPERCONDUCTOR"] == "NbTi":
+        if self.inputs["ISUPERCONDUCTOR"] == "NbTi":
             dict_dummy["T_cur_sharing"] = current_sharing_temperature_nbti(
                 dict_dummy["B_field"],
                 jop,
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-                self.dict_input["Tc0m"],
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
+                self.inputs["Tc0m"],
             )
             dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nbti(
                 bmax,
                 jop,
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-                self.dict_input["Tc0m"],
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
+                self.inputs["Tc0m"],
             )
-        elif self.dict_input["ISUPERCONDUCTOR"] == "Nb3Sn":
+        elif self.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
             dict_dummy["T_cur_sharing"] = current_sharing_temperature_nb3sn(
                 dict_dummy["B_field"],
                 dict_dummy["Epsilon"],
                 jop,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
+                self.inputs["Tc0m"],
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
             )
             dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nb3sn(
                 bmax,
                 dict_dummy["Epsilon"],
                 jop,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
+                self.inputs["Tc0m"],
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
             )
-        elif self.dict_input["ISUPERCONDUCTOR"] == "HTS":
+        elif self.inputs["ISUPERCONDUCTOR"] == "HTS":
             dict_dummy["T_cur_sharing"] = current_sharing_temperature_re123(
                 dict_dummy["B_field"],
                 jop,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
+                self.inputs["Tc0m"],
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
             )
             dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_re123(
                 bmax,
                 jop,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
+                self.inputs["Tc0m"],
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
             )
-        elif self.dict_input["ISUPERCONDUCTOR"] == "scaling.dat":
+        elif self.inputs["ISUPERCONDUCTOR"] == "scaling.dat":
 
             warnings.warn("Still to be understood what to do here!!")
 

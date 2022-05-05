@@ -831,7 +831,7 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
         # Save data for the Space convergence analysis (cdp, 12/2020)
         # compute spatial discretization pitch (cdp, 12/2020)
         discr = (
-            cond.dict_input["XLENGTH"]
+            cond.inputs["XLENGTH"]
             / cond.dict_discretization["Grid_input"]["NELEMS"]
         )
         folder_path = os.path.join(f_path, cond.ID)

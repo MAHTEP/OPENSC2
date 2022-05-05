@@ -69,7 +69,7 @@ def solid_components_temperature_initialization(cond):
                 # linear spatial temperature distribution (cdp, 12/2020)
                 s_comp.dict_node_pt["temperature"] = np.interp(
                     cond.dict_discretization["xcoord"],
-                    [0.0, cond.dict_input["XLENGTH"]],
+                    [0.0, cond.inputs["XLENGTH"]],
                     [s_comp.dict_operation["TEMINL"], s_comp.dict_operation["TEMOUT"]],
                 )
 

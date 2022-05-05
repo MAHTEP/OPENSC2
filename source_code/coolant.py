@@ -13,7 +13,7 @@ class Coolant(FluidComponentsInput):
     def __init__(self, sheet, sheetOpar, dict_file_path, identifier):
         super().__init__(sheet, sheetOpar, dict_file_path, identifier)
         # Kind of the coolant; make it lowercase to be userd as alias in PropsSI.
-        self.type = self.dict_input["FLUID_TYPE"].lower()
+        self.type = self.inputs["FLUID_TYPE"].lower()
         # Identifier of the coolant.
         self.identifier = f"{self.type}_{identifier.split('_')[1]}"
         # Dictionary dict_node_pt declaration.
@@ -42,8 +42,8 @@ class Coolant(FluidComponentsInput):
         ]
         # Empty dictionary of list to save variable time evolutions at inlet and outlet spatial coordinates.
         self.time_evol_io = {key: list() for key in headers_inl_out}
-        # Remove key FLUID_TYPE from self.dict_input (it becomes attribute of object coolant); removes also for object channel.
-        del self.dict_input["FLUID_TYPE"]
+        # Remove key FLUID_TYPE from self.inputs (it becomes attribute of object coolant); removes also for object channel.
+        del self.inputs["FLUID_TYPE"]
 
     # End method __init__.
 
@@ -73,13 +73,13 @@ class Coolant(FluidComponentsInput):
         Args:
             mass_flow_rate ([type]): [description]
             din_viscosity ([type]): [description]
-            dict_input ([type]): [description]
+            inputs ([type]): [description]
         """
         # Evaluate Reynold number for module Gen_Flow.py purpose for each fluid component
         return (
             mass_flow_rate
-            * self.dict_input["HYDIAMETER"]
-            / (din_viscosity * self.dict_input["CROSSECTION"])
+            * self.inputs["HYDIAMETER"]
+            / (din_viscosity * self.inputs["CROSSECTION"])
         )
 
     # end method eval_reynolds_from_mass_flow_rate
@@ -91,21 +91,21 @@ class Coolant(FluidComponentsInput):
             # Flow direction from x = 0 to x = L.
             self.dict_node_pt["pressure"] = np.interp(
                 conductor.dict_discretization["xcoord"],
-                [0.0, conductor.dict_input["XLENGTH"]],
+                [0.0, conductor.inputs["XLENGTH"]],
                 [self.dict_operation["PREINL"], self.dict_operation["PREOUT"]],
             )
         else:
             # Flow direction from x = L to x = 0.
             self.dict_node_pt["pressure"] = np.interp(
                 conductor.dict_discretization["xcoord"],
-                [0.0, conductor.dict_input["XLENGTH"]],
+                [0.0, conductor.inputs["XLENGTH"]],
                 [self.dict_operation["PREOUT"], self.dict_operation["PREINL"]],
             )
         # End if self.dict_operation["MDTIN"] >= 0.
         # Compute temperature from inlet and outlet valuesby linear interpolation.
         self.dict_node_pt["temperature"] = np.interp(
             conductor.dict_discretization["xcoord"],
-            [0.0, conductor.dict_input["XLENGTH"]],
+            [0.0, conductor.inputs["XLENGTH"]],
             [self.dict_operation["TEMINL"], self.dict_operation["TEMOUT"]],
         )
         # Compute density according to the mode (needed to compute the velocity from mass flow rate)
@@ -119,7 +119,7 @@ class Coolant(FluidComponentsInput):
         )
         # Compute velocity form mass flow rate, the sing is determined from mass flow rate.
         self.dict_node_pt["velocity"] = self.dict_operation["MDTIN"] / (
-            np.maximum(self.dict_input["CROSSECTION"], 1e-7)
+            np.maximum(self.inputs["CROSSECTION"], 1e-7)
             * self.dict_node_pt["total_density"]
         )
 
@@ -159,7 +159,7 @@ class Coolant(FluidComponentsInput):
     def eval_dimensionless_numbers(self, dict_dummy):
         # Compute Reynolds dimensionless number.
         dict_dummy["Reynolds"] = np.abs(
-            self.dict_input["HYDIAMETER"]
+            self.inputs["HYDIAMETER"]
             * dict_dummy["velocity"]
             * dict_dummy["total_density"]
             / dict_dummy["total_dynamic_viscosity"]
@@ -254,7 +254,7 @@ class Coolant(FluidComponentsInput):
         # end if conductor.num_time_step > 0
         # Compute mass flow rate spatial distribution
         dict_dummy["mass_flow_rate"] = (
-            self.dict_input["CROSSECTION"]
+            self.inputs["CROSSECTION"]
             * dict_dummy["velocity"]
             * dict_dummy["total_density"]
         )
@@ -292,7 +292,7 @@ class Coolant(FluidComponentsInput):
         Returns:
             [type]: [description]
         """
-        leff = XLENGTH / self.dict_input["COSTETA"]
+        leff = XLENGTH / self.inputs["COSTETA"]
         err = 1.0
         # Initialize total friction factor with the guess value (gen_flow sub dictionary)
         channel.dict_friction_factor[nodal]["total"] = friction_guess
@@ -304,10 +304,10 @@ class Coolant(FluidComponentsInput):
             ii = ii + 1
             old_velocity = velocity
             velocity = np.sqrt(
-                (self.dict_input["HYDIAMETER"] * PDROP)
+                (self.inputs["HYDIAMETER"] * PDROP)
                 / (2.0 * channel.dict_friction_factor[nodal]["total"] * RHOREF * leff)
             )
-            reynolds = (RHOREF * velocity * self.dict_input["HYDIAMETER"]) / VISREF
+            reynolds = (RHOREF * velocity * self.inputs["HYDIAMETER"]) / VISREF
             channel.eval_friction_factor(reynolds, nodal=nodal)
             err = np.fabs(velocity - old_velocity) / np.fabs(velocity)
         # End while ii.
@@ -334,6 +334,6 @@ class Coolant(FluidComponentsInput):
         Returns:
             [type]: [description]
         """
-        return FLDIR * self.dict_input["CROSSECTION"] * RHOREF * VELCT
+        return FLDIR * self.inputs["CROSSECTION"] * RHOREF * VELCT
 
     # End method compute_mass_flow_with_direction

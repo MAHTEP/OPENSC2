@@ -634,7 +634,7 @@ class Simulations:
         # Update dictionary self.dict_path
         self.dict_path["Sub_dir"] = os.path.join(
             self.dict_path["Main_dir"],
-            dict_int_method[self.list_of_Conductors[0].dict_input["METHOD"]],
+            dict_int_method[self.list_of_Conductors[0].inputs["METHOD"]],
         )
         list_folder = ["output", "figures"]
         # Create paths and folders with method _space_convergence_paths
@@ -755,15 +755,15 @@ class Simulations:
     # other features of the simulations together with the method, that is \
     # the one considered below to shorten the path (cpd, 10/2020)
     # block = list()
-    # block.append("XLENGTH_" + str(cond.dict_input["XLENGTH"]))
-    # if cond.self.dict_input["METHOD"] == "BE":
+    # block.append("XLENGTH_" + str(cond.inputs["XLENGTH"]))
+    # if cond.self.inputs["METHOD"] == "BE":
     # 	block.append("BE")
-    # elif cond.self.dict_input["METHOD"] == "CN]":
+    # elif cond.self.inputs["METHOD"] == "CN]":
     # 	block.append("CN")
-    # elif cond.self.dict_input["METHOD"] == "AM4":
+    # elif cond.self.inputs["METHOD"] == "AM4":
     # 	block.append("AM4")
-    # end if cond.dict_input["METHOD"] (cdp, 10/2020)
-    # block.append("IOP0_TOT_" + str(cond.dict_input["IOP0_TOT"]))
+    # end if cond.inputs["METHOD"] (cdp, 10/2020)
+    # block.append("IOP0_TOT_" + str(cond.inputs["IOP0_TOT"]))
     # INTIAL_val = str()
     # for ii in range(cond.dict_obj_inventory["FluidComponents"]["Number"]):
     # 	fluid_comp = cond.dict_obj_inventory["FluidComponents"]["Objects"][ii]

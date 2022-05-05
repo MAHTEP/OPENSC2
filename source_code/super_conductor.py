@@ -32,7 +32,7 @@ class SuperConductor(Strands):
         self.ID = sheet.cell(row=3, column=4 + icomp).value
 
         # dictionary declaration (cdp, 11/2020)
-        self.dict_input = dict()
+        self.inputs = dict()
         self.dict_operation = dict()
         self.dict_node_pt = dict()
         self.dict_Gauss_pt = dict()
@@ -40,8 +40,8 @@ class SuperConductor(Strands):
         # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
         self.time_evol = dict(temperature=dict(), B_field=dict(), T_cur_sharing=dict())
         self.dict_scaling_input = dict()
-        # Dictionary initialization: dict_input.
-        self.dict_input = pd.read_excel(
+        # Dictionary initialization: inputs.
+        self.inputs = pd.read_excel(
             dict_file_path["input"],
             sheet_name=sheet.title,
             skiprows=2,
@@ -58,7 +58,7 @@ class SuperConductor(Strands):
             index_col=0,
             usecols=["Variable name", self.ID],
         )[self.ID].to_dict()
-        self.ASC = self.dict_input["CROSSECTION"]
+        self.ASC = self.inputs["CROSSECTION"]
         if self.dict_operation["IBIFUN"] != -1:
             # Remove key B_field_units.
             del self.dict_operation["B_field_units"]

@@ -18,7 +18,7 @@ import os
 
 
 class FluidComponentsInput:
-    """Interface class used to get the input data for fluid components objects. Attributes dict_input and dict_operation are inherited from this class by Coolant and Channel class. Being an interface, this class has only the constructror (__init__) method."""
+    """Interface class used to get the input data for fluid components objects. Attributes inputs and dict_operation are inherited from this class by Coolant and Channel class. Being an interface, this class has only the constructror (__init__) method."""
 
     def __init__(self, sheet, sheetOpar, dict_file_path, identifier):
         """[summary]
@@ -30,10 +30,10 @@ class FluidComponentsInput:
             identifier ([type]): [description]
         """
         # Dictionary declaration (cdp, 11/2020)
-        self.dict_input = dict()
+        self.inputs = dict()
         self.dict_operation = dict()
-        # Dictionary initialization: dict_input.
-        self.dict_input = pd.read_excel(
+        # Dictionary initialization: inputs.
+        self.inputs = pd.read_excel(
             dict_file_path["input"],
             sheet_name=sheet.title,
             skiprows=2,
@@ -51,10 +51,10 @@ class FluidComponentsInput:
             usecols=["Variable name", identifier],
         )[identifier].to_dict()
         # Tuning input and operational parameters according to input flags value
-        if self.dict_input["ISRECTANGULAR"] == False:
-            # Remove keys SIDE1 and SIDE2 from dict_input
-            del self.dict_input["SIDE1"]
-            del self.dict_input["SIDE2"]
+        if self.inputs["ISRECTANGULAR"] == False:
+            # Remove keys SIDE1 and SIDE2 from inputs
+            del self.inputs["SIDE1"]
+            del self.inputs["SIDE2"]
 
     # End  method __init__.
 

@@ -149,7 +149,7 @@ def step(conductor, environment, qsource, num_step):
     SORMAT = np.zeros((conductor.dict_band["Full"], conductor.dict_N_equation["Total"]))
     DIFMAT = np.zeros((conductor.dict_band["Full"], conductor.dict_N_equation["Total"]))
     SYSMAT = np.zeros((conductor.dict_band["Full"], conductor.dict_N_equation["Total"]))
-    if conductor.dict_input["METHOD"] == "BE" or conductor.dict_input["METHOD"] == "CN":
+    if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
         # Backward Euler or Crank-Nicolson (cdp, 10/2020)
         if conductor.cond_num_step > 1:
             # Copy the load vector at the previous time step in the second column to \
@@ -172,7 +172,7 @@ def step(conductor, environment, qsource, num_step):
     # 	qsource = dict_qsource["single_conductor"]
 
     UPWEQT[0 : conductor.dict_N_equation["FluidComponents"]] = 1.0
-    # if conductor.dict_input["METHOD"] == "CN":
+    # if conductor.inputs["METHOD"] == "CN":
     # 		UPWEQT[2*conductor.dict_obj_inventory["FluidComponents"]\
     # 			["Number"]:conductor.dict_N_equation["FluidComponents"]] = 0.0
     # else it is 1.0 by initialization; as far as SolidComponents are \
@@ -502,7 +502,7 @@ def step(conductor, environment, qsource, num_step):
                 2.0
                 * fluid_comp_j.channel.dict_friction_factor[False]["total"][ii]
                 * np.abs(fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii])
-                / fluid_comp_j.channel.dict_input["HYDIAMETER"]
+                / fluid_comp_j.channel.inputs["HYDIAMETER"]
             )
             # pressure equation: elements below main diagonal \
             # construction (cdp, 07/2020)
@@ -561,7 +561,7 @@ def step(conductor, environment, qsource, num_step):
                             * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
                             - conductor.dict_Gauss_pt["K2"][interface_name][ii]
                         ) / (
-                            fluid_comp_j.channel.dict_input["CROSSECTION"]
+                            fluid_comp_j.channel.inputs["CROSSECTION"]
                             * fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
                         )
                         # (j,k + num_fluid_components:2*num_fluid_components) [Pres_k] \
@@ -575,7 +575,7 @@ def step(conductor, environment, qsource, num_step):
                             * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
                             - conductor.dict_Gauss_pt["K2"][interface_name][ii]
                         ) / (
-                            fluid_comp_j.channel.dict_input["CROSSECTION"]
+                            fluid_comp_j.channel.inputs["CROSSECTION"]
                             * fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
                         )
                         # pressure equation: main diagonal elements construction \
@@ -594,7 +594,7 @@ def step(conductor, environment, qsource, num_step):
                             + conductor.dict_obj_inventory["FluidComponents"]["Number"],
                         ] + (
                             fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                            / fluid_comp_j.channel.dict_input["CROSSECTION"]
+                            / fluid_comp_j.channel.inputs["CROSSECTION"]
                         ) * (
                             conductor.dict_Gauss_pt["K3"][interface_name][ii]
                             - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
@@ -624,7 +624,7 @@ def step(conductor, environment, qsource, num_step):
                             + conductor.dict_obj_inventory["FluidComponents"]["Number"],
                         ] = -(
                             fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                            / fluid_comp_j.channel.dict_input["CROSSECTION"]
+                            / fluid_comp_j.channel.inputs["CROSSECTION"]
                         ) * (
                             conductor.dict_Gauss_pt["K3"][interface_name][ii]
                             - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
@@ -658,7 +658,7 @@ def step(conductor, environment, qsource, num_step):
                             * conductor.dict_obj_inventory["FluidComponents"]["Number"],
                         ] + (
                             fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                            / fluid_comp_j.channel.dict_input["CROSSECTION"]
+                            / fluid_comp_j.channel.inputs["CROSSECTION"]
                         ) * (
                             conductor.dict_interf_peri["ch_ch"]["Open"][interface_name]
                             * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
@@ -681,7 +681,7 @@ def step(conductor, environment, qsource, num_step):
                             * conductor.dict_obj_inventory["FluidComponents"]["Number"],
                         ] = -(
                             fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                            / fluid_comp_j.channel.dict_input["CROSSECTION"]
+                            / fluid_comp_j.channel.inputs["CROSSECTION"]
                         ) * (
                             conductor.dict_interf_peri["ch_ch"]["Open"][interface_name]
                             * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
@@ -715,7 +715,7 @@ def step(conductor, environment, qsource, num_step):
                             * fluid_comp_j.coolant.dict_Gauss_pt[
                                 "total_isochoric_specific_heat"
                             ][ii]
-                            * fluid_comp_j.channel.dict_input["CROSSECTION"]
+                            * fluid_comp_j.channel.inputs["CROSSECTION"]
                         ) * (
                             conductor.dict_Gauss_pt["K3"][interface_name][ii]
                             - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
@@ -749,7 +749,7 @@ def step(conductor, environment, qsource, num_step):
                                 * fluid_comp_j.coolant.dict_Gauss_pt[
                                     "total_isochoric_specific_heat"
                                 ][ii]
-                                * fluid_comp_j.channel.dict_input["CROSSECTION"]
+                                * fluid_comp_j.channel.inputs["CROSSECTION"]
                             )
                             * (
                                 conductor.dict_Gauss_pt["K3"][interface_name][ii]
@@ -798,7 +798,7 @@ def step(conductor, environment, qsource, num_step):
                             * fluid_comp_j.coolant.dict_Gauss_pt[
                                 "total_isochoric_specific_heat"
                             ][ii]
-                            * fluid_comp_j.channel.dict_input["CROSSECTION"]
+                            * fluid_comp_j.channel.inputs["CROSSECTION"]
                         ) * (
                             conductor.dict_interf_peri["ch_ch"]["Open"][interface_name]
                             * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
@@ -829,7 +829,7 @@ def step(conductor, environment, qsource, num_step):
                                 * fluid_comp_j.coolant.dict_Gauss_pt[
                                     "total_isochoric_specific_heat"
                                 ][ii]
-                                * fluid_comp_j.channel.dict_input["CROSSECTION"]
+                                * fluid_comp_j.channel.inputs["CROSSECTION"]
                             )
                             * (
                                 conductor.dict_interf_peri["ch_ch"]["Open"][
@@ -875,7 +875,7 @@ def step(conductor, environment, qsource, num_step):
                         + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
                     ] + (
                         fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                        / fluid_comp_j.channel.dict_input["CROSSECTION"]
+                        / fluid_comp_j.channel.inputs["CROSSECTION"]
                     ) * (
                         conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
                         * conductor.dict_Gauss_pt["HTC"]["ch_sol"][chan_sol_topology][
@@ -888,7 +888,7 @@ def step(conductor, environment, qsource, num_step):
                         ll + conductor.dict_N_equation["FluidComponents"],
                     ] = -(
                         fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                        / fluid_comp_j.channel.dict_input["CROSSECTION"]
+                        / fluid_comp_j.channel.inputs["CROSSECTION"]
                     ) * (
                         conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
                         * conductor.dict_Gauss_pt["HTC"]["ch_sol"][chan_sol_topology][
@@ -914,7 +914,7 @@ def step(conductor, environment, qsource, num_step):
                         * fluid_comp_j.coolant.dict_Gauss_pt[
                             "total_isochoric_specific_heat"
                         ][ii]
-                        * fluid_comp_j.channel.dict_input["CROSSECTION"]
+                        * fluid_comp_j.channel.inputs["CROSSECTION"]
                     ) * (
                         conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
                         * conductor.dict_Gauss_pt["HTC"]["ch_sol"][chan_sol_topology][
@@ -935,7 +935,7 @@ def step(conductor, environment, qsource, num_step):
                             * fluid_comp_j.coolant.dict_Gauss_pt[
                                 "total_isochoric_specific_heat"
                             ][ii]
-                            * fluid_comp_j.channel.dict_input["CROSSECTION"]
+                            * fluid_comp_j.channel.inputs["CROSSECTION"]
                         )
                         * (
                             conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
@@ -964,10 +964,10 @@ def step(conductor, environment, qsource, num_step):
             # A_{s_comp}*rho_{s_comp,homo}*cp_{s_comp,homo}/cos(theta); \
             # homo = homogenized (cdp, 07/2020)
             MMAT[neq, neq] = (
-                s_comp_l.dict_input["CROSSECTION"]
+                s_comp_l.inputs["CROSSECTION"]
                 * s_comp_l.dict_Gauss_pt["total_density"]
                 * s_comp_l.dict_Gauss_pt["total_isobaric_specific_heat"][ii]
-                / s_comp_l.dict_input["COSTETA"]
+                / s_comp_l.inputs["COSTETA"]
             )
             # END M MATRIX: solid components equation (cdp, 07/2020)
 
@@ -978,11 +978,11 @@ def step(conductor, environment, qsource, num_step):
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
             # A_{s_comp}*k_{s_comp,homo}; homo = homogenized (cdp, 07/2020)
             KMAT[neq, neq] = (
-                s_comp_l.dict_input["CROSSECTION"]
+                s_comp_l.inputs["CROSSECTION"]
                 * s_comp_l.dict_Gauss_pt["total_thermal_conductivity"][ii]
-                / s_comp_l.dict_input["COSTETA"]
+                / s_comp_l.inputs["COSTETA"]
             )
-            # KMAT[neq, neq] = s_comp_l.dict_input["CROSSECTION"]*\
+            # KMAT[neq, neq] = s_comp_l.inputs["CROSSECTION"]*\
             # 								 s_comp_l.dict_Gauss_pt["total_thermal_conductivity"][ii]
             # END K MATRIX: solid components equation (cdp, 07/2020)
 
@@ -1073,17 +1073,17 @@ def step(conductor, environment, qsource, num_step):
                             environment.KIND, s_comp_l.ID
                         ]
                         == 2
-                        and conductor.dict_input["Is_rectangular"]
+                        and conductor.inputs["Is_rectangular"]
                     ):
                         # Rectangular duct.
                         SMAT[neq, neq] = (
                             SMAT[neq, neq]
                             + 2
-                            * conductor.dict_input["Height"]
+                            * conductor.inputs["Height"]
                             * conductor.dict_Gauss_pt["HTC"]["env_sol"][
                                 f"{environment.KIND}_{s_comp_l.ID}"
                             ]["conv"]["side"][ii]
-                            + conductor.dict_input["width"]
+                            + conductor.inputs["width"]
                             * (
                                 conductor.dict_Gauss_pt["HTC"]["env_sol"][
                                     f"{environment.KIND}_{s_comp_l.ID}"
@@ -1162,10 +1162,10 @@ def step(conductor, environment, qsource, num_step):
                                 environment.KIND, s_comp_l.ID
                             ]
                             == 2
-                            and conductor.dict_input["Is_rectangular"]
+                            and conductor.inputs["Is_rectangular"]
                         ):
                             # Rectangular duct.
-                            coef = 2 * conductor.dict_input[
+                            coef = 2 * conductor.inputs[
                                 "Height"
                             ] * conductor.dict_Gauss_pt["HTC"]["env_sol"][
                                 f"{environment.KIND}_{s_comp_l.ID}"
@@ -1175,7 +1175,7 @@ def step(conductor, environment, qsource, num_step):
                                 "side"
                             ][
                                 ii
-                            ] + conductor.dict_input[
+                            ] + conductor.inputs[
                                 "width"
                             ] * (
                                 conductor.dict_Gauss_pt["HTC"]["env_sol"][
@@ -1194,23 +1194,23 @@ def step(conductor, environment, qsource, num_step):
                                     f"{environment.KIND}_{s_comp_l.ID}"
                                 ]["conv"][ii]
                             )
-                        # End if conductor.dict_input["Is_rectangular"]
+                        # End if conductor.inputs["Is_rectangular"]
 
                         SVEC[1][neq, 0] = (
                             SVEC[1][neq, 0]
-                            + coef * environment.dict_input["Temperature"]
+                            + coef * environment.inputs["Temperature"]
                         )  # W/m
                         SVEC[1][neq, 1] = (
                             SVEC[1][neq, 1]
-                            + coef * environment.dict_input["Temperature"]
+                            + coef * environment.inputs["Temperature"]
                         )  # W/m
                         SVEC[0][neq, 0] = (
                             SVEC[0][neq, 0]
-                            + coef * environment.dict_input["Temperature"]
+                            + coef * environment.inputs["Temperature"]
                         )  # W/m
                         SVEC[0][neq, 1] = (
                             SVEC[0][neq, 1]
-                            + coef * environment.dict_input["Temperature"]
+                            + coef * environment.inputs["Temperature"]
                         )  # W/m
                     # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.ID] == 1
                 else:
@@ -1235,10 +1235,10 @@ def step(conductor, environment, qsource, num_step):
                                 environment.KIND, s_comp_l.ID
                             ]
                             == 2
-                            and conductor.dict_input["Is_rectangular"]
+                            and conductor.inputs["Is_rectangular"]
                         ):
                             # Rectangular duct.
-                            coef = 2 * conductor.dict_input[
+                            coef = 2 * conductor.inputs[
                                 "Height"
                             ] * conductor.dict_Gauss_pt["HTC"]["env_sol"][
                                 f"{environment.KIND}_{s_comp_l.ID}"
@@ -1248,7 +1248,7 @@ def step(conductor, environment, qsource, num_step):
                                 "side"
                             ][
                                 ii
-                            ] + conductor.dict_input[
+                            ] + conductor.inputs[
                                 "width"
                             ] * (
                                 conductor.dict_Gauss_pt["HTC"]["env_sol"][
@@ -1267,13 +1267,13 @@ def step(conductor, environment, qsource, num_step):
                                     f"{environment.KIND}_{s_comp_l.ID}"
                                 ]["conv"][ii]
                             )
-                        # End if conductor.dict_input["Is_rectangular"]
+                        # End if conductor.inputs["Is_rectangular"]
 
                         SVEC[neq, 0] = (
-                            SVEC[neq, 0] + coef * environment.dict_input["Temperature"]
+                            SVEC[neq, 0] + coef * environment.inputs["Temperature"]
                         )  # W/m
                         SVEC[neq, 1] = (
-                            SVEC[neq, 1] + coef * environment.dict_input["Temperature"]
+                            SVEC[neq, 1] + coef * environment.inputs["Temperature"]
                         )  # W/m
                     # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.ID] == 1
             # cl end august 24 2019
@@ -1493,8 +1493,8 @@ def step(conductor, environment, qsource, num_step):
                 + ELSMAT[iii, :]
             )
         if (
-            conductor.dict_input["METHOD"] == "BE"
-            or conductor.dict_input["METHOD"] == "CN"
+            conductor.inputs["METHOD"] == "BE"
+            or conductor.inputs["METHOD"] == "CN"
         ):
             # Backward Euler or Crank-Nicolson (cdp, 10, 2020)
             if conductor.cond_num_step == 1:
@@ -1528,7 +1528,7 @@ def step(conductor, environment, qsource, num_step):
                         jump : jump + conductor.dict_band["Half"], 0
                     ]
                 )
-        elif conductor.dict_input["METHOD"] == "AM4":
+        elif conductor.inputs["METHOD"] == "AM4":
             # Adams-Moulton order 4 (cdp, 10/2020)
             if conductor.cond_num_step == 1:
                 # Construct key SYSLOD of dictionary dict_Step (cdp, 10/2020)
@@ -1566,7 +1566,7 @@ def step(conductor, environment, qsource, num_step):
                     ]
                 )
             # end if conductor.cond_num_step (cdp, 10/2020)
-        # end conductor.dict_input["METHOD"] (cdp, 10/2020)
+        # end conductor.inputs["METHOD"] (cdp, 10/2020)
 
     # end for ii (cdp, 07/2020)
     # ** END MATRICES CONSTRUCTION (cdp, 07/2020) **
@@ -1603,12 +1603,12 @@ def step(conductor, environment, qsource, num_step):
     #     np.savetxt(writer, conductor.dict_Step["SYSLOD"], delimiter = "\t")
 
     # ** COMPUTE SYSTEM MATRIX **
-    if conductor.dict_input["METHOD"] == "BE" or conductor.dict_input["METHOD"] == "CN":
+    if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
         # Backward Euler or Crank-Nicolson (cdp, 10, 2020)
         SYSMAT = MASMAT / conductor.time_step + conductor.theta_method * (
             FLXMAT + DIFMAT + SORMAT
         )
-    elif conductor.dict_input["METHOD"] == "AM4":
+    elif conductor.inputs["METHOD"] == "AM4":
         # Adams-Moulton order 4 (cdp, 10, 2020)
         if conductor.cond_num_step == 1:
             # This is due to the dummy initial steady state (cdp, 10/2020)
@@ -1627,7 +1627,7 @@ def step(conductor, environment, qsource, num_step):
             MASMAT / conductor.time_step
             + 9 / 24 * conductor.dict_Step["AM4_AA"][:, :, 0]
         )
-    # end conductor.dict_input["METHOD"] (cdp, 10/2020)
+    # end conductor.inputs["METHOD"] (cdp, 10/2020)
 
     # 	# lines of code to save SYSMAT and SYSLOD in .dat files
     # 	SYSMAT_f_name = f"C:/Users/Daniele Placido/Desktop/Temporanei/per_tesi/\
@@ -1663,8 +1663,8 @@ def step(conductor, environment, qsource, num_step):
             )
         JJ = J - I + conductor.dict_band["Half"] - 1
         if (
-            conductor.dict_input["METHOD"] == "BE"
-            or conductor.dict_input["METHOD"] == "CN"
+            conductor.inputs["METHOD"] == "BE"
+            or conductor.inputs["METHOD"] == "CN"
         ):
             # Backward Euler or Crank-Nicolson (cdp, 10, 2020)
             # Matrix vector product contribution (cdp, 10, 2020)
@@ -1676,7 +1676,7 @@ def step(conductor, environment, qsource, num_step):
                 )
                 * conductor.dict_Step["SYSVAR"][J, 0]
             )
-        elif conductor.dict_input["METHOD"] == "AM4":
+        elif conductor.inputs["METHOD"] == "AM4":
             # Adams-Moulton order 4 (cdp, 10, 2020)
             # Matrices vectors product contribution (cdp, 10, 2020)
             Known[I] = np.sum(
@@ -1695,7 +1695,7 @@ def step(conductor, environment, qsource, num_step):
                 * conductor.dict_Step["SYSVAR"][J, 2]
             )
     # end for I (cdp, 07/2020)
-    if conductor.dict_input["METHOD"] == "BE" or conductor.dict_input["METHOD"] == "CN":
+    if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
         # Backward Euler or Crank-Nicolson (cdp, 10, 2020)
         # External sources (SYSLOD) contribution (cdp, 10, 2020)
         Known = (
@@ -1703,7 +1703,7 @@ def step(conductor, environment, qsource, num_step):
             + conductor.theta_method * conductor.dict_Step["SYSLOD"][:, 0]
             + (1.0 - conductor.theta_method) * conductor.dict_Step["SYSLOD"][:, 1]
         )
-    elif conductor.dict_input["METHOD"] == "AM4":
+    elif conductor.inputs["METHOD"] == "AM4":
         # Adams-Moulton order 4 (cdp, 10, 2020)
         # External sources (SYSLOD) contribution (cdp, 10, 2020)
         Known = (
@@ -1916,14 +1916,14 @@ def step(conductor, environment, qsource, num_step):
                 Known[Iiv_inl[fluid_comp_j.channel.flow_dir[0]]] = (
                     MDTIN
                     / fluid_comp_j.coolant.dict_node_pt["total_density"][0]
-                    / fluid_comp_j.channel.dict_input["CROSSECTION"]
+                    / fluid_comp_j.channel.inputs["CROSSECTION"]
                 )
             elif fluid_comp_j.channel.flow_dir[0] == "backward":
                 # Flow direction from x = L to x = 0.
                 Known[Iiv_inl[fluid_comp_j.channel.flow_dir[0]]] = (
                     MDTIN
                     / fluid_comp_j.coolant.dict_node_pt["total_density"][-1]
-                    / fluid_comp_j.channel.dict_input["CROSSECTION"]
+                    / fluid_comp_j.channel.inputs["CROSSECTION"]
                 )
             ## p_inl
             # SYSMAT[0:conductor.dict_band["Full"], Iip_inl] = 0.0
@@ -2117,14 +2117,14 @@ def step(conductor, environment, qsource, num_step):
                 Known[Iiv_inl[fluid_comp_j.channel.flow_dir[0]]] = (
                     MDTIN
                     / fluid_comp_j.coolant.dict_node_pt["total_density"][0]
-                    / fluid_comp_j.channel.dict_input["CROSSECTION"]
+                    / fluid_comp_j.channel.inputs["CROSSECTION"]
                 )
             elif fluid_comp_j.channel.flow_dir[0] == "backward":
                 # Flow direction from x = L to x = 0.
                 Known[Iiv_inl[fluid_comp_j.channel.flow_dir[0]]] = (
                     MDTIN
                     / fluid_comp_j.coolant.dict_node_pt["total_density"][-1]
-                    / fluid_comp_j.channel.dict_input["CROSSECTION"]
+                    / fluid_comp_j.channel.inputs["CROSSECTION"]
                 )
 
             # p_out

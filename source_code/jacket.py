@@ -31,7 +31,7 @@ class Jacket(SolidComponents):
         self.ID = sheet.cell(row=3, column=4 + icomp).value
 
         # dictionary declaration (cdp, 11/2020)
-        self.dict_input = dict()
+        self.inputs = dict()
         self.dict_operation = dict()
         self.dict_node_pt = dict()
         self.dict_Gauss_pt = dict()
@@ -40,8 +40,8 @@ class Jacket(SolidComponents):
         self.radiative_heat_inn = dict()
         # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
         self.time_evol = dict(temperature=dict())
-        # Dictionary initialization: dict_input.
-        self.dict_input = pd.read_excel(
+        # Dictionary initialization: inputs.
+        self.inputs = pd.read_excel(
             dict_file_path["input"],
             sheet_name=sheet.title,
             skiprows=2,
@@ -82,8 +82,8 @@ class Jacket(SolidComponents):
         """
         key = f"{environment.KIND}_{self.ID}"
         if (
-            conductor.dict_input["METHOD"] == "BE"
-            or conductor.dict_input["METHOD"] == "CN"
+            conductor.inputs["METHOD"] == "BE"
+            or conductor.inputs["METHOD"] == "CN"
         ):
             # Backward Euler or Crank-Nicolson.
             if conductor.cond_time[-1] == 0:
@@ -102,12 +102,12 @@ class Jacket(SolidComponents):
                     conductor.dict_interf_peri["env_sol"][key]
                     * conductor.dict_node_pt["HTC"]["env_sol"][key]["rad"]
                     * (
-                        environment.dict_input["Temperature"]
+                        environment.inputs["Temperature"]
                         - self.dict_node_pt["temperature"]
                     )
                 )
             # end if conductor.cond_time[-1].
-        elif conductor.dict_input["METHOD"] == "AM4":
+        elif conductor.inputs["METHOD"] == "AM4":
             # Adams-Moulton 4.
             if conductor.cond_time[-1] == 0:
                 # Initialization.
@@ -121,12 +121,12 @@ class Jacket(SolidComponents):
                     conductor.dict_interf_peri["env_sol"][key]
                     * conductor.dict_node_pt["HTC"]["env_sol"][key]["rad"]
                     * (
-                        environment.dict_input["Temperature"]
+                        environment.inputs["Temperature"]
                         - self.dict_node_pt["temperature"]
                     )
                 )
             # end if conductor.cond_time[-1].
-        # end if conductor.dict_input["METHOD"].
+        # end if conductor.inputs["METHOD"].
 
     # End method _radiative_source_therm.
 
@@ -143,8 +143,8 @@ class Jacket(SolidComponents):
             key = f"{jk_inner.ID}_{self.ID}"
         # End if self.ID.
         if (
-            conductor.dict_input["METHOD"] == "BE"
-            or conductor.dict_input["METHOD"] == "CN"
+            conductor.inputs["METHOD"] == "BE"
+            or conductor.inputs["METHOD"] == "CN"
         ):
             # Backward Euler or Crank-Nicolson.
             if conductor.cond_time[-1] == 0:
@@ -170,7 +170,7 @@ class Jacket(SolidComponents):
                     )
                 )
             # end if conductor.cond_time[-1].
-        elif conductor.dict_input["METHOD"] == "AM4":
+        elif conductor.inputs["METHOD"] == "AM4":
             # Adams-Moulton 4.
             if conductor.cond_time[-1] == 0:
                 # Initialization.
@@ -191,7 +191,7 @@ class Jacket(SolidComponents):
                     )
                 )
             # end if conductor.cond_time[-1].
-        # end if conductor.dict_input["METHOD"].
+        # end if conductor.inputs["METHOD"].
 
     # End method _radiative_source_therm.
 
