@@ -87,26 +87,26 @@ class Coolant(FluidComponentsInput):
     def _eval_nodal_pressure_temperature_velocity_initialization(self, conductor):
         # Pressure, temperaure and velocity form initial condition (numpy array since fx is a numpy array); if time is larger than zero, velocity, pressure and temperature came from problem solution after function STEP is invocked.
         # Compute pressure from inlet and outlet values by linear interpolation.
-        if self.dict_operation["MDTIN"] >= 0.0:
+        if self.operations["MDTIN"] >= 0.0:
             # Flow direction from x = 0 to x = L.
             self.dict_node_pt["pressure"] = np.interp(
                 conductor.dict_discretization["xcoord"],
                 [0.0, conductor.inputs["XLENGTH"]],
-                [self.dict_operation["PREINL"], self.dict_operation["PREOUT"]],
+                [self.operations["PREINL"], self.operations["PREOUT"]],
             )
         else:
             # Flow direction from x = L to x = 0.
             self.dict_node_pt["pressure"] = np.interp(
                 conductor.dict_discretization["xcoord"],
                 [0.0, conductor.inputs["XLENGTH"]],
-                [self.dict_operation["PREOUT"], self.dict_operation["PREINL"]],
+                [self.operations["PREOUT"], self.operations["PREINL"]],
             )
-        # End if self.dict_operation["MDTIN"] >= 0.
+        # End if self.operations["MDTIN"] >= 0.
         # Compute temperature from inlet and outlet valuesby linear interpolation.
         self.dict_node_pt["temperature"] = np.interp(
             conductor.dict_discretization["xcoord"],
             [0.0, conductor.inputs["XLENGTH"]],
-            [self.dict_operation["TEMINL"], self.dict_operation["TEMOUT"]],
+            [self.operations["TEMINL"], self.operations["TEMOUT"]],
         )
         # Compute density according to the mode (needed to compute the velocity from mass flow rate)
         self.dict_node_pt["total_density"] = PropsSI(
@@ -118,7 +118,7 @@ class Coolant(FluidComponentsInput):
             self.type,
         )
         # Compute velocity form mass flow rate, the sing is determined from mass flow rate.
-        self.dict_node_pt["velocity"] = self.dict_operation["MDTIN"] / (
+        self.dict_node_pt["velocity"] = self.operations["MDTIN"] / (
             np.maximum(self.inputs["CROSSECTION"], 1e-7)
             * self.dict_node_pt["total_density"]
         )

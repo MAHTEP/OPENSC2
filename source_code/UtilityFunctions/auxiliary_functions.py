@@ -395,7 +395,7 @@ def interpolation(conductor, comp, MM, tvec, f_path, sheet, *xvec, **options):
             )
             if options["Flag_name"] == "IQFUN":
                 # Interpolation to get external flux (cdp, 11/2020)
-                if comp.dict_operation["IQFUN"] == -1:
+                if comp.operations["IQFUN"] == -1:
                     # square wave in time and space (cdp, 11/2020)
                     if (
                         conductor.cond_time[-1] >= tvec[0]
@@ -413,7 +413,7 @@ def interpolation(conductor, comp, MM, tvec, f_path, sheet, *xvec, **options):
                             yy[lower_bound : upper_bound + 1] = MM[0, ii + 1]
                         # end if (cdp, 10/2020)
                     # end if conductor.cond_time[-1] (cdp, 11/2020)
-                # end if comp.dict_operation["IQFUN"]
+                # end if comp.operations["IQFUN"]
             else:
                 if (
                     conductor.cond_time[-1] >= tvec[0]

@@ -95,7 +95,7 @@ class SolidComponents:
         # Questa è una bozza, quando e se si dovranno considerare altri flag come \
         # IBFUN o IALPHAB, valutare se è il caso di sfruttare un metodo per \
         # evitare di scrivere lo stesso codice più volte (cdp, 11/2020)
-        if s_comp.dict_operation["IQFUN"] > 0:
+        if s_comp.operations["IQFUN"] > 0:
             # External heating parameters given in file operation.xlsx \
             # (cdp, 11/2020)
             # The heating will be on at some times (cdp, 01/2021)
@@ -104,18 +104,18 @@ class SolidComponents:
                 # Time adaptivity off and (cdp, 11/2020)
                 s_comp.dict_num_step["IQFUN"] = dict(
                     ON=int(
-                        s_comp.dict_operation["TQBEG"]
+                        s_comp.operations["TQBEG"]
                         / simulation.transient_input["STPMIN"]
                     ),
                     OFF=int(
-                        s_comp.dict_operation["TQEND"]
+                        s_comp.operations["TQEND"]
                         / simulation.transient_input["STPMIN"]
                     ),
                 )
             else:
                 # Time adaptivity on
                 print("Still to be decided what to do there (cdp, 11/2020)\n")
-        # End s_comp.dict_operation["IQFUN"].
+        # End s_comp.operations["IQFUN"].
 
     # end method __init__ (cdp, 11/2020)
 
@@ -729,7 +729,7 @@ class SolidComponents:
                 current_df, flagSpecfield = load_auxiliary_files(file_path, sheetname=self.ID)
                 # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                 self.current_interpolator, self.current_interp_flag = build_interpolator(
-                    current_df, self.dict_operation["IOP_INTERPOLATION"]
+                    current_df, self.operations["IOP_INTERPOLATION"]
                 )
 
             # call load_user_defined_quantity on the component.
@@ -750,12 +750,12 @@ class SolidComponents:
                 print("still to be decided what to do here\n")
         elif conductor.inputs["IOPFUN"] == 0:
             self.dict_node_pt["IOP"] = (
-                conductor.IOP_TOT * self.dict_operation["IOP0_FRACTION"]
+                conductor.IOP_TOT * self.operations["IOP0_FRACTION"]
             )
         elif conductor.inputs["IOPFUN"] == 1:
             if conductor.cond_time[-1] <= conductor.inputs["TAUDET"]:
                 self.dict_node_pt["IOP"] = (
-                    conductor.IOP_TOT * self.dict_operation["IOP0_FRACTION"]
+                    conductor.IOP_TOT * self.operations["IOP0_FRACTION"]
                 )
             elif conductor.cond_time[-1] > conductor.inputs["TAUDET"]:
                 conductor.IOP_TOT = conductor.inputs["IOP0_TOT"] * np.exp(
@@ -763,7 +763,7 @@ class SolidComponents:
                     / conductor.inputs["TAUDUM"]
                 )
                 self.dict_node_pt["IOP"] = (
-                    conductor.IOP_TOT * self.dict_operation["IOP0_FRACTION"]
+                    conductor.IOP_TOT * self.operations["IOP0_FRACTION"]
                 )
         # Conversion of float to float array if necessary, this avoid following \
         # error: TypeError: 'float' object is not subscriptable (cdp, 08/2020)
@@ -774,7 +774,7 @@ class SolidComponents:
     def get_magnetic_field(self, conductor, nodal=True):
         if nodal:
             # compute B_field in each node (cdp, 07/2020)
-            if self.dict_operation["IBIFUN"] < 0:  
+            if self.operations["IBIFUN"] < 0:  
                 # cza to enable other negative \
                 # (read from file) flags -> ibifun.eq.-3, see below (August 29, 2018)
 
@@ -787,7 +787,7 @@ class SolidComponents:
                     bfield_df,_ = load_auxiliary_files(file_path, sheetname=self.ID)
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                     self.bfield_interpolator, self.bfield_interp_flag = build_interpolator(
-                        bfield_df, self.dict_operation["B_INTERPOLATION"]
+                        bfield_df, self.operations["B_INTERPOLATION"]
                     )
 
                 # call load_user_defined_quantity on the component.
@@ -797,7 +797,7 @@ class SolidComponents:
                     conductor.cond_time[-1],
                     self.bfield_interp_flag,
                 )
-                if self.dict_operation["B_field_units"] == "T/A":
+                if self.operations["B_field_units"] == "T/A":
                     # BFIELD is per unit of current
                     self.dict_node_pt["B_field"] = (
                         self.dict_node_pt["B_field"] * conductor.IOP_TOT
@@ -809,20 +809,20 @@ class SolidComponents:
                         * conductor.IOP_TOT
                         / conductor.inputs["IOP0_TOT"]
                     )
-            elif self.dict_operation["IBIFUN"] == 0:
+            elif self.operations["IBIFUN"] == 0:
                 self.dict_node_pt["B_field"] = np.linspace(
-                    self.dict_operation["BISS"],
-                    self.dict_operation["BOSS"],
+                    self.operations["BISS"],
+                    self.operations["BOSS"],
                     conductor.dict_discretization["N_nod"],
                 )
-            elif self.dict_operation["IBIFUN"] == 1:
+            elif self.operations["IBIFUN"] == 1:
                 self.dict_node_pt["B_field"] = np.linspace(
-                    self.dict_operation["BISS"],
-                    self.dict_operation["BOSS"],
+                    self.operations["BISS"],
+                    self.operations["BOSS"],
                     conductor.dict_discretization["N_nod"],
                 ) + conductor.IOP_TOT / conductor.inputs["IOP0_TOT"] * np.linspace(
-                    self.dict_operation["BITR"],
-                    self.dict_operation["BOTR"],
+                    self.operations["BITR"],
+                    self.operations["BOTR"],
                     conductor.dict_discretization["N_nod"],
                 )
         elif nodal == False:
@@ -847,7 +847,7 @@ class SolidComponents:
 
         # START INITIALIZATION (cdp, 10/2020)
         if conductor.cond_num_step == 0:
-            if self.dict_operation["IQFUN"] == 0:
+            if self.operations["IQFUN"] == 0:
                 # Initialization is done always in the same way ragardless of the \
                 # solution method: a column vector to exploit the array smart notation \
                 # in Conductors class method Eval_Gauss_point. It is the only times at \
@@ -872,28 +872,28 @@ class SolidComponents:
                     self.dict_node_pt["EXTFLX"] = np.zeros(
                         (conductor.dict_discretization["N_nod"], 4)
                     )
-            # end if self.dict_operation["IQFUN"] (cdp, 11/2020)
+            # end if self.operations["IQFUN"] (cdp, 11/2020)
         # end if conductor.cond_num_step (cdp, 10/2020)
         # END INITIALIZATION (cdp, 10/2020)
         # criteria to decide how to evaluate the external heating (cdp, 10/2020)
-        if self.dict_operation["IQFUN"] > 0:
+        if self.operations["IQFUN"] > 0:
             # invoke method Q0_where to evaluate the external heating according to \
             # the function corresponding to the value of flag IQFUN. It is not \
             # necessary to distinguish according to "Method" options at this point \
             # (cdp, 10/2020)
             if (
-                conductor.cond_time[-1] > self.dict_operation["TQBEG"]
-                and conductor.cond_time[-1] <= self.dict_operation["TQEND"]
+                conductor.cond_time[-1] > self.operations["TQBEG"]
+                and conductor.cond_time[-1] <= self.operations["TQEND"]
             ):
                 self.heat0_where(conductor)
             elif (
-                conductor.cond_time[-1] > self.dict_operation["TQEND"]
+                conductor.cond_time[-1] > self.operations["TQEND"]
                 and self.flag_heating == "On"
             ):
                 self.dict_node_pt["EXTFLX"][:, 0] = 0.0
                 self.flag_heating = "Off"
             # end if (cdp, 10/2020)
-        elif self.dict_operation["IQFUN"] < 0:
+        elif self.operations["IQFUN"] < 0:
             if conductor.cond_time[-1] == 0:
                 # Build file path.
                 file_path = os.path.join(
@@ -903,7 +903,7 @@ class SolidComponents:
                 heat_df,_ = load_auxiliary_files(file_path, sheetname=self.ID)
                 # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                 self.heat_interpolator, self.heat_interp_flag = build_interpolator(
-                    heat_df, self.dict_operation["Q_INTERPOLATION"]
+                    heat_df, self.operations["Q_INTERPOLATION"]
                 )
 
                 # compute external heating at conductor initialization calling function do_interpolation.
@@ -929,7 +929,7 @@ class SolidComponents:
                     self.heat_interp_flag,
                 )
             # end if conductor.cond_num_step (cdp, 10/2020)
-        # end self.dict_operation["IQFUN"] (cdp, 10/2020)
+        # end self.operations["IQFUN"] (cdp, 10/2020)
 
     # end Get_Q
 
@@ -938,15 +938,15 @@ class SolidComponents:
         # Compute at each time step since the mesh can change
         lower_bound = np.min(
             np.nonzero(
-                conductor.dict_discretization["xcoord"] >= self.dict_operation["XQBEG"]
+                conductor.dict_discretization["xcoord"] >= self.operations["XQBEG"]
             )
         )
         upper_bound = np.max(
             np.nonzero(
-                conductor.dict_discretization["xcoord"] <= self.dict_operation["XQEND"]
+                conductor.dict_discretization["xcoord"] <= self.operations["XQEND"]
             )
         )
-        if self.dict_operation["IQFUN"] == 1:
+        if self.operations["IQFUN"] == 1:
             # Square wave in time and space (cdp, 11/2020)
             if (
                 conductor.inputs["METHOD"] == "BE"
@@ -958,7 +958,7 @@ class SolidComponents:
                     # heating starts at the beginning of the simulation (cdp, 10/2020)
                     self.dict_node_pt["EXTFLX"][
                         lower_bound : upper_bound + 1, 0
-                    ] = self.dict_operation["Q0"]
+                    ] = self.operations["Q0"]
                 elif conductor.cond_num_step > 0:
                     if conductor.cond_num_step == 1:
                         # Store the old values only immediately after the initializzation, \
@@ -969,14 +969,14 @@ class SolidComponents:
                         ].copy()
                     self.dict_node_pt["EXTFLX"][
                         lower_bound : upper_bound + 1, 0
-                    ] = self.dict_operation["Q0"]
+                    ] = self.operations["Q0"]
                 # end if (cdp, 10/2020)
             elif conductor.inputs["METHOD"] == "AM4":
                 # Adams-Moulton 4 (cdp, 10/2020)
                 if conductor.cond_num_step == 0:
                     self.dict_node_pt["EXTFLX"][
                         lower_bound : upper_bound + 1, 0
-                    ] = self.dict_operation["Q0"]
+                    ] = self.operations["Q0"]
                     for cc in range(1, 4):
                         # initialize the other columns to the same array: dummy steady \
                         # state (cdp, 10/2020)
@@ -990,10 +990,10 @@ class SolidComponents:
                     ].copy()
                     self.dict_node_pt["EXTFLX"][
                         lower_bound : upper_bound + 1, 0
-                    ] = self.dict_operation["Q0"]
+                    ] = self.operations["Q0"]
                 # end if (cdp, 10/2020)
             # end if conductor.inputs["METHOD"] (cdp, 10/2020)
-        # end if self.dict_operation["IQFUN"] (cdp, 11/2020)
+        # end if self.operations["IQFUN"] (cdp, 11/2020)
 
     # end Q0_where
 

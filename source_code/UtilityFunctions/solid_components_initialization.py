@@ -26,7 +26,7 @@ def solid_components_temperature_initialization(cond):
         s_comp.dict_Gauss_pt = dict()  # dictionary declaration (cdp, 07/2020)
         # s_comp temperature initialization to 0 (cdp, 12/2020)
         s_comp.dict_node_pt["temperature"] = np.zeros(cond.dict_discretization["N_nod"])
-        if s_comp.dict_operation["INTIAL"] == 0:
+        if s_comp.operations["INTIAL"] == 0:
             # Not user defined temperature initialization (cdp, 12/2020)
             # get contact perimeter flags reading the sub matrix channel - solid by \
             # column, array smart, in this way is possible to determine if s_comp is \
@@ -63,24 +63,24 @@ def solid_components_temperature_initialization(cond):
                     np.ones(cond.dict_discretization["N_nod"]) * T_min.min()
                 )
             # end if np.sum(contact_flag) (cdp, 12/2020)
-        elif abs(s_comp.dict_operation["INTIAL"]) == 1:
+        elif abs(s_comp.operations["INTIAL"]) == 1:
             # User imposed initial temperature spatial distribution (cdp, 12/2020)
-            if s_comp.dict_operation["INTIAL"] == 1:
+            if s_comp.operations["INTIAL"] == 1:
                 # linear spatial temperature distribution (cdp, 12/2020)
                 s_comp.dict_node_pt["temperature"] = np.interp(
                     cond.dict_discretization["xcoord"],
                     [0.0, cond.inputs["XLENGTH"]],
-                    [s_comp.dict_operation["TEMINL"], s_comp.dict_operation["TEMOUT"]],
+                    [s_comp.operations["TEMINL"], s_comp.operations["TEMOUT"]],
                 )
 
-            elif s_comp.dict_operation["INTIAL"] == -1:
+            elif s_comp.operations["INTIAL"] == -1:
                 print("still to do\n")
         else:
             # raise error due to not available INTIAL value (cdp, 12/2020)
             raise ValueError(
                 f"""INTIAL value not available. Please check check INTIAL value in sheet {s_comp.NAME} of file {cond.file_input["OPERATION"]}.\n"""
             )
-        # end if s_comp.dict_operation["INTIAL"] (cdp, 12/2020)
+        # end if s_comp.operations["INTIAL"] (cdp, 12/2020)
     # end for cc (cdp, 12/2020)
 
 

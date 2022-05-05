@@ -18,7 +18,7 @@ import os
 
 
 class FluidComponentsInput:
-    """Interface class used to get the input data for fluid components objects. Attributes inputs and dict_operation are inherited from this class by Coolant and Channel class. Being an interface, this class has only the constructror (__init__) method."""
+    """Interface class used to get the input data for fluid components objects. Attributes inputs and operations are inherited from this class by Coolant and Channel class. Being an interface, this class has only the constructror (__init__) method."""
 
     def __init__(self, sheet, sheetOpar, dict_file_path, identifier):
         """[summary]
@@ -31,7 +31,7 @@ class FluidComponentsInput:
         """
         # Dictionary declaration (cdp, 11/2020)
         self.inputs = dict()
-        self.dict_operation = dict()
+        self.operations = dict()
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(
             dict_file_path["input"],
@@ -41,8 +41,8 @@ class FluidComponentsInput:
             index_col=0,
             usecols=["Variable name", identifier],
         )[identifier].to_dict()
-        # Dictionary initialization: dict_operation.
-        self.dict_operation = pd.read_excel(
+        # Dictionary initialization: operations.
+        self.operations = pd.read_excel(
             dict_file_path["operation"],
             sheet_name=sheetOpar.title,
             skiprows=2,

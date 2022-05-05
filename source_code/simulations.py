@@ -768,12 +768,12 @@ class Simulations:
     # for ii in range(cond.dict_obj_inventory["FluidComponents"]["Number"]):
     # 	fluid_comp = cond.dict_obj_inventory["FluidComponents"]["Objects"][ii]
     # 	if cond.dict_obj_inventory["FluidComponents"]["Number"] == 1:
-    # 		INTIAL_val = INTIAL_val + str(fluid_comp.coolant.dict_operation["INTIAL"])
+    # 		INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"])
     # 	elif cond.dict_obj_inventory["FluidComponents"]["Number"] > 1:
     # 		if ii < cond.dict_obj_inventory["FluidComponents"]["Number"] - 1:
-    # 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.dict_operation["INTIAL"]) + ","
+    # 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"]) + ","
     # 		elif ii == cond.dict_obj_inventory["FluidComponents"]["Number"] - 1:
-    # 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.dict_operation["INTIAL"])
+    # 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"])
     # 		# end if ii (cdp, 10/2020)
     # 	# end if cond.dict_obj_inventory["FluidComponents"]["Number"] \
     # 	# (cdp, 10/2020)
@@ -783,12 +783,12 @@ class Simulations:
     # for ii in range(cond.dict_obj_inventory["SolidComponents"]["Number"]):
     # 	s_comp = cond.dict_obj_inventory["SolidComponents"]["Objects"][ii]
     # 	if cond.dict_obj_inventory["SolidComponents"]["Number"] == 1:
-    # 		XQEND_val = XQEND_val + str(s_comp.dict_operation["XQEND"])
+    # 		XQEND_val = XQEND_val + str(s_comp.operations["XQEND"])
     # 	elif cond.dict_obj_inventory["SolidComponents"]["Number"] > 1:
     # 		if ii < cond.dict_obj_inventory["SolidComponents"]["Number"] - 1:
-    # 			XQEND_val = XQEND_val + str(s_comp.dict_operation["XQEND"]) + ","
+    # 			XQEND_val = XQEND_val + str(s_comp.operations["XQEND"]) + ","
     # 		elif ii == cond.dict_obj_inventory["SolidComponents"]["Number"] - 1:
-    # 			XQEND_val = XQEND_val + str(s_comp.dict_operation["XQEND"])
+    # 			XQEND_val = XQEND_val + str(s_comp.operations["XQEND"])
     # 		# end if ii (cdp, 10/2020)
     # 	# end if cond.dict_obj_inventory["SolidComponents"]["Number"] \
     # 	# (cdp, 10/2020)

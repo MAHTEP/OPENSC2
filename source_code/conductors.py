@@ -1742,25 +1742,25 @@ class Conductors:
                 # user defined nodal points (cdp, 08/2020)
                 strand.get_superconductor_critical_prop(self)
                 if (
-                    strand.dict_operation["TCS_EVALUATION"] == False
+                    strand.operations["TCS_EVALUATION"] == False
                     and self.cond_num_step == 0
                 ):
                     # Evaluate current sharing temperature only at the first time step.
                     strand.get_tcs()
-                elif strand.dict_operation["TCS_EVALUATION"] == True:
+                elif strand.operations["TCS_EVALUATION"] == True:
                     # Evaluate current sharing temperature at each time step.
                     strand.get_tcs()
             # end if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"] \
             # (cdp, 08/2020)
-            if self.cond_num_step == 0 and strand.dict_operation["IQFUN"] == 0:
+            if self.cond_num_step == 0 and strand.operations["IQFUN"] == 0:
                 # call method get_heat only once to initialize key EXTFLX of dictionary \
                 # dict_node_pt to zeros (cdp, 11/2020)
                 strand.get_heat(self)
-            elif strand.dict_operation["IQFUN"] != 0:
+            elif strand.operations["IQFUN"] != 0:
                 # call method get_heat to evaluate external heating only if heating is on \
                 # (cdp, 10/2020)
                 strand.get_heat(self)
-            # end if strand.dict_operation["IQFUN"] (cdp, 10/2020)
+            # end if strand.operations["IQFUN"] (cdp, 10/2020)
             # call method jhtflx_new_0 to initialize JHTFLX to zeros for each \
             # conductor solid components (cdp, 06/2020)
             strand.jhtflx_new_0(self)
@@ -1775,15 +1775,15 @@ class Conductors:
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
             jacket.get_magnetic_field(self)
-            if self.cond_num_step == 0 and jacket.dict_operation["IQFUN"] == 0:
+            if self.cond_num_step == 0 and jacket.operations["IQFUN"] == 0:
                 # call method get_heat only once to initialize key EXTFLX of dictionary \
                 # dict_node_pt to zeros (cdp, 11/2020)
                 jacket.get_heat(self)
-            elif jacket.dict_operation["IQFUN"] != 0:
+            elif jacket.operations["IQFUN"] != 0:
                 # call method get_heat to evaluate external heating only if heating is on\
                 # (cdp, 10/2020)
                 jacket.get_heat(self)
-            # end if jacket.dict_operation["IQFUN"] (cdp, 10/2020)
+            # end if jacket.operations["IQFUN"] (cdp, 10/2020)
             # call method jhtflx_new_0 to initialize JHTFLX to zeros for each \
             # conductor solid components (cdp, 06/2020)
             jacket.jhtflx_new_0(self)
@@ -1912,12 +1912,12 @@ class Conductors:
                 # and/or SuperConductor properties in the Gauss point (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self, nodal=False)
                 if (
-                    strand.dict_operation["TCS_EVALUATION"] == False
+                    strand.operations["TCS_EVALUATION"] == False
                     and self.cond_num_step == 0
                 ):
                     # Evaluate current sharing temperature only at the first time step.
                     strand.get_tcs(nodal=False)
-                elif strand.dict_operation["TCS_EVALUATION"] == True:
+                elif strand.operations["TCS_EVALUATION"] == True:
                     # Evaluate current sharing temperature at each time step.
                     strand.get_tcs(nodal=False)
             # end if strand.NAME != self.dict_obj_inventory["Stabilizer"]["Name"] \
@@ -2145,7 +2145,7 @@ class Conductors:
                                 + dict_dummy_chan_r[flag_nodal]["temperature"] ** 2
                             )
                         )
-                        if self.cond_time[-1] > s_comp.dict_operation["TQBEG"]:
+                        if self.cond_time[-1] > s_comp.operations["TQBEG"]:
                             # implementation fully correct only for fully implicit method \
                             # (cdp, 06/2020)
                             htc_transient = np.sqrt(
@@ -2162,7 +2162,7 @@ class Conductors:
                                     np.pi
                                     * (
                                         self.cond_time[-1]
-                                        - s_comp.dict_operation["TQBEG"]
+                                        - s_comp.operations["TQBEG"]
                                     )
                                 )
                             )

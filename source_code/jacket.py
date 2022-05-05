@@ -32,7 +32,7 @@ class Jacket(SolidComponents):
 
         # dictionary declaration (cdp, 11/2020)
         self.inputs = dict()
-        self.dict_operation = dict()
+        self.operations = dict()
         self.dict_node_pt = dict()
         self.dict_Gauss_pt = dict()
         self.dict_num_step = dict()
@@ -49,8 +49,8 @@ class Jacket(SolidComponents):
             index_col=0,
             usecols=["Variable name", self.ID],
         )[self.ID].to_dict()
-        # Dictionary initialization: dict_operation.
-        self.dict_operation = pd.read_excel(
+        # Dictionary initialization: operations.
+        self.operations = pd.read_excel(
             dict_file_path["operation"],
             sheet_name=sheet.title,
             skiprows=2,
@@ -59,9 +59,9 @@ class Jacket(SolidComponents):
             usecols=["Variable name", self.ID],
         )[self.ID].to_dict()
 
-        if self.dict_operation["IBIFUN"] != -1:
+        if self.operations["IBIFUN"] != -1:
             # Remove key B_field_units.
-            del self.dict_operation["B_field_units"]
+            del self.operations["B_field_units"]
 
         # Call SolidComponents class constructor to deal with Jacket time \
         # steps for current, external heating and so on (cdp, 11/2020)

@@ -105,7 +105,7 @@ class Strands(SolidComponents):
 
         if nodal:
             # compute alpha_B in each node (cdp, 07/2020)
-            if self.dict_operation["IALPHAB"] <= -1:  # read from file
+            if self.operations["IALPHAB"] <= -1:  # read from file
                 if conductor.cond_time[-1] == 0:
                     # Build file path.
                     file_path = os.path.join(
@@ -120,7 +120,7 @@ class Strands(SolidComponents):
                         self.alphab_interpolator,
                         self.alphab_interp_flag,
                     ) = build_interpolator(
-                        alphab_df, self.dict_operation["ALPHAB_INTERPOLATION"]
+                        alphab_df, self.operations["ALPHAB_INTERPOLATION"]
                     )
 
                 # call load_user_defined_quantity on the component.
@@ -144,7 +144,7 @@ class Strands(SolidComponents):
                         * conductor.IOP_TOT
                         / conductor.inputs["IOP0_TOT"]
                     )
-            elif self.dict_operation["IALPHAB"] == 0:
+            elif self.operations["IALPHAB"] == 0:
                 self.dict_node_pt["alpha_B"] = np.zeros(
                     conductor.dict_discretization["N_nod"]
                 )
@@ -316,7 +316,7 @@ class Strands(SolidComponents):
         # For each strand of type MixSCStabilizer or SuperConductor (cdp, 06/2020)
         if nodal:
             # compute Epsilon in each node (cdp, 07/2020)
-            if self.dict_operation["IEPS"] < 0:  # strain from file strain.dat
+            if self.operations["IEPS"] < 0:  # strain from file strain.dat
 
                 if conductor.cond_time[-1] == 0:
                     # Build file path.
@@ -329,7 +329,7 @@ class Strands(SolidComponents):
                     )
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                     self.eps_interpolator, self.eps_interp_flag = build_interpolator(
-                        eps_df, self.dict_operation["IOP_INTERPOLATION"]
+                        eps_df, self.operations["IOP_INTERPOLATION"]
                     )
 
                 # call load_user_defined_quantity on the component.
@@ -342,14 +342,14 @@ class Strands(SolidComponents):
 
                 if flagSpecfield == 1:
                     print("still to be decided what to do here\n")
-            elif self.dict_operation["IEPS"] == 0:  # no strain (cdp, 06/2020)
+            elif self.operations["IEPS"] == 0:  # no strain (cdp, 06/2020)
                 self.dict_node_pt["Epsilon"] = np.zeros(
                     conductor.dict_discretization["N_nod"]
                 )
-            elif self.dict_operation["IEPS"] == 1:
+            elif self.operations["IEPS"] == 1:
                 # constant strain to the value in input file \
                 # conductor_i_operation.xlsx (cdp, 06/2020)
-                self.dict_node_pt["Epsilon"] = self.dict_operation["EPS"] * np.ones(
+                self.dict_node_pt["Epsilon"] = self.operations["EPS"] * np.ones(
                     conductor.dict_discretization["N_nod"]
                 )
         elif nodal == False:

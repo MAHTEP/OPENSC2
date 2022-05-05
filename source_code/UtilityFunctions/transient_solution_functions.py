@@ -1723,7 +1723,7 @@ def step(conductor, environment, qsource, num_step):
     # IMPOSE BOUNDARY CONDITIONS AT INLET/OUTLET
     for jj in range(conductor.dict_obj_inventory["FluidComponents"]["Number"]):
         fluid_comp_j = conductor.dict_obj_inventory["FluidComponents"]["Objects"][jj]
-        INTIAL = fluid_comp_j.coolant.dict_operation["INTIAL"]
+        INTIAL = fluid_comp_j.coolant.operations["INTIAL"]
         # index for inlet BC (cdp, 08/2020)
         Iiv_inl = dict(
             forward=jj,
@@ -1770,14 +1770,14 @@ def step(conductor, environment, qsource, num_step):
         if abs(INTIAL) == 1:
             if INTIAL == 1:
                 # inlet pressure (cdp, 07/2020)
-                p_inl = fluid_comp_j.coolant.dict_operation["PREINL"]
+                p_inl = fluid_comp_j.coolant.operations["PREINL"]
                 # inlet temperature (cdp, 07/2020)
-                T_inl = fluid_comp_j.coolant.dict_operation["TEMINL"]
+                T_inl = fluid_comp_j.coolant.operations["TEMINL"]
                 # outlet pressure (cdp, 07/2020)
-                p_out = fluid_comp_j.coolant.dict_operation["PREOUT"]
+                p_out = fluid_comp_j.coolant.operations["PREOUT"]
                 # outlet temperature: to be assigned if outlet velocity is negative \
                 # (cdp, 08/2020)
-                T_out = fluid_comp_j.coolant.dict_operation["TEMOUT"]
+                T_out = fluid_comp_j.coolant.operations["TEMOUT"]
             else:
                 # get from file with interpolation in time (cdp,07/2020)
                 [flow_par, flagSpecfield] = get_from_xlsx(
@@ -1874,16 +1874,16 @@ def step(conductor, environment, qsource, num_step):
             # INLET AND OUTLET RESERVOIRS, INLET CONDITIONS AND FLOW SPECIFIED
             if INTIAL == 2:
                 # inlet mass flow rate (cdp, 07/2020)
-                MDTIN = fluid_comp_j.coolant.dict_operation["MDTIN"]
+                MDTIN = fluid_comp_j.coolant.operations["MDTIN"]
                 # inlet pressure (cdp, 07/2020)
-                # p_inl = fluid_comp_j.coolant.dict_operation["PREINL"]
+                # p_inl = fluid_comp_j.coolant.operations["PREINL"]
                 # inlet temperature (cdp, 07/2020)
-                T_inl = fluid_comp_j.coolant.dict_operation["TEMINL"]
+                T_inl = fluid_comp_j.coolant.operations["TEMINL"]
                 # outlet pressure (cdp, 10/2020)
-                p_out = fluid_comp_j.coolant.dict_operation["PREOUT"]
+                p_out = fluid_comp_j.coolant.operations["PREOUT"]
                 # outlet temperature: to be assigned if outlet velocity is negative \
                 # (cdp, 08/2020)
-                T_out = fluid_comp_j.coolant.dict_operation["TEMOUT"]
+                T_out = fluid_comp_j.coolant.operations["TEMOUT"]
             else:  # N.B va aggiustato per renderlo conforme caso positivo! \
                 # (cdp, 10/2020)
                 # all values from flow_dummy.xlsx: call get_from_xlsx (cdp, 07/2020)
@@ -2007,7 +2007,7 @@ def step(conductor, environment, qsource, num_step):
             ] = 1.0
             Known[
                 Iip_inl[fluid_comp_j.channel.flow_dir[0]]
-            ] = fluid_comp_j.coolant.dict_operation["PREINL"]
+            ] = fluid_comp_j.coolant.operations["PREINL"]
             # T_inl
             if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
                 SYSMAT[
@@ -2021,7 +2021,7 @@ def step(conductor, environment, qsource, num_step):
                 ] = 1.0
                 Known[
                     Iit_inl[fluid_comp_j.channel.flow_dir[0]]
-                ] = fluid_comp_j.coolant.dict_operation["TEMINL"]
+                ] = fluid_comp_j.coolant.operations["TEMINL"]
             # v_out
             SYSMAT[
                 0 : conductor.dict_band["Full"],
@@ -2047,7 +2047,7 @@ def step(conductor, environment, qsource, num_step):
                 ] = 1.0
                 Known[
                     Iit_out[fluid_comp_j.channel.flow_dir[0]]
-                ] = fluid_comp_j.coolant.dict_operation["TEMOUT"]
+                ] = fluid_comp_j.coolant.operations["TEMOUT"]
         elif INTIAL == 4:
             # v_inl
             SYSMAT[
@@ -2078,14 +2078,14 @@ def step(conductor, environment, qsource, num_step):
         elif abs(INTIAL) == 5:
             if INTIAL == 5:
                 # inlet mass flow rate (cdp, 07/2020)
-                MDTIN = fluid_comp_j.coolant.dict_operation["MDTIN"]
+                MDTIN = fluid_comp_j.coolant.operations["MDTIN"]
                 # inlet temperature (cdp, 07/2020)
-                T_inl = fluid_comp_j.coolant.dict_operation["TEMINL"]
+                T_inl = fluid_comp_j.coolant.operations["TEMINL"]
                 # outlet pressure (cdp, 07/2020)
-                p_out = fluid_comp_j.coolant.dict_operation["PREOUT"]
+                p_out = fluid_comp_j.coolant.operations["PREOUT"]
                 # outlet temperature: to be assigned if outlet velocity is negative \
                 # (cdp, 08/2020)
-                T_out = fluid_comp_j.coolant.dict_operation["TEMOUT"]
+                T_out = fluid_comp_j.coolant.operations["TEMOUT"]
             else:
                 # all values from flow_dummy.xlsx: call get_from_xlsx (cdp, 07/2020)
                 [flow_par, flagSpecfield] = get_from_xlsx(
@@ -2197,7 +2197,7 @@ def step(conductor, environment, qsource, num_step):
             #   SYSMAT[0:conductor.dict_band["Full"], Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = 0.0
             #   # main diagonal (cdp, 08/2020)
             #   SYSMAT[conductor.dict_band["Half"] - 1, Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = 1.0
-            #   Known[Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = fluid_comp_j.coolant.dict_operation["TEMINL"]
+            #   Known[Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = fluid_comp_j.coolant.operations["TEMINL"]
             # # p_out
             # SYSMAT[0:conductor.dict_band["Full"], Iip_out[fluid_comp_j.channel.flow_dir[0]]] = 0.0
             # # main diagonal (cdp, 08/2020)

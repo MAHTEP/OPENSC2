@@ -27,15 +27,15 @@ class Channel(FluidComponentsInput):
         # Delete key/value pair "CHANNEL_TYPE" from self.inputs
         del self.inputs["CHANNEL_TYPE"]
         sign = dict(forward=1.0, backward=-1.0)
-        flow_dir = self.dict_operation["FLOWDIR"].lower()
+        flow_dir = self.operations["FLOWDIR"].lower()
         # Assign the direction of the flow to the attribute self.flow_dir
         self.flow_dir = (flow_dir, sign[flow_dir])
         if self.flow_dir[0] != "forward" and self.flow_dir[0] != "backward":
             raise ValueError(
-                f"{self.dict_operation['FLOWDIR']} is not a valid alias for the flag FLOWDIR.\nPlease, check {self.identifier} in sheet CHANNEL of input file conductor_operation.xlsx.\n"
+                f"{self.operations['FLOWDIR']} is not a valid alias for the flag FLOWDIR.\nPlease, check {self.identifier} in sheet CHANNEL of input file conductor_operation.xlsx.\n"
             )
         # Delete key/value pair "FLOWDIR" from self.inputs
-        del self.dict_operation["FLOWDIR"]
+        del self.operations["FLOWDIR"]
 
         # FRICTION FACTOR COEFFICIENT
 
