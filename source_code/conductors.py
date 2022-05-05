@@ -1,5 +1,6 @@
 # Import packages
 import logging
+import logging.config
 from openpyxl import load_workbook
 import numpy as np
 from scipy import constants
@@ -33,6 +34,11 @@ from UtilityFunctions.solid_components_initialization import (
 # Stainless Steel properties
 from Properties_of_materials.stainless_steel import thermal_conductivity_ss
 
+logging.config.fileConfig(fname='logging_electric_module.conf', disable_existing_loggers=True)
+
+# Get the logger specified in the file
+consolelogger = logging.getLogger("consoleLogger")
+filelogger = logging.getLogger("fileLogger")
 
 class Conductors:
 
