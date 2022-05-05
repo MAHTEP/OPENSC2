@@ -100,6 +100,10 @@ class Conductors:
         # Delete key NAME from dictionary self.dict_input
         del self.dict_input["NAME"]
 
+        _ = dict(BE=1.0, CE=0.5)
+        self.electric_theta = _[self.inputs["ELECTRIC_METHOD"]]
+        consolelogger.debug(f"Defined electric_theta\n")
+
         # Load the sheet CONDUCTOR_operation form file conducor_definition.xlsx as a disctionary.
         self.operations = pd.read_excel(
             os.path.join(self.BASE_PATH, simulation.transient_input["MAGNET"]),
