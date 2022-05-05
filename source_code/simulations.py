@@ -126,7 +126,7 @@ class Simulations:
             # Check if user define conductors with the same identifier in file conductor_diagnostic.xlsx.
             check_repeated_headings(dict_file["Spatial_distribution"], sheet)
         # End for sheet.
-        # Check if the number of defined conductors is consited in file conductor_definition.xlsx and in file conductor_gri.xlsx.
+        # Check if the number of defined conductors is consitent in file conductor_definition.xlsx and in file conductor_gri.xlsx.
 
         for cond_sheet in list_conductor_sheet:
             for sheet in [gridCond["GRID"], wb_diagno["Spatial_distribution"], wb_diagno["Time_evolution"]]:
@@ -147,7 +147,7 @@ class Simulations:
             self.list_of_Conductors.append(conductor)
         # end for ii (cdp, 12/2020)
         self.contactBetweenConductors = pd.read_excel(
-            conductor_defn, sheet_name="CONDUCTOR_COUPLING", header=0, index_col=0
+            conductor_defn, sheet_name="CONDUCTOR_coupling", header=0, index_col=0
         )
 
         # Loop to create the attributes required to make the real time plots (shortly rtp).
