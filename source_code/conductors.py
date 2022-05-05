@@ -100,6 +100,17 @@ class Conductors:
         # Delete key NAME from dictionary self.dict_input
         del self.dict_input["NAME"]
 
+        # Load the sheet CONDUCTOR_operation form file conducor_definition.xlsx as a disctionary.
+        self.operations = pd.read_excel(
+            os.path.join(self.BASE_PATH, simulation.transient_input["MAGNET"]),
+            sheet_name=sheetConductorsList[2].title,
+            skiprows=2,
+            header=0,
+            index_col=0,
+            usecols=["Variable name", self.ID],
+        )[self.ID].to_dict()
+        consolelogger.debug(f"Loaded sheet CONDUCTOR_operation from file conductor_definition\n")
+
         # Load all the sheets in file conductor_coupling.xlsx as a dictionary of dataframes.
         self.dict_df_coupling = pd.read_excel(
             os.path.join(self.BASE_PATH, self.file_input["STRUCTURE_COUPLING"]),

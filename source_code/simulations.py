@@ -110,6 +110,7 @@ class Simulations:
         list_conductor_sheet = [
             conductorsSpec["CONDUCTOR_files"],
             conductorsSpec["CONDUCTOR_input"],
+            conductorsSpec["CONDUCTOR_operation"],
         ]
 
         # Load the workbook in file conductor_grid.xlsx.
