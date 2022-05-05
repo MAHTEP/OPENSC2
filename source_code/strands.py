@@ -62,7 +62,7 @@ class Strands(SolidComponents):
         #                                                class Strands             -
         # xcoord*               I      np array float    conductor spatial
         #                                                discretization            m
-        # IOPFUN*               I      scalar integer    flag to decide how to
+        # I0_OP_MODE*               I      scalar integer    flag to decide how to
         #                                                evaluate current:
         #                                                == 0 -> constant;
         #                                                == 1 -> exponential decay;
@@ -70,7 +70,7 @@ class Strands(SolidComponents):
         #                                                I_file_dummy.xlsx         -
         # IOP_TOT*              I      scalar float      total operation
         #                                                current                   A
-        # IOP0_TOT*             I      scalar float      total operation current
+        # I0_OP_TOT*             I      scalar float      total operation current
         #                                                @ time = 0                A
         # IALPHAB§              I      scalar integer    flag to define the
         #                                                magnetic field gradient
@@ -90,8 +90,8 @@ class Strands(SolidComponents):
         # Invoched functions/methods: Get_from_xlsx
         #
         ############################################################################
-        # * xcoord, IOPFUN, IOP_TOT, IOP0_TOT, BASE_PATH and External_current_path
-        # are given by conductor.xcoord, conductor.inputs["IOPFUN"], conductor.IOP_TOT, conductor.inputs["IOP0_TOT"],
+        # * xcoord, I0_OP_MODE, IOP_TOT, I0_OP_TOT, BASE_PATH and External_current_path
+        # are given by conductor.xcoord, conductor.inputs["I0_OP_MODE"], conductor.IOP_TOT, conductor.inputs["I0_OP_TOT"],
         # conductor.BASE_PATH and conductor.file_input["EXTERNAL_CURRENT"].
         # § IALPHAB and alphaB are component attributes: self.IALPHAB, self.dict_node_pt["alpha_B"].
         # N.B. alphaB is a Strands attribute so its value can be assigned
@@ -138,11 +138,11 @@ class Strands(SolidComponents):
                     self.dict_node_pt["alpha_B"] = (
                         self.dict_node_pt["alpha_B"] * conductor.IOP_TOT
                     )
-                if conductor.inputs["IOPFUN"] < 0:
+                if conductor.inputs["I0_OP_MODE"] < 0:
                     self.dict_node_pt["alpha_B"] = (
                         self.dict_node_pt["alpha_B"]
                         * conductor.IOP_TOT
-                        / conductor.inputs["IOP0_TOT"]
+                        / conductor.inputs["I0_OP_TOT"]
                     )
             elif self.operations["IALPHAB"] == 0:
                 self.dict_node_pt["alpha_B"] = np.zeros(

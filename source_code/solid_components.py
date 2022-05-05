@@ -681,7 +681,7 @@ class SolidComponents:
         # --------------------------------------------------------------------------
         # self                  I     object             python object of
         #                                                class SolidComponents     -
-        # IOPFUN*               I     scalar integer     flag to decide how to
+        # I0_OP_MODE*               I     scalar integer     flag to decide how to
         #                                                evaluate current:
         #                                                == 0 -> constant;
         #                                                == 1 -> exponential decay;
@@ -704,8 +704,8 @@ class SolidComponents:
         # Invoched functions/methods: Get_from_xlsx
         #
         ############################################################################
-        # * IOPFUN, IOP_TOT, TAUDET, TAUDUM, BASE_PATH and External_current_path are
-        # given by conductor.inputs["IOPFUN"], conductor.IOP_TOT, conductor.inputs["TAUDET"], conductor.inputs["TAUDUM"],
+        # * I0_OP_MODE, IOP_TOT, TAUDET, TAUDUM, BASE_PATH and External_current_path are
+        # given by conductor.inputs["I0_OP_MODE"], conductor.IOP_TOT, conductor.inputs["TAUDET"], conductor.inputs["TAUDUM"],
         # conductor.BASE_PATH and conductor.file_input["EXTERNAL_CURRENT"].
         # § IOP0_FRACTION and IOP are component attributes: self.dict_node_pt["IOP"]0_FRACTION,
         #  .
@@ -718,7 +718,7 @@ class SolidComponents:
         ############################################################################
         """
 
-        if conductor.inputs["IOPFUN"] == -1:
+        if conductor.inputs["I0_OP_MODE"] == -1:
 
             if conductor.cond_time[-1] == 0:
                 # Build file path.
@@ -748,17 +748,17 @@ class SolidComponents:
             conductor.IOP_TOT = conductor.IOP_TOT + self.dict_node_pt["IOP"][0]
             if flagSpecfield == 2:
                 print("still to be decided what to do here\n")
-        elif conductor.inputs["IOPFUN"] == 0:
+        elif conductor.inputs["I0_OP_MODE"] == 0:
             self.dict_node_pt["IOP"] = (
                 conductor.IOP_TOT * self.operations["IOP0_FRACTION"]
             )
-        elif conductor.inputs["IOPFUN"] == 1:
+        elif conductor.inputs["I0_OP_MODE"] == 1:
             if conductor.cond_time[-1] <= conductor.inputs["TAUDET"]:
                 self.dict_node_pt["IOP"] = (
                     conductor.IOP_TOT * self.operations["IOP0_FRACTION"]
                 )
             elif conductor.cond_time[-1] > conductor.inputs["TAUDET"]:
-                conductor.IOP_TOT = conductor.inputs["IOP0_TOT"] * np.exp(
+                conductor.IOP_TOT = conductor.inputs["I0_OP_TOT"] * np.exp(
                     -(conductor.cond_time[-1] - conductor.inputs["TAUDET"])
                     / conductor.inputs["TAUDUM"]
                 )
@@ -802,12 +802,12 @@ class SolidComponents:
                     self.dict_node_pt["B_field"] = (
                         self.dict_node_pt["B_field"] * conductor.IOP_TOT
                     )
-                if conductor.inputs["IOPFUN"] != 0:
+                if conductor.inputs["I0_OP_MODE"] != 0:
                     #### bfield e' un self e' un vettore
                     self.dict_node_pt["B_field"] = (
                         self.dict_node_pt["B_field"]
                         * conductor.IOP_TOT
-                        / conductor.inputs["IOP0_TOT"]
+                        / conductor.inputs["I0_OP_TOT"]
                     )
             elif self.operations["IBIFUN"] == 0:
                 self.dict_node_pt["B_field"] = np.linspace(
@@ -820,7 +820,7 @@ class SolidComponents:
                     self.operations["BISS"],
                     self.operations["BOSS"],
                     conductor.dict_discretization["N_nod"],
-                ) + conductor.IOP_TOT / conductor.inputs["IOP0_TOT"] * np.linspace(
+                ) + conductor.IOP_TOT / conductor.inputs["I0_OP_TOT"] * np.linspace(
                     self.operations["BITR"],
                     self.operations["BOTR"],
                     conductor.dict_discretization["N_nod"],

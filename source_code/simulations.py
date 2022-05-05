@@ -763,7 +763,7 @@ class Simulations:
     # elif cond.self.inputs["METHOD"] == "AM4":
     # 	block.append("AM4")
     # end if cond.inputs["METHOD"] (cdp, 10/2020)
-    # block.append("IOP0_TOT_" + str(cond.inputs["IOP0_TOT"]))
+    # block.append("IOP0_TOT_" + str(cond.inputs["I0_OP_TOT"]))
     # INTIAL_val = str()
     # for ii in range(cond.dict_obj_inventory["FluidComponents"]["Number"]):
     # 	fluid_comp = cond.dict_obj_inventory["FluidComponents"]["Objects"][ii]
