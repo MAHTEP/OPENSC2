@@ -222,15 +222,9 @@ def step(conductor, environment, qsource, num_step):
     conductor.dict_Gauss_pt["K2"] = {}
     conductor.dict_Gauss_pt["K3"] = {}
 
-    for rr in range(conductor.inventory["FluidComponents"].number):
-        fluid_comp_r = conductor.inventory["FluidComponents"].collection[rr]
-        for cc in range(
-            rr + 1, conductor.inventory["FluidComponents"].number
+    for rr, fluid_comp_r in enumerate(conductor.inventory["FluidComponents"].collection):
+        for _, fluid_comp_c in enumerate(conductor.inventory["FluidComponents"].collection[rr+1:]
         ):
-            fluid_comp_c = conductor.inventory["FluidComponents"].collection[
-                cc
-            ]
-
             if (
                 conductor.dict_df_coupling["contact_perimeter_flag"].at[
                     fluid_comp_r.ID, fluid_comp_c.ID
@@ -410,10 +404,7 @@ def step(conductor, environment, qsource, num_step):
             0 : conductor.dict_N_equation["FluidComponents"],
         ] = np.eye(conductor.dict_N_equation["FluidComponents"])
         # END M MATRIX: fluid components equations (cdp, 07/2020)
-        for jj in range(conductor.inventory["FluidComponents"].number):
-            fluid_comp_j = conductor.inventory["FluidComponents"].collection[
-                jj
-            ]
+        for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponents"].collection):
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
             # coefficients coming from velocity equation (cdp, 07/2020)
             AMAT[jj, jj] = fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
@@ -525,9 +516,8 @@ def step(conductor, environment, qsource, num_step):
                 ]
                 * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
             )
-            for kk in range(conductor.inventory["FluidComponents"].number):
+            for kk, fluid_comp_k in enumerate(conductor.inventory["FluidComponents"].collection):
                 if kk != jj:
-                    fluid_comp_k = conductor.inventory["FluidComponents"].collection[kk]
 
                     # Construct interface name: it can be found also in \
                     # dict_topology["ch_ch"] but a search in dictionaties \
@@ -846,8 +836,7 @@ def step(conductor, environment, qsource, num_step):
                     # end if flag_ch_ch_contact (cdp, 09/2020)
                 # end if kk != jj (cdp, 07/2020)
             # end for kk (cdp, 07/2020)
-            for ll in range(conductor.inventory["SolidComponents"].number):
-                s_comp = conductor.inventory["SolidComponents"].collection[ll]
+            for ll, s_comp in enumerate(conductor.inventory["SolidComponents"].collection):
                 # chan_sol_topology is equivalent to \
                 # conductor.dict_topology["ch_sol"][fluid_comp_r.ID][s_comp.ID] \
                 # but it is shorter so I decide to use it here (cdp, 09/2020)
@@ -953,8 +942,7 @@ def step(conductor, environment, qsource, num_step):
         # (cdp, 07/2020)
         # * FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, SOLID \
         # COMPONENTS EQUATIONS *
-        for ll in range(conductor.inventory["SolidComponents"].number):
-            s_comp_l = conductor.inventory["SolidComponents"].collection[ll]
+        for ll, s_comp_l in enumerate(conductor.inventory["SolidComponents"].collection):
             neq = conductor.dict_N_equation["FluidComponents"] + ll
             # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
             # SolidComponents equation (cdp, 07/2020)
@@ -984,9 +972,8 @@ def step(conductor, environment, qsource, num_step):
             # END K MATRIX: solid components equation (cdp, 07/2020)
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-            for mm in range(conductor.inventory["SolidComponents"].number):
+            for mm, s_comp_m in enumerate(conductor.inventory["SolidComponents"].collection):
                 if mm != ll:
-                    s_comp_m = conductor.inventory["SolidComponents"].collection[mm]
                     # s_comp_topology is equivalent to \
                     # conductor.dict_topology["sol_sol"][s_comp_m.ID][s_comp_l.ID] \
                     # but it is shorter so I decide to use it here (cdp, 09/2020)
@@ -1019,8 +1006,7 @@ def step(conductor, environment, qsource, num_step):
                     # end if flag_sol_sol_contact (cdp, 09/2020)
                 # end if mm != ll (cdp, 07/2020)
             # end for mm (cdp, 07/2020)
-            for jj in range(conductor.inventory["FluidComponents"].number):
-                fluid_comp_j = conductor.inventory["FluidComponents"].collection[jj]
+            for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponents"].collection):
                 chan_sol_topology = f"{fluid_comp_j.ID}_{s_comp_l.ID}"
                 flag_chan_sol_contact = conductor.dict_interf_peri["ch_sol"].get(
                     chan_sol_topology, str_check
@@ -1714,8 +1700,7 @@ def step(conductor, environment, qsource, num_step):
     # 		np.savetxt(writer, SYSLOD, delimiter = "	")
 
     # IMPOSE BOUNDARY CONDITIONS AT INLET/OUTLET
-    for jj in range(conductor.inventory["FluidComponents"].number):
-        fluid_comp_j = conductor.inventory["FluidComponents"].collection[jj]
+    for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponents"].collection):
         INTIAL = fluid_comp_j.coolant.operations["INTIAL"]
         # index for inlet BC (cdp, 08/2020)
         Iiv_inl = dict(
@@ -2352,8 +2337,7 @@ def step(conductor, environment, qsource, num_step):
     CHG = Known - conductor.dict_Step["SYSVAR"][:, 0]
     EIG = abs(CHG / conductor.time_step) / (abs(SOL) + TINY)
 
-    for jj in range(conductor.inventory["FluidComponents"].number):
-        fluid_comp = conductor.inventory["FluidComponents"].collection[jj]
+    for jj, fluid_comp in enumerate(conductor.inventory["FluidComponents"].collection):
         # velocity (cdp, 08/2020)
         conductor.dict_norm["Change"][jj] = np.sqrt(
             np.sum(
@@ -2447,8 +2431,7 @@ def step(conductor, environment, qsource, num_step):
             fluid_comp.coolant.dict_node_pt["temperature"][:-1]
             + fluid_comp.coolant.dict_node_pt["temperature"][1:]
         ) / 2.0 - old_temperature_gauss[fluid_comp.ID]
-    for ll in range(conductor.inventory["SolidComponents"].number):
-        comp = conductor.inventory["SolidComponents"].collection[ll]
+    for ll, comp in enumerate(conductor.inventory["SolidComponents"].collection):
         # temperature (cdp, 08/2020)
         conductor.dict_norm["Change"][
             ll + conductor.dict_N_equation["FluidComponents"]

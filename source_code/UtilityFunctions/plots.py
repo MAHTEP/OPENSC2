@@ -435,12 +435,9 @@ def make_plots(simulation, kind="Space_distr"):
                     for ii in range(len(abscissa.columns))
                 }
             )
-            for rr in range(cond.inventory["SolidComponents"].number):
-                jk_r = cond.inventory["SolidComponents"].collection[rr]
-                for cc in range(
-                    rr + 1, cond.inventory["SolidComponents"].number
+            for rr, jk_r in enumerate(cond.inventory["SolidComponents"].collection):
+                for _, jk_c in enumerate(cond.inventory["SolidComponents"].collection[rr + 1:]
                 ):
-                    jk_c = cond.inventory["SolidComponents"].collection[cc]
                     if (
                         abs(cond.dict_df_coupling["HTC_choice"].at[jk_r.ID, jk_c.ID])
                         == 3
@@ -1384,11 +1381,7 @@ def plot_time_animation(simulation, conductor):
         # end if conductor.cond_time[-1] (cdp, 10/2020)
         if l_type == "FluidComponents":
             # loop on FluidComponents (cdp, 10/2020)
-            for ii in range(conductor.inventory["FluidComponents"].number):
-                # define channel object (cdp, 10/2020)
-                fluid_comp = conductor.inventory["FluidComponents"].collection[
-                    ii
-                ]
+            for fluid_comp in conductor.inventory["FluidComponents"].collection:
                 # make the plot of channels maximum temperature (cdp, 10/2020)
                 # conductor.dict_axes_animation["T_max"][l_type].plot(
                 #     conductor.cond_time[-1], fluid_comp.coolant.dict_node_pt["temperature"].max(), conductor.color[ii], label = fluid_comp.ID) # choose the color
@@ -1437,8 +1430,7 @@ def plot_time_animation(simulation, conductor):
             # conductor.dict_canvas["T_max"][l_type].draw()
         elif l_type == "Strands":
             # loop on Strands (cdp, 10/2020)
-            for ii in range(conductor.inventory["Strands"].number):
-                strand = conductor.inventory["Strands"].collection[ii]
+            for strand in conductor.inventory["Strands"].collection:
                 # plot the maximum strand temperature (cdp, 10/2020)
                 # conductor.dict_axes_animation["T_max"][l_type].plot(
                 #     conductor.cond_time[-1], strand.dict_node_pt["temperature"].max(), conductor.color[ii], label = strand.ID) # choose the color.

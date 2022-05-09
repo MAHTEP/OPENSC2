@@ -35,11 +35,14 @@ from UtilityFunctions.solid_components_initialization import (
 # Stainless Steel properties
 from Properties_of_materials.stainless_steel import thermal_conductivity_ss
 
-logging.config.fileConfig(fname='logging_electric_module.conf', disable_existing_loggers=True)
+logging.config.fileConfig(
+    fname="logging_electric_module.conf", disable_existing_loggers=True
+)
 
 # Get the logger specified in the file
 consolelogger = logging.getLogger("consoleLogger")
 filelogger = logging.getLogger("fileLogger")
+
 
 class Conductors:
 
@@ -114,7 +117,9 @@ class Conductors:
             index_col=0,
             usecols=["Variable name", self.ID],
         )[self.ID].to_dict()
-        consolelogger.debug(f"Loaded sheet CONDUCTOR_operation from file conductor_definition\n")
+        consolelogger.debug(
+            f"Loaded sheet CONDUCTOR_operation from file conductor_definition\n"
+        )
 
         # Load all the sheets in file conductor_coupling.xlsx as a dictionary of dataframes.
         self.dict_df_coupling = pd.read_excel(
@@ -332,11 +337,11 @@ class Conductors:
             kindObj = sheet.cell(row=1, column=1).value  # sheet["A1"].value
             numObj = int(sheet.cell(row=1, column=2).value)  # sheet["B1"].value
             if kindObj == "CHAN":
-                # Assign the total number of defined FluidComponents object to 
+                # Assign the total number of defined FluidComponents object to
                 # attribute number of object ComponentsCollection.
                 self.inventory["FluidComponents"].number = numObj
                 for ii in range(1, 1 + numObj):
-                    # ["FluidComponents"].collection: list of FluidComponents 
+                    # ["FluidComponents"].collection: list of FluidComponents
                     # objects;
                     # ["Conductor_components"].collection list of all objects
                     self.inventory["FluidComponents"].collection.append(
@@ -347,7 +352,7 @@ class Conductors:
                     )
                 # end for ii (cdp, 09/2020)
             elif kindObj == "STR_MIX":
-                # Assign the total number of defined MixSCStabilizer object to 
+                # Assign the total number of defined MixSCStabilizer object to
                 # attribute number of object ComponentsCollection.
                 self.inventory["MixSCStabilizer"].number = numObj
                 for ii in range(1, 1 + numObj):
@@ -370,7 +375,7 @@ class Conductors:
                     )
                 # end for ii (cdp, 09/2020)
             elif kindObj == "STR_SC":
-                # Assign the total number of defined SuperConductor object to 
+                # Assign the total number of defined SuperConductor object to
                 # attribute number of object ComponentsCollection.
                 self.inventory["SuperConductor"].number = numObj
                 for ii in range(1, 1 + numObj):
@@ -393,7 +398,7 @@ class Conductors:
                     )
                 # end for ii (cdp, 09/2020)
             elif kindObj == "STR_STAB":
-                # Assign the total number of defined Stabilizer object to 
+                # Assign the total number of defined Stabilizer object to
                 # attribute number of object ComponentsCollection.
                 self.inventory["Stabilizer"].number = numObj
                 for ii in range(1, 1 + numObj):
@@ -416,7 +421,7 @@ class Conductors:
                     )
                 # end for ii (cdp, 09/2020)
             elif kindObj == "Z_JACKET":
-                # Assign the total number of defined Jacket object to 
+                # Assign the total number of defined Jacket object to
                 # attribute number of object ComponentsCollection.
                 self.inventory["Jacket"].number = numObj
                 # Z_JACKET since it must be the last object in the list (cdp, 06/2020)
@@ -450,8 +455,7 @@ class Conductors:
         )
         # Total number of SolidComponents objects (cdp, 09/2020)
         self.inventory["SolidComponents"].number = (
-            self.inventory["Strands"].number
-            + self.inventory["Jacket"].number
+            self.inventory["Strands"].number + self.inventory["Jacket"].number
         )
         # Total number of Conductor component objects (cdp, 09/2020)
         self.inventory["Conductor_components"].number = (
@@ -501,12 +505,10 @@ class Conductors:
         self.get_hydraulic_parallel()
 
         # Nested loop channel-channel (cdp, 09/2020)
-        for rr in range(self.inventory["FluidComponents"].number):
-            fluid_comp_r = self.inventory["FluidComponents"].collection[rr]
-            for cc in range(
-                rr + 1, self.inventory["FluidComponents"].number
+        for rr, fluid_comp_r in enumerate(self.inventory["FluidComponents"].collection):
+            for cc, fluid_comp_c in enumerate(
+                self.inventory["FluidComponents"].collection[rr + 1 :], rr + 1
             ):
-                fluid_comp_c = self.inventory["FluidComponents"].collection[cc]
                 if (
                     self.dict_df_coupling["contact_perimeter_flag"].at[
                         fluid_comp_r.ID, fluid_comp_c.ID
@@ -606,15 +608,13 @@ class Conductors:
         # dummy to optimize nested loop (cdp, 09/2020)
         dict_chan_s_comp_contact = dict()
         # Nested loop channel-solid (cdp, 09/2020)
-        for rr in range(self.inventory["FluidComponents"].number):
-            fluid_comp_r = self.inventory["FluidComponents"].collection[rr]
+        for _, fluid_comp_r in enumerate(self.inventory["FluidComponents"].collection):
             # List linked channels-solid initialization (cdp, 09/2020)
             list_linked_chan_sol = list()
             # Nested dictionary in dict_topology_dummy_ch_sol declaration \
             # dict_topology_dummy_ch_sol
             dict_topology_dummy_ch_sol[fluid_comp_r.ID] = dict()
-            for cc in range(self.inventory["SolidComponents"].number):
-                s_comp_c = self.inventory["SolidComponents"].collection[cc]
+            for _, s_comp_c in enumerate(self.inventory["SolidComponents"].collection):
                 if (
                     self.dict_df_coupling["contact_perimeter_flag"].at[
                         fluid_comp_r.ID, s_comp_c.ID
@@ -661,17 +661,15 @@ class Conductors:
         # dummy to optimize nested loop (cdp, 09/2020)
         dict_s_comps_contact = dict()
         # Nested loop solid-solid (cdp, 09/2020)
-        for rr in range(self.inventory["SolidComponents"].number):
-            s_comp_r = self.inventory["SolidComponents"].collection[rr]
+        for rr, s_comp_r in enumerate(self.inventory["SolidComponents"].collection):
             # List linked solids initialization (cdp, 09/2020)
             list_linked_solids = list()
             # Nested dictionary in dict_topology_dummy_sol declaration \
             # dict_topology_dummy_sol
             dict_topology_dummy_sol[s_comp_r.ID] = dict()
-            for cc in range(
-                rr + 1, self.inventory["SolidComponents"].number
+            for _, s_comp_c in enumerate(
+                self.inventory["SolidComponents"].collection[rr + 1 :]
             ):
-                s_comp_c = self.inventory["SolidComponents"].collection[cc]
                 if (
                     self.dict_df_coupling["contact_perimeter_flag"].at[
                         s_comp_r.ID, s_comp_c.ID
@@ -917,9 +915,7 @@ class Conductors:
             dict_topology[fluid_comp_ref.ID]["Group"].append(fluid_comp_ref)
             for ch_index in ind_direct:
                 # get channel (cdp, 09/2020)
-                fluid_comp = self.inventory["FluidComponents"].collection[
-                    ch_index
-                ]
+                fluid_comp = self.inventory["FluidComponents"].collection[ch_index]
                 # Construct check dictionary (cdp, 09/2020)
                 check[fluid_comp_ref.ID][fluid_comp.ID] = dict(row=False, col=False)
                 # find the index in array already["no"] of the element that must be \
@@ -944,9 +940,7 @@ class Conductors:
             # (cdp, 09/2020)
             for ch_index in ind_direct:
                 # get channel (cdp, 09/2020)
-                fluid_comp = self.inventory["FluidComponents"].collection[
-                    ch_index
-                ]
+                fluid_comp = self.inventory["FluidComponents"].collection[ch_index]
                 # Initialize key value "variable_lower" of dictionary boundary. This \
                 # parameter is used to look only in the region of not directly \
                 # connected channels and is updated to consider only the data below \
@@ -1089,9 +1083,7 @@ class Conductors:
                 jj = jj + 1
                 ch_index = ind_link[jj]
                 # get channel
-                fluid_comp_r = self.inventory["FluidComponents"].collection[
-                    ch_index
-                ]
+                fluid_comp_r = self.inventory["FluidComponents"].collection[ch_index]
                 if (
                     dict_topology[fluid_comp_ref.ID].get(fluid_comp_r.ID) != None
                     and f"{fluid_comp_r.ID}_{fluid_comp_c.ID}"
@@ -1232,9 +1224,7 @@ class Conductors:
                 jj = jj + 1
                 ch_index = ind_link[jj]
                 # get channel (cdp, 09/2020)
-                fluid_comp_c = self.inventory["FluidComponents"].collection[
-                    ch_index
-                ]
+                fluid_comp_c = self.inventory["FluidComponents"].collection[ch_index]
                 if (
                     dict_topology[fluid_comp_ref.ID].get(fluid_comp_c.ID) != None
                     and f"{fluid_comp_c.ID}_{fluid_comp_r.ID}"
@@ -1528,14 +1518,12 @@ class Conductors:
         solid_components_temperature_initialization(self)
 
         # Nested loop jacket - jacket.
-        for rr in range(self.inventory["Jacket"].number):
-            jacket_r = self.inventory["Jacket"].collection[rr]
+        for rr, jacket_r in enumerate(self.inventory["Jacket"].collection):
             # np array of shape (Node, 1) to avoid broadcasting error.
             jacket_r.radiative_heat_env = np.zeros(
                 (jacket_r.dict_node_pt["temperature"].size, 1)
             )
-            for cc in range(rr + 1, self.inventory["Jacket"].number):
-                jacket_c = self.inventory["Jacket"].collection[cc]
+            for _, jacket_c in enumerate(self.inventory["Jacket"].collection[rr + 1 :]):
                 jacket_r.radiative_heat_inn[f"{jacket_r.ID}_{jacket_c.ID}"] = np.zeros(
                     (jacket_r.dict_node_pt["temperature"].size, 1)
                 )
@@ -1588,9 +1576,7 @@ class Conductors:
                 * s_comp.dict_Gauss_pt["temperature"]
             )
             if s_comp.NAME != "Z_JACKET":
-                self.E_str_ini = self.E_str_ini + s_comp.inputs[
-                    "CROSSECTION"
-                ] * np.sum(
+                self.E_str_ini = self.E_str_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
                         self.dict_discretization["xcoord"][
                             1 : self.dict_discretization["N_nod"]
@@ -1602,9 +1588,7 @@ class Conductors:
                     * s_comp.dict_Gauss_pt["temperature"]
                 )
             else:
-                self.E_jk_ini = self.E_jk_ini + s_comp.inputs[
-                    "CROSSECTION"
-                ] * np.sum(
+                self.E_jk_ini = self.E_jk_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
                         self.dict_discretization["xcoord"][
                             1 : self.dict_discretization["N_nod"]
@@ -1637,8 +1621,7 @@ class Conductors:
         # end if self.inputs
 
         # Assign initial values to key SYSVAR (cdp, 10/2020)
-        for jj in range(self.inventory["FluidComponents"].number):
-            fluid_comp = self.inventory["FluidComponents"].collection[jj]
+        for jj, fluid_comp in enumerate(self.inventory["FluidComponents"].collection):
             # velocity (cdp, 10/2020)
             self.dict_Step["SYSVAR"][
                 jj : self.dict_N_equation["Total"] : self.dict_N_equation["NODOFS"], 0
@@ -1646,19 +1629,22 @@ class Conductors:
             # pressure (cdp, 10/2020)
             self.dict_Step["SYSVAR"][
                 jj
-                + self.inventory["FluidComponents"].number : self.dict_N_equation["Total"] : self.dict_N_equation["NODOFS"],
+                + self.inventory["FluidComponents"].number : self.dict_N_equation[
+                    "Total"
+                ] : self.dict_N_equation["NODOFS"],
                 0,
             ] = fluid_comp.coolant.dict_node_pt["pressure"]
             # temperature (cdp, 10/2020)
             self.dict_Step["SYSVAR"][
                 jj
                 + 2
-                * self.inventory["FluidComponents"].number : self.dict_N_equation["Total"] : self.dict_N_equation["NODOFS"],
+                * self.inventory["FluidComponents"].number : self.dict_N_equation[
+                    "Total"
+                ] : self.dict_N_equation["NODOFS"],
                 0,
             ] = fluid_comp.coolant.dict_node_pt["temperature"]
         # end for jj (cdp, 10/2020)
-        for ll in range(self.inventory["SolidComponents"].number):
-            comp = self.inventory["SolidComponents"].collection[ll]
+        for ll, comp in enumerate(self.inventory["SolidComponents"].collection):
             # solid components temperature (cdp, 10/2020)
             self.dict_Step["SYSVAR"][
                 ll
@@ -1748,8 +1734,7 @@ class Conductors:
             strand.set_energy_counters(self)
         # end for strand (cdp,07/2020)
         # Loop on Jackets objects
-        for rr in range(self.inventory["Jacket"].number):
-            jacket = self.inventory["Jacket"].collection[rr]
+        for rr, jacket in enumerate(self.inventory["Jacket"].collection):
             jacket.get_current(self)
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
@@ -1778,8 +1763,7 @@ class Conductors:
                 # Evaluate the external heat by radiation in nodal points.
                 jacket._radiative_source_therm_env(self, simulation.environment)
             # End if self.dict_df_coupling["contact_perimeter_flag"]
-            for cc in range(rr + 1, self.inventory["Jacket"].number):
-                jacket_c = self.inventory["Jacket"].collection[cc]
+            for _, jacket_c in enumerate(self.inventory["Jacket"].collection[rr + 1 :]):
                 if (
                     abs(self.dict_df_coupling["HTC_choice"].at[jacket.ID, jacket_c.ID])
                     == 3
@@ -1838,10 +1822,8 @@ class Conductors:
         # End for jacket.
 
         # Nested loop jacket - jacket.
-        for rr in range(self.inventory["Jacket"].number):
-            jacket = self.inventory["Jacket"].collection[rr]
-            for cc in range(rr + 1, self.inventory["Jacket"].number):
-                jacket_c = self.inventory["Jacket"].collection[cc]
+        for rr, jacket in enumerate(self.inventory["Jacket"].collection):
+            for _, jacket_c in enumerate(self.inventory["Jacket"].collection[rr + 1 :]):
                 key = f"{jacket.ID}_{jacket_c.ID}"
                 # Add the radiative heat contribution between inner surface of the enclosure and inner jackets.
                 jacket.dict_Gauss_pt["Q1"] = (
@@ -1965,9 +1947,7 @@ class Conductors:
                 * s_comp.dict_Gauss_pt["temperature"]
             )
             if s_comp.NAME != "Z_JACKET":
-                self.E_str_fin = self.E_str_fin + s_comp.inputs[
-                    "CROSSECTION"
-                ] * np.sum(
+                self.E_str_fin = self.E_str_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
                         self.dict_discretization["xcoord"][
                             1 : self.dict_discretization["N_nod"]
@@ -1979,9 +1959,7 @@ class Conductors:
                     * s_comp.dict_Gauss_pt["temperature"]
                 )
             else:
-                self.E_jk_fin = self.E_jk_fin + s_comp.inputs[
-                    "CROSSECTION"
-                ] * np.sum(
+                self.E_jk_fin = self.E_jk_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
                         self.dict_discretization["xcoord"][
                             1 : self.dict_discretization["N_nod"]
@@ -2046,8 +2024,7 @@ class Conductors:
     """
 
         # loop to evaluate htc_steady for each channel according to its geometry (cpd 06/2020)
-        for rr in range(self.inventory["FluidComponents"].number):
-            fluid_comp = self.inventory["FluidComponents"].collection[rr]
+        for fluid_comp in self.inventory["FluidComponents"].collection:
             # Define dictionary to select nodal or gauss properties according to the value of flag_nodal.0
             dict_dummy_chan = {
                 True: fluid_comp.coolant.dict_node_pt,
@@ -2075,8 +2052,7 @@ class Conductors:
         dict_dummy["HTC"]["env_sol"] = dict()
         # Counters to check the number of the different possible kinds of interfaces (cdp, 09/2020)
         htc_len = 0
-        for rr in range(self.inventory["FluidComponents"].number):
-            fluid_comp_r = self.inventory["FluidComponents"].collection[rr]
+        for rr, fluid_comp_r in enumerate(self.inventory["FluidComponents"].collection):
             dict_dummy_chan_r = {
                 True: fluid_comp_r.coolant.dict_node_pt,
                 False: fluid_comp_r.coolant.dict_Gauss_pt,
@@ -2139,10 +2115,7 @@ class Conductors:
                                 )
                                 / (
                                     np.pi
-                                    * (
-                                        self.cond_time[-1]
-                                        - s_comp.operations["TQBEG"]
-                                    )
+                                    * (self.cond_time[-1] - s_comp.operations["TQBEG"])
                                 )
                             )
                             htc_full_transient = (htc_Kapitza * htc_transient) / (
@@ -2173,10 +2146,9 @@ class Conductors:
                         )
             # end loop on SolidComponents
             # nested loop on channel - channel objects (cdp, 06/2020)
-            for cc in range(
-                rr + 1, self.inventory["FluidComponents"].number
+            for _, fluid_comp_c in enumerate(
+                self.inventory["FluidComponents"].collection[rr + 1 :]
             ):
-                fluid_comp_c = self.inventory["FluidComponents"].collection[cc]
                 dict_dummy_chan_c = {
                     True: fluid_comp_c.coolant.dict_node_pt,
                     False: fluid_comp_c.coolant.dict_Gauss_pt,
@@ -2247,16 +2219,14 @@ class Conductors:
             # end for loop cc
         # end for loop rr
         # nested loop on solid - solid objects (cdp, 06/2020)
-        for rr in range(self.inventory["SolidComponents"].number):
-            s_comp_r = self.inventory["SolidComponents"].collection[rr]
+        for rr, s_comp_r in enumerate(self.inventory["SolidComponents"].collection):
             dict_dummy_comp_r = {
                 True: s_comp_r.dict_node_pt,
                 False: s_comp_r.dict_Gauss_pt,
             }
-            for cc in range(
-                rr + 1, self.inventory["SolidComponents"].number
+            for _, s_comp_c in enumerate(
+                self.inventory["SolidComponents"].collection[rr + 1 :]
             ):
-                s_comp_c = self.inventory["SolidComponents"].collection[cc]
                 dict_dummy_comp_c = {
                     True: s_comp_c.dict_node_pt,
                     False: s_comp_c.dict_Gauss_pt,
@@ -2578,10 +2548,7 @@ class Conductors:
                 + view_factor_rec
                 + (1.0 - jk_j.inputs["Emissivity"])
                 / jk_j.inputs["Emissivity"]
-                * (
-                    jk_i.inputs["Outer_perimeter"]
-                    / jk_j.inputs["Inner_perimeter"]
-                )
+                * (jk_i.inputs["Outer_perimeter"] / jk_j.inputs["Inner_perimeter"])
             )
         )  # W/m^2/K
 
@@ -2713,10 +2680,8 @@ class Conductors:
     def compute_radiative_heat_exhange_jk(self):
         """Method that evaluates the radiative heat exchanged by radiation between jackets."""
         # Nested loop on jackets.
-        for rr in range(self.inventory["Jacket"].number):
-            jk_r = self.inventory["Jacket"].collection[rr]
-            for cc in range(rr + 1, self.inventory["Jacket"].number):
-                jk_c = self.inventory["Jacket"].collection[cc]
+        for rr, jk_r in enumerate(self.inventory["Jacket"].collection):
+            for _, jk_c in enumerate(self.inventory["Jacket"].collection[rr + 1 :]):
                 if abs(self.dict_df_coupling["HTC_choice"].at[jk_r.ID, jk_c.ID]) == 3:
                     self.heat_rad_jk[f"{jk_r.ID}_{jk_c.ID}"] = (
                         self.dict_df_coupling["contact_perimeter"].at[jk_r.ID, jk_c.ID]
