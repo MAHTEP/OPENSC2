@@ -39,17 +39,17 @@ def get_time_step(conductor, transient_input, num_step):
             return
         # crb Differentiate the indexes depending on ischannel (December 16, 2015)
         t_step_comp = np.zeros(conductor.dict_N_equation["NODOFS"])
-        for ii in range(conductor.dict_obj_inventory["FluidComponents"]["Number"]):
+        for ii in range(conductor.inventory["FluidComponents"].number):
             # FluidComponents objects (cdp, 08/2020)
             # C * THE FOLLOWING STATEMENTS WOULD CONTROL THE ACCURACY OF MOMENTUM...
             if abs(transient_input["IADAPTIME"]) == 1:  # crb (Jan 20, 2011)
                 # (cdp, 08/2020)
                 t_step_comp[ii] = conductor.EIGTIM / (conductor.EQTEIG[ii] + TINY)
                 t_step_comp[
-                    ii + conductor.dict_obj_inventory["FluidComponents"]["Number"]
+                    ii + conductor.inventory["FluidComponents"].number
                 ] = conductor.EIGTIM / (
                     conductor.EQTEIG[
-                        ii + conductor.dict_obj_inventory["FluidComponents"]["Number"]
+                        ii + conductor.inventory["FluidComponents"].number
                     ]
                     + TINY
                 )
@@ -57,14 +57,14 @@ def get_time_step(conductor, transient_input, num_step):
                 # C * ... BUT ARE SUBSTITUTED BY THESE
                 t_step_comp[ii] = 1.0e10
                 t_step_comp[
-                    ii + conductor.dict_obj_inventory["FluidComponents"]["Number"]
+                    ii + conductor.inventory["FluidComponents"].number
                 ] = 1.0e10
             # endif (iadaptime)
             t_step_comp[
-                ii + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"]
+                ii + 2 * conductor.inventory["FluidComponents"].number
             ] = conductor.EIGTIM / (
                 conductor.EQTEIG[
-                    ii + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"]
+                    ii + 2 * conductor.inventory["FluidComponents"].number
                 ]
                 + TINY
             )
@@ -72,7 +72,7 @@ def get_time_step(conductor, transient_input, num_step):
             # TSTPPH2 = 1.0e+10
             # TSTPTH2 = 1.0e+10
             # crb (June 26, 2015) # cod (July 23, 2015)
-        for ii in range(conductor.dict_obj_inventory["SolidComponents"]["Number"]):
+        for ii in range(conductor.inventory["SolidComponents"].number):
             # SolidComponents objects (cdp, 08/2020)
             t_step_comp[
                 ii + conductor.dict_N_equation["FluidComponents"]
@@ -173,8 +173,7 @@ def step(conductor, environment, qsource, num_step):
 
     UPWEQT[0 : conductor.dict_N_equation["FluidComponents"]] = 1.0
     # if conductor.inputs["METHOD"] == "CN":
-    # 		UPWEQT[2*conductor.dict_obj_inventory["FluidComponents"]\
-    # 			["Number"]:conductor.dict_N_equation["FluidComponents"]] = 0.0
+    # 		UPWEQT[2*conductor.inventory["FluidComponents"].number:conductor.dict_N_equation["FluidComponents"]] = 0.0
     # else it is 1.0 by initialization; as far as SolidComponents are \
     # concerned UPWEQT is always 0 by initialization. (cdp, 08/2020)
 
@@ -188,17 +187,17 @@ def step(conductor, environment, qsource, num_step):
     # remember that LMPMAS came from mandm.for subroutine SETNUM (cdp, 07/2020)
     ALFA = 0.0
 
-    # for jj in range(conductor.dict_obj_inventory["FluidComponents"]["Number"]):
-    # 	fluid_comp = conductor.dict_obj_inventory["FluidComponents"]["Objects"][jj]
+    # for jj in range(conductor.inventory["FluidComponents"].number):
+    # 	fluid_comp = conductor.inventory["FluidComponents"].collection[jj]
     # 	# Get the solution at the previous time step
     # 	SYSVAR[jj:conductor.dict_N_equation["Total"]:conductor.dict_N_equation["NODOFS"]] = \
     # 																								fluid_comp.coolant.dict_node_pt["velocity"]
-    # 	SYSVAR[jj+conductor.dict_obj_inventory["FluidComponents"]["Number"]:\
+    # 	SYSVAR[jj+conductor.inventory["FluidComponents"].number:\
     # 		conductor.dict_N_equation["Total"]:conductor.dict_N_equation["NODOFS"]] = fluid_comp.coolant.dict_node_pt["pressure"]
-    # 	SYSVAR[jj+2*conductor.dict_obj_inventory["FluidComponents"]["Number"]:\
+    # 	SYSVAR[jj+2*conductor.inventory["FluidComponents"].number:\
     # 		conductor.dict_N_equation["Total"]:conductor.dict_N_equation["NODOFS"]] = fluid_comp.coolant.dict_node_pt["temperature"]
-    # for ll in range(conductor.dict_obj_inventory["SolidComponents"]["Number"]):
-    # 	comp = conductor.dict_obj_inventory["SolidComponents"]["Objects"][ll]
+    # for ll in range(conductor.inventory["SolidComponents"].number):
+    # 	comp = conductor.inventory["SolidComponents"].collection[ll]
     # 	SYSVAR[ll + conductor.dict_N_equation["FluidComponents"]:conductor.dict_N_equation["Total"]:conductor.dict_N_equation["NODOFS"]] = \
     # 																						comp.dict_node_pt["temperature"]
 
@@ -223,12 +222,12 @@ def step(conductor, environment, qsource, num_step):
     conductor.dict_Gauss_pt["K2"] = {}
     conductor.dict_Gauss_pt["K3"] = {}
 
-    for rr in range(conductor.dict_obj_inventory["FluidComponents"]["Number"]):
-        fluid_comp_r = conductor.dict_obj_inventory["FluidComponents"]["Objects"][rr]
+    for rr in range(conductor.inventory["FluidComponents"].number):
+        fluid_comp_r = conductor.inventory["FluidComponents"].collection[rr]
         for cc in range(
-            rr + 1, conductor.dict_obj_inventory["FluidComponents"]["Number"]
+            rr + 1, conductor.inventory["FluidComponents"].number
         ):
-            fluid_comp_c = conductor.dict_obj_inventory["FluidComponents"]["Objects"][
+            fluid_comp_c = conductor.inventory["FluidComponents"].collection[
                 cc
             ]
 
@@ -411,35 +410,35 @@ def step(conductor, environment, qsource, num_step):
             0 : conductor.dict_N_equation["FluidComponents"],
         ] = np.eye(conductor.dict_N_equation["FluidComponents"])
         # END M MATRIX: fluid components equations (cdp, 07/2020)
-        for jj in range(conductor.dict_obj_inventory["FluidComponents"]["Number"]):
-            fluid_comp_j = conductor.dict_obj_inventory["FluidComponents"]["Objects"][
+        for jj in range(conductor.inventory["FluidComponents"].number):
+            fluid_comp_j = conductor.inventory["FluidComponents"].collection[
                 jj
             ]
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
             # coefficients coming from velocity equation (cdp, 07/2020)
             AMAT[jj, jj] = fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-            AMAT[jj, jj + conductor.dict_obj_inventory["FluidComponents"]["Number"]] = (
+            AMAT[jj, jj + conductor.inventory["FluidComponents"].number] = (
                 1 / fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
             )
             # cefficients coming from pressure equation (cdp, 07/2020)
-            AMAT[jj + conductor.dict_obj_inventory["FluidComponents"]["Number"], jj] = (
+            AMAT[jj + conductor.inventory["FluidComponents"].number, jj] = (
                 fluid_comp_j.coolant.dict_Gauss_pt["total_speed_of_sound"][ii] ** 2
                 * fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
             )
             AMAT[
-                jj + conductor.dict_obj_inventory["FluidComponents"]["Number"],
-                jj + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                jj + conductor.inventory["FluidComponents"].number,
+                jj + conductor.inventory["FluidComponents"].number,
             ] = fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
             # cefficients coming from temperature equation (cdp, 07/2020)
             AMAT[
-                jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"], jj
+                jj + 2 * conductor.inventory["FluidComponents"].number, jj
             ] = (
                 fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
                 * fluid_comp_j.coolant.dict_Gauss_pt["temperature"][ii]
             )
             AMAT[
-                jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
-                jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                jj + 2 * conductor.inventory["FluidComponents"].number,
+                jj + 2 * conductor.inventory["FluidComponents"].number,
             ] = fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
             # END A MATRIX: fluid components equations (cdp, 07/2020)
 
@@ -456,22 +455,22 @@ def step(conductor, environment, qsource, num_step):
             )
             # pressure equation (cdp, 07/2020)
             KMAT[
-                jj + conductor.dict_obj_inventory["FluidComponents"]["Number"],
-                jj + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                jj + conductor.inventory["FluidComponents"].number,
+                jj + conductor.inventory["FluidComponents"].number,
             ] = (
                 conductor.dict_discretization["Delta_x"][ii]
-                * UPWEQT[jj + conductor.dict_obj_inventory["FluidComponents"]["Number"]]
+                * UPWEQT[jj + conductor.inventory["FluidComponents"].number]
                 * np.abs(fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii])
                 / 2.0
             )
             # temperature equation (cdp, 07/2020)
             KMAT[
-                jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
-                jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                jj + 2 * conductor.inventory["FluidComponents"].number,
+                jj + 2 * conductor.inventory["FluidComponents"].number,
             ] = (
                 conductor.dict_discretization["Delta_x"][ii]
                 * UPWEQT[
-                    jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"]
+                    jj + 2 * conductor.inventory["FluidComponents"].number
                 ]
                 * np.abs(fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii])
                 / 2.0
@@ -483,14 +482,14 @@ def step(conductor, environment, qsource, num_step):
             # KMAT[jj, jj] = conductor.time_step*UPWEQT[jj]*\
             # 														 fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]/2.
             # pressure equation (cdp, 07/2020)
-            # KMAT[jj+conductor.dict_obj_inventory["FluidComponents"]["Number"], jj+\
-            # conductor.dict_obj_inventory["FluidComponents"]["Number"]] = conductor.time_step*\
-            # 													UPWEQT[jj+conductor.dict_obj_inventory["FluidComponents"]["Number"]]*\
+            # KMAT[jj+conductor.inventory["FluidComponents"].number, jj+\
+            # conductor.inventory["FluidComponents"].number] = conductor.time_step*\
+            # 													UPWEQT[jj+conductor.inventory["FluidComponents"].number]*\
             # 													fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]/2.
             # temperature equation (cdp, 07/2020)
-            # KMAT[jj+2*conductor.dict_obj_inventory["FluidComponents"]["Number"], jj+\
-            # 2*conductor.dict_obj_inventory["FluidComponents"]["Number"]] = conductor.time_step*\
-            # 												UPWEQT[jj+2*conductor.dict_obj_inventory["FluidComponents"]["Number"]]*\
+            # KMAT[jj+2*conductor.inventory["FluidComponents"].number, jj+\
+            # 2*conductor.inventory["FluidComponents"].number] = conductor.time_step*\
+            # 												UPWEQT[jj+2*conductor.inventory["FluidComponents"].number]*\
             # 												fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]/2.
             # END K MATRIX: fluid components equations (cdp, 07/2020)
 
@@ -507,7 +506,7 @@ def step(conductor, environment, qsource, num_step):
             # pressure equation: elements below main diagonal \
             # construction (cdp, 07/2020)
             # (j+num_fluid_components,0:num_fluid_components) [Pres] (cdp, 07/2020)
-            SMAT[jj + conductor.dict_obj_inventory["FluidComponents"]["Number"], jj] = (
+            SMAT[jj + conductor.inventory["FluidComponents"].number, jj] = (
                 -SMAT[jj, jj]
                 * fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
                 * fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
@@ -518,7 +517,7 @@ def step(conductor, environment, qsource, num_step):
             # (j+2*num_fluid_components,0:num_fluid_components) [Temp] \
             # (cdp, 07/2020)
             SMAT[
-                jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"], jj
+                jj + 2 * conductor.inventory["FluidComponents"].number, jj
             ] = (
                 -SMAT[jj, jj]
                 / fluid_comp_j.coolant.dict_Gauss_pt["total_isochoric_specific_heat"][
@@ -526,11 +525,9 @@ def step(conductor, environment, qsource, num_step):
                 ]
                 * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
             )
-            for kk in range(conductor.dict_obj_inventory["FluidComponents"]["Number"]):
+            for kk in range(conductor.inventory["FluidComponents"].number):
                 if kk != jj:
-                    fluid_comp_k = conductor.dict_obj_inventory["FluidComponents"][
-                        "Objects"
-                    ][kk]
+                    fluid_comp_k = conductor.inventory["FluidComponents"].collection[kk]
 
                     # Construct interface name: it can be found also in \
                     # dict_topology["ch_ch"] but a search in dictionaties \
@@ -551,11 +548,11 @@ def step(conductor, environment, qsource, num_step):
                         SMAT[
                             jj,
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                         ] = SMAT[
                             jj,
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                         ] - (
                             conductor.dict_Gauss_pt["K1"][interface_name][ii]
                             * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
@@ -569,7 +566,7 @@ def step(conductor, environment, qsource, num_step):
                         SMAT[
                             jj,
                             kk
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                         ] = (
                             conductor.dict_Gauss_pt["K1"][interface_name][ii]
                             * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
@@ -584,14 +581,14 @@ def step(conductor, environment, qsource, num_step):
                         # (cdp, 07/2020)
                         SMAT[
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                         ] = SMAT[
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                         ] + (
                             fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
                             / fluid_comp_j.channel.inputs["CROSSECTION"]
@@ -619,9 +616,9 @@ def step(conductor, environment, qsource, num_step):
                         # (cdp, 07/2020)
                         SMAT[
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                             kk
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                         ] = -(
                             fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
                             / fluid_comp_j.channel.inputs["CROSSECTION"]
@@ -646,16 +643,16 @@ def step(conductor, environment, qsource, num_step):
                         # (cdp, 07/2020)
                         SMAT[
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                             jj
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                         ] = SMAT[
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                             jj
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                         ] + (
                             fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
                             / fluid_comp_j.channel.inputs["CROSSECTION"]
@@ -675,10 +672,10 @@ def step(conductor, environment, qsource, num_step):
                         # k + 2*num_fluid_components:dict_N_equation["FluidComponents"]) [Temp_j] # (cdp, 07/2020)
                         SMAT[
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                             kk
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                         ] = -(
                             fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
                             / fluid_comp_j.channel.inputs["CROSSECTION"]
@@ -701,15 +698,15 @@ def step(conductor, environment, qsource, num_step):
                         SMAT[
                             jj
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                         ] = SMAT[
                             jj
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                             jj
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                         ] + 1.0 / (
                             fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
                             * fluid_comp_j.coolant.dict_Gauss_pt[
@@ -739,9 +736,9 @@ def step(conductor, environment, qsource, num_step):
                         SMAT[
                             jj
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                             kk
-                            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            + conductor.inventory["FluidComponents"].number,
                         ] = (
                             -1.0
                             / (
@@ -782,17 +779,17 @@ def step(conductor, environment, qsource, num_step):
                         SMAT[
                             jj
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                             jj
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                         ] = SMAT[
                             jj
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                             jj
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                         ] + 1.0 / (
                             fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
                             * fluid_comp_j.coolant.dict_Gauss_pt[
@@ -818,10 +815,10 @@ def step(conductor, environment, qsource, num_step):
                         SMAT[
                             jj
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                             kk
                             + 2
-                            * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                            * conductor.inventory["FluidComponents"].number,
                         ] = (
                             -1.0
                             / (
@@ -849,8 +846,8 @@ def step(conductor, environment, qsource, num_step):
                     # end if flag_ch_ch_contact (cdp, 09/2020)
                 # end if kk != jj (cdp, 07/2020)
             # end for kk (cdp, 07/2020)
-            for ll in range(conductor.dict_obj_inventory["SolidComponents"]["Number"]):
-                s_comp = conductor.dict_obj_inventory["SolidComponents"]["Objects"][ll]
+            for ll in range(conductor.inventory["SolidComponents"].number):
+                s_comp = conductor.inventory["SolidComponents"].collection[ll]
                 # chan_sol_topology is equivalent to \
                 # conductor.dict_topology["ch_sol"][fluid_comp_r.ID][s_comp.ID] \
                 # but it is shorter so I decide to use it here (cdp, 09/2020)
@@ -866,13 +863,13 @@ def step(conductor, environment, qsource, num_step):
                     # (j+num_fluid_components,j+2*num_fluid_components) [Temp_j] \
                     # II + III (cdp, 07/2020)
                     SMAT[
-                        jj + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        jj + conductor.inventory["FluidComponents"].number,
                         jj
-                        + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        + 2 * conductor.inventory["FluidComponents"].number,
                     ] = SMAT[
-                        jj + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        jj + conductor.inventory["FluidComponents"].number,
                         jj
-                        + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        + 2 * conductor.inventory["FluidComponents"].number,
                     ] + (
                         fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
                         / fluid_comp_j.channel.inputs["CROSSECTION"]
@@ -884,7 +881,7 @@ def step(conductor, environment, qsource, num_step):
                     )
                     # (j+num_fluid_components,l + dict_N_equation["FluidComponents"]) [Temp_l] (cdp, 07/2020)
                     SMAT[
-                        jj + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        jj + conductor.inventory["FluidComponents"].number,
                         ll + conductor.dict_N_equation["FluidComponents"],
                     ] = -(
                         fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
@@ -901,14 +898,14 @@ def step(conductor, environment, qsource, num_step):
                     # II + III (cdp, 07/2020)
                     SMAT[
                         jj
-                        + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        + 2 * conductor.inventory["FluidComponents"].number,
                         jj
-                        + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        + 2 * conductor.inventory["FluidComponents"].number,
                     ] = SMAT[
                         jj
-                        + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        + 2 * conductor.inventory["FluidComponents"].number,
                         jj
-                        + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        + 2 * conductor.inventory["FluidComponents"].number,
                     ] + 1.0 / (
                         fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
                         * fluid_comp_j.coolant.dict_Gauss_pt[
@@ -926,7 +923,7 @@ def step(conductor, environment, qsource, num_step):
                     # (j+2*num_fluid_components,l + dict_N_equation["FluidComponents"]) [Temp_l] (cdp, 07/2020)
                     SMAT[
                         jj
-                        + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        + 2 * conductor.inventory["FluidComponents"].number,
                         ll + conductor.dict_N_equation["FluidComponents"],
                     ] = (
                         -1.0
@@ -956,8 +953,8 @@ def step(conductor, environment, qsource, num_step):
         # (cdp, 07/2020)
         # * FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, SOLID \
         # COMPONENTS EQUATIONS *
-        for ll in range(conductor.dict_obj_inventory["SolidComponents"]["Number"]):
-            s_comp_l = conductor.dict_obj_inventory["SolidComponents"]["Objects"][ll]
+        for ll in range(conductor.inventory["SolidComponents"].number):
+            s_comp_l = conductor.inventory["SolidComponents"].collection[ll]
             neq = conductor.dict_N_equation["FluidComponents"] + ll
             # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
             # SolidComponents equation (cdp, 07/2020)
@@ -987,11 +984,9 @@ def step(conductor, environment, qsource, num_step):
             # END K MATRIX: solid components equation (cdp, 07/2020)
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-            for mm in range(conductor.dict_obj_inventory["SolidComponents"]["Number"]):
+            for mm in range(conductor.inventory["SolidComponents"].number):
                 if mm != ll:
-                    s_comp_m = conductor.dict_obj_inventory["SolidComponents"][
-                        "Objects"
-                    ][mm]
+                    s_comp_m = conductor.inventory["SolidComponents"].collection[mm]
                     # s_comp_topology is equivalent to \
                     # conductor.dict_topology["sol_sol"][s_comp_m.ID][s_comp_l.ID] \
                     # but it is shorter so I decide to use it here (cdp, 09/2020)
@@ -1024,10 +1019,8 @@ def step(conductor, environment, qsource, num_step):
                     # end if flag_sol_sol_contact (cdp, 09/2020)
                 # end if mm != ll (cdp, 07/2020)
             # end for mm (cdp, 07/2020)
-            for jj in range(conductor.dict_obj_inventory["FluidComponents"]["Number"]):
-                fluid_comp_j = conductor.dict_obj_inventory["FluidComponents"][
-                    "Objects"
-                ][jj]
+            for jj in range(conductor.inventory["FluidComponents"].number):
+                fluid_comp_j = conductor.inventory["FluidComponents"].collection[jj]
                 chan_sol_topology = f"{fluid_comp_j.ID}_{s_comp_l.ID}"
                 flag_chan_sol_contact = conductor.dict_interf_peri["ch_sol"].get(
                     chan_sol_topology, str_check
@@ -1051,7 +1044,7 @@ def step(conductor, environment, qsource, num_step):
                     SMAT[
                         neq,
                         jj
-                        + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+                        + 2 * conductor.inventory["FluidComponents"].number,
                     ] = (
                         -conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
                         * conductor.dict_Gauss_pt["HTC"]["ch_sol"][chan_sol_topology][
@@ -1061,7 +1054,7 @@ def step(conductor, environment, qsource, num_step):
                 # end if flag_chan_sol_contact (cdp, 09/2020)
             # end for jj (cdp, 07/2020)
             # Convective heating with the external environment (implicit treatment).
-            if s_comp_l.NAME == conductor.dict_obj_inventory["Jacket"]["Name"]:
+            if s_comp_l.NAME == conductor.inventory["Jacket"].name:
                 if (
                     conductor.dict_df_coupling["contact_perimeter_flag"].at[
                         environment.KIND, s_comp_l.ID
@@ -1110,7 +1103,7 @@ def step(conductor, environment, qsource, num_step):
 
             # FORM THE S VECTOR AT THE NODAL POINTS (SOURCE)
             # cl modify august 24 2019
-            if s_comp_l.NAME != conductor.dict_obj_inventory["Jacket"]["Name"]:
+            if s_comp_l.NAME != conductor.inventory["Jacket"].name:
                 # Strands objects (cdp, 08/2020)
                 # This is independent from the solution method thanks to the \
                 # escamotage of the dummy steady state corresponding to the \
@@ -1721,8 +1714,8 @@ def step(conductor, environment, qsource, num_step):
     # 		np.savetxt(writer, SYSLOD, delimiter = "	")
 
     # IMPOSE BOUNDARY CONDITIONS AT INLET/OUTLET
-    for jj in range(conductor.dict_obj_inventory["FluidComponents"]["Number"]):
-        fluid_comp_j = conductor.dict_obj_inventory["FluidComponents"]["Objects"][jj]
+    for jj in range(conductor.inventory["FluidComponents"].number):
+        fluid_comp_j = conductor.inventory["FluidComponents"].collection[jj]
         INTIAL = fluid_comp_j.coolant.operations["INTIAL"]
         # index for inlet BC (cdp, 08/2020)
         Iiv_inl = dict(
@@ -1732,18 +1725,18 @@ def step(conductor, environment, qsource, num_step):
             + jj,
         )
         Iip_inl = dict(
-            forward=jj + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+            forward=jj + conductor.inventory["FluidComponents"].number,
             backward=conductor.dict_N_equation["Total"]
             - conductor.dict_N_equation["NODOFS"]
             + jj
-            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+            + conductor.inventory["FluidComponents"].number,
         )
         Iit_inl = dict(
-            forward=jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+            forward=jj + 2 * conductor.inventory["FluidComponents"].number,
             backward=conductor.dict_N_equation["Total"]
             - conductor.dict_N_equation["NODOFS"]
             + jj
-            + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+            + 2 * conductor.inventory["FluidComponents"].number,
         )
 
         # index for outlet BC (cdp, 08/2020)
@@ -1757,15 +1750,15 @@ def step(conductor, environment, qsource, num_step):
             forward=jj
             + conductor.dict_N_equation["Total"]
             - conductor.dict_N_equation["NODOFS"]
-            + conductor.dict_obj_inventory["FluidComponents"]["Number"],
-            backward=jj + conductor.dict_obj_inventory["FluidComponents"]["Number"],
+            + conductor.inventory["FluidComponents"].number,
+            backward=jj + conductor.inventory["FluidComponents"].number,
         )
         Iit_out = dict(
             forward=jj
             + conductor.dict_N_equation["Total"]
             - conductor.dict_N_equation["NODOFS"]
-            + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
-            backward=jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"],
+            + 2 * conductor.inventory["FluidComponents"].number,
+            backward=jj + 2 * conductor.inventory["FluidComponents"].number,
         )
         if abs(INTIAL) == 1:
             if INTIAL == 1:
@@ -2232,12 +2225,12 @@ def step(conductor, environment, qsource, num_step):
 
     old_temperature_gauss = {
         obj.ID: obj.coolant.dict_Gauss_pt["temperature"]
-        for obj in conductor.dict_obj_inventory["FluidComponents"]["Objects"]
+        for obj in conductor.inventory["FluidComponents"].collection
     }
     old_temperature_gauss.update(
         {
             obj.ID: obj.dict_Gauss_pt["temperature"]
-            for obj in conductor.dict_obj_inventory["SolidComponents"]["Objects"]
+            for obj in conductor.inventory["SolidComponents"].collection
         }
     )
 
@@ -2255,7 +2248,7 @@ def step(conductor, environment, qsource, num_step):
     CHG = np.zeros(conductor.dict_N_equation["Total"])
     EIG = np.zeros(conductor.dict_N_equation["Total"])
 
-    for jj in range(conductor.dict_obj_inventory["FluidComponents"]["Number"]):
+    for jj in range(conductor.inventory["FluidComponents"].number):
         # velocity (cdp, 08/2020)
         SOL[
             jj : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
@@ -2279,24 +2272,18 @@ def step(conductor, environment, qsource, num_step):
         # pressure (cdp, 08/2020)
         SOL[
             jj
-            + conductor.dict_obj_inventory["FluidComponents"][
-                "Number"
-            ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
+            + conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
         ] = Known[
             jj
-            + conductor.dict_obj_inventory["FluidComponents"][
-                "Number"
-            ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
+            + conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
         ]
         conductor.dict_norm["Solution"][
-            jj + conductor.dict_obj_inventory["FluidComponents"]["Number"]
+            jj + conductor.inventory["FluidComponents"].number
         ] = np.sqrt(
             np.sum(
                 SOL[
                     jj
-                    + conductor.dict_obj_inventory["FluidComponents"][
-                        "Number"
-                    ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
+                    + conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
                         "NODOFS"
                     ]
                 ]
@@ -2307,33 +2294,27 @@ def step(conductor, environment, qsource, num_step):
         SOL[
             jj
             + 2
-            * conductor.dict_obj_inventory["FluidComponents"][
-                "Number"
-            ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
+            * conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
         ] = Known[
             jj
             + 2
-            * conductor.dict_obj_inventory["FluidComponents"][
-                "Number"
-            ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
+            * conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
         ]
         conductor.dict_norm["Solution"][
-            jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"]
+            jj + 2 * conductor.inventory["FluidComponents"].number
         ] = np.sqrt(
             np.sum(
                 SOL[
                     jj
                     + 2
-                    * conductor.dict_obj_inventory["FluidComponents"][
-                        "Number"
-                    ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
+                    * conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
                         "NODOFS"
                     ]
                 ]
                 ** 2
             )
         )
-    for ll in range(conductor.dict_obj_inventory["SolidComponents"]["Number"]):
+    for ll in range(conductor.inventory["SolidComponents"].number):
         # temperature (cdp, 08/2020)
         SOL[
             ll
@@ -2371,8 +2352,8 @@ def step(conductor, environment, qsource, num_step):
     CHG = Known - conductor.dict_Step["SYSVAR"][:, 0]
     EIG = abs(CHG / conductor.time_step) / (abs(SOL) + TINY)
 
-    for jj in range(conductor.dict_obj_inventory["FluidComponents"]["Number"]):
-        fluid_comp = conductor.dict_obj_inventory["FluidComponents"]["Objects"][jj]
+    for jj in range(conductor.inventory["FluidComponents"].number):
+        fluid_comp = conductor.inventory["FluidComponents"].collection[jj]
         # velocity (cdp, 08/2020)
         conductor.dict_norm["Change"][jj] = np.sqrt(
             np.sum(
@@ -2399,14 +2380,12 @@ def step(conductor, environment, qsource, num_step):
         ].copy()
         # pressure (cdp, 08/2020)
         conductor.dict_norm["Change"][
-            jj + conductor.dict_obj_inventory["FluidComponents"]["Number"]
+            jj + conductor.inventory["FluidComponents"].number
         ] = np.sqrt(
             np.sum(
                 CHG[
                     jj
-                    + conductor.dict_obj_inventory["FluidComponents"][
-                        "Number"
-                    ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
+                    + conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
                         "NODOFS"
                     ]
                 ]
@@ -2414,37 +2393,31 @@ def step(conductor, environment, qsource, num_step):
             )
         )
         conductor.EQTEIG[
-            jj + conductor.dict_obj_inventory["FluidComponents"]["Number"]
+            jj + conductor.inventory["FluidComponents"].number
         ] = max(
             EIG[
                 jj
-                + conductor.dict_obj_inventory["FluidComponents"][
-                    "Number"
-                ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
+                + conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
                     "NODOFS"
                 ]
             ]
         )
         fluid_comp.coolant.dict_node_pt["pressure"] = conductor.dict_Step["SYSVAR"][
             jj
-            + conductor.dict_obj_inventory["FluidComponents"][
-                "Number"
-            ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
+            + conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
                 "NODOFS"
             ],
             0,
         ].copy()
         # temperature (cdp, 08/2020)
         conductor.dict_norm["Change"][
-            jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"]
+            jj + 2 * conductor.inventory["FluidComponents"].number
         ] = np.sqrt(
             np.sum(
                 CHG[
                     jj
                     + 2
-                    * conductor.dict_obj_inventory["FluidComponents"][
-                        "Number"
-                    ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
+                    * conductor.inventory["FluidComponents"].number: conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
                         "NODOFS"
                     ]
                 ]
@@ -2452,14 +2425,12 @@ def step(conductor, environment, qsource, num_step):
             )
         )
         conductor.EQTEIG[
-            jj + 2 * conductor.dict_obj_inventory["FluidComponents"]["Number"]
+            jj + 2 * conductor.inventory["FluidComponents"].number
         ] = max(
             EIG[
                 jj
                 + 2
-                * conductor.dict_obj_inventory["FluidComponents"][
-                    "Number"
-                ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
+                * conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
                     "NODOFS"
                 ]
             ]
@@ -2467,9 +2438,7 @@ def step(conductor, environment, qsource, num_step):
         fluid_comp.coolant.dict_node_pt["temperature"] = conductor.dict_Step["SYSVAR"][
             jj
             + 2
-            * conductor.dict_obj_inventory["FluidComponents"][
-                "Number"
-            ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
+            * conductor.inventory["FluidComponents"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
                 "NODOFS"
             ],
             0,
@@ -2478,8 +2447,8 @@ def step(conductor, environment, qsource, num_step):
             fluid_comp.coolant.dict_node_pt["temperature"][:-1]
             + fluid_comp.coolant.dict_node_pt["temperature"][1:]
         ) / 2.0 - old_temperature_gauss[fluid_comp.ID]
-    for ll in range(conductor.dict_obj_inventory["SolidComponents"]["Number"]):
-        comp = conductor.dict_obj_inventory["SolidComponents"]["Objects"][ll]
+    for ll in range(conductor.inventory["SolidComponents"].number):
+        comp = conductor.inventory["SolidComponents"].collection[ll]
         # temperature (cdp, 08/2020)
         conductor.dict_norm["Change"][
             ll + conductor.dict_N_equation["FluidComponents"]

@@ -19,12 +19,12 @@ def gen_flow(cond):
     path = os.path.join(cond.BASE_PATH, cond.file_input["EXTERNAL_FLOW"])
 
     # (cdp, 07/2020)
-    for fluid_comp in cond.dict_obj_inventory["FluidComponents"]["Objects"]:
+    for fluid_comp in cond.inventory["FluidComponents"].collection:
         totChannelCrossSection = (
             totChannelCrossSection + fluid_comp.channel.inputs["CROSSECTION"]
         )
     # Compute crossFraction for each fluid_comp (cdp, 07/2020)
-    for fluid_comp in cond.dict_obj_inventory["FluidComponents"]["Objects"]:
+    for fluid_comp in cond.inventory["FluidComponents"].collection:
         fluid_comp.crossFraction = (
             fluid_comp.channel.inputs["CROSSECTION"] / totChannelCrossSection
         )
@@ -1004,10 +1004,10 @@ def get_inlet_conductor_mfr(cond):
     cond.MDTINL = 0.0
     # Loop on FluidComponents to compute conductor inlet mass flow rate \
     # (cdp, 09/2020)
-    for fluid_comp in cond.dict_obj_inventory["FluidComponents"]["Objects"]:
+    for fluid_comp in cond.inventory["FluidComponents"].collection:
         cond.MDTINL = cond.MDTINL + fluid_comp.coolant.operations["MDTIN"]
     # Loop on FluidComponents to compute channels flow fraction (cdp, 09/2020)
-    for fluid_comp in cond.dict_obj_inventory["FluidComponents"]["Objects"]:
+    for fluid_comp in cond.inventory["FluidComponents"].collection:
         if cond.MDTINL != 0.0:
             # Avoid division by 0 if INTIAL = 3 or INTIAL = 4
             fluid_comp.channel.flow_fraction = (

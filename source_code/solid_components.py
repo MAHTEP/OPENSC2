@@ -119,7 +119,7 @@ class SolidComponents:
 
     # end method __init__ (cdp, 11/2020)
 
-    def eval_sol_comp_properties(self, dict_obj_inventory, nodal=True):
+    def eval_sol_comp_properties(self, inventory, nodal=True):
 
         """
         Method that evaluate total_density, specific_heat and thermal conductivity of SolidComponents class objects in both nodal points and Gauss points according to **options input parameter (cdp, 07/2020)
@@ -128,19 +128,19 @@ class SolidComponents:
         # Properties evaluation in each nodal point (cdp, 07/2020)
         if nodal:
             dict_dummy = self.dict_node_pt
-            self.dict_node_pt = self.eval_properties(dict_dummy, dict_obj_inventory)
+            self.dict_node_pt = self.eval_properties(dict_dummy, inventory)
         # Properties evaluation in each Gauss point (cdp, 07/2020)
         elif nodal == False:
             dict_dummy = self.dict_Gauss_pt
-            self.dict_Gauss_pt = self.eval_properties(dict_dummy, dict_obj_inventory)
+            self.dict_Gauss_pt = self.eval_properties(dict_dummy, inventory)
 
-    def eval_properties(self, dict_dummy, dict_obj_inventory):
+    def eval_properties(self, dict_dummy, inventory):
 
         """
         Method that actually evaluate total_density, specific_heat and thermal conductivity of SolidComponents class objects regardless of the location (nodal or Gauss points) (cdp, 07/2020)
         """
         # keys = list(self.inputs.keys())
-        if self.NAME == dict_obj_inventory["MixSCStabilizer"]["Name"]:
+        if self.NAME == inventory["MixSCStabilizer"].name:
             # STR_MIX: stabilizer and superconductor strand (cdp, 07/2020)
             # initialization (cdp, 07/2020)
             rho_num = 0.0
@@ -365,7 +365,7 @@ class SolidComponents:
             # This expression is always the same, what change is the way in which \
             # cp_num and rho_num are evaluated (cdp, 07/2020)
             dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
-        elif self.NAME == dict_obj_inventory["SuperConductor"]["Name"]:
+        elif self.NAME == inventory["SuperConductor"].name:
             # STR_SC: superconductor strand (cdp, 07/2020)
             if self.inputs["ISUPERCONDUCTOR"] == "NbTi":
                 # LTS: NbTi (cdp, 07/2020)
@@ -460,7 +460,7 @@ class SolidComponents:
         {list(self.inputs.keys())[3]} = 
         {self.inputs["ISUPERCONDUCTOR"]} is not defined yet.\n"""
                 )
-        elif self.NAME == dict_obj_inventory["Stabilizer"]["Name"]:
+        elif self.NAME == inventory["Stabilizer"].name:
             # STR_STAB: stabilizer strand (cdp, 07/2020)
             if self.inputs["ISTABILIZER"] == "Cu":
                 # Cu strand (cdp, 07/2020)
@@ -508,7 +508,7 @@ class SolidComponents:
           {list(self.inputs.keys())[2]} = 
           {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
                 )
-        elif self.NAME == dict_obj_inventory["Jacket"]["Name"]:
+        elif self.NAME == inventory["Jacket"].name:
             # Z_JKT: jacket (cdp, 07/2020)
             # initialization (cdp, 07/2020)
             self.inputs.update(CROSSECTION=0.0)

@@ -9,19 +9,19 @@ def solid_components_temperature_initialization(cond):
     """
     Function that initializes Solid Components temperature spatial distribution according to conductor topology and to the value of flag INTIAL (cdp, 12/2020)
     """
-    T_min = np.zeros(cond.dict_obj_inventory["FluidComponents"]["Number"])
+    T_min = np.zeros(cond.inventory["FluidComponents"].number)
     # Loop on FluidComponents to get the minimum temperature among all the \
     # channels (cdp, 12/2020)
-    for rr in range(cond.dict_obj_inventory["FluidComponents"]["Number"]):
-        fluid_comp = cond.dict_obj_inventory["FluidComponents"]["Objects"][rr]
+    for rr in range(cond.inventory["FluidComponents"].number):
+        fluid_comp = cond.inventory["FluidComponents"].collection[rr]
         T_min[rr] = fluid_comp.coolant.dict_node_pt["temperature"].min()
     # end for rr (cdp, 12/2020)
     # For each solid component evaluate temperature (cdp, 07/2020)
     # If needed read only the sub matrix describing channel - solid objects \
     # contact (cdp, 07/2020)
     # nested loop on channel - solid objects (cpd 07/2020)
-    for cc in range(cond.dict_obj_inventory["SolidComponents"]["Number"]):
-        s_comp = cond.dict_obj_inventory["SolidComponents"]["Objects"][cc]
+    for cc in range(cond.inventory["SolidComponents"].number):
+        s_comp = cond.inventory["SolidComponents"].collection[cc]
         s_comp.dict_node_pt = dict()  # dictionary declaration (cdp, 07/2020)
         s_comp.dict_Gauss_pt = dict()  # dictionary declaration (cdp, 07/2020)
         # s_comp temperature initialization to 0 (cdp, 12/2020)
@@ -32,20 +32,20 @@ def solid_components_temperature_initialization(cond):
             # column, array smart, in this way is possible to determine if s_comp is \
             # in thermal contact with channels or not (cdp, 12/2020)
             contact_flag = cond.dict_df_coupling["contact_perimeter"].iloc[
-                0 : cond.dict_obj_inventory["FluidComponents"]["Number"],
-                cc + cond.dict_obj_inventory["FluidComponents"]["Number"],
+                0 : cond.inventory["FluidComponents"].number,
+                cc + cond.inventory["FluidComponents"].number,
             ]
             if np.sum(contact_flag) > 0:
                 # get weight reading the sub matrix channel - solid by column, array \
                 # smart (cdp, 12/2020)
                 weight = cond.dict_df_coupling["contact_perimeter"].iloc[
-                    0 : cond.dict_obj_inventory["FluidComponents"]["Number"],
-                    cc + cond.dict_obj_inventory["FluidComponents"]["Number"],
+                    0 : cond.inventory["FluidComponents"].number,
+                    cc + cond.inventory["FluidComponents"].number,
                 ]
                 # evaluate SolidComponents temperature as the weighted average on \
                 # conctat_perimeter with channels (cpd 07/2020)
-                for rr in range(cond.dict_obj_inventory["FluidComponents"]["Number"]):
-                    fluid_comp = cond.dict_obj_inventory["FluidComponents"]["Objects"][
+                for rr in range(cond.inventory["FluidComponents"].number):
+                    fluid_comp = cond.inventory["FluidComponents"].collection[
                         rr
                     ]
                     s_comp.dict_node_pt["temperature"] = s_comp.dict_node_pt[

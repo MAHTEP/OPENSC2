@@ -299,9 +299,7 @@ class Simulations:
                     self.num_step,
                 )
                 # Loop on FluidComponents (cdp, 10/2020)
-                for fluid_comp in conductor.dict_obj_inventory["FluidComponents"][
-                    "Objects"
-                ]:
+                for fluid_comp in conductor.inventory["FluidComponents"].collection:
                     # compute density and mass flow rate in nodal points with the
                     # updated FluidComponents temperature and velocity (nodal = True by default)
                     fluid_comp.coolant._compute_density_and_mass_flow_rates_nodal_gauss(
@@ -334,7 +332,7 @@ class Simulations:
                     )
                 # end for fluid_comp (cdp, 10/2020)
                 # Loop on SolidComponents (cdp, 01/2021)
-                # for s_comp in conductor.dict_obj_inventory["SolidComponents"]\
+                # for s_comp in conductor.inventory["SolidComponents"]\
                 # 	["Objects"]:
                 # 	if s_comp.NAME != "STR_STAB" and s_comp.NAME != "Z_JACKET":
                 # 		# Call Get_superconductor_critical_prop to evaluate \
@@ -345,7 +343,7 @@ class Simulations:
                 # 	# compute, average density, thermal conductivity, specifi heat at \
                 # 	# constant pressure and electrical resistivity with the updated \
                 # 	# Solidcomponents temperature in nodal points (cdp, 01/2021)
-                # 	s_comp.Eval_sol_comp_properties(conductor.dict_obj_inventory, \
+                # 	s_comp.Eval_sol_comp_properties(conductor.inventory, \
                 # 		Where = "nodal")
                 ## end for s_comp (cdp, 01/2021)
 
@@ -765,32 +763,32 @@ class Simulations:
     # end if cond.inputs["METHOD"] (cdp, 10/2020)
     # block.append("IOP0_TOT_" + str(cond.inputs["I0_OP_TOT"]))
     # INTIAL_val = str()
-    # for ii in range(cond.dict_obj_inventory["FluidComponents"]["Number"]):
-    # 	fluid_comp = cond.dict_obj_inventory["FluidComponents"]["Objects"][ii]
-    # 	if cond.dict_obj_inventory["FluidComponents"]["Number"] == 1:
+    # for ii in range(cond.inventory["FluidComponents"]["Number"]):
+    # 	fluid_comp = cond.inventory["FluidComponents"]["Objects"][ii]
+    # 	if cond.inventory["FluidComponents"]["Number"] == 1:
     # 		INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"])
-    # 	elif cond.dict_obj_inventory["FluidComponents"]["Number"] > 1:
-    # 		if ii < cond.dict_obj_inventory["FluidComponents"]["Number"] - 1:
+    # 	elif cond.inventory["FluidComponents"]["Number"] > 1:
+    # 		if ii < cond.inventory["FluidComponents"]["Number"] - 1:
     # 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"]) + ","
-    # 		elif ii == cond.dict_obj_inventory["FluidComponents"]["Number"] - 1:
+    # 		elif ii == cond.inventory["FluidComponents"]["Number"] - 1:
     # 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"])
     # 		# end if ii (cdp, 10/2020)
-    # 	# end if cond.dict_obj_inventory["FluidComponents"]["Number"] \
+    # 	# end if cond.inventory["FluidComponents"]["Number"] \
     # 	# (cdp, 10/2020)
     ## end for ii (cdp, 10/2020)
     # block.append(f"INTIAL_({INTIAL_val})")
     # XQEND_val = str()
-    # for ii in range(cond.dict_obj_inventory["SolidComponents"]["Number"]):
-    # 	s_comp = cond.dict_obj_inventory["SolidComponents"]["Objects"][ii]
-    # 	if cond.dict_obj_inventory["SolidComponents"]["Number"] == 1:
+    # for ii in range(cond.inventory["SolidComponents"]["Number"]):
+    # 	s_comp = cond.inventory["SolidComponents"]["Objects"][ii]
+    # 	if cond.inventory["SolidComponents"]["Number"] == 1:
     # 		XQEND_val = XQEND_val + str(s_comp.operations["XQEND"])
-    # 	elif cond.dict_obj_inventory["SolidComponents"]["Number"] > 1:
-    # 		if ii < cond.dict_obj_inventory["SolidComponents"]["Number"] - 1:
+    # 	elif cond.inventory["SolidComponents"]["Number"] > 1:
+    # 		if ii < cond.inventory["SolidComponents"]["Number"] - 1:
     # 			XQEND_val = XQEND_val + str(s_comp.operations["XQEND"]) + ","
-    # 		elif ii == cond.dict_obj_inventory["SolidComponents"]["Number"] - 1:
+    # 		elif ii == cond.inventory["SolidComponents"]["Number"] - 1:
     # 			XQEND_val = XQEND_val + str(s_comp.operations["XQEND"])
     # 		# end if ii (cdp, 10/2020)
-    # 	# end if cond.dict_obj_inventory["SolidComponents"]["Number"] \
+    # 	# end if cond.inventory["SolidComponents"]["Number"] \
     # 	# (cdp, 10/2020)
     ## end for ii (cdp, 10/2020)
     # block.append(f"XQEND_({XQEND_val})")
