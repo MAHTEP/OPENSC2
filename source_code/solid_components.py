@@ -752,19 +752,8 @@ class SolidComponents:
             self.dict_node_pt["IOP"] = (
                 conductor.IOP_TOT * self.operations["IOP0_FRACTION"]
             )
-        elif conductor.inputs["I0_OP_MODE"] == 1:
-            if conductor.cond_time[-1] <= conductor.inputs["TAUDET"]:
-                self.dict_node_pt["IOP"] = (
-                    conductor.IOP_TOT * self.operations["IOP0_FRACTION"]
-                )
-            elif conductor.cond_time[-1] > conductor.inputs["TAUDET"]:
-                conductor.IOP_TOT = conductor.inputs["I0_OP_TOT"] * np.exp(
-                    -(conductor.cond_time[-1] - conductor.inputs["TAUDET"])
-                    / conductor.inputs["TAUDUM"]
-                )
-                self.dict_node_pt["IOP"] = (
-                    conductor.IOP_TOT * self.operations["IOP0_FRACTION"]
-                )
+        else:
+            raise ValueError(f"Not defined value for flag I0_OP_MODE: {conductor.inputs['I0_OP_MODE']=}.\n")
         # Conversion of float to float array if necessary, this avoid following \
         # error: TypeError: 'float' object is not subscriptable (cdp, 08/2020)
         self.dict_node_pt["IOP"] = np.array([self.dict_node_pt["IOP"]])
