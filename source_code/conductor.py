@@ -75,13 +75,9 @@ class Conductor:
 
         Args:
             self (Self): conductor object.
-            simulation (object): simulation object,
+            simulation (object): simulation object.
             sheetConductorsList (list): list of sheets available in input file conductor_definition.
             ICOND (int): conductor counter.
-
-        Raises:
-            ValueError: raise error if spatial coordinates in sheet Time_evolutions of file conductor_diagnostic are larger than the conductor length.
-            ValueError: raise error if time values in sheet Spatial_distribution of file conductor diagnostic are larger than the end time of the simulation.
         """
 
         self.BASE_PATH = simulation.basePath
@@ -138,7 +134,10 @@ class Conductor:
 
         # Calls method self.__manage_equipotential_surfaces_coordinate if
         # EQUIPOTENTIAL_SURFACE_FLAG is True.
+        consolelogger.debug(f"{self.operations['EQUIPOTENTIAL_SURFACE_FLAG']=};call method {_[self.operations['EQUIPOTENTIAL_SURFACE_FLAG']].__name__}\n")
         _[self.operations["EQUIPOTENTIAL_SURFACE_FLAG"]]()
+
+        consolelogger.debug(f"After equipotetial surface(s) definition\n")
 
         # Load all the sheets in file conductor_coupling.xlsx as a dictionary of dataframes.
         self.dict_df_coupling = pd.read_excel(
@@ -152,150 +151,14 @@ class Conductor:
         # Dictionary declaration (cdp, 09/2020)
         self.inventory = dict()
         # call method Conductor_components_instance to make instance of conductor components (cdp, 11/2020)
+        consolelogger.debug(f"Before call method {self.conductor_components_instance.__name__}")
         self.conductor_components_instance(simulation)
+        consolelogger.debug(f"After call method {self.conductor_components_instance.__name__}")
 
         # Call private method __initialize_attributes to initialize all the other useful and necessary attributes of class Conductor.
-        self.__initialize_attributes()
-
-        self.dict_topology = dict()  # dictionary declaration (cdp, 09/2020)
-        self.dict_interf_peri = dict()  # dictionary declaration (cdp, 07/2020)
-        # Call method Get_conductor_topology to evaluate conductor topology: \
-        # interfaces between channels, channels and solid components and between \
-        # solid components(cdp, 09/2020)
-        self.get_conductor_topology(simulation.environment)
-
-        self.dict_node_pt = dict()
-        self.dict_Gauss_pt = dict()
-
-        # CREATE grid for the i-th conductor
-        self.dict_discretization = dict()
-        self.dict_discretization["Grid_input"] = pd.read_excel(
-            os.path.join(self.BASE_PATH, self.file_input["GRID_DEFINITION"]),
-            sheet_name="GRID",
-            skiprows=2,
-            header=0,
-            index_col=0,
-            usecols=["Variable name", self.ID],
-            dtype="object",
-        )[self.ID].to_dict()
-
-        self.heat_rad_jk = dict()
-        self.heat_exchange_jk_env = dict()
-
-        # **NUMERICS**
-        # evaluate value of theta_method according to flag METHOD (cdo, 08/2020)
-        # Adams Moulton value is temporary and maybe non correct
-        _ = dict(BE=1.0, CE=0.5, AM4=1.0 / 24.0)
-        self.theta_method = _[self.inputs["ELECTRIC_METHOD"]]
-        self.electric_theta = _[self.inputs["ELECTRIC_METHOD"]]
-        consolelogger.debug(f"Defined electric_theta\n")
-        ## Evaluate parameters useful in function \
-        # Transient_solution_functions.py\STEP (cdp, 07/2020)
-        # dict_N_equation keys meaning:
-        # ["FluidComponent"]: total number of equations for FluidComponent \
-        # objects (cdp, 07/2020);
-        # ["StrandComponent"]: total number of equations for StrandComponent objects (cdp, 07/2020);
-        # ["JacketComponent"]: total number of equations for JacketComponent objects (cdp, 07/2020);
-        # ["SolidComponent"]: total number of equations for SolidComponent \
-        # objects (cdp, 07/2020);
-        # ["NODOFS"]: total number of equations for for each node, i.e. Number Of \
-        # Degrees Of Freedom, given by: \
-        # 3*(number of channels) + (number of strands) + (number of jackets) \
-        # (cdp, 07/2020);
-        self.dict_N_equation = dict(
-            FluidComponent=3 * self.inventory["FluidComponent"].number,
-            StrandComponent=self.inventory["StrandComponent"].number,
-            JacketComponent=self.inventory["JacketComponent"].number,
-            SolidComponent=self.inventory["SolidComponent"].number,
-        )
-        # necessary since it is not allowed to use the value of a dictionary key \
-        # before that the dictionary is fully defined (cdp, 09/2020)
-        self.dict_N_equation.update(
-            NODOFS=self.dict_N_equation["FluidComponent"]
-            + self.dict_N_equation["SolidComponent"]
-        )
-        # dict_band keys meaning:
-        # ["Half"]: half band width, including main diagonal (IEDOFS) (cdp, 09/2020)
-        # ["Main_diag"]: main diagonal index within the band (IHBAND) (cdp, 09/2020)
-        # ["Full"]: full band width, including main diagonal (IBWIDT) (cdp, 09/2020)
-        self.dict_band = dict(
-            Half=2 * self.dict_N_equation["NODOFS"],
-            Main_diag=2 * self.dict_N_equation["NODOFS"] - 1,
-            Full=4 * self.dict_N_equation["NODOFS"] - 1,
-        )
-        # self.MAXDOF = self.dict_N_equation["NODOFS"]*MAXNOD
-        self.EQTEIG = np.zeros(self.dict_N_equation["NODOFS"])
-        # dict_norm keys meaning:
-        # ["Solution"]: norm of the solution (cdp, 09/2020)
-        # ["Change"]: norm of the solution variation wrt the previous time step \
-        # (cdp, 09/2020)
-        self.dict_norm = dict(
-            Solution=np.zeros(self.dict_N_equation["NODOFS"]),
-            Change=np.zeros(self.dict_N_equation["NODOFS"]),
-        )
-
-        # evaluate attribute EIGTIM exploiting method Aprior (cdp, 08/2020)
-        self.aprior()
-        path_diagnostic = os.path.join(self.BASE_PATH, self.file_input["OUTPUT"])
-        # Load the content of column self.ID of sheet Space in file conductors_disgnostic.xlsx as a series and convert to numpy array of float.
-        self.Space_save = (
-            pd.read_excel(
-                path_diagnostic,
-                sheet_name="Spatial_distribution",
-                skiprows=2,
-                header=0,
-                usecols=[self.ID],
-                squeeze=True,
-            )
-            .dropna()
-            .to_numpy()
-            .astype(float)
-        )
-        # Adjust the user defined diagnostic.
-        self.Space_save = set_diagnostic(
-            self.Space_save, lb=0.0, ub=simulation.transient_input["TEND"]
-        )
-        # Check on spatial distribution diagnostic.
-        if self.Space_save.max() > simulation.transient_input["TEND"]:
-            raise ValueError(
-                f"File {self.file_input['OUTPUT']}, sheet Space, conductor {self.ID}: impossible to save spatial distributions at time {self.Space_save.max()} s since it is larger than the end time of the simulation {simulation.transient_input['TEND']} s.\n"
-            )
-        # End if self.Space_save.max() > simulation.transient_input["TEND"]
-        # index pointer to save solution spatial distribution (cdp, 12/2020)
-        self.i_save = 0
-        # list of number of time steps at wich save the spatial discretization
-        self.num_step_save = np.zeros(self.Space_save.shape, dtype=int)
-        # Load the content of column self.ID of sheet Time in file conductors_disgnostic.xlsx as a series and convert to numpy array of float.
-        self.Time_save = (
-            pd.read_excel(
-                path_diagnostic,
-                sheet_name="Time_evolution",
-                skiprows=2,
-                header=0,
-                usecols=[self.ID],
-                squeeze=True,
-            )
-            .dropna()
-            .to_numpy()
-            .astype(float)
-        )
-        # Adjust the user defined diagnostic.
-        self.Time_save = set_diagnostic(
-            self.Time_save, lb=0.0, ub=self.inputs["XLENGTH"]
-        )
-        # Check on time evolution diagnostic.
-        if self.Time_save.max() > self.inputs["XLENGTH"]:
-            raise ValueError(
-                f"File {self.file_input['OUTPUT']}, sheet Time, conductor {self.ID}: impossible to save time evolutions at axial coordinate {self.Time_save.max()} s since it is ouside the computational domain of the simulation [0, {self.inputs['XLENGTH']}] m.\n"
-            )
-        # End if self.Time_save.max() > self.inputs["XLENGTH"]
-
-        # declare dictionaries to store Figure and axes objects to constructi real \
-        # time figures (cdp, 10/2020)
-        self.dict_Figure_animation = dict(T_max=dict(), mfr=dict())
-        self.dict_axes_animation = dict(T_max=dict(), mfr=dict())
-        self.dict_canvas = dict(T_max=dict(), mfr=dict())
-        self.color = ["r*", "bo"]
+        consolelogger.debug(f"Before call method {self.__initialize_attributes.__name__}")
+        self.__initialize_attributes(simulation)
+        consolelogger.debug(f"After call method {self.__initialize_attributes.__name__}")
 
     # end method __init__ (cdp, 11/2020)
 
@@ -575,12 +438,162 @@ class Conductor:
 
     # end method Conductor_components_instance (cdp, 11/2020)
 
-    def __initialize_attributes(self: Self):
+    def __initialize_attributes(self: Self, simulation: object):
         """Private method that initializes usefull attributes of conductor object.
 
         Args:
-            self (Self): conductor object.
+            self (Self):
+
+        Args:
+            self (Self): conductor object
+            simulation (object): simulation object.
+
+        Raises:
+            ValueError: raise error if spatial coordinates in sheet Time_evolutions of file conductor_diagnostic are larger than the conductor length.
+            ValueError: raise error if time values in sheet Spatial_distribution of file conductor diagnostic are larger than the end time of the simulation.
         """
+        
+        self.dict_topology = dict()  # dictionary declaration (cdp, 09/2020)
+        self.dict_interf_peri = dict()  # dictionary declaration (cdp, 07/2020)
+        # Call method Get_conductor_topology to evaluate conductor topology: \
+        # interfaces between channels, channels and solid components and between \
+        # solid components(cdp, 09/2020)
+        self.get_conductor_topology(simulation.environment)
+
+        self.dict_node_pt = dict()
+        self.dict_Gauss_pt = dict()
+
+        # CREATE grid for the i-th conductor
+        self.dict_discretization = dict()
+        self.dict_discretization["Grid_input"] = pd.read_excel(
+            os.path.join(self.BASE_PATH, self.file_input["GRID_DEFINITION"]),
+            sheet_name="GRID",
+            skiprows=2,
+            header=0,
+            index_col=0,
+            usecols=["Variable name", self.ID],
+            dtype="object",
+        )[self.ID].to_dict()
+
+        self.heat_rad_jk = dict()
+        self.heat_exchange_jk_env = dict()
+
+        # **NUMERICS**
+        # evaluate value of theta_method according to flag METHOD (cdo, 08/2020)
+        # Adams Moulton value is temporary and maybe non correct
+        _ = dict(BE=1.0, CE=0.5, AM4=1.0 / 24.0)
+        self.theta_method = _[self.inputs["ELECTRIC_METHOD"]]
+        self.electric_theta = _[self.inputs["ELECTRIC_METHOD"]]
+        consolelogger.debug(f"Defined electric_theta\n")
+        ## Evaluate parameters useful in function \
+        # Transient_solution_functions.py\STEP (cdp, 07/2020)
+        # dict_N_equation keys meaning:
+        # ["FluidComponent"]: total number of equations for FluidComponent \
+        # objects (cdp, 07/2020);
+        # ["StrandComponent"]: total number of equations for StrandComponent objects (cdp, 07/2020);
+        # ["JacketComponent"]: total number of equations for JacketComponent objects (cdp, 07/2020);
+        # ["SolidComponent"]: total number of equations for SolidComponent \
+        # objects (cdp, 07/2020);
+        # ["NODOFS"]: total number of equations for for each node, i.e. Number Of \
+        # Degrees Of Freedom, given by: \
+        # 3*(number of channels) + (number of strands) + (number of jackets) \
+        # (cdp, 07/2020);
+        self.dict_N_equation = dict(
+            FluidComponent=3 * self.inventory["FluidComponent"].number,
+            StrandComponent=self.inventory["StrandComponent"].number,
+            JacketComponent=self.inventory["JacketComponent"].number,
+            SolidComponent=self.inventory["SolidComponent"].number,
+        )
+        # necessary since it is not allowed to use the value of a dictionary key \
+        # before that the dictionary is fully defined (cdp, 09/2020)
+        self.dict_N_equation.update(
+            NODOFS=self.dict_N_equation["FluidComponent"]
+            + self.dict_N_equation["SolidComponent"]
+        )
+        # dict_band keys meaning:
+        # ["Half"]: half band width, including main diagonal (IEDOFS) (cdp, 09/2020)
+        # ["Main_diag"]: main diagonal index within the band (IHBAND) (cdp, 09/2020)
+        # ["Full"]: full band width, including main diagonal (IBWIDT) (cdp, 09/2020)
+        self.dict_band = dict(
+            Half=2 * self.dict_N_equation["NODOFS"],
+            Main_diag=2 * self.dict_N_equation["NODOFS"] - 1,
+            Full=4 * self.dict_N_equation["NODOFS"] - 1,
+        )
+        # self.MAXDOF = self.dict_N_equation["NODOFS"]*MAXNOD
+        self.EQTEIG = np.zeros(self.dict_N_equation["NODOFS"])
+        # dict_norm keys meaning:
+        # ["Solution"]: norm of the solution (cdp, 09/2020)
+        # ["Change"]: norm of the solution variation wrt the previous time step \
+        # (cdp, 09/2020)
+        self.dict_norm = dict(
+            Solution=np.zeros(self.dict_N_equation["NODOFS"]),
+            Change=np.zeros(self.dict_N_equation["NODOFS"]),
+        )
+
+        # evaluate attribute EIGTIM exploiting method Aprior (cdp, 08/2020)
+        self.aprior()
+        path_diagnostic = os.path.join(self.BASE_PATH, self.file_input["OUTPUT"])
+        # Load the content of column self.ID of sheet Space in file conductors_disgnostic.xlsx as a series and convert to numpy array of float.
+        self.Space_save = (
+            pd.read_excel(
+                path_diagnostic,
+                sheet_name="Spatial_distribution",
+                skiprows=2,
+                header=0,
+                usecols=[self.ID],
+                squeeze=True,
+            )
+            .dropna()
+            .to_numpy()
+            .astype(float)
+        )
+        # Adjust the user defined diagnostic.
+        self.Space_save = set_diagnostic(
+            self.Space_save, lb=0.0, ub=simulation.transient_input["TEND"]
+        )
+        # Check on spatial distribution diagnostic.
+        if self.Space_save.max() > simulation.transient_input["TEND"]:
+            raise ValueError(
+                f"File {self.file_input['OUTPUT']}, sheet Space, conductor {self.ID}: impossible to save spatial distributions at time {self.Space_save.max()} s since it is larger than the end time of the simulation {simulation.transient_input['TEND']} s.\n"
+            )
+        # End if self.Space_save.max() > simulation.transient_input["TEND"]
+        # index pointer to save solution spatial distribution (cdp, 12/2020)
+        self.i_save = 0
+        # list of number of time steps at wich save the spatial discretization
+        self.num_step_save = np.zeros(self.Space_save.shape, dtype=int)
+        # Load the content of column self.ID of sheet Time in file conductors_disgnostic.xlsx as a series and convert to numpy array of float.
+        self.Time_save = (
+            pd.read_excel(
+                path_diagnostic,
+                sheet_name="Time_evolution",
+                skiprows=2,
+                header=0,
+                usecols=[self.ID],
+                squeeze=True,
+            )
+            .dropna()
+            .to_numpy()
+            .astype(float)
+        )
+        # Adjust the user defined diagnostic.
+        self.Time_save = set_diagnostic(
+            self.Time_save, lb=0.0, ub=self.inputs["XLENGTH"]
+        )
+        # Check on time evolution diagnostic.
+        if self.Time_save.max() > self.inputs["XLENGTH"]:
+            raise ValueError(
+                f"File {self.file_input['OUTPUT']}, sheet Time, conductor {self.ID}: impossible to save time evolutions at axial coordinate {self.Time_save.max()} s since it is ouside the computational domain of the simulation [0, {self.inputs['XLENGTH']}] m.\n"
+            )
+        # End if self.Time_save.max() > self.inputs["XLENGTH"]
+
+        # declare dictionaries to store Figure and axes objects to constructi real \
+        # time figures (cdp, 10/2020)
+        self.dict_Figure_animation = dict(T_max=dict(), mfr=dict())
+        self.dict_axes_animation = dict(T_max=dict(), mfr=dict())
+        self.dict_canvas = dict(T_max=dict(), mfr=dict())
+        self.color = ["r*", "bo"]
+
+        # Introduced for the electric module.
         self.total_elements = (
             self.grid_inputs["NELEMS"] * self.inventory["Conductor"].number
         )
