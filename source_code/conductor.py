@@ -69,7 +69,19 @@ class Conductor:
     KIND = "Conductor"
     CHUNCK_SIZE = 100
 
-    def __init__(self, simulation, sheetConductorsList, ICOND):
+    def __init__(self: Self, simulation: object, sheetConductorsList: list, ICOND: int):
+        """Makes an instance of class conductor.
+
+        Args:
+            self (Self): conductor object.
+            simulation (object): simulation object,
+            sheetConductorsList (list): list of sheets available in input file conductor_definition.
+            ICOND (int): conductor counter.
+
+        Raises:
+            ValueError: raise error if spatial coordinates in sheet Time_evolutions of file conductor_diagnostic are larger than the conductor length.
+            ValueError: raise error if time values in sheet Spatial_distribution of file conductor diagnostic are larger than the end time of the simulation.
+        """
 
         self.BASE_PATH = simulation.basePath
         self.ICOND = ICOND
