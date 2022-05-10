@@ -2,10 +2,10 @@ import numpy as np
 import warnings
 from CoolProp.CoolProp import PropsSI
 
-from fluid_components import FluidComponentsInput
+from fluid_components import FluidComponentInput
 
 
-class Coolant(FluidComponentsInput):
+class Coolant(FluidComponentInput):
     """docstring for Coolant."""
 
     KIND = "Coolant"
@@ -196,7 +196,7 @@ class Coolant(FluidComponentsInput):
     def _eval_properties(self, dict_dummy, aliases):
         """
         Method that actually evaluate density, specific_heat and thermal
-        conductivity of FluidComponents class objects regardless of the location
+        conductivity of FluidComponent class objects regardless of the location
         (nodal or Gauss points) (cdp, 09/2020)
         """
         # Evaluate density, dynamic viscosity, Gruneisen, enthalpy, isobaric specific heat, isochoric specific heat, speed of sound and thermal conductivity with MatLab functions and data base

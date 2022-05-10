@@ -1,28 +1,28 @@
-from solid_components import SolidComponents
-from strands import Strands
+from solid_components import SolidComponent
+from strands import StrandComponent
 import pandas as pd
 
 
-class Stabilizer(Strands):
+class StrandStabilizerComponent(StrandComponent):
 
     # Class for copper strands objects
 
     ### INPUT PARAMETERS
-    # some are inherited form the parent classes Strands and SolidComponents
+    # some are inherited form the parent classes StrandComponent and SolidComponent
 
     ### THERMOPHYSICAL PROPERTIES
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     ##### OPERATIONAL PARAMETERS
-    # inherited from parents class SolidComponents and Strands
+    # inherited from parents class SolidComponent and StrandComponent
 
     ### COMPUTED IN INITIALIZATION
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     ### COMPUTED VECTOR FOR MAGNETIC FIELD
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
-    KIND = "Stabilizer"
+    KIND = "StrandStabilizerComponent"
 
     def __init__(self, simulation, sheet, icomp, name, dict_file_path):
 
@@ -58,9 +58,9 @@ class Stabilizer(Strands):
             usecols=["Variable name", self.ID],
         )[self.ID].to_dict()
 
-        # Call SolidComponents class constructor to deal with Stabilizer time \
+        # Call SolidComponent class constructor to deal with StrandStabilizerComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
-        SolidComponents(simulation, self)
+        SolidComponent(simulation, self)
         if self.inputs["ISTABILIZER"] != "Cu":
             # remove key RRR from inputs if stabilizer is not Cu (cdp, 07/2020)
             self.inputs.pop("RRR")

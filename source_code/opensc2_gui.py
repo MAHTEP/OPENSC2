@@ -8,7 +8,7 @@ from PIL import ImageTk, Image
 import os
 import subprocess
 
-from simulations import Simulations
+from simulations import Simulation
 
 
 class OPENSC2_GUI:
@@ -342,7 +342,7 @@ class OPENSC2_GUI:
         base_path = os.path.join(main_input, sub_input)
 
         # simulation instance (cdp, 08/2020)
-        self.simulation = Simulations(base_path)
+        self.simulation = Simulation(base_path)
         # Enables the Save Simulation results cascade options (cdp, 12/2020)
         for key in list(self.dict_save_res.keys()):
             self.output_path_menu.entryconfigure(

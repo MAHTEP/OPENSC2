@@ -84,7 +84,7 @@ def check_object_number(object, path_1, path_2, sheet_1, sheet_2):
         ValueError: [description]
     """
     dict_method = dict(
-        Simulations="conductor_instance", Conductors="conductor_components_instance"
+        Simulation="conductor_instance", Conductor="conductor_components_instance"
     )
     if int(sheet_1.cell(row=1, column=2).value) != int(
         sheet_2.cell(row=1, column=2).value
@@ -129,7 +129,10 @@ def load_auxiliary_files(file_path, sheetname):
     """
     wb = load_workbook(file_path, data_only=True)
     sheet = wb[sheetname]
-    return (pd.read_excel(file_path, sheet_name=sheetname, header=0, index_col=0), sheet.cell(1, 1).value)
+    return (
+        pd.read_excel(file_path, sheet_name=sheetname, header=0, index_col=0),
+        sheet.cell(1, 1).value,
+    )
 
 
 # End function load_auxiliary_files
@@ -218,7 +221,7 @@ def do_interpolation(interpolator, zcoord, time_step, kind):
         return interpolator(time_step)
 
     elif kind == "space_and_time":
-        return interpolator(time_step,zcoord).reshape(zcoord.shape)
+        return interpolator(time_step, zcoord).reshape(zcoord.shape)
 
 
 # End function do_interpolation
@@ -279,7 +282,7 @@ def get_from_xlsx(conductor, f_path, comp, flag_name, *INTIAL):
     ##############################################################################
     #
     # Function that perform interpolation on data read from .xlsx files to
-    # initialize SolidComponents python objects parameters like magnetic field,
+    # initialize SolidComponent python objects parameters like magnetic field,
     # magnetic field gradient, strain and external heat.
     #
     ##############################################################################
@@ -287,7 +290,7 @@ def get_from_xlsx(conductor, f_path, comp, flag_name, *INTIAL):
     # --------------------------------------------------------------------------
     # f_path      I      string            path of the file to be read      -
     # comp        I      object            python object of
-    #                                      class SolidComponents            -
+    #                                      class SolidComponent            -
     # value       O      np array float    vector of interpolation
     #                                      results                          many
     # flag        O      scalar integer    flag that specifies data units   -
@@ -581,7 +584,7 @@ def read_interp_file(file_path, comp, *INTIAL, **options):
     # --------------------------------------------------------------------------
     # file_path   I      string                path of the file to be read  -
     # comp        I      object                python object of
-    #                                          class SolidComponents    -
+    #                                          class SolidComponent    -
     # tt          O      np array float        time values vector to be
     #                                          used in interpolation        s
     # xx          O      np array float        space values vector to be

@@ -1,28 +1,28 @@
-from solid_components import SolidComponents
+from solid_components import SolidComponent
 import pandas as pd
 import numpy as np
 
 
-class Jacket(SolidComponents):
+class JacketComponent(SolidComponent):
 
     # Class for jacket objects
 
     ### INPUT PARAMETERS
-    # some are inherited from class SolidComponents
+    # some are inherited from class SolidComponent
 
     ### THERMOPHYSICAL PROPERTIES
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     ### OPERATIONAL PARAMETERS
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     ### COMPUTED IN INITIALIZATION
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     ### COMPUTED VECTOR FOR MAGNETIC FIELD
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
-    KIND = "Jacket"
+    KIND = "JacketComponent"
 
     def __init__(self, simulation, sheet, icomp, name, dict_file_path):
 
@@ -63,9 +63,9 @@ class Jacket(SolidComponents):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
 
-        # Call SolidComponents class constructor to deal with Jacket time \
+        # Call SolidComponent class constructor to deal with JacketComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
-        SolidComponents(simulation, self)
+        SolidComponent(simulation, self)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.NAME}, ID: {self.ID})"
@@ -81,10 +81,7 @@ class Jacket(SolidComponents):
             environment ([type]): [description]
         """
         key = f"{environment.KIND}_{self.ID}"
-        if (
-            conductor.inputs["METHOD"] == "BE"
-            or conductor.inputs["METHOD"] == "CN"
-        ):
+        if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson.
             if conductor.cond_time[-1] == 0:
                 # Initialization.
@@ -142,10 +139,7 @@ class Jacket(SolidComponents):
         else:
             key = f"{jk_inner.ID}_{self.ID}"
         # End if self.ID.
-        if (
-            conductor.inputs["METHOD"] == "BE"
-            or conductor.inputs["METHOD"] == "CN"
-        ):
+        if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson.
             if conductor.cond_time[-1] == 0:
                 # Initialization.

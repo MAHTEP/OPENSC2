@@ -1,5 +1,5 @@
 import warnings
-from solid_components import SolidComponents
+from solid_components import SolidComponent
 from openpyxl import load_workbook
 import numpy as np
 import os
@@ -33,15 +33,15 @@ from Properties_of_materials.rare_earth_123 import (
 )
 
 
-class Strands(SolidComponents):
+class StrandComponent(SolidComponent):
 
     ### INPUT PARAMETERS
 
     ### OPERATIONAL PARAMETERS
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     ### COMPUTED IN INITIALIZATION
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     KIND = "Strand"
 
@@ -313,7 +313,7 @@ class Strands(SolidComponents):
     # End method eval_tcs
 
     def get_eps(self, conductor, nodal=True):
-        # For each strand of type MixSCStabilizer or SuperConductor (cdp, 06/2020)
+        # For each strand of type StrandMixedComponent or StrandSuperconductorComponent (cdp, 06/2020)
         if nodal:
             # compute Epsilon in each node (cdp, 07/2020)
             if self.operations["IEPS"] < 0:  # strain from file strain.dat

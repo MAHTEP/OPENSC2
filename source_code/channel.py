@@ -2,10 +2,10 @@ import numpy as np
 
 # import sys
 import warnings
-from fluid_components import FluidComponentsInput
+from fluid_components import FluidComponentInput
 
 
-class Channel(FluidComponentsInput):
+class Channel(FluidComponentInput):
     """docstring for Channel."""
 
     KIND = "Channel"
@@ -173,7 +173,7 @@ class Channel(FluidComponentsInput):
         self.dict_nusselt = {True: None, False: None}
 
         # For time evolution plots.
-        self.time_evol = dict(friction_factor = dict())
+        self.time_evol = dict(friction_factor=dict())
 
     # End method __init__.
 
@@ -338,8 +338,7 @@ class Channel(FluidComponentsInput):
         self.dict_friction_factor[nodal]["turbulent"] = (
             (
                 dict_coeff[self.inputs["IFRICTION"]]["aa"]
-                * (reynolds / corr_diam)
-                ** (dict_coeff[self.inputs["IFRICTION"]]["bb"])
+                * (reynolds / corr_diam) ** (dict_coeff[self.inputs["IFRICTION"]]["bb"])
             )
             / dict_coeff[self.inputs["IFRICTION"]]["cc"]
             / (corr_diam ** dict_coeff[self.inputs["IFRICTION"]]["dd"])
@@ -530,9 +529,7 @@ class Channel(FluidComponentsInput):
         """
         # Define dictionary for the geometry evaluation. If flag self.inputs["ISRECTANGULAR"] is True TTHICK1 = SIDE1 and DOUTCT = SIDE2, else use default values.
         dict_geometry = {
-            True: dict(
-                TTHICK1=self.inputs["SIDE1"], DOUTCT=self.inputs["SIDE2"]
-            ),
+            True: dict(TTHICK1=self.inputs["SIDE1"], DOUTCT=self.inputs["SIDE2"]),
             False: dict(
                 TTHICK1=tthick1,
                 DOUTCT=self._eval_correction_diameter_hole(tthick=tthick1)[0],
@@ -628,9 +625,7 @@ class Channel(FluidComponentsInput):
             117: self._incropera_rectangular_duct_demo_cs_coeff_hole,
         }
         # Evaluate coefficients for the correlations.
-        re_rect = dict_methods[self.inputs["IFRICTION"]](
-            reynolds, flag_eval_ccc=False
-        )
+        re_rect = dict_methods[self.inputs["IFRICTION"]](reynolds, flag_eval_ccc=False)
         # Evaluate turbulent friction factor.
         self.dict_friction_factor[nodal]["turbulent"] = (
             0.79 * np.log10(re_rect) - 1.64
@@ -714,8 +709,7 @@ class Channel(FluidComponentsInput):
             (
                 -1.8
                 * np.log10(
-                    (self.inputs["Roughness"] / self.inputs["HYDIAMETER"] / 3.7)
-                    ** 1.11
+                    (self.inputs["Roughness"] / self.inputs["HYDIAMETER"] / 3.7) ** 1.11
                     + (6.9 / reynolds)
                 )
             )
@@ -746,11 +740,7 @@ class Channel(FluidComponentsInput):
                 (
                     -2.0
                     * np.log10(
-                        (
-                            self.inputs["Roughness"]
-                            / self.inputs["HYDIAMETER"]
-                            / 3.7
-                        )
+                        (self.inputs["Roughness"] / self.inputs["HYDIAMETER"] / 3.7)
                         + (2.51 / reynolds / np.sqrt(fric_old))
                     )
                 )
@@ -911,8 +901,7 @@ class Channel(FluidComponentsInput):
         # Evaluate jj.
         jj = (
             dict_coeff[self.inputs["IFRICTION"]][1]
-            / self.inputs["VOID_FRACTION"]
-            ** dict_coeff[self.inputs["IFRICTION"]][2]
+            / self.inputs["VOID_FRACTION"] ** dict_coeff[self.inputs["IFRICTION"]][2]
         )
         # Evaluate kk.
         kk = (
@@ -942,9 +931,7 @@ class Channel(FluidComponentsInput):
             / 2.0
             / kk
             / reynolds
-            + (self.inputs["HYDIAMETER"] * self.inputs["VOID_FRACTION"] ** 2)
-            / 2.0
-            * jj
+            + (self.inputs["HYDIAMETER"] * self.inputs["VOID_FRACTION"] ** 2) / 2.0 * jj
         )
 
     # End method darcy_forcheimer_porus_medium_correlation_bundle.
@@ -1018,11 +1005,7 @@ class Channel(FluidComponentsInput):
             + (self.inputs["HYDIAMETER"] * self.inputs["VOID_FRACTION"] ** 2)
             / 2.0
             * jj
-            * (
-                self.inputs["HYDIAMETER"]
-                / self.inputs["VOID_FRACTION"]
-                / np.sqrt(kk)
-            )
+            * (self.inputs["HYDIAMETER"] / self.inputs["VOID_FRACTION"] / np.sqrt(kk))
             ** 0.14
             / reynolds ** 0.14
         )
@@ -1217,9 +1200,7 @@ class Channel(FluidComponentsInput):
             [type]: [description]
         """
         # Called if self.inputs["Flag_htc_steady_corr"] = 119
-        alpha = self.inputs["HYDIAMETER"] / (
-            self.inputs["HYDIAMETER"] + 2 * 1e-3
-        )
+        alpha = self.inputs["HYDIAMETER"] / (self.inputs["HYDIAMETER"] + 2 * 1e-3)
         NuTemp = 7.541 * (
             1.0
             - 2.610 * alpha

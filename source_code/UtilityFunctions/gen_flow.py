@@ -19,12 +19,12 @@ def gen_flow(cond):
     path = os.path.join(cond.BASE_PATH, cond.file_input["EXTERNAL_FLOW"])
 
     # (cdp, 07/2020)
-    for fluid_comp in cond.inventory["FluidComponents"].collection:
+    for fluid_comp in cond.inventory["FluidComponent"].collection:
         totChannelCrossSection = (
             totChannelCrossSection + fluid_comp.channel.inputs["CROSSECTION"]
         )
     # Compute crossFraction for each fluid_comp (cdp, 07/2020)
-    for fluid_comp in cond.inventory["FluidComponents"].collection:
+    for fluid_comp in cond.inventory["FluidComponent"].collection:
         fluid_comp.crossFraction = (
             fluid_comp.channel.inputs["CROSSECTION"] / totChannelCrossSection
         )
@@ -219,9 +219,9 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
     elif abs(fluid_comp.coolant.operations["INTIAL"]) == 3:
         if fluid_comp.coolant.operations["INTIAL"] == 3:
             # INLET RESERVOIR AND CLOSED OUTLET (SYMMETRY)
-            fluid_comp.coolant.operations[
-                "PREOUT"
-            ] = fluid_comp.coolant.operations["PREINL"]
+            fluid_comp.coolant.operations["PREOUT"] = fluid_comp.coolant.operations[
+                "PREINL"
+            ]
             fluid_comp.coolant.operations["MDTIN"] = 0.0
         elif fluid_comp.coolant.operations["INTIAL"] == -3:
             # in this case call Get_from_xlsx (cdp, 09/2020)
@@ -229,15 +229,15 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
     # end abs(INTIAL == 3)
     elif abs(fluid_comp.coolant.operations["INTIAL"]) == 4:
         if fluid_comp.coolant.operations["INTIAL"] == 4:
-            fluid_comp.coolant.operations[
+            fluid_comp.coolant.operations["PREINL"] = fluid_comp.coolant.operations[
+                "PREINI"
+            ]
+            fluid_comp.coolant.operations["TEMINL"] = fluid_comp.coolant.operations[
+                "TEMINI"
+            ]
+            fluid_comp.coolant.operations["PREOUT"] = fluid_comp.coolant.operations[
                 "PREINL"
-            ] = fluid_comp.coolant.operations["PREINI"]
-            fluid_comp.coolant.operations[
-                "TEMINL"
-            ] = fluid_comp.coolant.operations["TEMINI"]
-            fluid_comp.coolant.operations[
-                "PREOUT"
-            ] = fluid_comp.coolant.operations["PREINL"]
+            ]
             fluid_comp.coolant.operations["MDTIN"] = 0.0
         elif fluid_comp.coolant.operations["INTIAL"] == -4:
             # in this case call Get_from_xlsx (cdp, 09/2020)
@@ -957,9 +957,9 @@ def abs_intial_equal_4_hp(cond, chan_group, N_group, path):
             # Initial pressure (cdp, 09/2020)
             p_ini[ii] = fluid_comp.coolant.operations["PREINI"]
             # Impose initial temperature (cdp, 09/2020)
-            fluid_comp.coolant.operations[
-                "TEMINL"
-            ] = fluid_comp.coolant.operations["TEMINI"]
+            fluid_comp.coolant.operations["TEMINL"] = fluid_comp.coolant.operations[
+                "TEMINI"
+            ]
             # Impose inlet mass flow rate (cdp, 09/2020)
             fluid_comp.coolant.operations["MDTIN"] = 0.0
             print(
@@ -1002,12 +1002,12 @@ def get_inlet_conductor_mfr(cond):
 
     # total conductor inlet mass flow rate initialization (cdp, 09/2020)
     cond.MDTINL = 0.0
-    # Loop on FluidComponents to compute conductor inlet mass flow rate \
+    # Loop on FluidComponent to compute conductor inlet mass flow rate \
     # (cdp, 09/2020)
-    for fluid_comp in cond.inventory["FluidComponents"].collection:
+    for fluid_comp in cond.inventory["FluidComponent"].collection:
         cond.MDTINL = cond.MDTINL + fluid_comp.coolant.operations["MDTIN"]
-    # Loop on FluidComponents to compute channels flow fraction (cdp, 09/2020)
-    for fluid_comp in cond.inventory["FluidComponents"].collection:
+    # Loop on FluidComponent to compute channels flow fraction (cdp, 09/2020)
+    for fluid_comp in cond.inventory["FluidComponent"].collection:
         if cond.MDTINL != 0.0:
             # Avoid division by 0 if INTIAL = 3 or INTIAL = 4
             fluid_comp.channel.flow_fraction = (

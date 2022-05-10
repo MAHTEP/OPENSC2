@@ -17,7 +17,7 @@ import pandas as pd
 import os
 
 
-class FluidComponentsInput:
+class FluidComponentInput:
     """Interface class used to get the input data for fluid components objects. Attributes inputs and operations are inherited from this class by Coolant and Channel class. Being an interface, this class has only the constructror (__init__) method."""
 
     def __init__(self, sheet, sheetOpar, dict_file_path, identifier):
@@ -59,14 +59,14 @@ class FluidComponentsInput:
     # End  method __init__.
 
 
-# End class FluidComponentsSetUp.
+# End class FluidComponentInput.
 
 # Import classes Channel and Coolant: done here to avoid circular import error
 from channel import Channel
 from coolant import Coolant
 
 
-class FluidComponents:
+class FluidComponent:
 
     # class variable shared by all instances
     KIND = "Fluid_component"
@@ -105,4 +105,4 @@ class FluidComponents:
     # End method __str__.
 
 
-# End class FluidComponents.
+# End class FluidComponent.

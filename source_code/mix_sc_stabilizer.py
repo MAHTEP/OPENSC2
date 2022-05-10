@@ -1,26 +1,26 @@
-from solid_components import SolidComponents
-from strands import Strands
+from solid_components import SolidComponent
+from strands import StrandComponent
 import pandas as pd
 
 
-class MixSCStabilizer(Strands):
+class StrandMixedComponent(StrandComponent):
 
     # Class for mixed strands objects
 
     ### INPUT PARAMETERS
-    # some are inherited form the parent classes Strands and SolidComponents
+    # some are inherited form the parent classes StrandComponent and SolidComponent
 
     ### THERMOPHYSICAL PROPERTIES
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     ### OPERATIONAL PARAMETERS
-    # inherited from parent classes Strands and SolidComponents
+    # inherited from parent classes StrandComponent and SolidComponent
 
     ### COMPUTED IN INITIALIZATION
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     ### COMPUTED VECTOR FOR MAGNETIC FIELD
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     KIND = "Mixed_sc_stab"
 
@@ -58,12 +58,10 @@ class MixSCStabilizer(Strands):
             usecols=["Variable name", self.ID],
         )[self.ID].to_dict()
 
-        self.ASC = self.inputs["CROSSECTION"] / (
-            1.0 + self.inputs["STAB_NON_STAB"]
-        )
-        # Call SolidComponents class constructor to deal with MixSCStabilizer time \
+        self.ASC = self.inputs["CROSSECTION"] / (1.0 + self.inputs["STAB_NON_STAB"])
+        # Call SolidComponent class constructor to deal with StrandMixedComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
-        SolidComponents(simulation, self)
+        SolidComponent(simulation, self)
         if self.inputs["ISTABILIZER"] != "Cu":
             # remove key RRR from inputs if stabilizer is not Cu (cdp, 07/2020)
             self.inputs.pop("RRR")

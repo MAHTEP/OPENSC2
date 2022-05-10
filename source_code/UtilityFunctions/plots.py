@@ -29,8 +29,8 @@ def plot_properties(simulation, cond, what="initialization"):
             Save=simulation.dict_path[f"Figures_Solution_{cond.ID}_dir"],
         )
     # end if what (cdp, 12/2020)
-    # Loop on FluidComponents (cdp, 12/2020)
-    for fluid_comp in cond.inventory["FluidComponents"].collection:
+    # Loop on FluidComponent (cdp, 12/2020)
+    for fluid_comp in cond.inventory["FluidComponent"].collection:
         # load values
         file_load = os.path.join(dict_path["Load"], f"{fluid_comp.ID}.tsv")
         # Load data in file_load as pandas DataFrame
@@ -74,8 +74,8 @@ def plot_properties(simulation, cond, what="initialization"):
             # 																										transparent = False)
             plt.close()
     # end for fluid_comp (cdp, 12/2020)
-    # Loop on SolidComponents (cdp, 12/2020)
-    for s_comp in cond.inventory["SolidComponents"].collection:
+    # Loop on SolidComponent (cdp, 12/2020)
+    for s_comp in cond.inventory["SolidComponent"].collection:
         # load values
         file_load = os.path.join(dict_path["Load"], f"{s_comp.ID}.tsv")
         # Load data in file_load as pandas DataFrame
@@ -153,7 +153,7 @@ def plot_nomenclature_y(prop):
         Heat_exch=("Q_exch", "(W/m)"),
         isobaric_expansion_coefficient=(r"$\alpha_L$", "(1/K)"),
         isothermal_compressibility=(r"$\beta$", "(1/Pa)"),
-        friction_factor=("f","(~)"),
+        friction_factor=("f", "(~)"),
     )
     return dict_nomenclature[prop]
 
@@ -210,9 +210,13 @@ def make_plots(simulation, kind="Space_distr"):
         if kind == "Space_distr":
             # unify the array (cdp, 11/2020)
             kind_save = np.around(cond.Space_save, simulation.n_digit)
-            root_load_path = simulation.dict_path[f"Output_Spatial_distribution_{cond.ID}_dir"]
+            root_load_path = simulation.dict_path[
+                f"Output_Spatial_distribution_{cond.ID}_dir"
+            ]
             des = "sd"
-            root_save_path = simulation.dict_path[f"Figures_Spatial_distribution_{cond.ID}_dir"]
+            root_save_path = simulation.dict_path[
+                f"Figures_Spatial_distribution_{cond.ID}_dir"
+            ]
             abscissa = pd.read_csv(
                 os.path.join(root_load_path, "xcoord.tsv"), delimiter="\t"
             )
@@ -228,9 +232,13 @@ def make_plots(simulation, kind="Space_distr"):
         elif kind == "Time_evol":
             # unify the array (cdp, 11/2020)
             kind_save = cond.Time_save
-            root_load_path = simulation.dict_path[f"Output_Time_evolution_{cond.ID}_dir"]
+            root_load_path = simulation.dict_path[
+                f"Output_Time_evolution_{cond.ID}_dir"
+            ]
             des = "te"
-            root_save_path = simulation.dict_path[f"Figures_Time_evolution_{cond.ID}_dir"]
+            root_save_path = simulation.dict_path[
+                f"Figures_Time_evolution_{cond.ID}_dir"
+            ]
             # plot features (cdp, 01/2021)
             # unify the array (cdp, 11/2020)
             # uni_label = cond.Time_save
@@ -263,8 +271,8 @@ def make_plots(simulation, kind="Space_distr"):
             )
             N_lines[nn] = round(N_lines_tot[nn] / N_axes[nn])
         # end for nn (cdp, 11/2020)
-        # Loop on FluidComponents (cdp, 11/2020)
-        for fluid_comp in cond.inventory["FluidComponents"].collection:
+        # Loop on FluidComponent (cdp, 11/2020)
+        for fluid_comp in cond.inventory["FluidComponent"].collection:
             # dictionary declaration (cdp, 09/2020)
             dict_values[cond.ID][fluid_comp.ID] = {}
             # Load properties value for channels (cdp, 09/2020)
@@ -353,15 +361,15 @@ def make_plots(simulation, kind="Space_distr"):
                 # end if kind (cdp, 01/2021)
             # end for prop (cdp, 10/2020)
         # end for fluid_comp (cdp, 10/2020)
-        # Loop on SolidComponents (cdp, 11/2020)
-        for s_comp in cond.inventory["SolidComponents"].collection:
+        # Loop on SolidComponent (cdp, 11/2020)
+        for s_comp in cond.inventory["SolidComponent"].collection:
             dict_values[cond.ID][s_comp.ID] = {}
-            if s_comp.NAME != cond.inventory["Jacket"].name:
-                # Strands objects (cdp, 09/2020)
+            if s_comp.NAME != cond.inventory["JacketComponent"].name:
+                # StrandComponent objects (cdp, 09/2020)
                 # Load properties value for strands (cdp, 09/2020)
                 prop_s_comp = prop_st[s_comp.NAME]
             else:
-                # Jackets objects (cdp, 09/2020)
+                # JacketComponents objects (cdp, 09/2020)
                 # Load properties value for jackets (cdp, 09/2020)
                 prop_s_comp = prop_jk
             for prop in prop_s_comp:
@@ -435,8 +443,9 @@ def make_plots(simulation, kind="Space_distr"):
                     for ii in range(len(abscissa.columns))
                 }
             )
-            for rr, jk_r in enumerate(cond.inventory["SolidComponents"].collection):
-                for _, jk_c in enumerate(cond.inventory["SolidComponents"].collection[rr + 1:]
+            for rr, jk_r in enumerate(cond.inventory["SolidComponent"].collection):
+                for _, jk_c in enumerate(
+                    cond.inventory["SolidComponent"].collection[rr + 1 :]
                 ):
                     if (
                         abs(cond.dict_df_coupling["HTC_choice"].at[jk_r.ID, jk_c.ID])
@@ -1098,10 +1107,10 @@ def create_real_time_plots(simulation, conductor):
     """Function create_real_time_plots allows to create the required attributes to buld the real time plots (rtp).
 
     Args:
-        simulation (object): object simulation instance of class Simulations.
-        conductor (object): object conductor instance of class Conductors.
+        simulation (object): object simulation instance of class Simulation.
+        conductor (object): object conductor instance of class Conductor.
     """
-    for f_comp in conductor.inventory["FluidComponents"].collection:
+    for f_comp in conductor.inventory["FluidComponent"].collection:
         f_comp.create_rtp_max_temperature = {
             True: create_real_time_plots_max_temperature,
             False: do_nothing,
@@ -1131,7 +1140,7 @@ def create_real_time_plots(simulation, conductor):
         )
     # End for f_comp.
 
-    for s_comp in conductor.inventory["SolidComponents"].collection:
+    for s_comp in conductor.inventory["SolidComponent"].collection:
         s_comp.create_rtp_max_temperature = {
             True: create_real_time_plots_max_temperature,
             False: do_nothing,
@@ -1154,9 +1163,9 @@ def create_real_time_plots_max_temperature(simulation, conductor, comp):
     """Function create_real_time_plots_max_temperature creates the required attribures of object comp to make the real time plots of the maximum temperature time evolution.
 
     Args:
-        simulation (object): object simulation instance of class Simulations.
-        conductor (object): object conductor instance of class Conductors.
-        comp (object): can be any object instance of classes FluidComponents, MixSCStabilizet, SuperConductor Stabilizer or Jacket.
+        simulation (object): object simulation instance of class Simulation.
+        conductor (object): object conductor instance of class Conductor.
+        comp (object): can be any object instance of classes FluidComponent, MixSCStabilizet, StrandSuperconductorComponent StrandStabilizerComponent or JacketComponent.
     """
     comp.figure_max_temp, comp.axes_max_temp = plt.subplots(
         num=f"{simulation.transient_input['SIMULATION']} ({conductor.number}): maximum {comp.ID} temperature",
@@ -1179,9 +1188,9 @@ def create_real_time_plots_inlet_outlet_mfr(simulation, conductor, f_comp):
     """Function create_real_time_plots_inlet_outlet_mfr creates the required attribures of object fluid_component to make the real time plots of the inlet and outlet mass flow rates time evolution.
 
     Args:
-        simulation (object): object simulation instance of class Simulations.
-        conductor (object): object conductor instance of class Conductors.
-        f_comp (object): object fluid_component instance of class FluidComponents.
+        simulation (object): object simulation instance of class Simulation.
+        conductor (object): object conductor instance of class Conductor.
+        f_comp (object): object fluid_component instance of class FluidComponent.
     """
     f_comp.figure_io_mfr, f_comp.axes_io_mfr = plt.subplots(
         num=f"{simulation.transient_input['SIMULATION']} ({conductor.number}): {f_comp.ID} mass flow rates",
@@ -1205,9 +1214,9 @@ def do_nothing(simulation, cond=None, comp=None):
     """Function do_nothing does nothing; necessay in the branchless coding.
 
     Args:
-        simulation (object): object simulation instance of class Simulations
-        cond (objetc, optional): object conductor instance of class Conductors.. Defaults to None.
-        comp (object, optional): can be any object instance of classes FluidComponents, MixSCStabilizet, SuperConductor Stabilizer or Jacket. Defaults to None.
+        simulation (object): object simulation instance of class Simulation
+        cond (objetc, optional): object conductor instance of class Conductor.. Defaults to None.
+        comp (object, optional): can be any object instance of classes FluidComponent, MixSCStabilizet, StrandSuperconductorComponent StrandStabilizerComponent or JacketComponent. Defaults to None.
     """
     pass
 
@@ -1219,9 +1228,9 @@ def update_real_time_plots(conductor):
     """Function update_real_time_plots is the main function that allows to update the real time plots at each time step.
 
     Args:
-        conductor (object): object conductor instance of class Conductors.
+        conductor (object): object conductor instance of class Conductor.
     """
-    for f_comp in conductor.inventory["FluidComponents"].collection:
+    for f_comp in conductor.inventory["FluidComponent"].collection:
 
         # When the GUI works add the default to true.
 
@@ -1230,16 +1239,12 @@ def update_real_time_plots(conductor):
             conductor, f_comp
         )
         # If flag Show_fig is set to TRUE update the real time plot of inlet and outlet f_comp mass flow rate (invoke function update_real_time_plots_inlet_outlet_mfr); else does nothing.
-        f_comp.update_rtp_io_mfr[f_comp.coolant.inputs["Show_fig"]](
-            conductor, f_comp
-        )
+        f_comp.update_rtp_io_mfr[f_comp.coolant.inputs["Show_fig"]](conductor, f_comp)
     # End for f_comp.
 
-    for s_comp in conductor.inventory["SolidComponents"].collection:
+    for s_comp in conductor.inventory["SolidComponent"].collection:
         # If flag Show_fig is set to TRUE update the real time plot of maximum s_comp temperature (invoke function update_real_time_plots_max_temperature); else does nothing.
-        s_comp.update_rtp_max_temperature[s_comp.inputs["Show_fig"]](
-            conductor, s_comp
-        )
+        s_comp.update_rtp_max_temperature[s_comp.inputs["Show_fig"]](conductor, s_comp)
         # End for s_comp.
 
     plt.pause(5e-3)
@@ -1251,8 +1256,8 @@ def update_real_time_plots_max_temperature(conductor, comp):
     """Function update_real_time_plots_max_temperature updates the real time plots of the maximum temperature time evolution of each component (comp) object.
 
     Args:
-        conductor (object): object conductor instance of class Conductors.
-        comp (object): can be any object instance of classes FluidComponents, MixSCStabilizet, SuperConductor Stabilizer or Jacket.
+        conductor (object): object conductor instance of class Conductor.
+        comp (object): can be any object instance of classes FluidComponent, MixSCStabilizet, StrandSuperconductorComponent StrandStabilizerComponent or JacketComponent.
     """
     if comp.KIND == "Fluid_component":
         comp.axes_max_temp.plot(
@@ -1273,8 +1278,8 @@ def update_real_time_plots_inlet_outlet_mfr(conductor, f_comp):
     """Function update_real_time_plots_inlet_outlet_mfr updates the real time plots of the inlet and outlet time evolution of fluid_component (f_comp) objects.
 
     Args:
-        conductor (object): object conductor instance of class Conductors.
-        f_comp (object): object fluid_component instance of class FluidComponents.
+        conductor (object): object conductor instance of class Conductor.
+        f_comp (object): object fluid_component instance of class FluidComponent.
     """
     # Aggiustare per tener conto della effettiva direzione del flusso di refrigerante.
     f_comp.axes_io_mfr.plot(
@@ -1298,9 +1303,9 @@ def create_legend_rtp(conductor):
     """Function create_legend_rtp is the main fucntion to add legend to the real time plots.
 
     Args:
-        conductor (object): object conductor instance of class Conductors.
+        conductor (object): object conductor instance of class Conductor.
     """
-    for f_comp in conductor.inventory["FluidComponents"].collection:
+    for f_comp in conductor.inventory["FluidComponent"].collection:
         # If flag Show_fig is set to TRUE create the legend in the time plot of inlet and outlet f_comp mass flow rate (invoke function add_legend_mfr); else does nothing.
         f_comp.add_legend_rtp_io_mfr[f_comp.coolant.inputs["Show_fig"]](f_comp)
     # End for create_legend_rtp.
@@ -1313,7 +1318,7 @@ def add_legend_rtp(f_comp):
     """Function add_legend_rtp adds legend to the real time plot of inlet and outlet mass flow rate time evolutions for fluid_components objects.
 
     Args:
-        f_comp (object): object fluid_component instance of class FluidComponents.
+        f_comp (object): object fluid_component instance of class FluidComponent.
     """
     f_comp.axes_io_mfr.legend(loc="best", fontsize=8, framealpha=0.2)
     # comp.axes_max_temp.legend(loc = 'best', fontsize = 8, framealpha = 0.2)
@@ -1328,7 +1333,7 @@ def plot_time_animation(simulation, conductor):
     Function that make an animated plot of the time evolution of the maximum temperature of the strands. (cdp, 10/2020)
     """
 
-    list_types = ["FluidComponents", "Strands", "Jacket"]
+    list_types = ["FluidComponent", "StrandComponent", "JacketComponent"]
     for l_type in list_types:
         if conductor.cond_time[-1] == 0:
             # Define some immutable features of the plots only once (cdp, 10/2020)
@@ -1341,13 +1346,13 @@ def plot_time_animation(simulation, conductor):
                 num=f"{simulation.transient_input['SIMULATION']} ({conductor.number}): maximum {l_type} temperature",
                 figsize=(5, 5),
             )
-            if l_type == "FluidComponents":
+            if l_type == "FluidComponent":
                 # Create a number of Figure and axes objects equal to the number of \
-                # FluidComponents objects to plot the inlet and outlet mass flow rate \
-                # for each FluidComponents object in a dedicated plot. (cdp, 10/2020)
+                # FluidComponent objects to plot the inlet and outlet mass flow rate \
+                # for each FluidComponent object in a dedicated plot. (cdp, 10/2020)
                 # conductor.dict_Figure_animation["mfr"][l_type] = dict()
                 # conductor.dict_axes_animation["mfr"][l_type] = dict()
-                for fluid_comp in conductor.inventory["FluidComponents"].collection:
+                for fluid_comp in conductor.inventory["FluidComponent"].collection:
                     (
                         conductor.dict_Figure_animation["mfr"][fluid_comp.ID],
                         conductor.dict_axes_animation["mfr"][fluid_comp.ID],
@@ -1379,9 +1384,9 @@ def plot_time_animation(simulation, conductor):
                 [0.0, simulation.transient_input["TEND"]]
             )
         # end if conductor.cond_time[-1] (cdp, 10/2020)
-        if l_type == "FluidComponents":
-            # loop on FluidComponents (cdp, 10/2020)
-            for fluid_comp in conductor.inventory["FluidComponents"].collection:
+        if l_type == "FluidComponent":
+            # loop on FluidComponent (cdp, 10/2020)
+            for fluid_comp in conductor.inventory["FluidComponent"].collection:
                 # make the plot of channels maximum temperature (cdp, 10/2020)
                 # conductor.dict_axes_animation["T_max"][l_type].plot(
                 #     conductor.cond_time[-1], fluid_comp.coolant.dict_node_pt["temperature"].max(), conductor.color[ii], label = fluid_comp.ID) # choose the color
@@ -1428,9 +1433,9 @@ def plot_time_animation(simulation, conductor):
             # conductor.dict_canvas["T_max"][l_type].get_tk_widget().grid(row = 0, \
             # 	column = 0, columnspan = 2)
             # conductor.dict_canvas["T_max"][l_type].draw()
-        elif l_type == "Strands":
-            # loop on Strands (cdp, 10/2020)
-            for strand in conductor.inventory["Strands"].collection:
+        elif l_type == "StrandComponent":
+            # loop on StrandComponent (cdp, 10/2020)
+            for strand in conductor.inventory["StrandComponent"].collection:
                 # plot the maximum strand temperature (cdp, 10/2020)
                 # conductor.dict_axes_animation["T_max"][l_type].plot(
                 #     conductor.cond_time[-1], strand.dict_node_pt["temperature"].max(), conductor.color[ii], label = strand.ID) # choose the color.
@@ -1451,8 +1456,8 @@ def plot_time_animation(simulation, conductor):
             # conductor.dict_canvas["T_max"][l_type].get_tk_widget().grid(row = 0, \
             # 	column = 0)
             # conductor.dict_canvas["T_max"][l_type].draw()
-        elif l_type == "Jacket":
-            # for the time being do not make figures for Jackets objects \
+        elif l_type == "JacketComponent":
+            # for the time being do not make figures for JacketComponents objects \
             # (cdp, 10/2020)
             pass
         # end if l_type (cdp, 10/2020)
@@ -1476,15 +1481,15 @@ def plot_time_animation(simulation, conductor):
     # 	# strand
     # 	conductor.axes_SYSLOD_str.plot(conductor.dict_discretization["xcoord"], \
     # 		conductor.dict_Step["SYSLOD"]\
-    # 		[conductor.dict_N_equation["FluidComponents"]:\
+    # 		[conductor.dict_N_equation["FluidComponent"]:\
     # 		conductor.dict_N_equation["Total"]:\
     # 		conductor.dict_N_equation["NODOFS"],0], \
     # 		label = conductor.cond_time[-1])
     # 	# jacket
     # 	conductor.axes_SYSLOD_jk.plot(conductor.dict_discretization["xcoord"], \
     # 		conductor.dict_Step["SYSLOD"]\
-    # 		[conductor.dict_N_equation["FluidComponents"] + \
-    # 		conductor.dict_N_equation["Strands"]:conductor.dict_N_equation["Total"]: \
+    # 		[conductor.dict_N_equation["FluidComponent"] + \
+    # 		conductor.dict_N_equation["StrandComponent"]:conductor.dict_N_equation["Total"]: \
     # 		conductor.dict_N_equation["NODOFS"],0], \
     # 			label = conductor.cond_time[-1])
     # 	conductor.axes_SYSLOD_str.legend(bbox_to_anchor = (1.11, 1), \
@@ -1495,11 +1500,10 @@ def plot_time_animation(simulation, conductor):
     # (cdp, 10/2020)
     if conductor.cond_time[-1] == 0:
         # plt.show(block = False)
-        # close figure related to Jacket objects (cdp, 10/2020)
-        plt.close(conductor.dict_Figure_animation["T_max"]["Jacket"])
+        # close figure related to JacketComponent objects (cdp, 10/2020)
+        plt.close(conductor.dict_Figure_animation["T_max"]["JacketComponent"])
         # gui.plots_window.deiconify()
     plt.pause(0.01)
 
 
 # end function Plot_time_animation (cdp, 10/2020)
-

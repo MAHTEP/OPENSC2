@@ -1,27 +1,27 @@
-from solid_components import SolidComponents
-from strands import Strands
+from solid_components import SolidComponent
+from strands import StrandComponent
 import pandas as pd
 
 # Modified by D.Placido PoliTo
 # data 05/05/2020
-class SuperConductor(Strands):
+class StrandSuperconductorComponent(StrandComponent):
 
     # Class for superconductor strands objects
 
     ### INPUT PARAMETERS
-    # some are inherited form the parent classes Strands and SolidComponents
+    # some are inherited form the parent classes StrandComponent and SolidComponent
 
     ### THERMOPHYSICAL PROPERTIES
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     ### OPERATIONAL PARAMETERS
-    # inherited from parent classes Strands and SolidComponents
+    # inherited from parent classes StrandComponent and SolidComponent
 
     ### COMPUTED IN INITIALIZATION
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     ### COMPUTED VECTOR FOR MAGNETIC FIELD
-    # inherited from class SolidComponents
+    # inherited from class SolidComponent
 
     KIND = "Super_conductor"
 
@@ -62,9 +62,9 @@ class SuperConductor(Strands):
         if self.operations["IBIFUN"] != -1:
             # Remove key B_field_units.
             del self.operations["B_field_units"]
-        # Call SolidComponents class constructor to deal with SuperConductor time \
+        # Call SolidComponent class constructor to deal with StrandSuperconductorComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
-        SolidComponents(simulation, self)
+        SolidComponent(simulation, self)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.NAME}, ID: {self.ID})"

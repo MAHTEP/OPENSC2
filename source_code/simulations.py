@@ -5,7 +5,7 @@ import os
 from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
 import warnings
 
-from conductors import Conductors
+from conductors import Conductor
 from environment import Environment
 from UtilityFunctions.auxiliary_functions import (
     check_repeated_headings,
@@ -28,7 +28,7 @@ from UtilityFunctions.plots import (
 )
 
 
-class Simulations:
+class Simulation:
 
     # Current working directory
     CWD = os.getcwd()
@@ -40,7 +40,7 @@ class Simulations:
         # Ask User the name of the cable. (cdp, 10/2020)
         self.dict_path = dict(
             Current_work_dir=self.CWD,
-            Results_dir=os.path.join(self.CWD,"..","Simulations_results"),
+            Results_dir=os.path.join(self.CWD, "..", "Simulations_results"),
         )
         # Create directory Simulations_results if it does not exist yet
         os.makedirs(self.dict_path["Results_dir"], exist_ok=True)
@@ -130,7 +130,11 @@ class Simulations:
         # Check if the number of defined conductors is consitent in file conductor_definition.xlsx and in file conductor_gri.xlsx.
 
         for cond_sheet in list_conductor_sheet:
-            for sheet in [gridCond["GRID"], wb_diagno["Spatial_distribution"], wb_diagno["Time_evolution"]]:
+            for sheet in [
+                gridCond["GRID"],
+                wb_diagno["Spatial_distribution"],
+                wb_diagno["Time_evolution"],
+            ]:
                 check_object_number(
                     self,
                     self.transient_input["MAGNET"],
@@ -144,7 +148,7 @@ class Simulations:
         self.numObj = int(list_conductor_sheet[0].cell(row=1, column=2).value)
         # LOAD MAIN CONDUCTORS PARAMETERS
         for ii in range(1, 1 + self.numObj):
-            conductor = Conductors(self, list_conductor_sheet, ii)
+            conductor = Conductor(self, list_conductor_sheet, ii)
             self.list_of_Conductors.append(conductor)
         # end for ii (cdp, 12/2020)
         self.contactBetweenConductors = pd.read_excel(
@@ -175,10 +179,13 @@ class Simulations:
         if self.numObj == 1:
             # There is only 1 Conductor object, exploit cond instantiated above (cdp,07/2020)
             self.dict_qsource[cond.ID] = np.zeros(
-                (cond.dict_discretization["N_nod"], cond.dict_N_equation["Jacket"])
+                (
+                    cond.dict_discretization["N_nod"],
+                    cond.dict_N_equation["JacketComponent"],
+                )
             )
         else:
-            # more than one Conductors object (cdp,07/2020)
+            # more than one Conductor object (cdp,07/2020)
             for rr in range(self.numObj):
                 cond_r = self.list_of_Conductors[rr]
                 if all(self.contactBetweenConductors.iloc[rr, :]) == 0:
@@ -187,7 +194,7 @@ class Simulations:
                     self.dict_qsource[cond_r.ID] = np.zeros(
                         (
                             cond_r.dict_discretization["N_nod"],
-                            cond_r.dict_N_equation["Jacket"],
+                            cond_r.dict_N_equation["JacketComponent"],
                         )
                     )
                 else:
@@ -211,7 +218,7 @@ class Simulations:
                             self.dict_qsource[f"{cond_r.ID}_{cond_c.ID}"] = np.zeros(
                                 (
                                     cond_r.dict_discretization["N_nod"],
-                                    cond_r.dict_N_equation["Jacket"],
+                                    cond_r.dict_N_equation["JacketComponent"],
                                 )
                             )
                             raise ValueError(
@@ -271,7 +278,7 @@ class Simulations:
                 )
                 # update time step (cdp, 08/2020)
                 conductor.cond_num_step = conductor.cond_num_step + 1
-                # before calling Conductors method initialization adapt mesh if \
+                # before calling Conductor method initialization adapt mesh if \
                 # necessary as foreseen by ITYMSH. To do later (cdp, 07/2020)
                 # se ho nuova griglia calcolare coefficenti, temperature, pressioni, \
                 # parametri adimensionati sfruttando np.interp (in fortrand è adaptm)
@@ -298,15 +305,15 @@ class Simulations:
                     self.dict_qsource[conductor.ID],
                     self.num_step,
                 )
-                # Loop on FluidComponents (cdp, 10/2020)
-                for fluid_comp in conductor.inventory["FluidComponents"].collection:
+                # Loop on FluidComponent (cdp, 10/2020)
+                for fluid_comp in conductor.inventory["FluidComponent"].collection:
                     # compute density and mass flow rate in nodal points with the
-                    # updated FluidComponents temperature and velocity (nodal = True by default)
+                    # updated FluidComponent temperature and velocity (nodal = True by default)
                     fluid_comp.coolant._compute_density_and_mass_flow_rates_nodal_gauss(
                         conductor
                     )
                     # Enthalpy balance: sum((mdot*w)_out - (mdot*w)_inl), used to check \
-                    # the imposition of SolidComponents temperature initial spatial \
+                    # the imposition of SolidComponent temperature initial spatial \
                     # distribution (cdp, 12/2020)
                     conductor.enthalpy_balance = (
                         conductor.enthalpy_balance
@@ -331,12 +338,12 @@ class Simulations:
                         * fluid_comp.coolant.dict_node_pt["total_enthalpy"][0]
                     )
                 # end for fluid_comp (cdp, 10/2020)
-                # Loop on SolidComponents (cdp, 01/2021)
-                # for s_comp in conductor.inventory["SolidComponents"]\
+                # Loop on SolidComponent (cdp, 01/2021)
+                # for s_comp in conductor.inventory["SolidComponent"]\
                 # 	["Objects"]:
                 # 	if s_comp.NAME != "STR_STAB" and s_comp.NAME != "Z_JACKET":
                 # 		# Call Get_superconductor_critical_prop to evaluate \
-                # 		# MixSCStabilizer and/or SuperConductor properties in nodal points.
+                # 		# StrandMixedComponent and/or StrandSuperconductorComponent properties in nodal points.
                 # 		# In questo modo le calclo 2 volte, qui e alla successiva chiamata \
                 # 		# dell methodo Operating conditions, da sistemare per ottimizzare.
                 # 		s_comp.Get_superconductor_critical_prop(self, Where = "nodal")
@@ -369,7 +376,9 @@ class Simulations:
                     # (cdp, 08/2020)
                     save_simulation_space(
                         conductor,
-                        self.dict_path[f"Output_Spatial_distribution_{conductor.ID}_dir"],
+                        self.dict_path[
+                            f"Output_Spatial_distribution_{conductor.ID}_dir"
+                        ],
                         abs(self.n_digit),
                     )
                 # end if isave
@@ -408,7 +417,9 @@ class Simulations:
         for cond in self.list_of_Conductors:
             # save simulation spatial distribution at TEND (cdp, 01/2021)
             save_simulation_space(
-                cond, self.dict_path[f"Output_Spatial_distribution_{cond.ID}_dir"], abs(self.n_digit)
+                cond,
+                self.dict_path[f"Output_Spatial_distribution_{cond.ID}_dir"],
+                abs(self.n_digit),
             )
             # Call function Save_properties to save the conductor final solution \
             # (cdp, 12/2020)
@@ -426,7 +437,9 @@ class Simulations:
         for cond in self.list_of_Conductors:
             cond.post_processing(self)
             reorganize_spatial_distribution(
-                cond, self.dict_path[f"Output_Spatial_distribution_{cond.ID}_dir"], self.n_digit
+                cond,
+                self.dict_path[f"Output_Spatial_distribution_{cond.ID}_dir"],
+                self.n_digit,
             )
             # Plot conductor solution spatial distribution (cdp, 12/2020)
             plot_properties(self, cond, what="solution")
@@ -641,7 +654,12 @@ class Simulations:
         self._time_convergence_paths(list_folder)
         # Print a warning if os.path.exists() returns True, build the directories if returns False.
         dict_make = {True: self._make_warnings, False: self._make_directories}
-        list_f_names = ["Initialization", "Spatial_distribution", "Time_evolution", "Solution"]
+        list_f_names = [
+            "Initialization",
+            "Spatial_distribution",
+            "Time_evolution",
+            "Solution",
+        ]
         dict_benchmark = dict(
             Initialization=self._do_nothing,
             Spatial_distribution=self._benchmark_paths,
@@ -651,16 +669,19 @@ class Simulations:
         # Create subfolders path invocking method _subfolders_paths
         self._subfolders_paths(list_folder, list_f_names, dict_make, dict_benchmark)
 
-        # Path to save the input files of the simulation in read olny mode as 
+        # Path to save the input files of the simulation in read olny mode as
         # metadata for the simulation itself.
-        self.dict_path["Save_input"] = os.path.join(self.dict_path["Sub_dir"], self.transient_input["SIMULATION"], self.basePath.split("/")[-1])
+        self.dict_path["Save_input"] = os.path.join(
+            self.dict_path["Sub_dir"],
+            self.transient_input["SIMULATION"],
+            self.basePath.split("/")[-1],
+        )
         os.makedirs(self.dict_path["Save_input"], exist_ok=True)
 
     # End method Simulation_folders_manager.
 
     def save_input_files(self):
-        """Method that saves the input file of the simulation as .xlsx files in read only mode. These files are metadata for the simulation output.
-        """
+        """Method that saves the input file of the simulation as .xlsx files in read only mode. These files are metadata for the simulation output."""
         load_paths = list()
         save_paths = list()
         filenames = list()
@@ -669,7 +690,7 @@ class Simulations:
         load_transient_input = os.path.join(self.basePath, self.starter_file)
         load_paths.append(os.path.join(self.basePath, self.starter_file))
         filenames.append(self.starter_file)
-        
+
         # Load file transitory_input.
         transient_input = pd.read_excel(
             load_transient_input,
@@ -681,8 +702,10 @@ class Simulations:
 
         # Load paths of environment_input and conductor_definition files.
         for index in ["ENVIRONMENT", "MAGNET"]:
-            load_paths.append(os.path.join(self.basePath, transient_input.loc[index,"Value"]))
-            filenames.append(transient_input.loc[index,"Value"])
+            load_paths.append(
+                os.path.join(self.basePath, transient_input.loc[index, "Value"])
+            )
+            filenames.append(transient_input.loc[index, "Value"])
 
         # Load file conductor_definition
         conductors = pd.read_excel(
@@ -694,16 +717,18 @@ class Simulations:
         )
 
         # Get all the other input file names.
-        # -3 and not -4 since one column of the input file becomes the index of 
+        # -3 and not -4 since one column of the input file becomes the index of
         # the data frame and should not be considered.
         n_cond = conductors["CONDUCTOR_files"].shape[1] - 3
-        other_files = pd.Series(np.zeros((12*n_cond),dtype=object))
+        other_files = pd.Series(np.zeros((12 * n_cond), dtype=object))
 
         for ii in range(n_cond):
-            other_files.iloc[ii*12:12*(ii+1)] = conductors["CONDUCTOR_files"].iloc[:,ii+3]
+            other_files.iloc[ii * 12 : 12 * (ii + 1)] = conductors[
+                "CONDUCTOR_files"
+            ].iloc[:, ii + 3]
 
         del conductors, transient_input
-        # Remove repeated file names (if more than one conductor is defined, 
+        # Remove repeated file names (if more than one conductor is defined,
         # some input files can be shared by the conductors).
         other_files = other_files.unique()
         # Remove not defined file names.
@@ -718,22 +743,26 @@ class Simulations:
             # Build save_paths from load_paths.
             save_paths.append(os.path.join(self.dict_path["Save_input"], fname))
             if os.path.exists(save_paths[-1]):
-                # Makes the file read/write for the owner if the file 
+                # Makes the file read/write for the owner if the file
                 # already exists
-                os.chmod(save_paths[-1], S_IWUSR|S_IREAD)
-            
-            if ("coupling" in fname or "environment_input" in fname or "transitory_input" in fname):
+                os.chmod(save_paths[-1], S_IWUSR | S_IREAD)
+
+            if (
+                "coupling" in fname
+                or "environment_input" in fname
+                or "transitory_input" in fname
+            ):
                 skip_rows = 1
             else:
                 skip_rows = 2
             # Load input file
             dff = pd.read_excel(
-                    load_paths[ii],
-                    sheet_name=None,
-                    header=0,
-                    index_col=0,
-                    skiprows=skip_rows,
-                )
+                load_paths[ii],
+                sheet_name=None,
+                header=0,
+                index_col=0,
+                skiprows=skip_rows,
+            )
             # Save input file
             with pd.ExcelWriter(save_paths[-1]) as writer:
                 for key, df in dff.items():
@@ -741,56 +770,57 @@ class Simulations:
 
         # Convert saved files to read only mode.
         for path in save_paths:
-            os.chmod(path, S_IREAD|S_IRGRP|S_IROTH)
+            os.chmod(path, S_IREAD | S_IRGRP | S_IROTH)
 
     # End method save_input_files
 
+
 ##############################################################################
 
-    ## This code was part of the old version of method Simulation_folders_manager, may be useful in future so I do not delete it. ##
+## This code was part of the old version of method Simulation_folders_manager, may be useful in future so I do not delete it. ##
 
-    # Gives an error due to a too long path: it thakes into account of \
-    # other features of the simulations together with the method, that is \
-    # the one considered below to shorten the path (cpd, 10/2020)
-    # block = list()
-    # block.append("XLENGTH_" + str(cond.inputs["XLENGTH"]))
-    # if cond.self.inputs["METHOD"] == "BE":
-    # 	block.append("BE")
-    # elif cond.self.inputs["METHOD"] == "CN]":
-    # 	block.append("CN")
-    # elif cond.self.inputs["METHOD"] == "AM4":
-    # 	block.append("AM4")
-    # end if cond.inputs["METHOD"] (cdp, 10/2020)
-    # block.append("IOP0_TOT_" + str(cond.inputs["I0_OP_TOT"]))
-    # INTIAL_val = str()
-    # for ii in range(cond.inventory["FluidComponents"]["Number"]):
-    # 	fluid_comp = cond.inventory["FluidComponents"]["Objects"][ii]
-    # 	if cond.inventory["FluidComponents"]["Number"] == 1:
-    # 		INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"])
-    # 	elif cond.inventory["FluidComponents"]["Number"] > 1:
-    # 		if ii < cond.inventory["FluidComponents"]["Number"] - 1:
-    # 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"]) + ","
-    # 		elif ii == cond.inventory["FluidComponents"]["Number"] - 1:
-    # 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"])
-    # 		# end if ii (cdp, 10/2020)
-    # 	# end if cond.inventory["FluidComponents"]["Number"] \
-    # 	# (cdp, 10/2020)
-    ## end for ii (cdp, 10/2020)
-    # block.append(f"INTIAL_({INTIAL_val})")
-    # XQEND_val = str()
-    # for ii in range(cond.inventory["SolidComponents"]["Number"]):
-    # 	s_comp = cond.inventory["SolidComponents"]["Objects"][ii]
-    # 	if cond.inventory["SolidComponents"]["Number"] == 1:
-    # 		XQEND_val = XQEND_val + str(s_comp.operations["XQEND"])
-    # 	elif cond.inventory["SolidComponents"]["Number"] > 1:
-    # 		if ii < cond.inventory["SolidComponents"]["Number"] - 1:
-    # 			XQEND_val = XQEND_val + str(s_comp.operations["XQEND"]) + ","
-    # 		elif ii == cond.inventory["SolidComponents"]["Number"] - 1:
-    # 			XQEND_val = XQEND_val + str(s_comp.operations["XQEND"])
-    # 		# end if ii (cdp, 10/2020)
-    # 	# end if cond.inventory["SolidComponents"]["Number"] \
-    # 	# (cdp, 10/2020)
-    ## end for ii (cdp, 10/2020)
-    # block.append(f"XQEND_({XQEND_val})")
-    ## Join the block together using _ ad separator (cdp, 10/2020)
-    # self.dict_path["Sub_dir"] = "_".join([f"{val}" for val in block])
+# Gives an error due to a too long path: it thakes into account of \
+# other features of the simulations together with the method, that is \
+# the one considered below to shorten the path (cpd, 10/2020)
+# block = list()
+# block.append("XLENGTH_" + str(cond.inputs["XLENGTH"]))
+# if cond.self.inputs["METHOD"] == "BE":
+# 	block.append("BE")
+# elif cond.self.inputs["METHOD"] == "CN]":
+# 	block.append("CN")
+# elif cond.self.inputs["METHOD"] == "AM4":
+# 	block.append("AM4")
+# end if cond.inputs["METHOD"] (cdp, 10/2020)
+# block.append("IOP0_TOT_" + str(cond.inputs["I0_OP_TOT"]))
+# INTIAL_val = str()
+# for ii in range(cond.inventory["FluidComponent"]["Number"]):
+# 	fluid_comp = cond.inventory["FluidComponent"]["Objects"][ii]
+# 	if cond.inventory["FluidComponent"]["Number"] == 1:
+# 		INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"])
+# 	elif cond.inventory["FluidComponent"]["Number"] > 1:
+# 		if ii < cond.inventory["FluidComponent"]["Number"] - 1:
+# 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"]) + ","
+# 		elif ii == cond.inventory["FluidComponent"]["Number"] - 1:
+# 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"])
+# 		# end if ii (cdp, 10/2020)
+# 	# end if cond.inventory["FluidComponent"]["Number"] \
+# 	# (cdp, 10/2020)
+## end for ii (cdp, 10/2020)
+# block.append(f"INTIAL_({INTIAL_val})")
+# XQEND_val = str()
+# for ii in range(cond.inventory["SolidComponent"]["Number"]):
+# 	s_comp = cond.inventory["SolidComponent"]["Objects"][ii]
+# 	if cond.inventory["SolidComponent"]["Number"] == 1:
+# 		XQEND_val = XQEND_val + str(s_comp.operations["XQEND"])
+# 	elif cond.inventory["SolidComponent"]["Number"] > 1:
+# 		if ii < cond.inventory["SolidComponent"]["Number"] - 1:
+# 			XQEND_val = XQEND_val + str(s_comp.operations["XQEND"]) + ","
+# 		elif ii == cond.inventory["SolidComponent"]["Number"] - 1:
+# 			XQEND_val = XQEND_val + str(s_comp.operations["XQEND"])
+# 		# end if ii (cdp, 10/2020)
+# 	# end if cond.inventory["SolidComponent"]["Number"] \
+# 	# (cdp, 10/2020)
+## end for ii (cdp, 10/2020)
+# block.append(f"XQEND_({XQEND_val})")
+## Join the block together using _ ad separator (cdp, 10/2020)
+# self.dict_path["Sub_dir"] = "_".join([f"{val}" for val in block])

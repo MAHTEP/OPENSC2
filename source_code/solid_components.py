@@ -85,11 +85,11 @@ from Properties_of_materials.aluminium import (
 )
 
 
-class SolidComponents:
+class SolidComponent:
     def __init__(self, simulation, s_comp):
 
         """
-        Constructor method of class SolidComponents (cdp, 11/2020)
+        Constructor method of class SolidComponent (cdp, 11/2020)
         """
 
         # Questa è una bozza, quando e se si dovranno considerare altri flag come \
@@ -122,7 +122,7 @@ class SolidComponents:
     def eval_sol_comp_properties(self, inventory, nodal=True):
 
         """
-        Method that evaluate total_density, specific_heat and thermal conductivity of SolidComponents class objects in both nodal points and Gauss points according to **options input parameter (cdp, 07/2020)
+        Method that evaluate total_density, specific_heat and thermal conductivity of SolidComponent class objects in both nodal points and Gauss points according to **options input parameter (cdp, 07/2020)
         """
 
         # Properties evaluation in each nodal point (cdp, 07/2020)
@@ -137,10 +137,10 @@ class SolidComponents:
     def eval_properties(self, dict_dummy, inventory):
 
         """
-        Method that actually evaluate total_density, specific_heat and thermal conductivity of SolidComponents class objects regardless of the location (nodal or Gauss points) (cdp, 07/2020)
+        Method that actually evaluate total_density, specific_heat and thermal conductivity of SolidComponent class objects regardless of the location (nodal or Gauss points) (cdp, 07/2020)
         """
         # keys = list(self.inputs.keys())
-        if self.NAME == inventory["MixSCStabilizer"].name:
+        if self.NAME == inventory["StrandMixedComponent"].name:
             # STR_MIX: stabilizer and superconductor strand (cdp, 07/2020)
             # initialization (cdp, 07/2020)
             rho_num = 0.0
@@ -183,9 +183,7 @@ class SolidComponents:
                                     self.inputs["RRR"],
                                 )
                             )
-                        elif (
-                            self.inputs["ISTABILIZER"] == "Al"
-                        ):  # Al (cdp, 07/2020)
+                        elif self.inputs["ISTABILIZER"] == "Al":  # Al (cdp, 07/2020)
                             rho_num = rho_num + density_al() * R_stab_non_stab
                             cp_num = (
                                 cp_num
@@ -238,9 +236,7 @@ class SolidComponents:
                                     self.inputs["RRR"],
                                 )
                             )
-                        elif (
-                            self.inputs["ISTABILIZER"] == "Al"
-                        ):  # Al (cdp, 07/2020)
+                        elif self.inputs["ISTABILIZER"] == "Al":  # Al (cdp, 07/2020)
                             rho_num = rho_num + density_al() * A_stab
                             cp_num = (
                                 cp_num
@@ -352,20 +348,17 @@ class SolidComponents:
                     total_electrical_resistivity=rhoe_num / (1 + R_stab_non_stab)
                 )
             else:
-                dict_dummy.update(
-                    total_density=rho_num / self.inputs["CROSSECTION"]
-                )
+                dict_dummy.update(total_density=rho_num / self.inputs["CROSSECTION"])
                 dict_dummy.update(
                     total_thermal_conductivity=kk_num / self.inputs["CROSSECTION"]
                 )
                 dict_dummy.update(
-                    total_electrical_resistivity=rhoe_num
-                    / self.inputs["CROSSECTION"]
+                    total_electrical_resistivity=rhoe_num / self.inputs["CROSSECTION"]
                 )
             # This expression is always the same, what change is the way in which \
             # cp_num and rho_num are evaluated (cdp, 07/2020)
             dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
-        elif self.NAME == inventory["SuperConductor"].name:
+        elif self.NAME == inventory["StrandSuperconductorComponent"].name:
             # STR_SC: superconductor strand (cdp, 07/2020)
             if self.inputs["ISUPERCONDUCTOR"] == "NbTi":
                 # LTS: NbTi (cdp, 07/2020)
@@ -460,7 +453,7 @@ class SolidComponents:
         {list(self.inputs.keys())[3]} = 
         {self.inputs["ISUPERCONDUCTOR"]} is not defined yet.\n"""
                 )
-        elif self.NAME == inventory["Stabilizer"].name:
+        elif self.NAME == inventory["StrandStabilizerComponent"].name:
             # STR_STAB: stabilizer strand (cdp, 07/2020)
             if self.inputs["ISTABILIZER"] == "Cu":
                 # Cu strand (cdp, 07/2020)
@@ -508,7 +501,7 @@ class SolidComponents:
           {list(self.inputs.keys())[2]} = 
           {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
                 )
-        elif self.NAME == inventory["Jacket"].name:
+        elif self.NAME == inventory["JacketComponent"].name:
             # Z_JKT: jacket (cdp, 07/2020)
             # initialization (cdp, 07/2020)
             self.inputs.update(CROSSECTION=0.0)
@@ -523,12 +516,8 @@ class SolidComponents:
                 if self.inputs["IMATERIAL_JK"] != "None":
                     if self.inputs["IMATERIAL_JK"] == "steinless_steel":
                         # stainless steel (cdp, 07/2020)
-                        self.inputs.update(
-                            CROSSECTION=self.inputs["CROSSECTION_JK"]
-                        )
-                        rho_num = (
-                            rho_num + density_ss() * self.inputs["CROSSECTION_JK"]
-                        )
+                        self.inputs.update(CROSSECTION=self.inputs["CROSSECTION_JK"])
+                        rho_num = rho_num + density_ss() * self.inputs["CROSSECTION_JK"]
                         cp_num = (
                             cp_num
                             + density_ss()
@@ -552,12 +541,8 @@ class SolidComponents:
                 if self.inputs["IMATERIAL_IN"] != "None":
                     if self.inputs["IMATERIAL_IN"] == "glass_epoxy":
                         # Glass-epoxy (cdp, 07/2020)
-                        self.inputs.update(
-                            CROSSECTION=self.inputs["CROSSECTION_IN"]
-                        )
-                        rho_num = (
-                            rho_num + density_ge() * self.inputs["CROSSECTION_IN"]
-                        )
+                        self.inputs.update(CROSSECTION=self.inputs["CROSSECTION_IN"])
+                        rho_num = rho_num + density_ge() * self.inputs["CROSSECTION_IN"]
                         cp_num = (
                             cp_num
                             + density_ge()
@@ -586,8 +571,7 @@ class SolidComponents:
                                 + self.inputs["CROSSECTION_JK"]
                             )
                             rho_num = (
-                                rho_num
-                                + density_ss() * self.inputs["CROSSECTION_JK"]
+                                rho_num + density_ss() * self.inputs["CROSSECTION_JK"]
                             )
                             cp_num = (
                                 cp_num
@@ -619,8 +603,7 @@ class SolidComponents:
                                 + self.inputs["CROSSECTION_IN"]
                             )
                             rho_num = (
-                                rho_num
-                                + density_ge() * self.inputs["CROSSECTION_IN"]
+                                rho_num + density_ge() * self.inputs["CROSSECTION_IN"]
                             )
                             cp_num = (
                                 cp_num
@@ -635,9 +618,7 @@ class SolidComponents:
                             )
                             # dummy value for electrical resistivity, high value since it is \
                             # an insulator (cdp, 08/2020)
-                            rhoe_num = (
-                                rhoe_num + 1e5 * self.inputs["CROSSECTION_IN"]
-                            )
+                            rhoe_num = rhoe_num + 1e5 * self.inputs["CROSSECTION_IN"]
                         else:
                             raise ValueError(
                                 f"""ERROR: material corresponding to
@@ -647,7 +628,7 @@ class SolidComponents:
                     # end if ntype (cdp, 07/2020)
                 # end for ntype (cdp, 07/2020)
 
-            # Jacket properties evaluation
+            # JacketComponent properties evaluation
             dict_dummy.update(total_density=rho_num / self.inputs["CROSSECTION"])
             dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
             dict_dummy.update(
@@ -674,13 +655,13 @@ class SolidComponents:
         ############################################################################
         #
         # Method that initialize electrical current in python objects of class
-        # SolidComponents.
+        # SolidComponent.
         #
         ############################################################################
         # VARIABLE              I/O    TYPE              DESCRIPTION            UNIT
         # --------------------------------------------------------------------------
         # self                  I     object             python object of
-        #                                                class SolidComponents     -
+        #                                                class SolidComponent     -
         # I0_OP_MODE*               I     scalar integer     flag to decide how to
         #                                                evaluate current:
         #                                                == 0 -> constant;
@@ -709,7 +690,7 @@ class SolidComponents:
         # conductor.BASE_PATH and conductor.file_input["EXTERNAL_CURRENT"].
         # § IOP0_FRACTION and IOP are component attributes: self.dict_node_pt["IOP"]0_FRACTION,
         #  .
-        # N.B. IOP is a SolidComponents attribute so its value can be assigned
+        # N.B. IOP is a SolidComponent attribute so its value can be assigned
         # directly, it is a scalar floar since there is no current redistribution.
         ############################################################################
         #
@@ -726,11 +707,14 @@ class SolidComponents:
                     conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
                 )
                 # Load auxiliary input file.
-                current_df, flagSpecfield = load_auxiliary_files(file_path, sheetname=self.ID)
-                # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
-                self.current_interpolator, self.current_interp_flag = build_interpolator(
-                    current_df, self.operations["IOP_INTERPOLATION"]
+                current_df, flagSpecfield = load_auxiliary_files(
+                    file_path, sheetname=self.ID
                 )
+                # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                (
+                    self.current_interpolator,
+                    self.current_interp_flag,
+                ) = build_interpolator(current_df, self.operations["IOP_INTERPOLATION"])
 
             # call load_user_defined_quantity on the component.
             self.dict_node_pt["IOP"] = do_interpolation(
@@ -753,7 +737,9 @@ class SolidComponents:
                 conductor.IOP_TOT * self.operations["IOP0_FRACTION"]
             )
         else:
-            raise ValueError(f"Not defined value for flag I0_OP_MODE: {conductor.inputs['I0_OP_MODE']=}.\n")
+            raise ValueError(
+                f"Not defined value for flag I0_OP_MODE: {conductor.inputs['I0_OP_MODE']=}.\n"
+            )
         # Conversion of float to float array if necessary, this avoid following \
         # error: TypeError: 'float' object is not subscriptable (cdp, 08/2020)
         self.dict_node_pt["IOP"] = np.array([self.dict_node_pt["IOP"]])
@@ -763,7 +749,7 @@ class SolidComponents:
     def get_magnetic_field(self, conductor, nodal=True):
         if nodal:
             # compute B_field in each node (cdp, 07/2020)
-            if self.operations["IBIFUN"] < 0:  
+            if self.operations["IBIFUN"] < 0:
                 # cza to enable other negative \
                 # (read from file) flags -> ibifun.eq.-3, see below (August 29, 2018)
 
@@ -773,9 +759,12 @@ class SolidComponents:
                         conductor.BASE_PATH, conductor.file_input["EXTERNAL_BFIELD"]
                     )
                     # Load auxiliary input file.
-                    bfield_df,_ = load_auxiliary_files(file_path, sheetname=self.ID)
+                    bfield_df, _ = load_auxiliary_files(file_path, sheetname=self.ID)
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
-                    self.bfield_interpolator, self.bfield_interp_flag = build_interpolator(
+                    (
+                        self.bfield_interpolator,
+                        self.bfield_interp_flag,
+                    ) = build_interpolator(
                         bfield_df, self.operations["B_INTERPOLATION"]
                     )
 
@@ -839,7 +828,7 @@ class SolidComponents:
             if self.operations["IQFUN"] == 0:
                 # Initialization is done always in the same way ragardless of the \
                 # solution method: a column vector to exploit the array smart notation \
-                # in Conductors class method Eval_Gauss_point. It is the only times at \
+                # in Conductor class method Eval_Gauss_point. It is the only times at \
                 # which this method is invoked (cdp, 11/2020)
                 self.dict_node_pt["EXTFLX"] = np.zeros(
                     (conductor.dict_discretization["N_nod"], 1)
@@ -889,7 +878,7 @@ class SolidComponents:
                     conductor.BASE_PATH, conductor.file_input["EXTERNAL_HEAT"]
                 )
                 # Load auxiliary input file.
-                heat_df,_ = load_auxiliary_files(file_path, sheetname=self.ID)
+                heat_df, _ = load_auxiliary_files(file_path, sheetname=self.ID)
                 # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                 self.heat_interpolator, self.heat_interp_flag = build_interpolator(
                     heat_df, self.operations["Q_INTERPOLATION"]
@@ -937,10 +926,7 @@ class SolidComponents:
         )
         if self.operations["IQFUN"] == 1:
             # Square wave in time and space (cdp, 11/2020)
-            if (
-                conductor.inputs["METHOD"] == "BE"
-                or conductor.inputs["METHOD"] == "CN"
-            ):
+            if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
                 # Backward Euler or Crank-Nicolson (cdp, 10/2020)
                 if conductor.cond_num_step == 0:
                     # Initialization to Q0 value: this occurs when TQBEG = 0.0 s, i.e. \
@@ -994,13 +980,13 @@ class SolidComponents:
         ############################################################################
         #
         # Method that initialize to zero the Joule heating flux in python objects
-        # of class SolidComponents.
+        # of class SolidComponent.
         #
         ############################################################################
         # VARIABLE    I/O    TYPE              DESCRIPTION                      UNIT
         # --------------------------------------------------------------------------
         # self        I      object            python object of
-        #                                      class SolidComponents           -
+        #                                      class SolidComponent           -
         # xcoord*     I      np array float    conductor spatial
         #                                      discretization                  m
         # JHTFLX      O      np array float    Joule heating flux
@@ -1010,7 +996,7 @@ class SolidComponents:
         #
         ############################################################################
         # * xcoord is given by conductor.xcoord
-        # N.B. JHTFLX is a SolidComponents attribute so its value can be assigned
+        # N.B. JHTFLX is a SolidComponent attribute so its value can be assigned
         # directly, it has the same of shape of xcoord and it is a np array.
         ############################################################################
         #
@@ -1020,10 +1006,7 @@ class SolidComponents:
         """
 
         # Method JHTFLX_new_0 starts here. (cdp, 06/2020)
-        if (
-            conductor.inputs["METHOD"] == "BE"
-            or conductor.inputs["METHOD"] == "CN"
-        ):
+        if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson (cdp, 10/2020)
             if conductor.cond_time[-1] == 0:
                 # Initialization (cdp, 10/2020)
@@ -1068,13 +1051,13 @@ class SolidComponents:
         ############################################################################
         #
         # Method that initialize to zero the external energy and Joule heating in
-        # python objects of class SolidComponents.
+        # python objects of class SolidComponent.
         #
         ############################################################################
         # VARIABLE    I/O    TYPE              DESCRIPTION                      UNIT
         # --------------------------------------------------------------------------
         # self        I      object            python object of
-        #                                      class SolidComponents           -
+        #                                      class SolidComponent           -
         # xcoord*     I      np array float    conductor spatial
         #                                      discretization                  m
         # EEXT        O      np array float    external heating vector         MJ
@@ -1085,7 +1068,7 @@ class SolidComponents:
         #
         ############################################################################
         # * xcoord is given by conductor.xcoord
-        # N.B. EEXT and EJHT are SolidComponents attributes so therir value can be
+        # N.B. EEXT and EJHT are SolidComponent attributes so therir value can be
         # assigned directly they have the same of shape of xcoord and they are np
         # arrays.
         ############################################################################
@@ -1097,10 +1080,7 @@ class SolidComponents:
 
         # Method Set_energy_counters starts here. (cdp, 06/2020)
 
-        if (
-            conductor.inputs["METHOD"] == "BE"
-            or conductor.inputs["METHOD"] == "CN"
-        ):
+        if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson (cdp, 10/2020)
             if conductor.cond_time[-1] == 0:
                 # Initialization (cdp, 10/2020)

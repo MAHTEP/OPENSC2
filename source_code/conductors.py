@@ -10,12 +10,12 @@ import sys
 import warnings
 
 # import classes
-from components_collection import ComponentsCollection
-from fluid_components import FluidComponents
-from jacket import Jacket
-from mix_sc_stabilizer import MixSCStabilizer
-from stabilizer import Stabilizer
-from super_conductor import SuperConductor
+from components_collection import ComponentCollection
+from fluid_components import FluidComponent
+from jacket import JacketComponent
+from mix_sc_stabilizer import StrandMixedComponent
+from stabilizer import StrandStabilizerComponent
+from super_conductor import StrandSuperconductorComponent
 
 # import functions
 from UtilityFunctions.auxiliary_functions import (
@@ -44,7 +44,7 @@ consolelogger = logging.getLogger("consoleLogger")
 filelogger = logging.getLogger("fileLogger")
 
 
-class Conductors:
+class Conductor:
 
     BASE_PATH = ""
 
@@ -176,27 +176,27 @@ class Conductors:
         ## Evaluate parameters useful in function \
         # Transient_solution_functions.py\STEP (cdp, 07/2020)
         # dict_N_equation keys meaning:
-        # ["FluidComponents"]: total number of equations for FluidComponents \
+        # ["FluidComponent"]: total number of equations for FluidComponent \
         # objects (cdp, 07/2020);
-        # ["Strands"]: total number of equations for Strands objects (cdp, 07/2020);
-        # ["Jacket"]: total number of equations for Jacket objects (cdp, 07/2020);
-        # ["SolidComponents"]: total number of equations for SolidComponents \
+        # ["StrandComponent"]: total number of equations for StrandComponent objects (cdp, 07/2020);
+        # ["JacketComponent"]: total number of equations for JacketComponent objects (cdp, 07/2020);
+        # ["SolidComponent"]: total number of equations for SolidComponent \
         # objects (cdp, 07/2020);
         # ["NODOFS"]: total number of equations for for each node, i.e. Number Of \
         # Degrees Of Freedom, given by: \
         # 3*(number of channels) + (number of strands) + (number of jackets) \
         # (cdp, 07/2020);
         self.dict_N_equation = dict(
-            FluidComponents=3 * self.inventory["FluidComponents"].number,
-            Strands=self.inventory["Strands"].number,
-            Jacket=self.inventory["Jacket"].number,
-            SolidComponents=self.inventory["SolidComponents"].number,
+            FluidComponent=3 * self.inventory["FluidComponent"].number,
+            StrandComponent=self.inventory["StrandComponent"].number,
+            JacketComponent=self.inventory["JacketComponent"].number,
+            SolidComponent=self.inventory["SolidComponent"].number,
         )
         # necessary since it is not allowed to use the value of a dictionary key \
         # before that the dictionary is fully defined (cdp, 09/2020)
         self.dict_N_equation.update(
-            NODOFS=self.dict_N_equation["FluidComponents"]
-            + self.dict_N_equation["SolidComponents"]
+            NODOFS=self.dict_N_equation["FluidComponent"]
+            + self.dict_N_equation["SolidComponent"]
         )
         # dict_band keys meaning:
         # ["Half"]: half band width, including main diagonal (IEDOFS) (cdp, 09/2020)
@@ -303,14 +303,14 @@ class Conductors:
         wb_operations = load_workbook(dict_file_path["operation"], data_only=True)
 
         listOfComponents = wb_input.get_sheet_names()
-        self.inventory["FluidComponents"] = ComponentsCollection("CHAN")
-        self.inventory["MixSCStabilizer"] = ComponentsCollection("STR_MIX")
-        self.inventory["Stabilizer"] = ComponentsCollection("STR_STAB")
-        self.inventory["SuperConductor"] = ComponentsCollection("STR_SC")
-        self.inventory["Jacket"] = ComponentsCollection("Z_JACKET")
-        self.inventory["Strands"] = ComponentsCollection()
-        self.inventory["SolidComponents"] = ComponentsCollection()
-        self.inventory["Conductor_components"] = ComponentsCollection()
+        self.inventory["FluidComponent"] = ComponentCollection("CHAN")
+        self.inventory["StrandMixedComponent"] = ComponentCollection("STR_MIX")
+        self.inventory["StrandStabilizerComponent"] = ComponentCollection("STR_STAB")
+        self.inventory["StrandSuperconductorComponent"] = ComponentCollection("STR_SC")
+        self.inventory["JacketComponent"] = ComponentCollection("Z_JACKET")
+        self.inventory["StrandComponent"] = ComponentCollection()
+        self.inventory["SolidComponent"] = ComponentCollection()
+        self.inventory["all_component"] = ComponentCollection()
         for sheetID in listOfComponents:
             sheet = wb_input[sheetID]
             sheetOpar = wb_operations[sheetID]
@@ -337,107 +337,119 @@ class Conductors:
             kindObj = sheet.cell(row=1, column=1).value  # sheet["A1"].value
             numObj = int(sheet.cell(row=1, column=2).value)  # sheet["B1"].value
             if kindObj == "CHAN":
-                # Assign the total number of defined FluidComponents object to
-                # attribute number of object ComponentsCollection.
-                self.inventory["FluidComponents"].number = numObj
+                # Assign the total number of defined FluidComponent object to
+                # attribute number of object ComponentCollection.
+                self.inventory["FluidComponent"].number = numObj
                 for ii in range(1, 1 + numObj):
-                    # ["FluidComponents"].collection: list of FluidComponents
+                    # ["FluidComponent"].collection: list of FluidComponent
                     # objects;
-                    # ["Conductor_components"].collection list of all objects
-                    self.inventory["FluidComponents"].collection.append(
-                        FluidComponents(sheet, sheetOpar, ii, dict_file_path)
+                    # ["all_component"].collection list of all objects
+                    self.inventory["FluidComponent"].collection.append(
+                        FluidComponent(sheet, sheetOpar, ii, dict_file_path)
                     )
-                    self.inventory["Conductor_components"].collection.append(
-                        self.inventory["FluidComponents"].collection[ii - 1]
+                    self.inventory["all_component"].collection.append(
+                        self.inventory["FluidComponent"].collection[ii - 1]
                     )
                 # end for ii (cdp, 09/2020)
             elif kindObj == "STR_MIX":
-                # Assign the total number of defined MixSCStabilizer object to
-                # attribute number of object ComponentsCollection.
-                self.inventory["MixSCStabilizer"].number = numObj
+                # Assign the total number of defined StrandMixedComponent object to
+                # attribute number of object ComponentCollection.
+                self.inventory["StrandMixedComponent"].number = numObj
                 for ii in range(1, 1 + numObj):
-                    # ["MixSCStabilizer"].collection: list of MixSCStabilizer objects;
-                    # ["Strands"].collection: list of Strands objects;
-                    # ["SolidComponents"].collection: list of SolidComponents objects;
-                    # ["Conductor_components"].collection: list of all objects
+                    # ["StrandMixedComponent"].collection: list of StrandMixedComponent objects;
+                    # ["StrandComponent"].collection: list of StrandComponent objects;
+                    # ["SolidComponent"].collection: list of SolidComponent objects;
+                    # ["all_component"].collection: list of all objects
                     # (cdp, 09/2020)
-                    self.inventory["MixSCStabilizer"].collection.append(
-                        MixSCStabilizer(simulation, sheet, ii, kindObj, dict_file_path)
+                    self.inventory["StrandMixedComponent"].collection.append(
+                        StrandMixedComponent(
+                            simulation, sheet, ii, kindObj, dict_file_path
+                        )
                     )
-                    self.inventory["Strands"].collection.append(
-                        self.inventory["MixSCStabilizer"].collection[ii - 1]
+                    self.inventory["StrandComponent"].collection.append(
+                        self.inventory["StrandMixedComponent"].collection[ii - 1]
                     )
-                    self.inventory["SolidComponents"].collection.append(
-                        self.inventory["MixSCStabilizer"].collection[ii - 1]
+                    self.inventory["SolidComponent"].collection.append(
+                        self.inventory["StrandMixedComponent"].collection[ii - 1]
                     )
-                    self.inventory["Conductor_components"].collection.append(
-                        self.inventory["MixSCStabilizer"].collection[ii - 1]
+                    self.inventory["all_component"].collection.append(
+                        self.inventory["StrandMixedComponent"].collection[ii - 1]
                     )
                 # end for ii (cdp, 09/2020)
             elif kindObj == "STR_SC":
-                # Assign the total number of defined SuperConductor object to
-                # attribute number of object ComponentsCollection.
-                self.inventory["SuperConductor"].number = numObj
+                # Assign the total number of defined StrandSuperconductorComponent object to
+                # attribute number of object ComponentCollection.
+                self.inventory["StrandSuperconductorComponent"].number = numObj
                 for ii in range(1, 1 + numObj):
-                    # ["SuperConductor"].collection: list of SuperConductor objects;
-                    # ["Strands"].collection: list of Strands objects;
-                    # ["SolidComponents"].collection: list of SolidComponents objects;
-                    # ["Conductor_components"].collection: list of all objects
+                    # ["StrandSuperconductorComponent"].collection: list of StrandSuperconductorComponent objects;
+                    # ["StrandComponent"].collection: list of StrandComponent objects;
+                    # ["SolidComponent"].collection: list of SolidComponent objects;
+                    # ["all_component"].collection: list of all objects
                     # (cdp, 09/2020)
-                    self.inventory["SuperConductor"].collection.append(
-                        SuperConductor(simulation, sheet, ii, kindObj, dict_file_path)
+                    self.inventory["StrandSuperconductorComponent"].collection.append(
+                        StrandSuperconductorComponent(
+                            simulation, sheet, ii, kindObj, dict_file_path
+                        )
                     )
-                    self.inventory["Strands"].collection.append(
-                        self.inventory["SuperConductor"].collection[ii - 1]
+                    self.inventory["StrandComponent"].collection.append(
+                        self.inventory["StrandSuperconductorComponent"].collection[
+                            ii - 1
+                        ]
                     )
-                    self.inventory["SolidComponents"].collection.append(
-                        self.inventory["SuperConductor"].collection[ii - 1]
+                    self.inventory["SolidComponent"].collection.append(
+                        self.inventory["StrandSuperconductorComponent"].collection[
+                            ii - 1
+                        ]
                     )
-                    self.inventory["Conductor_components"].collection.append(
-                        self.inventory["SuperConductor"].collection[ii - 1]
+                    self.inventory["all_component"].collection.append(
+                        self.inventory["StrandSuperconductorComponent"].collection[
+                            ii - 1
+                        ]
                     )
                 # end for ii (cdp, 09/2020)
             elif kindObj == "STR_STAB":
-                # Assign the total number of defined Stabilizer object to
-                # attribute number of object ComponentsCollection.
-                self.inventory["Stabilizer"].number = numObj
+                # Assign the total number of defined StrandStabilizerComponent object to
+                # attribute number of object ComponentCollection.
+                self.inventory["StrandStabilizerComponent"].number = numObj
                 for ii in range(1, 1 + numObj):
-                    # ["Stabilizer"].collection: list of Stabilizer objects;
-                    # ["Strands"].collection: list of Strands objects;
-                    # ["SolidComponents"].collection: list of SolidComponents objects;
-                    # ["Conductor_components"].collection: list of all objects
+                    # ["StrandStabilizerComponent"].collection: list of StrandStabilizerComponent objects;
+                    # ["StrandComponent"].collection: list of StrandComponent objects;
+                    # ["SolidComponent"].collection: list of SolidComponent objects;
+                    # ["all_component"].collection: list of all objects
                     # (cdp, 09/2020)
-                    self.inventory["Stabilizer"].collection.append(
-                        Stabilizer(simulation, sheet, ii, kindObj, dict_file_path)
+                    self.inventory["StrandStabilizerComponent"].collection.append(
+                        StrandStabilizerComponent(
+                            simulation, sheet, ii, kindObj, dict_file_path
+                        )
                     )
-                    self.inventory["Strands"].collection.append(
-                        self.inventory["Stabilizer"].collection[ii - 1]
+                    self.inventory["StrandComponent"].collection.append(
+                        self.inventory["StrandStabilizerComponent"].collection[ii - 1]
                     )
-                    self.inventory["SolidComponents"].collection.append(
-                        self.inventory["Stabilizer"].collection[ii - 1]
+                    self.inventory["SolidComponent"].collection.append(
+                        self.inventory["StrandStabilizerComponent"].collection[ii - 1]
                     )
-                    self.inventory["Conductor_components"].collection.append(
-                        self.inventory["Stabilizer"].collection[ii - 1]
+                    self.inventory["all_component"].collection.append(
+                        self.inventory["StrandStabilizerComponent"].collection[ii - 1]
                     )
                 # end for ii (cdp, 09/2020)
             elif kindObj == "Z_JACKET":
-                # Assign the total number of defined Jacket object to
-                # attribute number of object ComponentsCollection.
-                self.inventory["Jacket"].number = numObj
+                # Assign the total number of defined JacketComponent object to
+                # attribute number of object ComponentCollection.
+                self.inventory["JacketComponent"].number = numObj
                 # Z_JACKET since it must be the last object in the list (cdp, 06/2020)
                 for ii in range(1, 1 + numObj):
-                    # ["Jacket"].collection: list of Jacket objects;
-                    # ["SolidComponents"].collection: list of SolidComponents objects;
-                    # ["Conductor_components"].collection: list of all objects
+                    # ["JacketComponent"].collection: list of JacketComponent objects;
+                    # ["SolidComponent"].collection: list of SolidComponent objects;
+                    # ["all_component"].collection: list of all objects
                     # (cdp, 09/2020)
-                    self.inventory["Jacket"].collection.append(
-                        Jacket(simulation, sheet, ii, kindObj, dict_file_path)
+                    self.inventory["JacketComponent"].collection.append(
+                        JacketComponent(simulation, sheet, ii, kindObj, dict_file_path)
                     )
-                    self.inventory["SolidComponents"].collection.append(
-                        self.inventory["Jacket"].collection[ii - 1]
+                    self.inventory["SolidComponent"].collection.append(
+                        self.inventory["JacketComponent"].collection[ii - 1]
                     )
-                    self.inventory["Conductor_components"].collection.append(
-                        self.inventory["Jacket"].collection[ii - 1]
+                    self.inventory["all_component"].collection.append(
+                        self.inventory["JacketComponent"].collection[ii - 1]
                     )
                 # end for ii (cdp, 09/2020)
             else:
@@ -447,20 +459,21 @@ class Conductors:
             # end if kindObj (cdp, 11/2020)
         # end for sheetID (cdp, 11/2020)
 
-        # Total number of Strands objects (cdp, 09/2020)
-        self.inventory["Strands"].number = (
-            self.inventory["MixSCStabilizer"].number
-            + self.inventory["Stabilizer"].number
-            + self.inventory["SuperConductor"].number
+        # Total number of StrandComponent objects (cdp, 09/2020)
+        self.inventory["StrandComponent"].number = (
+            self.inventory["StrandMixedComponent"].number
+            + self.inventory["StrandStabilizerComponent"].number
+            + self.inventory["StrandSuperconductorComponent"].number
         )
-        # Total number of SolidComponents objects (cdp, 09/2020)
-        self.inventory["SolidComponents"].number = (
-            self.inventory["Strands"].number + self.inventory["Jacket"].number
+        # Total number of SolidComponent objects (cdp, 09/2020)
+        self.inventory["SolidComponent"].number = (
+            self.inventory["StrandComponent"].number
+            + self.inventory["JacketComponent"].number
         )
         # Total number of Conductor component objects (cdp, 09/2020)
-        self.inventory["Conductor_components"].number = (
-            self.inventory["FluidComponents"].number
-            + self.inventory["SolidComponents"].number
+        self.inventory["all_component"].number = (
+            self.inventory["FluidComponent"].number
+            + self.inventory["SolidComponent"].number
         )
 
     # end method Conductor_components_instance (cdp, 11/2020)
@@ -505,9 +518,9 @@ class Conductors:
         self.get_hydraulic_parallel()
 
         # Nested loop channel-channel (cdp, 09/2020)
-        for rr, fluid_comp_r in enumerate(self.inventory["FluidComponents"].collection):
+        for rr, fluid_comp_r in enumerate(self.inventory["FluidComponent"].collection):
             for cc, fluid_comp_c in enumerate(
-                self.inventory["FluidComponents"].collection[rr + 1 :], rr + 1
+                self.inventory["FluidComponent"].collection[rr + 1 :], rr + 1
             ):
                 if (
                     self.dict_df_coupling["contact_perimeter_flag"].at[
@@ -608,13 +621,13 @@ class Conductors:
         # dummy to optimize nested loop (cdp, 09/2020)
         dict_chan_s_comp_contact = dict()
         # Nested loop channel-solid (cdp, 09/2020)
-        for _, fluid_comp_r in enumerate(self.inventory["FluidComponents"].collection):
+        for _, fluid_comp_r in enumerate(self.inventory["FluidComponent"].collection):
             # List linked channels-solid initialization (cdp, 09/2020)
             list_linked_chan_sol = list()
             # Nested dictionary in dict_topology_dummy_ch_sol declaration \
             # dict_topology_dummy_ch_sol
             dict_topology_dummy_ch_sol[fluid_comp_r.ID] = dict()
-            for _, s_comp_c in enumerate(self.inventory["SolidComponents"].collection):
+            for _, s_comp_c in enumerate(self.inventory["SolidComponent"].collection):
                 if (
                     self.dict_df_coupling["contact_perimeter_flag"].at[
                         fluid_comp_r.ID, s_comp_c.ID
@@ -661,14 +674,14 @@ class Conductors:
         # dummy to optimize nested loop (cdp, 09/2020)
         dict_s_comps_contact = dict()
         # Nested loop solid-solid (cdp, 09/2020)
-        for rr, s_comp_r in enumerate(self.inventory["SolidComponents"].collection):
+        for rr, s_comp_r in enumerate(self.inventory["SolidComponent"].collection):
             # List linked solids initialization (cdp, 09/2020)
             list_linked_solids = list()
             # Nested dictionary in dict_topology_dummy_sol declaration \
             # dict_topology_dummy_sol
             dict_topology_dummy_sol[s_comp_r.ID] = dict()
             for _, s_comp_c in enumerate(
-                self.inventory["SolidComponents"].collection[rr + 1 :]
+                self.inventory["SolidComponent"].collection[rr + 1 :]
             ):
                 if (
                     self.dict_df_coupling["contact_perimeter_flag"].at[
@@ -725,7 +738,7 @@ class Conductors:
                 else:
                     # Raise error
                     raise os.error(
-                        f"Jacket of kind {s_comp_r.inputs['Jacket_kind']} can not have and interface with the environment.\n"
+                        f"JacketComponent of kind {s_comp_r.inputs['Jacket_kind']} can not have and interface with the environment.\n"
                     )
                 # End if s_comp_r.inputs["Jacket_kind"]
         # end for rr (cdp, 09/2020)
@@ -765,9 +778,9 @@ class Conductors:
         check_found = dict()
 
         ii = -1
-        while ii < self.inventory["FluidComponents"].number - 1:
+        while ii < self.inventory["FluidComponent"].number - 1:
             ii = ii + 1
-            fluid_comp = self.inventory["FluidComponents"].collection[ii]
+            fluid_comp = self.inventory["FluidComponent"].collection[ii]
             # loop on reference channels (cdp, 09/2020)
             check_found[fluid_comp.ID] = dict(
                 Hydraulic_parallel=False, Thermal_contact=False
@@ -817,13 +830,13 @@ class Conductors:
     # 	if N_channel_no_par == 0:
     # 		print("There are no isolated channels\n")
     # 	elif N_channel_no_par > 0 and N_channel_no_par < \
-    # 			 self.inventory["FluidComponents"].number:
+    # 			 self.inventory["FluidComponent"].number:
     # 		if N_channel_no_par == 1:
     # 			print(f"""There is {N_channel_no_par} channel that is not in hydraulic parallel: {self.dict_topology["Standalone_channels"][0].ID}\n""")
     # 		else:
     # 			print(f"""There are {N_channel_no_par} channels that are not in hydraulic parallel: {self.dict_topology["Standalone_channels"][:].ID}\n""")
     # 	elif N_channel_no_par == \
-    # 			 self.inventory["FluidComponents"].number:
+    # 			 self.inventory["FluidComponent"].number:
     # 		print("All channels are isolated\n")
     # 	else:
     # 		print(f"Something does not work\n")
@@ -867,7 +880,7 @@ class Conductors:
         # index to used to update key "yes" (cdp, 09/2020)
         already["ii_yes"] = 0
         # Define dictionary dict_topology. This is different from \
-        # self.dict_topology which is a class Conductors attribute. A the end of \
+        # self.dict_topology which is a class Conductor attribute. A the end of \
         # this method self.dict_topology will be updated with the values in \
         # dict_topology (cdp, 09/2020)
         dict_topology = dict()
@@ -883,7 +896,7 @@ class Conductors:
             # get the reference channel: it is the one characterized by the minimum \
             # index value in array already["no"] (cdp, 09/2020)
             fluid_comp_ref_row_ind = min(already["no"])
-            fluid_comp_ref = self.inventory["FluidComponents"].collection[
+            fluid_comp_ref = self.inventory["FluidComponent"].collection[
                 fluid_comp_ref_row_ind
             ]
             # update dictionary already (cdp, 09/2020)
@@ -915,7 +928,7 @@ class Conductors:
             dict_topology[fluid_comp_ref.ID]["Group"].append(fluid_comp_ref)
             for ch_index in ind_direct:
                 # get channel (cdp, 09/2020)
-                fluid_comp = self.inventory["FluidComponents"].collection[ch_index]
+                fluid_comp = self.inventory["FluidComponent"].collection[ch_index]
                 # Construct check dictionary (cdp, 09/2020)
                 check[fluid_comp_ref.ID][fluid_comp.ID] = dict(row=False, col=False)
                 # find the index in array already["no"] of the element that must be \
@@ -940,7 +953,7 @@ class Conductors:
             # (cdp, 09/2020)
             for ch_index in ind_direct:
                 # get channel (cdp, 09/2020)
-                fluid_comp = self.inventory["FluidComponents"].collection[ch_index]
+                fluid_comp = self.inventory["FluidComponent"].collection[ch_index]
                 # Initialize key value "variable_lower" of dictionary boundary. This \
                 # parameter is used to look only in the region of not directly \
                 # connected channels and is updated to consider only the data below \
@@ -1083,7 +1096,7 @@ class Conductors:
                 jj = jj + 1
                 ch_index = ind_link[jj]
                 # get channel
-                fluid_comp_r = self.inventory["FluidComponents"].collection[ch_index]
+                fluid_comp_r = self.inventory["FluidComponent"].collection[ch_index]
                 if (
                     dict_topology[fluid_comp_ref.ID].get(fluid_comp_r.ID) != None
                     and f"{fluid_comp_r.ID}_{fluid_comp_c.ID}"
@@ -1224,7 +1237,7 @@ class Conductors:
                 jj = jj + 1
                 ch_index = ind_link[jj]
                 # get channel (cdp, 09/2020)
-                fluid_comp_c = self.inventory["FluidComponents"].collection[ch_index]
+                fluid_comp_c = self.inventory["FluidComponent"].collection[ch_index]
                 if (
                     dict_topology[fluid_comp_ref.ID].get(fluid_comp_c.ID) != None
                     and f"{fluid_comp_c.ID}_{fluid_comp_r.ID}"
@@ -1442,7 +1455,7 @@ class Conductors:
         # For each channel evaluate following fluid properties (array):velocity, \
         # pressure, temperature, density, Reynolds, Prandtl (cdp, 06/2020)
         # N.B. questo loop si potrebbe fare usando map.
-        for fluid_comp in self.inventory["FluidComponents"].collection:
+        for fluid_comp in self.inventory["FluidComponent"].collection:
             # Compute pressure, temperature and velocity in nodal points according to the initial conditions
             fluid_comp.coolant._eval_nodal_pressure_temperature_velocity_initialization(
                 self
@@ -1456,10 +1469,10 @@ class Conductors:
             temp_ave = (
                 temp_ave
                 + fluid_comp.coolant.dict_node_pt["temperature"]
-                / self.inventory["FluidComponents"].number
+                / self.inventory["FluidComponent"].number
             )
             # Enthaly balance: dt*sum((mdot*w)_out - (mdot*w)_inl), used to check \
-            # the imposition of SolidComponents temperature initial spatial \
+            # the imposition of SolidComponent temperature initial spatial \
             # distribution (cdp, 12/2020)
             # N.B. queste istruzioni posso inserirle in un metodo della classe.
             self.enthalpy_balance = self.enthalpy_balance + simulation.transient_input[
@@ -1487,24 +1500,24 @@ class Conductors:
         ## If needed read only the sub matrix describing channel - solid objects \
         ## contact (cdp, 07/2020)
         ## nested loop on channel - solid objects (cpd 07/2020)
-        # for cc in range(self.inventory["SolidComponents"].number):
-        # 	s_comp = self.inventory["SolidComponents"].collection[cc]
+        # for cc in range(self.inventory["SolidComponent"].number):
+        # 	s_comp = self.inventory["SolidComponent"].collection[cc]
         # 	weight = self.dict_df_coupling["contact_perimeter"][0:\
-        # 					 self.inventory["FluidComponents"].number, \
-        # 					 cc + self.inventory["FluidComponents"].number]
+        # 					 self.inventory["FluidComponent"].number, \
+        # 					 cc + self.inventory["FluidComponent"].number]
         # 	s_comp.dict_node_pt["temperature"] = \
         # 																np.zeros(self.dict_discretization["N_nod"])
         # 	if np.sum(weight) > 0:
-        # 		# evaluate SolidComponents temperature as the weighted average on \
+        # 		# evaluate SolidComponent temperature as the weighted average on \
         # 		# conctat_perimeter with channels (cpd 07/2020)
-        # 		for rr in range(self.inventory["FluidComponents"].number):
-        # 			fluid_comp = self.inventory["FluidComponents"].collection[rr]
+        # 		for rr in range(self.inventory["FluidComponent"].number):
+        # 			fluid_comp = self.inventory["FluidComponent"].collection[rr]
         # 			s_comp.dict_node_pt["temperature"] = \
         # 																	s_comp.dict_node_pt["temperature"] + \
         # 																	fluid_comp.coolant.dict_node_pt["temperature"]*\
         # 																	weight[rr]/np.sum(weight)
         # 	else:
-        # 		# evaluate SolidComponents temperature as the algebraic average of \
+        # 		# evaluate SolidComponent temperature as the algebraic average of \
         # 		# channels temperature (cdp, 07/2020)
         # 		s_comp.dict_node_pt["temperature"] = temp_ave
         # 		# scalar (cdp, 07/2020)
@@ -1513,17 +1526,19 @@ class Conductors:
         # 	#f_plot(s_comp, self.dict_discretization["xcoord"])
 
         # Call function SolidComponents_T_initialization to initialize \
-        # SolidComponents temperature spatial distribution from FluidComponents \
+        # SolidComponent temperature spatial distribution from FluidComponent \
         # temperature or from input values according to flag INTIAL (cdp, 12/2020)
         solid_components_temperature_initialization(self)
 
         # Nested loop jacket - jacket.
-        for rr, jacket_r in enumerate(self.inventory["Jacket"].collection):
+        for rr, jacket_r in enumerate(self.inventory["JacketComponent"].collection):
             # np array of shape (Node, 1) to avoid broadcasting error.
             jacket_r.radiative_heat_env = np.zeros(
                 (jacket_r.dict_node_pt["temperature"].size, 1)
             )
-            for _, jacket_c in enumerate(self.inventory["Jacket"].collection[rr + 1 :]):
+            for _, jacket_c in enumerate(
+                self.inventory["JacketComponent"].collection[rr + 1 :]
+            ):
                 jacket_r.radiative_heat_inn[f"{jacket_r.ID}_{jacket_c.ID}"] = np.zeros(
                     (jacket_r.dict_node_pt["temperature"].size, 1)
                 )
@@ -1542,27 +1557,27 @@ class Conductors:
         # set_energy_counters, Get_transp_coeff @ time = 0 to perform \
         # initialization (cdp, 07/2020)
         self.operating_conditions(simulation)
-        # Loop on SolidComponents (cdp, 01/2021)
+        # Loop on SolidComponent (cdp, 01/2021)
         # N.B. questo loop si potrebbe fare usando map.
-        for s_comp in self.inventory["SolidComponents"].collection:
+        for s_comp in self.inventory["SolidComponent"].collection:
             # compute, average density, thermal conductivity, specifi heat at \
             # constant pressure and electrical resistivity at initial \
-            # SolidComponents temperature in nodal points (cdp, 01/2021)
+            # SolidComponent temperature in nodal points (cdp, 01/2021)
             s_comp.eval_sol_comp_properties(self.inventory)
         # end for s_comp.
 
-        # Initialize the Energy of the SolidComponents (cdp, 12/2020)
+        # Initialize the Energy of the SolidComponent (cdp, 12/2020)
         self.E_sol_ini = 0.0
         self.E_sol_fin = 0.0
         self.E_str_ini = 0.0
         self.E_str_fin = 0.0
         self.E_jk_ini = 0.0
         self.E_jk_fin = 0.0
-        # Loop on SolidComponents to evaluate the total initial energy of \
-        # SolidComponents, used to check the imposition of SolidComponents \
+        # Loop on SolidComponent to evaluate the total initial energy of \
+        # SolidComponent, used to check the imposition of SolidComponent \
         # temperature initial spatial distribution (cdp, 12/2020)
         # N.B. questo loop si potrebbe fare usando map.
-        for s_comp in self.inventory["SolidComponents"].collection:
+        for s_comp in self.inventory["SolidComponent"].collection:
             # N.B. queste istruzioni posso inserirle in un metodo della classe.
             self.E_sol_ini = self.E_sol_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                 (
@@ -1621,7 +1636,7 @@ class Conductors:
         # end if self.inputs
 
         # Assign initial values to key SYSVAR (cdp, 10/2020)
-        for jj, fluid_comp in enumerate(self.inventory["FluidComponents"].collection):
+        for jj, fluid_comp in enumerate(self.inventory["FluidComponent"].collection):
             # velocity (cdp, 10/2020)
             self.dict_Step["SYSVAR"][
                 jj : self.dict_N_equation["Total"] : self.dict_N_equation["NODOFS"], 0
@@ -1629,7 +1644,7 @@ class Conductors:
             # pressure (cdp, 10/2020)
             self.dict_Step["SYSVAR"][
                 jj
-                + self.inventory["FluidComponents"].number : self.dict_N_equation[
+                + self.inventory["FluidComponent"].number : self.dict_N_equation[
                     "Total"
                 ] : self.dict_N_equation["NODOFS"],
                 0,
@@ -1638,17 +1653,17 @@ class Conductors:
             self.dict_Step["SYSVAR"][
                 jj
                 + 2
-                * self.inventory["FluidComponents"].number : self.dict_N_equation[
+                * self.inventory["FluidComponent"].number : self.dict_N_equation[
                     "Total"
                 ] : self.dict_N_equation["NODOFS"],
                 0,
             ] = fluid_comp.coolant.dict_node_pt["temperature"]
         # end for jj (cdp, 10/2020)
-        for ll, comp in enumerate(self.inventory["SolidComponents"].collection):
+        for ll, comp in enumerate(self.inventory["SolidComponent"].collection):
             # solid components temperature (cdp, 10/2020)
             self.dict_Step["SYSVAR"][
                 ll
-                + self.dict_N_equation["FluidComponents"] : self.dict_N_equation[
+                + self.dict_N_equation["FluidComponent"] : self.dict_N_equation[
                     "Total"
                 ] : self.dict_N_equation["NODOFS"],
                 0,
@@ -1687,22 +1702,22 @@ class Conductors:
         # Evaluate transport coefficients in nodal points.
         self.get_transp_coeff(simulation)
 
-        # Loop on Strands objects (csp, 07/2020)
-        for strand in self.inventory["Strands"].collection:
+        # Loop on StrandComponent objects (csp, 07/2020)
+        for strand in self.inventory["StrandComponent"].collection:
             strand.get_current(self)
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
             strand.get_magnetic_field(self)
-            # call method get_magnetic_field_gradient for each Strands object (cdp, 06/2020)
+            # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self)
-            if strand.NAME != self.inventory["Stabilizer"].name:
+            if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
                 if strand.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
                     strand.get_eps(self)
                 # end if strand.inputs["ISUPERCONDUCTOR"] (cdp, 08/2020)
-                # Call get_superconductor_critical_prop to evaluate MixSCStabilizer \
-                # and/or SuperConductor properties in nodal points. Added to allow \
+                # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
+                # and/or StrandSuperconductorComponent properties in nodal points. Added to allow \
                 # storage of current sharing temperature time evolution values in \
                 # user defined nodal points (cdp, 08/2020)
                 strand.get_superconductor_critical_prop(self)
@@ -1715,7 +1730,7 @@ class Conductors:
                 elif strand.operations["TCS_EVALUATION"] == True:
                     # Evaluate current sharing temperature at each time step.
                     strand.get_tcs()
-            # end if strand.NAME != self.inventory["Stabilizer"].name \
+            # end if strand.NAME != self.inventory["StrandStabilizerComponent"].name \
             # (cdp, 08/2020)
             if self.cond_num_step == 0 and strand.operations["IQFUN"] == 0:
                 # call method get_heat only once to initialize key EXTFLX of dictionary \
@@ -1733,8 +1748,8 @@ class Conductors:
             # conductor solid components (cdp, 06/2020)
             strand.set_energy_counters(self)
         # end for strand (cdp,07/2020)
-        # Loop on Jackets objects
-        for rr, jacket in enumerate(self.inventory["Jacket"].collection):
+        # Loop on JacketComponents objects
+        for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
             jacket.get_current(self)
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
@@ -1763,7 +1778,9 @@ class Conductors:
                 # Evaluate the external heat by radiation in nodal points.
                 jacket._radiative_source_therm_env(self, simulation.environment)
             # End if self.dict_df_coupling["contact_perimeter_flag"]
-            for _, jacket_c in enumerate(self.inventory["Jacket"].collection[rr + 1 :]):
+            for _, jacket_c in enumerate(
+                self.inventory["JacketComponent"].collection[rr + 1 :]
+            ):
                 if (
                     abs(self.dict_df_coupling["HTC_choice"].at[jacket.ID, jacket_c.ID])
                     == 3
@@ -1788,14 +1805,14 @@ class Conductors:
         # PROPERTIES AT THE GAUSS POINT (CENTRE OF THE ELEMENT)
 
         # Fluid components (cdp, 07/2020)
-        for fluid_comp in self.inventory["FluidComponents"].collection:
+        for fluid_comp in self.inventory["FluidComponent"].collection:
             # Evaluate coolant properties in Gauss points
             fluid_comp.coolant._eval_properties_nodal_gauss(
                 self, simulation.fluid_prop_aliases, nodal=False
             )
 
-        # Jacket (cdp, 07/2020)
-        for jacket in self.inventory["Jacket"].collection:
+        # JacketComponent (cdp, 07/2020)
+        for jacket in self.inventory["JacketComponent"].collection:
             jacket.dict_Gauss_pt["temperature"] = (
                 np.abs(
                     jacket.dict_node_pt["temperature"][:-1]
@@ -1822,8 +1839,10 @@ class Conductors:
         # End for jacket.
 
         # Nested loop jacket - jacket.
-        for rr, jacket in enumerate(self.inventory["Jacket"].collection):
-            for _, jacket_c in enumerate(self.inventory["Jacket"].collection[rr + 1 :]):
+        for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
+            for _, jacket_c in enumerate(
+                self.inventory["JacketComponent"].collection[rr + 1 :]
+            ):
                 key = f"{jacket.ID}_{jacket_c.ID}"
                 # Add the radiative heat contribution between inner surface of the enclosure and inner jackets.
                 jacket.dict_Gauss_pt["Q1"] = (
@@ -1844,8 +1863,8 @@ class Conductors:
             jacket.eval_sol_comp_properties(self.inventory, nodal=False)
         # end for rr.
 
-        # Strands (cdp, 07/2020)
-        for strand in self.inventory["Strands"].collection:
+        # StrandComponent (cdp, 07/2020)
+        for strand in self.inventory["StrandComponent"].collection:
             strand.dict_Gauss_pt["temperature"] = (
                 np.abs(
                     strand.dict_node_pt["temperature"][:-1]
@@ -1860,17 +1879,17 @@ class Conductors:
             strand.dict_Gauss_pt["Q2"] = (
                 strand.dict_node_pt["JHTFLX"][1:] + strand.dict_node_pt["EXTFLX"][1:]
             )
-            # call method get_magnetic_field_gradient for each Strands object (cdp, 06/2020)
+            # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self, nodal=False)
-            # only for MixSCStabilizer and SuperConductor objects (cdp, 07/2020)
-            if strand.NAME != self.inventory["Stabilizer"].name:
+            # only for StrandMixedComponent and StrandSuperconductorComponent objects (cdp, 07/2020)
+            if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
                 if strand.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
                     strand.get_eps(self, nodal=False)
                 # end if strand.inputs["ISUPERCONDUCTOR"] (cdp, 08/2020)
-                # Call get_superconductor_critical_prop to evaluate MixSCStabilizer \
-                # and/or SuperConductor properties in the Gauss point (cdp, 07/2020)
+                # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
+                # and/or StrandSuperconductorComponent properties in the Gauss point (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self, nodal=False)
                 if (
                     strand.operations["TCS_EVALUATION"] == False
@@ -1881,9 +1900,9 @@ class Conductors:
                 elif strand.operations["TCS_EVALUATION"] == True:
                     # Evaluate current sharing temperature at each time step.
                     strand.get_tcs(nodal=False)
-            # end if strand.NAME != self.inventory["Stabilizer"].name \
+            # end if strand.NAME != self.inventory["StrandStabilizerComponent"].name \
             # (cdp, 08/2020)
-            # Evaluate SolidComponents properties
+            # Evaluate SolidComponent properties
             strand.eval_sol_comp_properties(self.inventory, nodal=False)
 
         # call method Get_transp_coeff to evaluate transport properties (heat \
@@ -1897,44 +1916,44 @@ class Conductors:
 
         # bozza della funzione Post_processing
 
-        # Loop on FluidComponents (cdp, 07/2020)
-        for fluid_comp in self.inventory["FluidComponents"].collection:
+        # Loop on FluidComponent (cdp, 07/2020)
+        for fluid_comp in self.inventory["FluidComponent"].collection:
             # Evaluate the other coolant properties in nodal points (nodal = True by default)
             fluid_comp.coolant._eval_properties_nodal_gauss(
                 self, simulation.fluid_prop_aliases
             )
-        # Loop on Jackets (cdp, 07/2020)
-        for jacket in self.inventory["Jacket"].collection:
+        # Loop on JacketComponents (cdp, 07/2020)
+        for jacket in self.inventory["JacketComponent"].collection:
             jacket.get_current(self)
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
             jacket.get_magnetic_field(self)
         # end for jacket (cdp, 07/2020)
-        # Loop on Strands (cdp, 07/2020)
-        for strand in self.inventory["Strands"].collection:
-            # call method get_magnetic_field_gradient for each Strands object (cdp, 06/2020)
+        # Loop on StrandComponent (cdp, 07/2020)
+        for strand in self.inventory["StrandComponent"].collection:
+            # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self)
             # questa è la parte che credo sia rilevante
-            # only for MixSCStabilizer and SuperConductor objects (cdp, 07/2020)
-            if strand.NAME != self.inventory["Stabilizer"].name:
+            # only for StrandMixedComponent and StrandSuperconductorComponent objects (cdp, 07/2020)
+            if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
                 if strand.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
                     strand.get_eps(self)
                 # end if strand.inputs["ISUPERCONDUCTOR"] (cdp, 08/2020)
-                # Call get_superconductor_critical_prop to evaluate MixSCStabilizer \
-                # and/or SuperConductor properties in nodal points (cdp, 07/2020)
+                # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
+                # and/or StrandSuperconductorComponent properties in nodal points (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self)
                 # Evaluate current sharing temperature
                 strand.get_tcs()
 
-            # end if strand.NAME != self.inventory["Stabilizer"].name \
+            # end if strand.NAME != self.inventory["StrandStabilizerComponent"].name \
             # (cdp, 08/2020)
 
-        # Loop on SolidComponents to evaluate the total final energy of \
-        # SolidComponents, used to check the imposition of SolidComponents \
+        # Loop on SolidComponent to evaluate the total final energy of \
+        # SolidComponent, used to check the imposition of SolidComponent \
         # temperature initial spatial distribution (cdp, 12/2020)
-        for s_comp in self.inventory["SolidComponents"].collection:
+        for s_comp in self.inventory["SolidComponent"].collection:
             self.E_sol_fin = self.E_sol_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                 (
                     self.dict_discretization["xcoord"][
@@ -2024,7 +2043,7 @@ class Conductors:
     """
 
         # loop to evaluate htc_steady for each channel according to its geometry (cpd 06/2020)
-        for fluid_comp in self.inventory["FluidComponents"].collection:
+        for fluid_comp in self.inventory["FluidComponent"].collection:
             # Define dictionary to select nodal or gauss properties according to the value of flag_nodal.0
             dict_dummy_chan = {
                 True: fluid_comp.coolant.dict_node_pt,
@@ -2052,14 +2071,14 @@ class Conductors:
         dict_dummy["HTC"]["env_sol"] = dict()
         # Counters to check the number of the different possible kinds of interfaces (cdp, 09/2020)
         htc_len = 0
-        for rr, fluid_comp_r in enumerate(self.inventory["FluidComponents"].collection):
+        for rr, fluid_comp_r in enumerate(self.inventory["FluidComponent"].collection):
             dict_dummy_chan_r = {
                 True: fluid_comp_r.coolant.dict_node_pt,
                 False: fluid_comp_r.coolant.dict_Gauss_pt,
             }
             # Read the submatrix containing information about channel - solid objects iterfaces (cdp, 06/2020)
             # nested loop on channel - solid objects (cpd 06/2020)
-            for s_comp in self.inventory["SolidComponents"].collection:
+            for s_comp in self.inventory["SolidComponent"].collection:
                 dict_dummy_comp = {
                     True: s_comp.dict_node_pt,
                     False: s_comp.dict_Gauss_pt,
@@ -2144,10 +2163,10 @@ class Conductors:
                         ] * np.ones(
                             dict_dummy_chan_r[flag_nodal]["temperature"].shape
                         )
-            # end loop on SolidComponents
+            # end loop on SolidComponent
             # nested loop on channel - channel objects (cdp, 06/2020)
             for _, fluid_comp_c in enumerate(
-                self.inventory["FluidComponents"].collection[rr + 1 :]
+                self.inventory["FluidComponent"].collection[rr + 1 :]
             ):
                 dict_dummy_chan_c = {
                     True: fluid_comp_c.coolant.dict_node_pt,
@@ -2219,13 +2238,13 @@ class Conductors:
             # end for loop cc
         # end for loop rr
         # nested loop on solid - solid objects (cdp, 06/2020)
-        for rr, s_comp_r in enumerate(self.inventory["SolidComponents"].collection):
+        for rr, s_comp_r in enumerate(self.inventory["SolidComponent"].collection):
             dict_dummy_comp_r = {
                 True: s_comp_r.dict_node_pt,
                 False: s_comp_r.dict_Gauss_pt,
             }
             for _, s_comp_c in enumerate(
-                self.inventory["SolidComponents"].collection[rr + 1 :]
+                self.inventory["SolidComponent"].collection[rr + 1 :]
             ):
                 dict_dummy_comp_c = {
                     True: s_comp_c.dict_node_pt,
@@ -2499,7 +2518,7 @@ class Conductors:
                 else:
                     # Raise error
                     raise os.error(
-                        f"Jacket of kind {s_comp_r.inputs['Jacket_kind']} can not exchange heat by radiation and/or convection with the environment.\n"
+                        f"JacketComponent of kind {s_comp_r.inputs['Jacket_kind']} can not exchange heat by radiation and/or convection with the environment.\n"
                     )
                 # End if s_comp_r.inputs["Jacket_kind"]
             # End if self.dict_df_coupling["contact_perimeter_flag"].at[simulation.environment.KIND, s_comp_r.ID]
@@ -2585,7 +2604,7 @@ class Conductors:
         self.energy_balance = 0.0  # energy balance initialization (cdp, 09/2020)
         self.inner_pow = 0.0
         self.outer_pow = 0.0
-        for fluid_comp in self.inventory["FluidComponents"].collection:
+        for fluid_comp in self.inventory["FluidComponent"].collection:
             # Mass balance (cdp, 09/2020)
             self.mass_balance = self.mass_balance + self.time_step * (
                 fluid_comp.coolant.dict_node_pt["mass_flow_rate"][0]
@@ -2618,7 +2637,7 @@ class Conductors:
                 + fluid_comp.coolant.dict_node_pt["velocity"][-1] ** 2 / 2.0
             )
         # End for fluid_comp.
-        for jacket in self.inventory["Jacket"].collection:
+        for jacket in self.inventory["JacketComponent"].collection:
             if (
                 self.dict_df_coupling["contact_perimeter_flag"].loc[
                     simulation.environment.KIND, jacket.ID
@@ -2657,7 +2676,7 @@ class Conductors:
                 )
             # End if.
         # End jacket.
-        # Energy balance to check the correct management of SolidComponents forced \
+        # Energy balance to check the correct management of SolidComponent forced \
         # initial temperature distribution (cdp, 12/2020)
         # E_residual = (self.E_sol_ini - self.E_sol_fin) - \
         #              (self.enthalpy_inl - self.enthalpy_out)
@@ -2680,8 +2699,10 @@ class Conductors:
     def compute_radiative_heat_exhange_jk(self):
         """Method that evaluates the radiative heat exchanged by radiation between jackets."""
         # Nested loop on jackets.
-        for rr, jk_r in enumerate(self.inventory["Jacket"].collection):
-            for _, jk_c in enumerate(self.inventory["Jacket"].collection[rr + 1 :]):
+        for rr, jk_r in enumerate(self.inventory["JacketComponent"].collection):
+            for _, jk_c in enumerate(
+                self.inventory["JacketComponent"].collection[rr + 1 :]
+            ):
                 if abs(self.dict_df_coupling["HTC_choice"].at[jk_r.ID, jk_c.ID]) == 3:
                     self.heat_rad_jk[f"{jk_r.ID}_{jk_c.ID}"] = (
                         self.dict_df_coupling["contact_perimeter"].at[jk_r.ID, jk_c.ID]
@@ -2706,7 +2727,7 @@ class Conductors:
         Args:
             environment ([type]): [description]
         """
-        for jk in self.inventory["Jacket"].collection:
+        for jk in self.inventory["JacketComponent"].collection:
             if (
                 self.dict_df_coupling["contact_perimeter_flag"].at[
                     environment.KIND, jk.ID

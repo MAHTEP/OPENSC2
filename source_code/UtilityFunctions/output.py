@@ -8,12 +8,10 @@ import os
 
 def save_properties(conductor, f_path):
 
-    """Functions that save .tsv files with suitable file names, FluidComponents and SolidComponents initialization and final solution, together with spatial coordinate discretization. Channels saved variables are: temperature, pressure, density, viscosity, specific heat at constant pressure, thermal conductivity, velocity, Reynolds number and Prandtl number. Strands saved variables are: temperature, density, specific heat at constant pressure, thermal conductivity, magnetic field, electrical resistivity, current sharing temperature; jackets saved variables are temperature, specific heat at constant pressure, thermal conductivity, magnetic field, electrical resistivity."""
+    """Functions that save .tsv files with suitable file names, FluidComponent and SolidComponent initialization and final solution, together with spatial coordinate discretization. Channels saved variables are: temperature, pressure, density, viscosity, specific heat at constant pressure, thermal conductivity, velocity, Reynolds number and Prandtl number. StrandComponent saved variables are: temperature, density, specific heat at constant pressure, thermal conductivity, magnetic field, electrical resistivity, current sharing temperature; jackets saved variables are temperature, specific heat at constant pressure, thermal conductivity, magnetic field, electrical resistivity."""
 
     list_prop_chan = list(
-        conductor.inventory["FluidComponents"].collection[
-            0
-        ].coolant.dict_node_pt.keys()
+        conductor.inventory["FluidComponent"].collection[0].coolant.dict_node_pt.keys()
     )
     list_prop_chan.append("friction_factor")
     list_units = [
@@ -41,7 +39,7 @@ def save_properties(conductor, f_path):
     header_st = "xcoord (m)	temperature (K)	B_field (T)	T_cur_sharing (K)"
     header_stab = "xcoord (m)	temperature (K)	B_field (T)"
     header_jk = "xcoord (m)	temperature (K)"
-    for fluid_comp in conductor.inventory["FluidComponents"].collection:
+    for fluid_comp in conductor.inventory["FluidComponent"].collection:
         A_chan = np.zeros(
             (
                 conductor.dict_discretization["N_nod"],
@@ -56,9 +54,9 @@ def save_properties(conductor, f_path):
         A_chan[:, -1] = fluid_comp.channel.dict_friction_factor[True]["total"]
         with open(file_path, "w") as writer:
             np.savetxt(writer, A_chan, delimiter="\t", header=header_chan, comments="")
-    for strand in conductor.inventory["Strands"].collection:
+    for strand in conductor.inventory["StrandComponent"].collection:
         file_path = os.path.join(f_path, f"{strand.ID}.tsv")
-        if strand.NAME != conductor.inventory["Stabilizer"].name:
+        if strand.NAME != conductor.inventory["StrandStabilizerComponent"].name:
             A_strand = np.zeros((conductor.dict_discretization["N_nod"], 4))
             A_strand[:, 3] = strand.dict_node_pt["T_cur_sharing"]
         else:
@@ -67,7 +65,7 @@ def save_properties(conductor, f_path):
         A_strand[:, 1] = strand.dict_node_pt["temperature"]
         A_strand[:, 2] = strand.dict_node_pt["B_field"]
         with open(file_path, "w") as writer:
-            if strand.NAME != conductor.inventory["Stabilizer"].name:
+            if strand.NAME != conductor.inventory["StrandStabilizerComponent"].name:
                 np.savetxt(
                     writer, A_strand, delimiter="\t", header=header_st, comments=""
                 )
@@ -75,7 +73,7 @@ def save_properties(conductor, f_path):
                 np.savetxt(
                     writer, A_strand, delimiter="\t", header=header_stab, comments=""
                 )
-    for jacket in conductor.inventory["Jacket"].collection:
+    for jacket in conductor.inventory["JacketComponent"].collection:
         file_path = os.path.join(f_path, f"{jacket.ID}.tsv")
         A_jacket = np.zeros((conductor.dict_discretization["N_nod"], 2))
         A_jacket[:, 0] = conductor.dict_discretization["xcoord"]
@@ -95,11 +93,11 @@ def save_simulation_space(conductor, f_path, n_digit):
     (cdp, 08/2020)
     """
 
-    # Save transient solution for each Conductors objects at each \
+    # Save transient solution for each Conductor objects at each \
     # iteration_store iteration. For each conductor component, solution is \
-    # stored in a dedicated file. FluidComponents stored variables are velocity, \
+    # stored in a dedicated file. FluidComponent stored variables are velocity, \
     # pressure and temperature together with spatial discretization, while for \
-    # SolidComponents only temperature and spatial discretization are stored. \
+    # SolidComponent only temperature and spatial discretization are stored. \
     # (cdp, 08/2020)
     # Hypothesis: for different input files parameters there are different \
     # simulation names (cdp, 08/2020)
@@ -117,7 +115,7 @@ def save_simulation_space(conductor, f_path, n_digit):
         "friction_factor",
     ]
     header_chan = "xcoord (m)	velocity (m/s)	pressure (Pa)	temperature (K)	total_density (kg/m^3)\tfriction_factor (~)"
-    for fluid_comp in conductor.inventory["FluidComponents"].collection:
+    for fluid_comp in conductor.inventory["FluidComponent"].collection:
         file_path = os.path.join(
             f_path, f"{fluid_comp.ID}_({conductor.cond_num_step})_sd.tsv"
         )
@@ -141,7 +139,7 @@ def save_simulation_space(conductor, f_path, n_digit):
     # 							"total_thermal_conductivity", "EXTFLX", "JHTFLX"]
     headers_s_comp = "xcoord (m)	temperature (K)"
     prop_s_comp = ["xcoord", "temperature"]
-    for s_comp in conductor.inventory["SolidComponents"].collection:
+    for s_comp in conductor.inventory["SolidComponent"].collection:
         file_path = os.path.join(
             f_path, f"{s_comp.ID}_({conductor.cond_num_step})_sd.tsv"
         )
@@ -279,8 +277,8 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
     # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
     # Round the time to save to n_digit digits only once
     time = np.around(cond.Space_save, n_digit)
-    # loop on FluidComponents (cdp, 11/2020)
-    for fluid_comp in cond.inventory["FluidComponents"].collection:
+    # loop on FluidComponent (cdp, 11/2020)
+    for fluid_comp in cond.inventory["FluidComponent"].collection:
         # create a list of files that have the fluid_comp.ID and User in the name \
         # exploiting list compreension: these files are the ones that will be \
         # reorganized by this function (cdp, 11/2020)
@@ -288,7 +286,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
-        if fluid_comp.ID == cond.inventory["FluidComponents"].collection[0].ID:
+        if fluid_comp.ID == cond.inventory["FluidComponent"].collection[0].ID:
             # declare dictionary to store the spatial diccretizations only once \
             # (cdp, 01/2021)
             dict_xcoord = dict()
@@ -303,10 +301,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
             )
             # Delete the old file format.
             os.remove(file_load)
-            if (
-                fluid_comp.ID
-                == cond.inventory["FluidComponents"].collection[0].ID
-            ):
+            if fluid_comp.ID == cond.inventory["FluidComponent"].collection[0].ID:
                 # store the spatial discretizations at each required time step in file \
                 # xcoord.tsv only once (cdp,01/2021)
                 dict_xcoord[f"time = {time[ii]} (s)"] = dict_df[file_name]["xcoord (m)"]
@@ -351,7 +346,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
             # save the data frame, without the row index name (cdp, 11/2020)
             dict_df_new[prop].to_csv(path_save, sep="\t", index=False)
         # end for prop (cdp, 11/2020)
-        if fluid_comp.ID == cond.inventory["FluidComponents"].collection[0].ID:
+        if fluid_comp.ID == cond.inventory["FluidComponent"].collection[0].ID:
             # convert the dictionary to a DataFrame (cdp,01/2021)
             df_xcoord = pd.DataFrame(dict_xcoord)
             # build file name (cdp, 01/2021)
@@ -361,8 +356,8 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
             df_xcoord.to_csv(path_save, sep="\t", index=False)
             # end if fluid_comp.ID (cdp, 01/2021)
     # end for fluid_comp (cdp, 11/2020)
-    # loop on SolidComponents (cdp, 11/2020)
-    for s_comp in cond.inventory["SolidComponents"].collection:
+    # loop on SolidComponent (cdp, 11/2020)
+    for s_comp in cond.inventory["SolidComponent"].collection:
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
@@ -531,7 +526,7 @@ def save_simulation_time(simulation, conductor):
             "total_density_out (kg/m^3)",
             "mass_flow_rate_out (kg/s)",
         ]
-        for f_comp in conductor.inventory["FluidComponents"].collection:
+        for f_comp in conductor.inventory["FluidComponent"].collection:
             # Loop on velocity, pressure, temperature and total density.
             for key, value in f_comp.coolant.time_evol.items():
                 # Inizialize dictionary corresponding to key to a dictionary of empty lists for the first time.
@@ -576,7 +571,7 @@ def save_simulation_time(simulation, conductor):
                 header=True,
             )
         # End for f_comp.
-        for s_comp in conductor.inventory["SolidComponents"].collection:
+        for s_comp in conductor.inventory["SolidComponent"].collection:
             # Loop on velocity, pressure, temperature and total density.
             for key, value in s_comp.time_evol.items():
                 # Inizialize dictionary corresponding to key to a dictionary of empty lists for the first time.
@@ -600,8 +595,8 @@ def save_simulation_time(simulation, conductor):
     # convert conductor.cond_time list to np.array (cdp, 10/2020)
     time = np.array(conductor.cond_time[-1])
 
-    # FluidComponents objects (cdp, 08/2020)
-    for fluid_comp in conductor.inventory["FluidComponents"].collection:
+    # FluidComponent objects (cdp, 08/2020)
+    for fluid_comp in conductor.inventory["FluidComponent"].collection:
         # Loop on velocity, pressure, temperature and total density.
         for key, value in fluid_comp.coolant.time_evol.items():
             # Update the contend of the dictionary of lists with propertiy values at selected xcoord and current time.
@@ -712,8 +707,8 @@ def save_simulation_time(simulation, conductor):
         # End if len().
     # End for fluid_comp.
 
-    # SolidComponents objects (cdp, 08/2020)
-    for s_comp in conductor.inventory["SolidComponents"].collection:
+    # SolidComponent objects (cdp, 08/2020)
+    for s_comp in conductor.inventory["SolidComponent"].collection:
         for key, value in s_comp.time_evol.items():
             # Update the contend of the dictionary of lists with propertiy values at selected xcoord and current time.
             s_comp.time_evol[key] = update_values(
@@ -831,8 +826,7 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
         # Save data for the Space convergence analysis (cdp, 12/2020)
         # compute spatial discretization pitch (cdp, 12/2020)
         discr = (
-            cond.inputs["XLENGTH"]
-            / cond.dict_discretization["Grid_input"]["NELEMS"]
+            cond.inputs["XLENGTH"] / cond.dict_discretization["Grid_input"]["NELEMS"]
         )
         folder_path = os.path.join(f_path, cond.ID)
         # Create the path of the file {cond.ID}_delta_x.tsv (cdp, 11/2020)
@@ -928,9 +922,9 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
         with open(file_path, "a") as writer:
             np.savetxt(writer, AA, delimiter="\t")
     # end if not (cdp, 12/2020)
-    # Loop on FluidComponents (cdp, 12/2020)
-    for fluid_comp in cond.inventory["FluidComponents"].collection:
-        # save FluidComponents solution spatial distribution at TEND: velocity, \
+    # Loop on FluidComponent (cdp, 12/2020)
+    for fluid_comp in cond.inventory["FluidComponent"].collection:
+        # save FluidComponent solution spatial distribution at TEND: velocity, \
         # pressure and temperature only (cdp, 11/2020)
         folder_path = os.path.join(f_path, cond.ID, fluid_comp.ID)
         os.makedirs(name=folder_path, exist_ok=True)
@@ -939,8 +933,8 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
             (
                 cond.dict_discretization["N_nod"],
                 int(
-                    cond.dict_N_equation["FluidComponents"]
-                    / cond.inventory["FluidComponents"].number
+                    cond.dict_N_equation["FluidComponent"]
+                    / cond.inventory["FluidComponent"].number
                 ),
             )
         )
@@ -951,9 +945,9 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
         with open(file_path, "w") as writer:
             np.savetxt(writer, A_chan, delimiter="\t", header=header_chan, comments="")
     # end for fluid_comp (cdp, 11/2020)
-    # Loop on SolidComponents (cdp, 12/2020)
-    for s_comp in cond.inventory["SolidComponents"].collection:
-        # save SolidComponents solution spatial distribution at TEND: temperature \
+    # Loop on SolidComponent (cdp, 12/2020)
+    for s_comp in cond.inventory["SolidComponent"].collection:
+        # save SolidComponent solution spatial distribution at TEND: temperature \
         # only (cdp, 11/2020)
         folder_path = os.path.join(f_path, cond.ID, s_comp.ID)
         os.makedirs(name=folder_path, exist_ok=True)
