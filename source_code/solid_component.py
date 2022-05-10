@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-from UtilityFunctions.auxiliary_functions import (
+from utility_functions.auxiliary_functions import (
     get_from_xlsx,
     load_auxiliary_files,
     build_interpolator,
@@ -9,7 +9,7 @@ from UtilityFunctions.auxiliary_functions import (
 )
 
 # Cu properties
-from Properties_of_materials.copper import (
+from properties_of_materials.copper import (
     thermal_conductivity_cu_nist,
     isobaric_specific_heat_cu_nist,
     density_cu,
@@ -17,28 +17,28 @@ from Properties_of_materials.copper import (
 )
 
 # NbTi properties
-from Properties_of_materials.niobium_titanium import (
+from properties_of_materials.niobium_titanium import (
     thermal_conductivity_nbti,
     isobaric_specific_heat_nbti,
     density_nbti,
 )
 
 # Nb3Sn properties
-from Properties_of_materials.niobium3_tin import (
+from properties_of_materials.niobium3_tin import (
     thermal_conductivity_nb3sn,
     isobaric_specific_heat_nb3sn,
     density_nb3sn,
 )
 
 # RE123 properties
-from Properties_of_materials.rare_earth_123 import (
+from properties_of_materials.rare_earth_123 import (
     thermal_conductivity_re123,
     isobaric_specific_heat_re123,
     density_re123,
 )
 
 # Stainless steel properties
-from Properties_of_materials.stainless_steel import (
+from properties_of_materials.stainless_steel import (
     thermal_conductivity_ss,
     isobaric_specific_heat_ss,
     density_ss,
@@ -46,14 +46,14 @@ from Properties_of_materials.stainless_steel import (
 )
 
 # Glass-epoxy properties
-from Properties_of_materials.glass_epoxy import (
+from properties_of_materials.glass_epoxy import (
     thermal_conductivity_ge,
     isobaric_specific_heat_ge,
     density_ge,
 )
 
 # Silver properties
-from Properties_of_materials.silver import (
+from properties_of_materials.silver import (
     thermal_conductivity_ag,
     isobaric_specific_heat_ag,
     density_ag,
@@ -61,7 +61,7 @@ from Properties_of_materials.silver import (
 )
 
 # HASTELLOY - C276 properties
-from Properties_of_materials.hastelloy_c276 import (
+from properties_of_materials.hastelloy_c276 import (
     thermal_conductivity_hc276,
     isobaric_specific_heat_hc276,
     density_hc276,
@@ -69,7 +69,7 @@ from Properties_of_materials.hastelloy_c276 import (
 )
 
 # Solder Sn60Pb40 properties
-from Properties_of_materials.solder_sn60_pb40 import (
+from properties_of_materials.solder_sn60_pb40 import (
     thermal_conductivity_sn60pb40,
     isobaric_specific_heat_sn60pb40,
     density_sn60pb40,
@@ -77,7 +77,7 @@ from Properties_of_materials.solder_sn60_pb40 import (
 )
 
 # Aluminium properties
-from Properties_of_materials.aluminium import (
+from properties_of_materials.aluminium import (
     thermal_conductivity_al,
     isobaric_specific_heat_al,
     density_al,

@@ -1,7 +1,7 @@
 import warnings
 import numpy as np
 import os
-from UtilityFunctions.auxiliary_functions import get_from_xlsx
+from utility_functions.auxiliary_functions import get_from_xlsx
 
 
 def gen_flow(cond):

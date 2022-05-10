@@ -18,22 +18,22 @@ from strand_stabilizer_component import StrandStabilizerComponent
 from strand_superconductor_component import StrandSuperconductorComponent
 
 # import functions
-from UtilityFunctions.auxiliary_functions import (
+from utility_functions.auxiliary_functions import (
     check_repeated_headings,
     check_headers,
     check_object_number,
     set_diagnostic,
 )
-from UtilityFunctions.initialization_functions import conductor_spatial_discretization
-from UtilityFunctions.gen_flow import gen_flow
-from UtilityFunctions.output import save_properties, save_convergence_data
-from UtilityFunctions.plots import update_real_time_plots, create_legend_rtp
-from UtilityFunctions.solid_components_initialization import (
+from utility_functions.initialization_functions import conductor_spatial_discretization
+from utility_functions.gen_flow import gen_flow
+from utility_functions.output import save_properties, save_convergence_data
+from utility_functions.plots import update_real_time_plots, create_legend_rtp
+from utility_functions.solid_components_initialization import (
     solid_components_temperature_initialization,
 )
 
 # Stainless Steel properties
-from Properties_of_materials.stainless_steel import thermal_conductivity_ss
+from properties_of_materials.stainless_steel import thermal_conductivity_ss
 
 logging.config.fileConfig(
     fname="logging_electric_module.conf", disable_existing_loggers=True

@@ -1,6 +1,6 @@
 import enum
 from sys import flags
-from Properties_of_materials.stainless_steel import density_ss
+from properties_of_materials.stainless_steel import density_ss
 import numpy as np
 import pandas as pd
 import os

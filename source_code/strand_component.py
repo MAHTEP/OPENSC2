@@ -3,30 +3,30 @@ from solid_component import SolidComponent
 from openpyxl import load_workbook
 import numpy as np
 import os
-from UtilityFunctions.auxiliary_functions import (
+from utility_functions.auxiliary_functions import (
     get_from_xlsx,
     load_auxiliary_files,
     build_interpolator,
     do_interpolation,
 )
 
-# from UtilityFunctions.InitializationFunctions import Read_input_file
+# from utility_functions.InitializationFunctions import Read_input_file
 # NbTi properties
-from Properties_of_materials.niobium_titanium import (
+from properties_of_materials.niobium_titanium import (
     critical_temperature_nbti,
     critical_current_density_nbti,
     current_sharing_temperature_nbti,
 )
 
 # Nb3Sn properties
-from Properties_of_materials.niobium3_tin import (
+from properties_of_materials.niobium3_tin import (
     critical_temperature_nb3sn,
     critical_current_density_nb3sn,
     current_sharing_temperature_nb3sn,
 )
 
 # RE123 properties
-from Properties_of_materials.rare_earth_123 import (
+from properties_of_materials.rare_earth_123 import (
     critical_magnetic_field_re123,
     critical_current_density_re123,
     current_sharing_temperature_re123,

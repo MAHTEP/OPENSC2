@@ -7,20 +7,20 @@ import warnings
 
 from conductor import Conductor
 from environment import Environment
-from UtilityFunctions.auxiliary_functions import (
+from utility_functions.auxiliary_functions import (
     check_repeated_headings,
     check_object_number,
     with_read_csv,
     with_read_excel,
 )
-from UtilityFunctions.transient_solution_functions import get_time_step, step
-from UtilityFunctions.output import (
+from utility_functions.transient_solution_functions import get_time_step, step
+from utility_functions.output import (
     save_simulation_space,
     reorganize_spatial_distribution,
     save_simulation_time,
     save_properties,
 )
-from UtilityFunctions.plots import (
+from utility_functions.plots import (
     plot_properties,
     make_plots,
     create_real_time_plots,

@@ -332,7 +332,7 @@ class OPENSC2_GUI:
         """
 
         # Main directory with all the input files (cdp, 10/2020)
-        main_input = "Description_of_Components"
+        main_input = "input_files"
         sub_input = tk.filedialog.askdirectory(
             parent=self.main_window,
             title="Select input files directory",
@@ -518,7 +518,7 @@ class OPENSC2_GUI:
         Method that allows to open and read the file of the User Guide. (cdp, 12/2020)
         """
         # Path of the user guide folder (cdp, 12/2020)
-        user_guide = os.path.join(self.current_dir, "User_guide")
+        user_guide = os.path.join(self.current_dir, "user_guide")
         # get the name of the file to be opened (cdp, 12/2020)
         f_name = tk.filedialog.askopenfilename(
             parent=self.main_window, title="User guide", initialdir=user_guide

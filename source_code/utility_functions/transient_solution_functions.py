@@ -4,7 +4,7 @@ import numpy as np
 import os
 import re
 from scipy.linalg import solve_banded
-from UtilityFunctions.auxiliary_functions import get_from_xlsx
+from utility_functions.auxiliary_functions import get_from_xlsx
 
 
 def get_time_step(conductor, transient_input, num_step):
