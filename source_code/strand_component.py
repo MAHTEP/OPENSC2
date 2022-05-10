@@ -1,5 +1,5 @@
 import warnings
-from solid_components import SolidComponent
+from solid_component import SolidComponent
 from openpyxl import load_workbook
 import numpy as np
 import os

@@ -2,7 +2,7 @@ import numpy as np
 
 # import sys
 import warnings
-from fluid_components import FluidComponentInput
+from fluid_component import FluidComponentInput
 
 
 class Channel(FluidComponentInput):

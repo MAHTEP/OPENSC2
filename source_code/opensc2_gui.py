@@ -8,7 +8,7 @@ from PIL import ImageTk, Image
 import os
 import subprocess
 
-from simulations import Simulation
+from simulation import Simulation
 
 
 class OPENSC2_GUI:

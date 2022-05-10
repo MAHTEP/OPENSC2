@@ -1,5 +1,5 @@
-from solid_components import SolidComponent
-from strands import StrandComponent
+from solid_component import SolidComponent
+from strand_component import StrandComponent
 import pandas as pd
 
 

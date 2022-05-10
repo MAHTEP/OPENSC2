@@ -2,7 +2,7 @@ import numpy as np
 import warnings
 from CoolProp.CoolProp import PropsSI
 
-from fluid_components import FluidComponentInput
+from fluid_component import FluidComponentInput
 
 
 class Coolant(FluidComponentInput):

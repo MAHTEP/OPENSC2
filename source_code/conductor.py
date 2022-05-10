@@ -10,12 +10,12 @@ import sys
 import warnings
 
 # import classes
-from components_collection import ComponentCollection
-from fluid_components import FluidComponent
-from jacket import JacketComponent
-from mix_sc_stabilizer import StrandMixedComponent
-from stabilizer import StrandStabilizerComponent
-from super_conductor import StrandSuperconductorComponent
+from component_collection import ComponentCollection
+from fluid_component import FluidComponent
+from jacket_component import JacketComponent
+from strand_mixed_component import StrandMixedComponent
+from strand_stabilizer_component import StrandStabilizerComponent
+from strand_superconductor_component import StrandSuperconductorComponent
 
 # import functions
 from UtilityFunctions.auxiliary_functions import (

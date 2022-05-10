@@ -5,7 +5,7 @@ import os
 from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
 import warnings
 
-from conductors import Conductor
+from conductor import Conductor
 from environment import Environment
 from UtilityFunctions.auxiliary_functions import (
     check_repeated_headings,

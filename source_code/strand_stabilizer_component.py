@@ -1,12 +1,11 @@
-from solid_components import SolidComponent
-from strands import StrandComponent
+from solid_component import SolidComponent
+from strand_component import StrandComponent
 import pandas as pd
 
-# Modified by D.Placido PoliTo
-# data 05/05/2020
-class StrandSuperconductorComponent(StrandComponent):
 
-    # Class for superconductor strands objects
+class StrandStabilizerComponent(StrandComponent):
+
+    # Class for copper strands objects
 
     ### INPUT PARAMETERS
     # some are inherited form the parent classes StrandComponent and SolidComponent
@@ -14,8 +13,8 @@ class StrandSuperconductorComponent(StrandComponent):
     ### THERMOPHYSICAL PROPERTIES
     # inherited from class SolidComponent
 
-    ### OPERATIONAL PARAMETERS
-    # inherited from parent classes StrandComponent and SolidComponent
+    ##### OPERATIONAL PARAMETERS
+    # inherited from parents class SolidComponent and StrandComponent
 
     ### COMPUTED IN INITIALIZATION
     # inherited from class SolidComponent
@@ -23,7 +22,7 @@ class StrandSuperconductorComponent(StrandComponent):
     ### COMPUTED VECTOR FOR MAGNETIC FIELD
     # inherited from class SolidComponent
 
-    KIND = "Super_conductor"
+    KIND = "StrandStabilizerComponent"
 
     def __init__(self, simulation, sheet, icomp, name, dict_file_path):
 
@@ -38,7 +37,7 @@ class StrandSuperconductorComponent(StrandComponent):
         self.dict_Gauss_pt = dict()
         self.dict_num_step = dict()
         # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
-        self.time_evol = dict(temperature=dict(), B_field=dict(), T_cur_sharing=dict())
+        self.time_evol = dict(temperature=dict(), B_field=dict())
         self.dict_scaling_input = dict()
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(
@@ -58,16 +57,21 @@ class StrandSuperconductorComponent(StrandComponent):
             index_col=0,
             usecols=["Variable name", self.ID],
         )[self.ID].to_dict()
-        self.ASC = self.inputs["CROSSECTION"]
+
+        # Call SolidComponent class constructor to deal with StrandStabilizerComponent time \
+        # steps for current, external heating and so on (cdp, 11/2020)
+        SolidComponent(simulation, self)
+        if self.inputs["ISTABILIZER"] != "Cu":
+            # remove key RRR from inputs if stabilizer is not Cu (cdp, 07/2020)
+            self.inputs.pop("RRR")
         if self.operations["IBIFUN"] != -1:
             # Remove key B_field_units.
             del self.operations["B_field_units"]
-        # Call SolidComponent class constructor to deal with StrandSuperconductorComponent time \
-        # steps for current, external heating and so on (cdp, 11/2020)
-        SolidComponent(simulation, self)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.NAME}, ID: {self.ID})"
 
     def __str__(self):
         pass
+
+    # agiungere metodi per calcolo proprietà nel gauss point

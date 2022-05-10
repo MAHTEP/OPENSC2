@@ -1,4 +1,4 @@
-from solid_components import SolidComponent
+from solid_component import SolidComponent
 import pandas as pd
 import numpy as np
 
