@@ -4,7 +4,8 @@ import logging.config
 from typing_extensions import Self
 from openpyxl import load_workbook
 import numpy as np
-from scipy import constants
+from scipy.sparse import coo_matrix, csr_matrix, lil_matrix, diags
+from scipy import constants, integrate
 import pandas as pd
 import os
 import sys
@@ -152,6 +153,9 @@ class Conductor:
         self.inventory = dict()
         # call method Conductor_components_instance to make instance of conductor components (cdp, 11/2020)
         self.conductor_components_instance(simulation)
+
+        # Call private method __initialize_attributes to initialize all the other useful and necessary attributes of class Conductor.
+        self.__initialize_attributes()
 
         self.dict_topology = dict()  # dictionary declaration (cdp, 09/2020)
         self.dict_interf_peri = dict()  # dictionary declaration (cdp, 07/2020)
@@ -570,6 +574,123 @@ class Conductor:
         )
 
     # end method Conductor_components_instance (cdp, 11/2020)
+
+    def __initialize_attributes(self: Self):
+        """Private method that initializes usefull attributes of conductor object.
+
+        Args:
+            self (Self): conductor object.
+        """
+        self.total_elements = (
+            self.grid_inputs["NELEMS"] * self.inventory["Conductor"].number
+        )
+        self.total_nodes = (self.grid_inputs["NELEMS"] + 1) * self.inventory[
+            "Conductor"
+        ].number
+
+        self.total_elements_current_carriers = (
+            self.grid_inputs["NELEMS"] * self.inventory["StrandComponent"].number
+        )
+        self.total_nodes_current_carriers = (
+            self.grid_inputs["NELEMS"] + 1
+        ) * self.inventory["StrandComponent"].number
+
+        # Convert to matrix (make them sparse matrices)
+        # +1 keeps into account the Environment object in the
+        # conductor_coupling workbook.
+        self.electric_conductance = self.electric_conductance.iloc[
+            self.inventory["FluidComponent"].number
+            + 1 : self.inventory["FluidComponent"].number
+            + self.inventory["StrandComponent"].number
+            + 1,
+            self.inventory["FluidComponent"].number
+            + 1 : self.inventory["FluidComponent"].number
+            + self.inventory["StrandComponent"].number
+            + 1,
+        ].to_numpy()
+        self.electric_conductance_mode = self.electric_conductance_mode.iloc[
+            self.inventory["FluidComponent"].number
+            + 1 : self.inventory["FluidComponent"].number
+            + self.inventory["StrandComponent"].number
+            + 1,
+            self.inventory["FluidComponent"].number
+            + 1 : self.inventory["FluidComponent"].number
+            + self.inventory["StrandComponent"].number
+            + 1,
+        ].to_numpy()
+
+        # Initialize resistance matrix to a dummy value (sparse matrix)
+        self.electric_resistance_matrix = diags(
+            10.0 * np.ones(self.total_elements_current_carriers),
+            offsets=0,
+            shape=(
+                self.total_elements_current_carriers,
+                self.total_elements_current_carriers,
+            ),
+            format="csr",
+            dtype=float,
+        )
+
+        self.inductance_matrix = np.zeros(
+            (
+                self.total_elements_current_carriers,
+                self.total_elements_current_carriers,
+            )
+        )
+
+        self.electric_conductance_matrix = csr_matrix(
+            (self.total_nodes_current_carriers, self.total_nodes_current_carriers),
+            dtype=float,
+        )
+
+        self.electric_stiffness_matrix = lil_matrix(
+            (
+                self.total_elements_current_carriers
+                + self.total_nodes_current_carriers,
+                self.total_elements_current_carriers
+                + self.total_nodes_current_carriers,
+            ),
+            dtype=float,
+        )
+
+        self.electric_mass_matrix = lil_matrix(
+            (
+                self.total_elements_current_carriers
+                + self.total_nodes_current_carriers,
+                self.total_elements_current_carriers
+                + self.total_nodes_current_carriers,
+            ),
+            dtype=float,
+        )
+
+        self.equipotential_node_index = np.zeros(
+            (
+                self.operations["EQUIPOTENTIAL_SURFACE_NUMBER"],
+                self.inventory["StrandComponent"].number,
+            ),
+            dtype=int,
+        )
+
+        nn = 0
+        for obj in self.inventory["StrandComponent"].collection:
+            nn += obj.operations["FIX_POTENTIAL_NUMBER"]
+
+        self.fixed_potential_index = np.zeros(nn, dtype=int)
+        self.fixed_potential_value = np.zeros(nn)
+
+        self.operating_current = np.zeros(self.total_nodes_current_carriers)
+
+        self.electric_known_term_vector = np.zeros(
+            self.total_elements_current_carriers + self.total_nodes_current_carriers
+        )
+
+        self.electric_right_hand_side = np.zeros(
+            self.total_elements_current_carriers + self.total_nodes_current_carriers
+        )
+
+        # Electric time initialization, to be understood where to actually do
+        # this
+        self.electric_time = 0.0  # s
 
     def conductors_coupling(self):
         pass
