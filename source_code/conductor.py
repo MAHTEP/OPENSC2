@@ -1,6 +1,7 @@
 # Import packages
 import logging
 import logging.config
+from typing_extensions import Self
 from openpyxl import load_workbook
 import numpy as np
 from scipy import constants
@@ -117,6 +118,15 @@ class Conductor:
             f"Loaded sheet CONDUCTOR_operation from file conductor_definition\n"
         )
 
+        _ = {
+            True: self.__manage_equipotential_surfaces_coordinate,
+            False: self.__delete_equipotential_inputs,
+        }
+
+        # Calls method self.__manage_equipotential_surfaces_coordinate if
+        # EQUIPOTENTIAL_SURFACE_FLAG is True.
+        _[self.operations["EQUIPOTENTIAL_SURFACE_FLAG"]]()
+
         # Load all the sheets in file conductor_coupling.xlsx as a dictionary of dataframes.
         self.dict_df_coupling = pd.read_excel(
             os.path.join(self.BASE_PATH, self.file_input["STRUCTURE_COUPLING"]),
@@ -159,7 +169,7 @@ class Conductor:
         # **NUMERICS**
         # evaluate value of theta_method according to flag METHOD (cdo, 08/2020)
         # Adams Moulton value is temporary and maybe non correct
-        _ = dict(BE=1.0, CE=0.5, AM4 = 1.0/24.0)
+        _ = dict(BE=1.0, CE=0.5, AM4=1.0 / 24.0)
         self.theta_method = _[self.inputs["ELECTRIC_METHOD"]]
         self.electric_theta = _[self.inputs["ELECTRIC_METHOD"]]
         consolelogger.debug(f"Defined electric_theta\n")
@@ -278,6 +288,87 @@ class Conductor:
 
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.KIND}, ID: {self.ID})"
+
+    def __delete_equipotential_inputs(self: Self):
+        """Private method that deletes input values EQUIPOTENTIAL_SURFACE_NUMBER and EQUIPOTENTIAL_SURFACE_COORDINATE if they are not needed.
+
+        Args:
+            self (Self): conductor object.
+        """
+
+        del self.operations["EQUIPOTENTIAL_SURFACE_NUMBER"]
+        del self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]
+
+    def __convert_equipotential_surface_coordinate_to_array(self: Self):
+        """Private method used as switch to convert values corresponding to key EQUIPOTENTIAL_SURFACE_COORDINATE to numpy array according to the original type (integer for single value or string for multiple values).
+
+        Args:
+            self (Self): conductor object.
+        """
+        _ = {int: self.__int_to_array, str: self.__str_to_array}
+
+        _[type(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"])]()
+
+    def __int_to_array(self: Self):
+        """Private method that convert integer value of key EQUIPOTENTIAL_SURFACE_COORDINATE to numpy array; used when one coordinate is assigned.
+
+        Args:
+            self (Self): conductor object.
+        """
+        self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"] = np.array(
+            [self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]], dtype=float
+        )
+
+    def __str_to_array(self: Self):
+        """Private method that convert sting value of key EQUIPOTENTIAL_SURFACE_COORDINATE to numpy array, used when more than one coordinate is assigned.
+
+        Args:
+            self (Self): conductor object.
+        """
+        self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"] = np.array(
+            self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"].split(","), dtype=float
+        )
+
+    def __checks_equipotential_surface_coordinate(self: Self):
+        """Private method that make consistency checks on input values EQUIPOTENTIAL_SURFACE_COORDINATE and EQUIPOTENTIAL_SURFACE_NUMBER.
+
+        Args:
+            self (Self): conductor object.
+
+        Raises:
+            ValueError: raise error if the number of assinged coordinates is different from the number of declared equipotential surfaces.
+            ValueError: raises value error if equipotential coordinate is exceeded conductor length.
+            ValueError: raises value error if equipotential coordinate is negative.
+        """
+
+        if (
+            len(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"])
+            != self.operations["EQUIPOTENTIAL_SURFACE_NUMBER"]
+        ):
+            raise ValueError(
+                f"The number of the equipotential surfaces coordinates must be equal to the number of declared equipotential surfaces:\n{self.operations['EQUIPOTENTIAL_SURFACE_COORDINATE']=};\n{self.operations['EQUIPOTENTIAL_SURFACE_NUMBER']=}\n"
+            )
+        if (
+            np.max(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"])
+            > self.inputs["XLENGTH"]
+        ):
+            raise ValueError(
+                f"Equipotential surface coordinate cannot exceed conductor length:\n{np.max(self.operations['EQUIPOTENTIAL_SURFACE_COORDINATE'])=}m;\n{self.inputs['XLENGTH']=}m"
+            )
+        if np.min(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]) < 0.0:
+            raise ValueError(
+                f"Equipotential surface coordinate must be positive:\n{np.min(self.operations['EQUIPOTENTIAL_SURFACE_COORDINATE'])=}m"
+            )
+
+    def __manage_equipotential_surfaces_coordinate(self: Self):
+        """Private method that manages the input values for the definition of the equipotential surfaces.
+
+        Args:
+            self (Self): conductor object.
+        """
+
+        self.__convert_equipotential_surface_coordinate_to_array()
+        self.__checks_equipotential_surface_coordinate()
 
     def conductor_components_instance(self, simulation):
         """
