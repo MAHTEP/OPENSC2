@@ -104,10 +104,6 @@ class Conductor:
         # Delete key NAME from dictionary self.inputs
         del self.inputs["NAME"]
 
-        _ = dict(BE=1.0, CE=0.5)
-        self.electric_theta = _[self.inputs["ELECTRIC_METHOD"]]
-        consolelogger.debug(f"Defined electric_theta\n")
-
         # Load the sheet CONDUCTOR_operation form file conducor_definition.xlsx as a disctionary.
         self.operations = pd.read_excel(
             os.path.join(self.BASE_PATH, simulation.transient_input["MAGNET"]),
@@ -162,17 +158,11 @@ class Conductor:
 
         # **NUMERICS**
         # evaluate value of theta_method according to flag METHOD (cdo, 08/2020)
-        if self.inputs["METHOD"] == "BE":
-            # Backward Euler (cdp, 10/2020)
-            self.theta_method = 1.0
-        elif self.inputs["METHOD"] == "CN":
-            # Crank-Nicolson (cdp, 10/2020)
-            self.theta_method = 0.5
-        elif self.inputs["METHOD"] == "AM4":
-            # Adams-Moulton 4 (cdp, 10/2020)
-            # questo valore è provvisorio e sicuramente poco corretto, da ragionare e approfondire
-            self.theta_method = 1.0 / 24.0
-
+        # Adams Moulton value is temporary and maybe non correct
+        _ = dict(BE=1.0, CE=0.5, AM4 = 1.0/24.0)
+        self.theta_method = _[self.inputs["ELECTRIC_METHOD"]]
+        self.electric_theta = _[self.inputs["ELECTRIC_METHOD"]]
+        consolelogger.debug(f"Defined electric_theta\n")
         ## Evaluate parameters useful in function \
         # Transient_solution_functions.py\STEP (cdp, 07/2020)
         # dict_N_equation keys meaning:
