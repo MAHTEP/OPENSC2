@@ -195,3 +195,112 @@ def uniform_angular_discretization(
         comp.cyl_helix.windings_number * 2 * np.pi,
         conductor.gird_features["N_nod"],
     )
+
+
+def fixed_refined_spatial_discretization(
+    conductor: Conductor, zcoord: np.ndarray
+) -> np.ndarray:
+    """Function that evaluate fixed refined spatial discretization along z direction.
+
+    Args:
+        conductor (Conductor): conductor object, has all the information to evaluate the fixed refined grid.
+        zcoord (np.ndarray): array of length conductor.gird_features["N_nod"] initialized to zeros.
+
+    Raises:
+        ValueError: if dz in refined region is lower than minimum dz.
+        ValueError: if dz in refined region is larger than maximum dz.
+
+    Returns:
+        np.ndarray: array of length conductor.gird_features["N_nod"] with fixed refined spatial discretization for straight conductor components.
+    """
+    n_elem = dict()
+
+    # total number of elements to be used for coarse region of the mesh
+    n_elem["coarse"] = conductor.gird_input["NELEMS"] - conductor.gird_input["NELREF"]
+    # number of elements to be used in coarse region left to refined mesh zone
+    n_elem["left"] = round(
+        (conductor.gird_input["XBREFI"] - 0.0)
+        / (
+            conductor.inputs["XLENGTH"]
+            - (conductor.gird_input["XEREFI"] - conductor.gird_input["XBREFI"])
+        )
+        * n_elem["coarse"]
+    )
+    n_elem["right"] = n_elem["coarse"] - n_elem["left"]
+
+    NOD_ref = conductor.gird_input["NELREF"] + 1
+
+    # Refined zone discretization
+    dx_ref = (
+        conductor.gird_input["XEREFI"] - conductor.gird_input["XBREFI"]
+    ) / conductor.gird_input[
+        "NELREF"
+    ]  # m refined zone discretization pitch
+    if (dx_ref >= conductor.gird_input["SIZMIN"]) and (
+        dx_ref <= conductor.gird_input["SIZMAX"]
+    ):
+        # refined mesh
+        zcoord[
+            n_elem["left"] : n_elem["left"] + conductor.gird_input["NELREF"] + 1
+        ] = np.linspace(
+            conductor.gird_input["XBREFI"], conductor.gird_input["XEREFI"], NOD_ref
+        )
+    elif dx_ref < conductor.gird_input["SIZMIN"]:
+        raise ValueError(
+            f"ERROR: {dx_ref=} m in refined zone < {conductor.gird_input['SIZMIN']=} m!!!\n"
+        )
+    elif dx_ref > conductor.gird_input["SIZMAX"]:
+        raise ValueError(
+            f"ERROR: {dx_ref=} m in refined zone > {conductor.gird_input['SIZMAX']} m!!!\n"
+        )
+
+    if n_elem["left"] > 0:
+        # Discretization of coarse region left to refined zone
+        dx_try = (conductor.gird_input["XBREFI"] - 0.0) / n_elem["left"]
+        dx1 = dx_ref  # dummy to not overwrite dx_ref
+        ii = 0
+        while (dx_try / dx1 > conductor.gird_input["DXINCRE"]) and (
+            ii <= n_elem["left"]
+        ):
+            ii = ii + 1
+            dx = dx1 * conductor.gird_input["DXINCRE"]
+            zcoord[n_elem["left"] - ii] = zcoord[n_elem["left"] + 1 - ii] - dx
+            dx1 = dx
+            dx_try = (zcoord[n_elem["left"] - ii] - 0.0) / (n_elem["left"] - ii)
+
+        zcoord[0 : n_elem["left"] - ii + 1] = np.linspace(
+            0.0, zcoord[n_elem["left"] - ii], n_elem["left"] - ii + 1
+        )
+
+    if n_elem["right"] > 0:
+        # Discretization of coarse region right to refined zone
+        dx_try = (
+            conductor.inputs["XLENGTH"] - conductor.gird_input["XEREFI"]
+        ) / n_elem["right"]
+        dx1 = dx_ref  # dummy to not overwrite dx_ref
+        ii = 0
+        while (dx_try / dx1 > conductor.gird_input["DXINCRE"]) and (
+            ii <= n_elem["right"]
+        ):
+            ii = ii + 1
+            dx = dx1 * conductor.gird_input["DXINCRE"]
+            zcoord[n_elem["left"] + conductor.gird_input["NELREF"] + ii] = (
+                zcoord[n_elem["left"] + conductor.gird_input["NELREF"] + ii - 1] + dx
+            )
+            dx1 = dx
+            dx_try = (
+                conductor.inputs["XLENGTH"]
+                - zcoord[n_elem["left"] + conductor.gird_input["NELREF"] + ii]
+            ) / (n_elem["right"] - ii)
+
+        zcoord[
+            n_elem["left"]
+            + conductor.gird_input["NELREF"]
+            + ii : conductor.gird_input["NELEMS"]
+            + 1
+        ] = np.linspace(
+            zcoord[n_elem["left"] + conductor.gird_input["NELREF"] + ii],
+            conductor.inputs["XLENGTH"],
+            n_elem["right"] - ii + 1,
+        )
+    return zcoord
