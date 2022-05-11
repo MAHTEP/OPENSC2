@@ -1,10 +1,19 @@
 import warnings
 import numpy as np
+import os
 from typing import Union
-from ..conductor import Conductor
-from ..strand_mixed_component import StrandMixedComponent
-from ..strand_stabilizer_component import StrandStabilizerComponent
-from ..strand_superconductor_component import StrandSuperconductorComponent
+
+from fluid_component import FluidComponent
+from jacket_component import JacketComponent
+from conductor import Conductor
+from strand_mixed_component import StrandMixedComponent
+from strand_stabilizer_component import StrandStabilizerComponent
+from strand_superconductor_component import StrandSuperconductorComponent
+from utility_functions.auxiliary_functions import (
+    load_auxiliary_files,
+    build_interpolator,
+    do_interpolation,
+)
 
 
 def conductor_spatial_discretization(simulation, conductor):
@@ -411,3 +420,46 @@ def fixed_refined_angular_discretization(
         ] = np.linspace(tau_beg, tau_end, n_elem["right"] + 1 - ii + 1)
 
     return tau
+
+
+def user_defined_grid(
+    conductor: Conductor,
+    comp: Union[
+        FluidComponent,
+        JacketComponent,
+        StrandMixedComponent,
+        StrandStabilizerComponent,
+        StrandSuperconductorComponent,
+    ],
+) -> Union[np.ndarray, tuple]:
+    """Fuction that loads user defined spatial discretization of the generic conductor component.
+
+    Args:
+        conductor (Conductor): conductor object, has all the information to evaluate the fixed refined grid.
+        comp (Union[FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent ]): generic object for wich the user defined spatial discretization should be evaluated.
+
+    Returns:
+        Union[np.ndarray, tuple]: array or tuple with the user defined spatial discretization.
+
+    Notes: does not allow interpolation in space and or in time, i.e. only fixed spatial discretization is available.
+    """
+    # Build file path.
+    file_path = os.path.join(conductor.BASE_PATH, conductor.file_input["EXTERNAL_GRID"])
+    # Load auxiliary input file.
+    coord_df, _ = load_auxiliary_files(file_path, sheetname=comp.ID)
+
+    if (
+        comp.__class__.__name__ == "FluidComponent"
+        or comp.__class__.__name__ == "JacketComponent"
+    ):
+        return coord_df.to_numpy()
+    elif (
+        comp.__class__.__name__ == "StrandMixedComponent"
+        or comp.__class__.__name__ == "StrandStabilizerComponent"
+        or comp.__class__.__name__ == "StrandSuperconductorComponent"
+    ):
+        return (
+            coord_df["xx [m]"].to_numpy(),
+            coord_df["yy [m]"].to_numpy(),
+            coord_df["zz [m]"].to_numpy(),
+        )
