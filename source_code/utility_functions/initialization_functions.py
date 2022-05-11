@@ -37,10 +37,10 @@ def conductor_spatial_discretization(simulation, conductor):
 
     XLENGTH = conductor.inputs["XLENGTH"]
     MAXNOD = conductor.inputs["MAXNOD"]
-    ITYMSH = conductor.dict_discretization["Grid_input"]["ITYMSH"]
-    NELEMS = conductor.dict_discretization["Grid_input"]["NELEMS"]
-    XBREFI = conductor.dict_discretization["Grid_input"]["XBREFI"]
-    XEREFI = conductor.dict_discretization["Grid_input"]["XEREFI"]
+    ITYMSH = conductor.gird_input["ITYMSH"]
+    NELEMS = conductor.gird_input["NELEMS"]
+    XBREFI = conductor.gird_input["XBREFI"]
+    XEREFI = conductor.gird_input["XEREFI"]
 
     nnodes = NELEMS + 1
     # conductor spatial discretization initialization
@@ -52,7 +52,7 @@ def conductor_spatial_discretization(simulation, conductor):
             simulation, "EXTERNAL_GRID", f"x_{conductor.name} [m]"
         )
         # Evaluate the number of elements from the number of nodes
-        conductor.dict_discretization["Grid_input"]["NELEMS"] = nnodes - 1
+        conductor.gird_input["NELEMS"] = nnodes - 1
 
     # COMPUTE THE COORDINATES IN THE FIRST TURN
     elif ITYMSH == 0 or ITYMSH == 2 or abs(XEREFI - XBREFI) <= 1e-3:
@@ -62,10 +62,10 @@ def conductor_spatial_discretization(simulation, conductor):
     # !*LOCALLY REFINED MESH. COMPUTED ON A SINGLE TURN BASIS
     elif ITYMSH == 1 or ITYMSH == 3:
 
-        NELREF = conductor.dict_discretization["Grid_input"]["NELREF"]
-        SIZMIN = conductor.dict_discretization["Grid_input"]["SIZMIN"]
-        SIZMAX = conductor.dict_discretization["Grid_input"]["SIZMAX"]
-        DXINCRE = conductor.dict_discretization["Grid_input"]["DXINCRE"]
+        NELREF = conductor.gird_input["NELREF"]
+        SIZMIN = conductor.gird_input["SIZMIN"]
+        SIZMAX = conductor.gird_input["SIZMAX"]
+        DXINCRE = conductor.gird_input["DXINCRE"]
 
         # total number of elements to be used for coarse region of the mesh
         NELCOARS = NELEMS - NELREF

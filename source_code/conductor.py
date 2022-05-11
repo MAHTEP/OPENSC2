@@ -465,7 +465,7 @@ class Conductor:
 
         # CREATE grid for the i-th conductor
         self.dict_discretization = dict()
-        self.dict_discretization["Grid_input"] = pd.read_excel(
+        self.gird_input = pd.read_excel(
             os.path.join(self.BASE_PATH, self.file_input["GRID_DEFINITION"]),
             sheet_name="GRID",
             skiprows=2,

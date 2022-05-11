@@ -330,7 +330,7 @@ def step(conductor, environment, qsource, num_step):
     # ** MATRICES CONSTRUCTION (cdp, 07/2020) **
 
     # riscrivere in forma array smart una volta risolti tutti i dubbi, se possibile (cdp, 07/2020)
-    for ii in range(conductor.dict_discretization["Grid_input"]["NELEMS"]):
+    for ii in range(conductor.gird_input["NELEMS"]):
 
         # Auxiliary matrices initialization to zeros at each Gauss point \
         # (cdp, 08/2020)

@@ -507,7 +507,7 @@ class Simulation:
             "TEND_"
             + f"{self.transient_input['TEND']}_"
             + "NELEMS_"
-            + f"{self.list_of_Conductors[0].dict_discretization['Grid_input']['NELEMS']}"
+            + f"{self.list_of_Conductors[0].gird_input['NELEMS']}"
         )
         # Build list_key_val exploiting list comprehension. List of tuples: index [0] is the key of the dictionary, index [1] is the corresponding value that is the path to Output or Figures sub directories.
         list_key_val = [
