@@ -19,7 +19,7 @@ def conductor_spatial_discretization(simulation, conductor):
     # XEREFI = end coordinate of a refined zone, if any (input parameter)
     # NELREF = number of elements in the refined zone, if any (input parameter)
     # grid_input["ITYMSH"] = mesh type: =0 fixed and uniform, =1 fixed refined,
-    # =3 adapted with # initial refinement; =-1 read from file
+    # =3 adapted with # initial refinement =-1 read from file
     # -  XLENGTH = conductor length (input parameter, property of the conductor)
     # OBSOLETE IT is in conductor instance
     # -  NNODES = number of points in the computational grid, computed parameter # = NELEMS + 1 OBSOLETE IT is computed
@@ -304,3 +304,125 @@ def fixed_refined_spatial_discretization(
             n_elem["right"] - ii + 1,
         )
     return zcoord
+
+
+def fixed_refined_angular_discretization(
+    conductor: Conductor,
+    comp: Union[
+        StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent
+    ],
+    tau: np.ndarray,
+) -> np.ndarray:
+    """Function that evaluate fixed refined angular discretization, used for hlicoidal geometry.
+
+    Args:
+        conductor (Conductor): conductor object, has all the information to evaluate the fixed refined grid.
+        comp (Union[ StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent ]): generic object for wich the fixed refined angular discretization should be evaluated.
+        tau (np.ndarray): array of length conductor.gird_features["N_nod"] initialized to zeros.
+
+    Raises:
+        ValueError: if dtau in refined region is lower than minimum dtau.
+        ValueError: if dtau in refined region is larger than maximum dtau.
+
+    Returns:
+        np.ndarray: array of length conductor.gird_features["N_nod"] with fixed refined angular discretization for helicoidal conductor components.
+    """
+    n_elem = dict()
+    n_elem["coarse"] = conductor.gird_input["NELEMS"] - conductor.gird_input["NELREF"]
+    n_elem["left"] = round(
+        (conductor.gird_input["XBREFI"] - 0.0)
+        / (
+            conductor.inputs["XLENGTH"]
+            - (conductor.gird_input["XEREFI"] - conductor.gird_input["XBREFI"])
+        )
+        * n_elem["coarse"]
+    )
+    n_elem["right"] = n_elem["coarse"] - n_elem["left"]
+
+    n_winding = dict()
+    # number of windings left to the refined region
+    n_winding["left"] = conductor.gird_input["XBREFI"] / (
+        2 * np.pi * comp.cyl_helix.reduced_pitch
+    )
+    # number of windings right to the refined region
+    n_winding["right"] = (
+        conductor.inputs["XLENGTH"] - conductor.gird_input["EBREFI"]
+    ) / (2 * np.pi * comp.cyl_helix.reduced_pitch)
+    # number of windings in the refined region
+    n_winding["ref"] = (
+        conductor.gird_input["EBREFI"] - conductor.gird_input["XBREFI"]
+    ) / (2 * np.pi * comp.cyl_helix.reduced_pitch)
+
+    assert (
+        comp.cyl_helix.winding_number
+        - (n_winding["left"] + n_winding["ref"] + n_winding["right"])
+        <= 1e-15
+    )
+
+    dtau_ref = 2 * np.pi * n_winding["ref"] / conductor.gird_input["NELREF"]
+
+    if (dtau_ref >= conductor.gird_input["SIZMIN"]) and (
+        dtau_ref <= conductor.gird_input["SIZMAX"]
+    ):
+
+        tau_beg = 2 * np.pi * n_winding["left"] + dtau_ref
+        tau_end = 2 * np.pi * (n_winding["left"] + n_winding["ref"])
+        tau[
+            n_elem["left"] + 1 : (n_elem["left"] + 1) + (conductor.gird_input["NELREF"])
+        ] = np.linspace(tau_beg, tau_end, conductor.gird_input["NELREF"] + 1)
+    elif dtau_ref < conductor.gird_input["SIZMIN"]:
+        raise ValueError(
+            f"ERROR: {dtau_ref=} m in refined zone < {conductor.gird_input['SIZMIN']=} m!!!\n"
+        )
+    elif dtau_ref > conductor.gird_input["SIZMAX"]:
+        raise ValueError(
+            f"ERROR: {dtau_ref=} m in refined zone > {conductor.gird_input['SIZMAX']} m!!!\n"
+        )
+
+    if n_elem["left"] > 0:
+
+        d_tau_try = 2 * np.pi * n_winding["left"] / n_elem["left"]
+        d_tau1 = dtau_ref
+        ii = 0
+        while (d_tau_try / d_tau1 > conductor.gird_input["DXINCRE"]) and (
+            ii <= n_elem["left"]
+        ):
+            d_tau = d_tau1 * conductor.gird_input["DXINCRE"]
+            tau[n_elem["left"] - ii] = tau[n_elem["left"] + 1 - ii] - d_tau
+            d_tau1 = d_tau
+            d_tau_try = tau[n_elem["left"] - ii] / (n_elem["left"] - ii - 1)
+            ii = ii + 1
+
+        tau_beg = 0.0
+        tau_end = tau(n_elem["left"] + 1 - ii)
+        tau[1 : n_elem["left"] + 1 - ii] = np.linspace(
+            tau_beg, tau_end, n_elem["left"] + 1 - ii
+        )
+
+    if n_elem["right"] > 0:
+
+        d_tau_try = 2 * np.pi * n_winding["right"] / n_elem["right"]
+        d_tau1 = dtau_ref
+        ii = 0
+        while (d_tau_try / d_tau1 > conductor.gird_input["DXINCRE"]) and (
+            ii <= n_elem["right"]
+        ):
+            d_tau = d_tau1 * conductor.gird_input["DXINCRE"]
+            tau[(n_elem["left"] + 1) + (conductor.gird_input["NELREF"]) + ii] = (
+                tau[(n_elem["left"] + 1) + (conductor.gird_input["NELREF"]) + ii - 1]
+                + d_tau
+            )
+            d_tau1 = d_tau
+            d_tau_try = (
+                2 * np.pi * comp.cyl_helix.winding_number
+                - tau[(n_elem["left"] + 1) + (conductor.gird_input["NELREF"]) + ii]
+            ) / (n_elem["left"] - ii - 1)
+            ii = ii + 1
+
+        tau_beg = tau[(n_elem["left"] + 1) + (conductor.gird_input["NELREF"]) + ii - 1]
+        tau_end = 2 * np.pi * comp.cyl_helix.winding_number
+        tau[
+            (n_elem["left"] + 1) + (conductor.gird_input["NELREF"]) + ii - 1 : -1
+        ] = np.linspace(tau_beg, tau_end, n_elem["right"] + 1 - ii + 1)
+
+    return tau
