@@ -79,7 +79,7 @@ class CylindricalHelix:
 
     def __eval_helix_length(self):
         """Private method that evaluates the total length of the helix. Value is assigned to attribute self.length."""
-        self.length = self.windings_number * self.winding_length
+        self.length = self.winding_number * self.winding_length
 
     def helix_parametrization(self, tau: np.ndarray) -> tuple:
         """Method that evaluates cylindrical helix coordinates according to canonical parametrization.
