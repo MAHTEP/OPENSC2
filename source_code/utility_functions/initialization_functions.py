@@ -168,7 +168,7 @@ def uniform_spatial_discretization(conductor: Conductor, _=None) -> np.ndarray:
         _ (_type_): not used input argument.
 
     Returns:
-        np.ndarray: array with uniform spatial discretization along z direction of length conductor.gird_features["N_nod"].
+        np.ndarray: array with uniform spatial discretization along z direction of length conductor.gird_features["N_nod"] for straight conductor components.
     """
     return np.linspace(
         0.0, conductor.inputs["XLENGTH"], conductor.gird_features["N_nod"]
@@ -188,7 +188,7 @@ def uniform_angular_discretization(
         comp (Union[StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent]): generic object of for wich the uniform angular discretization should be evaluated.
 
     Returns:
-        np.ndarray: array with uniform angular discretization of length conductor.gird_features["N_nod"].
+        np.ndarray: array with uniform angular discretization of length conductor.gird_features["N_nod"] for helicoidal components.
     """
     return np.linspace(
         0.0,
