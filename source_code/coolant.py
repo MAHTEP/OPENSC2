@@ -90,21 +90,21 @@ class Coolant(FluidComponentInput):
         if self.operations["MDTIN"] >= 0.0:
             # Flow direction from x = 0 to x = L.
             self.dict_node_pt["pressure"] = np.interp(
-                conductor.dict_discretization["xcoord"],
+                conductor.gird_features["xcoord"],
                 [0.0, conductor.inputs["XLENGTH"]],
                 [self.operations["PREINL"], self.operations["PREOUT"]],
             )
         else:
             # Flow direction from x = L to x = 0.
             self.dict_node_pt["pressure"] = np.interp(
-                conductor.dict_discretization["xcoord"],
+                conductor.gird_features["xcoord"],
                 [0.0, conductor.inputs["XLENGTH"]],
                 [self.operations["PREOUT"], self.operations["PREINL"]],
             )
         # End if self.operations["MDTIN"] >= 0.
         # Compute temperature from inlet and outlet valuesby linear interpolation.
         self.dict_node_pt["temperature"] = np.interp(
-            conductor.dict_discretization["xcoord"],
+            conductor.gird_features["xcoord"],
             [0.0, conductor.inputs["XLENGTH"]],
             [self.operations["TEMINL"], self.operations["TEMOUT"]],
         )
@@ -141,7 +141,7 @@ class Coolant(FluidComponentInput):
             # N.B. valutare se posso usare np.interp per calcolare pressione e temperatura nel Gauss. Per la velocità capire se posso passare per la densità nel Gauss invertendo la formula della portata come fatto per l'inizializzazione della velocità nei nodi. In questo caso userei come portata il valore medio tra i primi due nodi. Occhio che questa funzione viene utilizzata at ogni timestep non solo all'inizializzazione.
             self.dict_Gauss_pt = {
                 key: (
-                    self.dict_node_pt[key][: conductor.dict_discretization["N_nod"] - 1]
+                    self.dict_node_pt[key][: conductor.gird_features["N_nod"] - 1]
                     + self.dict_node_pt[key][1:]
                 )
                 / 2.0
@@ -230,7 +230,7 @@ class Coolant(FluidComponentInput):
             # Velocity in Gauss points
             self.dict_Gauss_pt["velocity"] = (
                 self.dict_node_pt["velocity"][
-                    : conductor.dict_discretization["N_nod"] - 1
+                    : conductor.gird_features["N_nod"] - 1
                 ]
                 + self.dict_node_pt["velocity"][1:]
             ) / 2.0

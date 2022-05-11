@@ -138,10 +138,10 @@ def conductor_spatial_discretization(simulation, conductor):
         )
         conductor.inHard = xcoord
 
-    conductor.dict_discretization["N_nod"] = nnodes
-    conductor.dict_discretization["xcoord"] = xcoord
-    conductor.dict_discretization["Delta_x"] = xcoord[1:] - xcoord[:-1]
-    conductor.dict_discretization["dx"] = conductor.dict_discretization["Delta_x"].max()
+    conductor.gird_features["N_nod"] = nnodes
+    conductor.gird_features["xcoord"] = xcoord
+    conductor.gird_features["Delta_x"] = xcoord[1:] - xcoord[:-1]
+    conductor.gird_features["dx"] = conductor.gird_features["Delta_x"].max()
     # end function
 
 
@@ -168,10 +168,10 @@ def uniform_spatial_discretization(conductor: Conductor, _=None) -> np.ndarray:
         _ (_type_): not used input argument.
 
     Returns:
-        np.ndarray: array with uniform spatial discretization along z direction of length conductor.dict_discretization["N_nod"].
+        np.ndarray: array with uniform spatial discretization along z direction of length conductor.gird_features["N_nod"].
     """
     return np.linspace(
-        0.0, conductor.inputs["XLENGTH"], conductor.dict_discretization["N_nod"]
+        0.0, conductor.inputs["XLENGTH"], conductor.gird_features["N_nod"]
     )
 
 
@@ -188,10 +188,10 @@ def uniform_angular_discretization(
         comp (Union[StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent]): generic object of for wich the uniform angular discretization should be evaluated.
 
     Returns:
-        np.ndarray: array with uniform angular discretization of length conductor.dict_discretization["N_nod"].
+        np.ndarray: array with uniform angular discretization of length conductor.gird_features["N_nod"].
     """
     return np.linspace(
         0.0,
         comp.cyl_helix.windings_number * 2 * np.pi,
-        conductor.dict_discretization["N_nod"],
+        conductor.gird_features["N_nod"],
     )

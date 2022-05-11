@@ -42,12 +42,12 @@ def save_properties(conductor, f_path):
     for fluid_comp in conductor.inventory["FluidComponent"].collection:
         A_chan = np.zeros(
             (
-                conductor.dict_discretization["N_nod"],
+                conductor.gird_features["N_nod"],
                 len(fluid_comp.coolant.dict_node_pt) + 2,
             )
         )
         file_path = os.path.join(f_path, f"{fluid_comp.ID}.tsv")
-        A_chan[:, 0] = conductor.dict_discretization["xcoord"]
+        A_chan[:, 0] = conductor.gird_features["xcoord"]
         for ii, prop_value in enumerate(fluid_comp.coolant.dict_node_pt.values(), 1):
             A_chan[:, ii] = prop_value
         # Save total friction factor
@@ -57,11 +57,11 @@ def save_properties(conductor, f_path):
     for strand in conductor.inventory["StrandComponent"].collection:
         file_path = os.path.join(f_path, f"{strand.ID}.tsv")
         if strand.NAME != conductor.inventory["StrandStabilizerComponent"].name:
-            A_strand = np.zeros((conductor.dict_discretization["N_nod"], 4))
+            A_strand = np.zeros((conductor.gird_features["N_nod"], 4))
             A_strand[:, 3] = strand.dict_node_pt["T_cur_sharing"]
         else:
-            A_strand = np.zeros((conductor.dict_discretization["N_nod"], 3))
-        A_strand[:, 0] = conductor.dict_discretization["xcoord"]
+            A_strand = np.zeros((conductor.gird_features["N_nod"], 3))
+        A_strand[:, 0] = conductor.gird_features["xcoord"]
         A_strand[:, 1] = strand.dict_node_pt["temperature"]
         A_strand[:, 2] = strand.dict_node_pt["B_field"]
         with open(file_path, "w") as writer:
@@ -75,8 +75,8 @@ def save_properties(conductor, f_path):
                 )
     for jacket in conductor.inventory["JacketComponent"].collection:
         file_path = os.path.join(f_path, f"{jacket.ID}.tsv")
-        A_jacket = np.zeros((conductor.dict_discretization["N_nod"], 2))
-        A_jacket[:, 0] = conductor.dict_discretization["xcoord"]
+        A_jacket = np.zeros((conductor.gird_features["N_nod"], 2))
+        A_jacket[:, 0] = conductor.gird_features["xcoord"]
         A_jacket[:, 1] = jacket.dict_node_pt["temperature"]
         with open(file_path, "w") as writer:
             np.savetxt(writer, A_jacket, delimiter="\t", header=header_jk, comments="")
@@ -119,10 +119,10 @@ def save_simulation_space(conductor, f_path, n_digit):
         file_path = os.path.join(
             f_path, f"{fluid_comp.ID}_({conductor.cond_num_step})_sd.tsv"
         )
-        A_chan = np.zeros((conductor.dict_discretization["N_nod"], len(prop_chan)))
+        A_chan = np.zeros((conductor.gird_features["N_nod"], len(prop_chan)))
         for ii in range(len(prop_chan)):
             if prop_chan[ii] == "xcoord":
-                A_chan[:, ii] = conductor.dict_discretization[prop_chan[ii]]
+                A_chan[:, ii] = conductor.gird_features[prop_chan[ii]]
             elif prop_chan[ii] != "friction_factor":
                 A_chan[:, ii] = fluid_comp.coolant.dict_node_pt[prop_chan[ii]]
             else:
@@ -143,10 +143,10 @@ def save_simulation_space(conductor, f_path, n_digit):
         file_path = os.path.join(
             f_path, f"{s_comp.ID}_({conductor.cond_num_step})_sd.tsv"
         )
-        A_s_comp = np.zeros((conductor.dict_discretization["N_nod"], len(prop_s_comp)))
+        A_s_comp = np.zeros((conductor.gird_features["N_nod"], len(prop_s_comp)))
         for ii in range(len(prop_s_comp)):
             if prop_s_comp[ii] == "xcoord":
-                A_s_comp[:, ii] = conductor.dict_discretization[prop_s_comp[ii]]
+                A_s_comp[:, ii] = conductor.gird_features[prop_s_comp[ii]]
             else:
                 A_s_comp[:, ii] = s_comp.dict_node_pt[prop_s_comp[ii]]
                 if prop_s_comp[ii] == "EXTFLX" or prop_s_comp[ii] == "JHTFLX":
@@ -504,7 +504,7 @@ def save_simulation_time(simulation, conductor):
     ind_xcoord = {
         f"xcoord = {conductor.Time_save[ii]} (m)": np.max(
             np.nonzero(
-                conductor.dict_discretization["xcoord"] <= conductor.Time_save[ii]
+                conductor.gird_features["xcoord"] <= conductor.Time_save[ii]
             )
         )
         for ii in range(conductor.Time_save.size)
@@ -931,7 +931,7 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
         file_path = os.path.join(folder_path, f"{fluid_comp.ID}_({brackets}).tsv")
         A_chan = np.zeros(
             (
-                cond.dict_discretization["N_nod"],
+                cond.gird_features["N_nod"],
                 int(
                     cond.dict_N_equation["FluidComponent"]
                     / cond.inventory["FluidComponent"].number

@@ -23,7 +23,7 @@ def solid_components_temperature_initialization(cond):
         s_comp.dict_node_pt = dict()  # dictionary declaration (cdp, 07/2020)
         s_comp.dict_Gauss_pt = dict()  # dictionary declaration (cdp, 07/2020)
         # s_comp temperature initialization to 0 (cdp, 12/2020)
-        s_comp.dict_node_pt["temperature"] = np.zeros(cond.dict_discretization["N_nod"])
+        s_comp.dict_node_pt["temperature"] = np.zeros(cond.gird_features["N_nod"])
         if s_comp.operations["INTIAL"] == 0:
             # Not user defined temperature initialization (cdp, 12/2020)
             # get contact perimeter flags reading the sub matrix channel - solid by \
@@ -57,7 +57,7 @@ def solid_components_temperature_initialization(cond):
                 # temperature spatial distribution is initialized at the minimum \
                 # temperature among the channels (cdp, 12/2020)
                 s_comp.dict_node_pt["temperature"] = (
-                    np.ones(cond.dict_discretization["N_nod"]) * T_min.min()
+                    np.ones(cond.gird_features["N_nod"]) * T_min.min()
                 )
             # end if np.sum(contact_flag) (cdp, 12/2020)
         elif abs(s_comp.operations["INTIAL"]) == 1:
@@ -65,7 +65,7 @@ def solid_components_temperature_initialization(cond):
             if s_comp.operations["INTIAL"] == 1:
                 # linear spatial temperature distribution (cdp, 12/2020)
                 s_comp.dict_node_pt["temperature"] = np.interp(
-                    cond.dict_discretization["xcoord"],
+                    cond.gird_features["xcoord"],
                     [0.0, cond.inputs["XLENGTH"]],
                     [s_comp.operations["TEMINL"], s_comp.operations["TEMOUT"]],
                 )

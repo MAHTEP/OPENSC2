@@ -207,14 +207,14 @@ def step(conductor, environment, qsource, num_step):
     # (cdp, 07/2020)
     XMED = (
         np.array(
-            conductor.dict_discretization["xcoord"][:-1]
-            + conductor.dict_discretization["xcoord"][1:]
+            conductor.gird_features["xcoord"][:-1]
+            + conductor.gird_features["xcoord"][1:]
         )
         / 2.0
     )
-    conductor.dict_discretization["Delta_x"] = (
-        conductor.dict_discretization["xcoord"][1:]
-        - conductor.dict_discretization["xcoord"][:-1]
+    conductor.gird_features["Delta_x"] = (
+        conductor.gird_features["xcoord"][1:]
+        - conductor.gird_features["xcoord"][:-1]
     )
 
     # dictionaties declaration (cdp, 07/2020)
@@ -439,7 +439,7 @@ def step(conductor, environment, qsource, num_step):
             # KMAT algebraic construction (cdp, 07/2020)
             # velocity equation (cdp, 07/2020)
             KMAT[jj, jj] = (
-                conductor.dict_discretization["Delta_x"][ii]
+                conductor.gird_features["Delta_x"][ii]
                 * UPWEQT[jj]
                 * np.abs(fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii])
                 / 2.0
@@ -449,7 +449,7 @@ def step(conductor, environment, qsource, num_step):
                 jj + conductor.inventory["FluidComponent"].number,
                 jj + conductor.inventory["FluidComponent"].number,
             ] = (
-                conductor.dict_discretization["Delta_x"][ii]
+                conductor.gird_features["Delta_x"][ii]
                 * UPWEQT[jj + conductor.inventory["FluidComponent"].number]
                 * np.abs(fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii])
                 / 2.0
@@ -459,7 +459,7 @@ def step(conductor, environment, qsource, num_step):
                 jj + 2 * conductor.inventory["FluidComponent"].number,
                 jj + 2 * conductor.inventory["FluidComponent"].number,
             ] = (
-                conductor.dict_discretization["Delta_x"][ii]
+                conductor.gird_features["Delta_x"][ii]
                 * UPWEQT[
                     jj + 2 * conductor.inventory["FluidComponent"].number
                 ]
@@ -1264,23 +1264,23 @@ def step(conductor, environment, qsource, num_step):
         ELMMAT[
             0 : conductor.dict_N_equation["NODOFS"],
             0 : conductor.dict_N_equation["NODOFS"],
-        ] = (conductor.dict_discretization["Delta_x"][ii] * (1.0 / 3.0 + ALFA) * MMAT)
+        ] = (conductor.gird_features["Delta_x"][ii] * (1.0 / 3.0 + ALFA) * MMAT)
         ELMMAT[
             0 : conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
-        ] = (conductor.dict_discretization["Delta_x"][ii] * (1.0 / 6.0 - ALFA) * MMAT)
+        ] = (conductor.gird_features["Delta_x"][ii] * (1.0 / 6.0 - ALFA) * MMAT)
         ELMMAT[
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
             0 : conductor.dict_N_equation["NODOFS"],
-        ] = (conductor.dict_discretization["Delta_x"][ii] * (1.0 / 6.0 - ALFA) * MMAT)
+        ] = (conductor.gird_features["Delta_x"][ii] * (1.0 / 6.0 - ALFA) * MMAT)
         ELMMAT[
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
-        ] = (conductor.dict_discretization["Delta_x"][ii] * (1.0 / 3.0 + ALFA) * MMAT)
+        ] = (conductor.gird_features["Delta_x"][ii] * (1.0 / 3.0 + ALFA) * MMAT)
 
         # COMPUTE THE CONVECTION MATRIX
         # array smart (cdp, 07/2020)
@@ -1310,46 +1310,46 @@ def step(conductor, environment, qsource, num_step):
         ELKMAT[
             0 : conductor.dict_N_equation["NODOFS"],
             0 : conductor.dict_N_equation["NODOFS"],
-        ] = (KMAT / conductor.dict_discretization["Delta_x"][ii])
+        ] = (KMAT / conductor.gird_features["Delta_x"][ii])
         ELKMAT[
             0 : conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
-        ] = (-KMAT / conductor.dict_discretization["Delta_x"][ii])
+        ] = (-KMAT / conductor.gird_features["Delta_x"][ii])
         ELKMAT[
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
             0 : conductor.dict_N_equation["NODOFS"],
-        ] = (-KMAT / conductor.dict_discretization["Delta_x"][ii])
+        ] = (-KMAT / conductor.gird_features["Delta_x"][ii])
         ELKMAT[
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
-        ] = (KMAT / conductor.dict_discretization["Delta_x"][ii])
+        ] = (KMAT / conductor.gird_features["Delta_x"][ii])
 
         # COMPUTE THE SOURCE MATRIX
         # array smart (cdp, 07/2020)
         ELSMAT[
             0 : conductor.dict_N_equation["NODOFS"],
             0 : conductor.dict_N_equation["NODOFS"],
-        ] = (SMAT * conductor.dict_discretization["Delta_x"][ii] / 3.0)
+        ] = (SMAT * conductor.gird_features["Delta_x"][ii] / 3.0)
         ELSMAT[
             0 : conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
-        ] = (SMAT * conductor.dict_discretization["Delta_x"][ii] / 6.0)
+        ] = (SMAT * conductor.gird_features["Delta_x"][ii] / 6.0)
         ELSMAT[
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
             0 : conductor.dict_N_equation["NODOFS"],
-        ] = (SMAT * conductor.dict_discretization["Delta_x"][ii] / 6.0)
+        ] = (SMAT * conductor.gird_features["Delta_x"][ii] / 6.0)
         ELSMAT[
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
-        ] = (SMAT * conductor.dict_discretization["Delta_x"][ii] / 3.0)
+        ] = (SMAT * conductor.gird_features["Delta_x"][ii] / 3.0)
 
         # COMPUTE THE SOURCE VECTOR (ANALYTIC INTEGRATION)
         # array smart (cdp, 07/2020)
@@ -1358,7 +1358,7 @@ def step(conductor, environment, qsource, num_step):
         if conductor.cond_num_step == 1:
             # Current time step (cdp, 10/2020)
             ELSLOD[1][0 : conductor.dict_N_equation["NODOFS"]] = (
-                conductor.dict_discretization["Delta_x"][ii]
+                conductor.gird_features["Delta_x"][ii]
                 / 6.0
                 * (2.0 * SVEC[1][:, 0] + SVEC[1][:, 1])
             )
@@ -1366,13 +1366,13 @@ def step(conductor, environment, qsource, num_step):
                 conductor.dict_N_equation["NODOFS"] : 2
                 * conductor.dict_N_equation["NODOFS"]
             ] = (
-                conductor.dict_discretization["Delta_x"][ii]
+                conductor.gird_features["Delta_x"][ii]
                 / 6.0
                 * (SVEC[1][:, 0] + 2.0 * SVEC[1][:, 1])
             )
             # Previous time step (cdp, 10/2020)
             ELSLOD[0][0 : conductor.dict_N_equation["NODOFS"]] = (
-                conductor.dict_discretization["Delta_x"][ii]
+                conductor.gird_features["Delta_x"][ii]
                 / 6.0
                 * (2.0 * SVEC[0][:, 0] + SVEC[0][:, 1])
             )
@@ -1380,14 +1380,14 @@ def step(conductor, environment, qsource, num_step):
                 conductor.dict_N_equation["NODOFS"] : 2
                 * conductor.dict_N_equation["NODOFS"]
             ] = (
-                conductor.dict_discretization["Delta_x"][ii]
+                conductor.gird_features["Delta_x"][ii]
                 / 6.0
                 * (SVEC[0][:, 0] + 2.0 * SVEC[0][:, 1])
             )
         else:
             # Compute only at the current time step (cdp, 10/2020)
             ELSLOD[0 : conductor.dict_N_equation["NODOFS"]] = (
-                conductor.dict_discretization["Delta_x"][ii]
+                conductor.gird_features["Delta_x"][ii]
                 / 6.0
                 * (2.0 * SVEC[:, 0] + SVEC[:, 1])
             )
@@ -1395,7 +1395,7 @@ def step(conductor, environment, qsource, num_step):
                 conductor.dict_N_equation["NODOFS"] : 2
                 * conductor.dict_N_equation["NODOFS"]
             ] = (
-                conductor.dict_discretization["Delta_x"][ii]
+                conductor.gird_features["Delta_x"][ii]
                 / 6.0
                 * (SVEC[:, 0] + 2.0 * SVEC[:, 1])
             )
