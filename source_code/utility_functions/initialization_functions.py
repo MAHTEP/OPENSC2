@@ -1,5 +1,10 @@
 import warnings
 import numpy as np
+from typing import Union
+from ..conductor import Conductor
+from ..strand_mixed_component import StrandMixedComponent
+from ..strand_stabilizer_component import StrandStabilizerComponent
+from ..strand_superconductor_component import StrandSuperconductorComponent
 
 
 def conductor_spatial_discretization(simulation, conductor):
@@ -154,14 +159,39 @@ def ext_grid(path, NN):  # optimized and testetd: ok (cdp,06/2020)
         )
     return xx  # xcoord
 
-def uniform_straight_discretization(conductor: object, _ = None) -> np.ndarray:
-    """Evaluate straight uniform spatial discretization in z direction.
+
+def uniform_spatial_discretization(conductor: Conductor, _=None) -> np.ndarray:
+    """Evaluates straight uniform spatial discretization in z direction.
 
     Args:
-        conductor (object): conductor object, has all the information to evaluate the unifrom mesh
-        _ (_type_): not used input argument
+        conductor (Conductor): conductor object, has all the information to evaluate the unifrom mesh.
+        _ (_type_): not used input argument.
 
     Returns:
-        np.ndarray: uniform spatial discretization along z direction.
+        np.ndarray: array with uniform spatial discretization along z direction of length conductor.dict_discretization["N_nod"].
     """
-    return np.linspace(0.0, conductor.inputs["XLENGTH"], conductor.dict_discretization["N_nod"])
+    return np.linspace(
+        0.0, conductor.inputs["XLENGTH"], conductor.dict_discretization["N_nod"]
+    )
+
+
+def uniform_angular_discretization(
+    conductor: Conductor,
+    comp: Union[
+        StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent
+    ],
+) -> np.ndarray:
+    """Function that evaluates uniform angular discretization, used for helicoidal geometry.
+
+    Args:
+        conductor (Conductor): conductor object, has all the information to evaluate the unifrom mesh.
+        comp (Union[StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent]): generic object of for wich the uniform angular discretization should be evaluated.
+
+    Returns:
+        np.ndarray: array with uniform angular discretization of length conductor.dict_discretization["N_nod"].
+    """
+    return np.linspace(
+        0.0,
+        comp.cyl_helix.windings_number * 2 * np.pi,
+        conductor.dict_discretization["N_nod"],
+    )
