@@ -145,21 +145,6 @@ def conductor_spatial_discretization(simulation, conductor):
     # end function
 
 
-# function to impose user defined grid
-def ext_grid(path, NN):  # optimized and testetd: ok (cdp,06/2020)
-    # read mesh from user defined file .dat made of two columns and NELEMS + 1 \
-    # rows: first column is for node index, second row is for coordinate value
-    xx = np.loadtxt(f"{path}/user_grid.dat")
-    xx = xx[:, 1]  # get only x coordinates value
-    if xx.size != NN:  # check on number of nodes
-        raise ValueError(
-            f"ERROR: number of rows in file user_grid.dat ({xx.size}) \
-                     is not consistent with given input number of nodes \
-                     ({NN})!!!.\n User should modify file user_grid.dat.\n"
-        )
-    return xx  # xcoord
-
-
 def uniform_spatial_discretization(conductor: Conductor, _=None) -> np.ndarray:
     """Evaluates straight uniform spatial discretization in z direction.
 
