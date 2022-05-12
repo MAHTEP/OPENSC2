@@ -1,6 +1,7 @@
-import warnings
+import logging
 import numpy as np
 import os
+import warnings
 from typing import Union
 
 from fluid_component import FluidComponent
@@ -14,6 +15,8 @@ from utility_functions.auxiliary_functions import (
     build_interpolator,
     do_interpolation,
 )
+
+logger_discretization = logging.getLogger("opensc2Logger.discretization")
 
 
 def conductor_spatial_discretization(simulation, conductor):
@@ -463,3 +466,41 @@ def user_defined_grid(
             coord_df["yy [m]"].to_numpy(),
             coord_df["zz [m]"].to_numpy(),
         )
+
+
+def check_grid_features(
+    zlenght: float,
+    comp: Union[
+        FluidComponent,
+        JacketComponent,
+        StrandMixedComponent,
+        StrandStabilizerComponent,
+        StrandSuperconductorComponent,
+    ],
+):
+    """Function that cheks initial anf final coordinates of the discretization to be consistent with the input values.
+
+    Args:
+        zlenght (float): straight length of the cable
+        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which the spatial discretization is evaluated.
+
+    Raises:
+        ValueError: if first coordinate is smaller 0.0 (below a tolerance)
+        ValueError: if first coordinate is lager than 0.0 (above a tolerance)
+        ValueError: if last coordinate is smaller or larger than zlenght (within a tollerance).
+    """
+
+    tol = 1e-6
+    if (comp.coordinate["z"][0] - 0.0) > -tol:
+        message = f"{comp.ID = }: comp.coordinate['z'][0] must be 0.0; {comp.coordinate['z'][0]=} (m) < {0.0} (m)."
+        logger_discretization.error(message)
+        raise ValueError(message)
+    if (comp.coordinate["z"][0] - 0.0) > tol:
+        message = f"{comp.ID = }: comp.coordinate['z'][0] must be 0.0; {comp.coordinate['z'][0]=} (m) > {0.0} (m)."
+        logger_discretization.error(message)
+        raise ValueError(message)
+
+    if abs(comp.coordinate["z"][-1] - zlenght) > tol:
+        message = f"{comp.ID = }: comp.coordinate['z'][-1] does not equal zlenght!\n{comp.coordinate['z'][-1]=} m; {zlenght =} m"
+        logger_discretization.warning(message)
+        raise ValueError(message)
