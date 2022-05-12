@@ -1,6 +1,5 @@
 # Import packages
 import logging
-import logging.config
 from typing_extensions import Self
 from openpyxl import load_workbook
 import numpy as np
@@ -37,13 +36,8 @@ from utility_functions.solid_components_initialization import (
 # Stainless Steel properties
 from properties_of_materials.stainless_steel import thermal_conductivity_ss
 
-logging.config.fileConfig(
-    fname="logging_electric_module.conf", disable_existing_loggers=True
-)
-
 # Get the logger specified in the file
-consolelogger = logging.getLogger("consoleLogger")
-filelogger = logging.getLogger("fileLogger")
+conductorlogger = logging.getLogger("opensc2Logger.conductor")
 
 
 class Conductor:
@@ -123,7 +117,7 @@ class Conductor:
             index_col=0,
             usecols=["Variable name", self.ID],
         )[self.ID].to_dict()
-        consolelogger.debug(
+        conductorlogger.debug(
             f"Loaded sheet CONDUCTOR_operation from file conductor_definition\n"
         )
 
@@ -134,10 +128,12 @@ class Conductor:
 
         # Calls method self.__manage_equipotential_surfaces_coordinate if
         # EQUIPOTENTIAL_SURFACE_FLAG is True.
-        consolelogger.debug(f"{self.operations['EQUIPOTENTIAL_SURFACE_FLAG']=};call method {_[self.operations['EQUIPOTENTIAL_SURFACE_FLAG']].__name__}\n")
+        conductorlogger.debug(
+            f"{self.operations['EQUIPOTENTIAL_SURFACE_FLAG']=};call method {_[self.operations['EQUIPOTENTIAL_SURFACE_FLAG']].__name__}\n"
+        )
         _[self.operations["EQUIPOTENTIAL_SURFACE_FLAG"]]()
 
-        consolelogger.debug(f"After equipotetial surface(s) definition\n")
+        conductorlogger.debug(f"After equipotetial surface(s) definition\n")
 
         # Load all the sheets in file conductor_coupling.xlsx as a dictionary of dataframes.
         self.dict_df_coupling = pd.read_excel(
@@ -151,14 +147,22 @@ class Conductor:
         # Dictionary declaration (cdp, 09/2020)
         self.inventory = dict()
         # call method Conductor_components_instance to make instance of conductor components (cdp, 11/2020)
-        consolelogger.debug(f"Before call method {self.conductor_components_instance.__name__}")
+        conductorlogger.debug(
+            f"Before call method {self.conductor_components_instance.__name__}"
+        )
         self.conductor_components_instance(simulation)
-        consolelogger.debug(f"After call method {self.conductor_components_instance.__name__}")
+        conductorlogger.debug(
+            f"After call method {self.conductor_components_instance.__name__}"
+        )
 
         # Call private method __initialize_attributes to initialize all the other useful and necessary attributes of class Conductor.
-        consolelogger.debug(f"Before call method {self.__initialize_attributes.__name__}")
+        conductorlogger.debug(
+            f"Before call method {self.__initialize_attributes.__name__}"
+        )
         self.__initialize_attributes(simulation)
-        consolelogger.debug(f"After call method {self.__initialize_attributes.__name__}")
+        conductorlogger.debug(
+            f"After call method {self.__initialize_attributes.__name__}"
+        )
 
     # end method __init__ (cdp, 11/2020)
 
@@ -452,7 +456,7 @@ class Conductor:
             ValueError: raise error if spatial coordinates in sheet Time_evolutions of file conductor_diagnostic are larger than the conductor length.
             ValueError: raise error if time values in sheet Spatial_distribution of file conductor diagnostic are larger than the end time of the simulation.
         """
-        
+
         self.dict_topology = dict()  # dictionary declaration (cdp, 09/2020)
         self.dict_interf_peri = dict()  # dictionary declaration (cdp, 07/2020)
         # Call method Get_conductor_topology to evaluate conductor topology: \
@@ -484,7 +488,7 @@ class Conductor:
         _ = dict(BE=1.0, CE=0.5, AM4=1.0 / 24.0)
         self.theta_method = _[self.inputs["ELECTRIC_METHOD"]]
         self.electric_theta = _[self.inputs["ELECTRIC_METHOD"]]
-        consolelogger.debug(f"Defined electric_theta\n")
+        conductorlogger.debug(f"Defined electric_theta\n")
         ## Evaluate parameters useful in function \
         # Transient_solution_functions.py\STEP (cdp, 07/2020)
         # dict_N_equation keys meaning:
@@ -1808,9 +1812,7 @@ class Conductor:
             # N.B. queste istruzioni posso inserirle in un metodo della classe.
             self.E_sol_ini = self.E_sol_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                 (
-                    self.gird_features["xcoord"][
-                        1 : self.gird_features["N_nod"]
-                    ]
+                    self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
                     - self.gird_features["xcoord"][0:-1]
                 )
                 * s_comp.dict_Gauss_pt["total_density"]
@@ -1820,9 +1822,7 @@ class Conductor:
             if s_comp.NAME != "Z_JACKET":
                 self.E_str_ini = self.E_str_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.gird_features["xcoord"][
-                            1 : self.gird_features["N_nod"]
-                        ]
+                        self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
                         - self.gird_features["xcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
@@ -1832,9 +1832,7 @@ class Conductor:
             else:
                 self.E_jk_ini = self.E_jk_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.gird_features["xcoord"][
-                            1 : self.gird_features["N_nod"]
-                        ]
+                        self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
                         - self.gird_features["xcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
@@ -2183,9 +2181,7 @@ class Conductor:
         for s_comp in self.inventory["SolidComponent"].collection:
             self.E_sol_fin = self.E_sol_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                 (
-                    self.gird_features["xcoord"][
-                        1 : self.gird_features["N_nod"]
-                    ]
+                    self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
                     - self.gird_features["xcoord"][0:-1]
                 )
                 * s_comp.dict_Gauss_pt["total_density"]
@@ -2195,9 +2191,7 @@ class Conductor:
             if s_comp.NAME != "Z_JACKET":
                 self.E_str_fin = self.E_str_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.gird_features["xcoord"][
-                            1 : self.gird_features["N_nod"]
-                        ]
+                        self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
                         - self.gird_features["xcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
@@ -2207,9 +2201,7 @@ class Conductor:
             else:
                 self.E_jk_fin = self.E_jk_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.gird_features["xcoord"][
-                            1 : self.gird_features["N_nod"]
-                        ]
+                        self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
                         - self.gird_features["xcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
