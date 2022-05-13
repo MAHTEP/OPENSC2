@@ -7,6 +7,7 @@ from typing import Union
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
 from conductor import Conductor
+from strand_component import StrandComponent
 from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
 from strand_superconductor_component import StrandSuperconductorComponent
@@ -506,34 +507,43 @@ def check_grid_features(
         raise ValueError(message)
 
 
-def check_user_defined_grid(dfs: dict, file_path: str) -> int:
+def check_user_defined_grid(dfs: dict, conductor: Conductor, file_path: str) -> int:
     """Function that checks the consistency of the user defined spatial discretization for all user defined components.
 
     Args:
         dfs (dict): dictionary of dataframes, each dataframes has the coordinate of the corresponding coductor component.
+        conductor (Conductor): conductor object.
         file_path (str): path of the input file with user defined spatial discretization.
 
     Raises:
+        ValueError: if the number of sheets in used defined auxiliary input file differs from the total number of conductor components defined.
         ValueError: if for strand object less than three spatial coordinates are provided (x, y, z).
         ValueError: if the number of nodes is not the same in at least one sheet of the file. The reference number of nodes is inferred from the first sheet of the file.
 
     Returns:
         (int): total number of nodes of the user defined spatial discretization.
     """
-    for ii, (key, value) in enumerate(dfs.values()):
-        if ii == 0:
-            n_node_ref = value.shape[0]
-            key_ref = key
-        else:
-            if "STR" in key:
-                if value.shape[1] < 3:
-                    raise ValueError(
-                        f"User must provide three coordinates in sheep {key} of input file {file_path}.\n"
-                    )
-            if value.shape[0] != n_node_ref:
+    if len(dfs) != conductor.inventory["all_component"].number:
+        raise ValueError(
+            f"The number of sheets in file {file_path} must be equal to the number of defined conductor components.\n{len(dfs)} != {conductor.inventory['all_component'].number}.\n"
+        )
+
+    comp_ref = conductor.inventory["FluidComponent"].collection[0]
+    n_node_ref = check_max_node_number(
+        dfs[comp_ref.ID].shape[0], conductor, file_path, comp_ref.ID
+    )
+
+    for comp in conductor.inventory["all_component"].collection[1:]:
+        if issubclass(comp, StrandComponent):
+            if dfs[comp.ID].shape[1] < 3:
                 raise ValueError(
-                    f"Inconsistent number of user defined nodes. The number of nodes in sheet {key} of file {file_path} must be equal to the one defined in sheet {key_ref} of the same file."
+                    f"User must provide three coordinates in sheeT {comp.ID} of input file {file_path}.\n"
                 )
+        if dfs[comp.ID].shape[0] != n_node_ref:
+            raise ValueError(
+                f"Inconsistent number of user defined nodes. The number of nodes in sheet {comp.ID} of file {file_path} must be equal to the one defined in sheet {comp_ref.ID} of the same file."
+            )
+
     return n_node_ref
 
 
