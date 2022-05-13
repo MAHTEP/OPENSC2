@@ -77,11 +77,11 @@ class Environment:
 
         # Declare dictionary with the characterisctic length.
         dict_characterisctic_length = dict(
-            vertical_plate=conductor.gird_features["Delta_x"],  # to be checked
-            vertical_plate_churchill_chu=conductor.gird_features[
+            vertical_plate=conductor.grid_features["Delta_x"],  # to be checked
+            vertical_plate_churchill_chu=conductor.grid_features[
                 "Delta_x"
             ],  # to be checked
-            vertical_plate_churchill_chu_accurate=conductor.gird_features[
+            vertical_plate_churchill_chu_accurate=conductor.grid_features[
                 "Delta_x"
             ],  # to be checked
             long_horziontal_cylinder_morgan=conductor.inputs["Diameter"],
@@ -366,7 +366,7 @@ class Environment:
         """
         dict_check = {True: self._do_nothing, False: warnings.warn}
         check = any(
-            conductor.inputs["Diameter"] / conductor.gird_features["Delta_x"]
+            conductor.inputs["Diameter"] / conductor.grid_features["Delta_x"]
             > 35.0 / grashof ** (1.0 / 4.0)
         )
         dict_check[check](

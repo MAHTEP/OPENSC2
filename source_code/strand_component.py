@@ -126,7 +126,7 @@ class StrandComponent(SolidComponent):
                 # call load_user_defined_quantity on the component.
                 self.dict_node_pt["IOP"] = do_interpolation(
                     self.alphab_interpolator,
-                    conductor.gird_features["xcoord"],
+                    conductor.grid_features["xcoord"],
                     conductor.cond_time[-1],
                     self.alphab_interp_flag,
                 )
@@ -146,17 +146,17 @@ class StrandComponent(SolidComponent):
                     )
             elif self.operations["IALPHAB"] == 0:
                 self.dict_node_pt["alpha_B"] = np.zeros(
-                    conductor.gird_features["N_nod"]
+                    conductor.grid_features["N_nod"]
                 )
         elif nodal == False:
             # compute alpha_B in each Gauss point (cdp, 07/2020)
             self.dict_Gauss_pt["alpha_B"] = (
                 np.abs(
                     self.dict_node_pt["alpha_B"][
-                        0 : conductor.gird_features["N_nod"] - 1
+                        0 : conductor.grid_features["N_nod"] - 1
                     ]
                     + self.dict_node_pt["alpha_B"][
-                        1 : conductor.gird_features["N_nod"] + 1
+                        1 : conductor.grid_features["N_nod"] + 1
                     ]
                 )
                 / 2.0
@@ -335,7 +335,7 @@ class StrandComponent(SolidComponent):
                 # call load_user_defined_quantity on the component.
                 self.dict_node_pt["Epsilon"] = do_interpolation(
                     self.eps_interpolator,
-                    conductor.gird_features["xcoord"],
+                    conductor.grid_features["xcoord"],
                     conductor.cond_time[-1],
                     self.eps_interp_flag,
                 )
@@ -344,22 +344,22 @@ class StrandComponent(SolidComponent):
                     print("still to be decided what to do here\n")
             elif self.operations["IEPS"] == 0:  # no strain (cdp, 06/2020)
                 self.dict_node_pt["Epsilon"] = np.zeros(
-                    conductor.gird_features["N_nod"]
+                    conductor.grid_features["N_nod"]
                 )
             elif self.operations["IEPS"] == 1:
                 # constant strain to the value in input file \
                 # conductor_i_operation.xlsx (cdp, 06/2020)
                 self.dict_node_pt["Epsilon"] = self.operations["EPS"] * np.ones(
-                    conductor.gird_features["N_nod"]
+                    conductor.grid_features["N_nod"]
                 )
         elif nodal == False:
             # compute Epsilon in each Gauss point (cdp, 07/2020)
             self.dict_Gauss_pt["Epsilon"] = (
                 self.dict_node_pt["Epsilon"][
-                    0 : conductor.gird_features["N_nod"] - 1
+                    0 : conductor.grid_features["N_nod"] - 1
                 ]
                 + self.dict_node_pt["Epsilon"][
-                    1 : conductor.gird_features["N_nod"] + 1
+                    1 : conductor.grid_features["N_nod"] + 1
                 ]
             ) / 2.0
 

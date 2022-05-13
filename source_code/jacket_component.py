@@ -86,7 +86,7 @@ class JacketComponent(SolidComponent):
             if conductor.cond_time[-1] == 0:
                 # Initialization.
                 self.radiative_heat_env = np.zeros(
-                    (conductor.gird_features["N_nod"], 2)
+                    (conductor.grid_features["N_nod"], 2)
                 )
             elif conductor.cond_time[-1] > 0:
                 if conductor.cond_num_step == 1:
@@ -109,7 +109,7 @@ class JacketComponent(SolidComponent):
             if conductor.cond_time[-1] == 0:
                 # Initialization.
                 self.radiative_heat_env = np.zeros(
-                    (conductor.gird_features["N_nod"], 4)
+                    (conductor.grid_features["N_nod"], 4)
                 )
             elif conductor.cond_time[-1] > 0:
                 self.radiative_heat_env[:, 1:4] = self.radiative_heat_env[:, 0:3].copy()
@@ -144,7 +144,7 @@ class JacketComponent(SolidComponent):
             if conductor.cond_time[-1] == 0:
                 # Initialization.
                 self.radiative_heat_inn[key] = np.zeros(
-                    (conductor.gird_features["N_nod"], 2)
+                    (conductor.grid_features["N_nod"], 2)
                 )
             elif conductor.cond_time[-1] > 0:
                 if conductor.cond_num_step == 1:
@@ -169,7 +169,7 @@ class JacketComponent(SolidComponent):
             if conductor.cond_time[-1] == 0:
                 # Initialization.
                 self.radiative_heat_inn[key] = np.zeros(
-                    (conductor.gird_features["N_nod"], 4)
+                    (conductor.grid_features["N_nod"], 4)
                 )
             elif conductor.cond_time[-1] > 0:
                 self.radiative_heat_inn[key][:, 1:4] = self.radiative_heat_inn[key][

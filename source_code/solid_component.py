@@ -719,7 +719,7 @@ class SolidComponent:
             # call load_user_defined_quantity on the component.
             self.dict_node_pt["IOP"] = do_interpolation(
                 self.current_interpolator,
-                conductor.gird_features["xcoord"],
+                conductor.grid_features["xcoord"],
                 conductor.cond_time[-1],
                 self.current_interp_flag,
             )
@@ -771,7 +771,7 @@ class SolidComponent:
                 # call load_user_defined_quantity on the component.
                 self.dict_node_pt["B_field"] = do_interpolation(
                     self.bfield_interpolator,
-                    conductor.gird_features["xcoord"],
+                    conductor.grid_features["xcoord"],
                     conductor.cond_time[-1],
                     self.bfield_interp_flag,
                 )
@@ -791,17 +791,17 @@ class SolidComponent:
                 self.dict_node_pt["B_field"] = np.linspace(
                     self.operations["BISS"],
                     self.operations["BOSS"],
-                    conductor.gird_features["N_nod"],
+                    conductor.grid_features["N_nod"],
                 )
             elif self.operations["IBIFUN"] == 1:
                 self.dict_node_pt["B_field"] = np.linspace(
                     self.operations["BISS"],
                     self.operations["BOSS"],
-                    conductor.gird_features["N_nod"],
+                    conductor.grid_features["N_nod"],
                 ) + conductor.IOP_TOT / conductor.inputs["I0_OP_TOT"] * np.linspace(
                     self.operations["BITR"],
                     self.operations["BOTR"],
-                    conductor.gird_features["N_nod"],
+                    conductor.grid_features["N_nod"],
                 )
         elif nodal == False:
             # compute B_field in each Gauss point (cdp, 07/2020)
@@ -831,7 +831,7 @@ class SolidComponent:
                 # in Conductor class method Eval_Gauss_point. It is the only times at \
                 # which this method is invoked (cdp, 11/2020)
                 self.dict_node_pt["EXTFLX"] = np.zeros(
-                    (conductor.gird_features["N_nod"], 1)
+                    (conductor.grid_features["N_nod"], 1)
                 )
             else:
                 # Initialization is done always in the same way ragardless of the \
@@ -843,12 +843,12 @@ class SolidComponent:
                 ):
                     # Backward Euler or Crank-Nicolson (cdp, 10/2020)
                     self.dict_node_pt["EXTFLX"] = np.zeros(
-                        (conductor.gird_features["N_nod"], 2)
+                        (conductor.grid_features["N_nod"], 2)
                     )
                 elif conductor.inputs["METHOD"] == "AM4":
                     # Adams-Moulton 4 (cdp, 10/2020)
                     self.dict_node_pt["EXTFLX"] = np.zeros(
-                        (conductor.gird_features["N_nod"], 4)
+                        (conductor.grid_features["N_nod"], 4)
                     )
             # end if self.operations["IQFUN"] (cdp, 11/2020)
         # end if conductor.cond_num_step (cdp, 10/2020)
@@ -888,7 +888,7 @@ class SolidComponent:
 
                 self.dict_node_pt["EXTFLX"][:, 0] = do_interpolation(
                     self.heat_interpolator,
-                    conductor.gird_features["xcoord"],
+                    conductor.grid_features["xcoord"],
                     conductor.cond_time[-1],
                     self.heat_interp_flag,
                 )
@@ -902,7 +902,7 @@ class SolidComponent:
                 # call method load_user_defined_quantity to compute heat and overwrite the previous values.
                 self.dict_node_pt["EXTFLX"][:, 0] = do_interpolation(
                     self.heat_interpolator,
-                    conductor.gird_features["xcoord"],
+                    conductor.grid_features["xcoord"],
                     conductor.cond_time[-1],
                     self.heat_interp_flag,
                 )
@@ -916,12 +916,12 @@ class SolidComponent:
         # Compute at each time step since the mesh can change
         lower_bound = np.min(
             np.nonzero(
-                conductor.gird_features["xcoord"] >= self.operations["XQBEG"]
+                conductor.grid_features["xcoord"] >= self.operations["XQBEG"]
             )
         )
         upper_bound = np.max(
             np.nonzero(
-                conductor.gird_features["xcoord"] <= self.operations["XQEND"]
+                conductor.grid_features["xcoord"] <= self.operations["XQEND"]
             )
         )
         if self.operations["IQFUN"] == 1:
@@ -1011,7 +1011,7 @@ class SolidComponent:
             if conductor.cond_time[-1] == 0:
                 # Initialization (cdp, 10/2020)
                 self.dict_node_pt["JHTFLX"] = np.zeros(
-                    (conductor.gird_features["N_nod"], 2)
+                    (conductor.grid_features["N_nod"], 2)
                 )
             elif conductor.cond_time[-1] > 0:
                 if conductor.cond_num_step == 1:
@@ -1029,7 +1029,7 @@ class SolidComponent:
             if conductor.cond_time[-1] == 0:
                 # Initialization (cdp, 10/2020)
                 self.dict_node_pt["JHTFLX"] = np.zeros(
-                    (conductor.gird_features["N_nod"], 4)
+                    (conductor.grid_features["N_nod"], 4)
                 )
             elif conductor.cond_time[-1] > 0:
                 self.dict_node_pt["JHTFLX"][:, 1:4] = self.dict_node_pt["JHTFLX"][
@@ -1085,10 +1085,10 @@ class SolidComponent:
             if conductor.cond_time[-1] == 0:
                 # Initialization (cdp, 10/2020)
                 self.dict_node_pt["EEXT"] = np.zeros(
-                    (conductor.gird_features["N_nod"], 2)
+                    (conductor.grid_features["N_nod"], 2)
                 )
                 self.dict_node_pt["EJHT"] = np.zeros(
-                    (conductor.gird_features["N_nod"], 2)
+                    (conductor.grid_features["N_nod"], 2)
                 )
             elif conductor.cond_time[-1] > 0:
                 if conductor.cond_num_step == 1:
@@ -1108,10 +1108,10 @@ class SolidComponent:
             if conductor.cond_time[-1] == 0:
                 # Initialization (cdp, 10/2020)
                 self.dict_node_pt["EEXT"] = np.zeros(
-                    (conductor.gird_features["N_nod"], 4)
+                    (conductor.grid_features["N_nod"], 4)
                 )
                 self.dict_node_pt["EJHT"] = np.zeros(
-                    (conductor.gird_features["N_nod"], 4)
+                    (conductor.grid_features["N_nod"], 4)
                 )
             elif conductor.cond_time[-1] > 0:
                 self.dict_node_pt["EEXT"][:, 1:4] = self.dict_node_pt["EEXT"][

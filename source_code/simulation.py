@@ -180,7 +180,7 @@ class Simulation:
             # There is only 1 Conductor object, exploit cond instantiated above (cdp,07/2020)
             self.dict_qsource[cond.ID] = np.zeros(
                 (
-                    cond.gird_features["N_nod"],
+                    cond.grid_features["N_nod"],
                     cond.dict_N_equation["JacketComponent"],
                 )
             )
@@ -193,7 +193,7 @@ class Simulation:
                     # Consider all the columns in order to not miss the info on last raw (otherwise the last conductor will not be added as key of the dictionary).
                     self.dict_qsource[cond_r.ID] = np.zeros(
                         (
-                            cond_r.gird_features["N_nod"],
+                            cond_r.grid_features["N_nod"],
                             cond_r.dict_N_equation["JacketComponent"],
                         )
                     )
@@ -217,7 +217,7 @@ class Simulation:
                             # N.B. controllare anche nella chiamata a step come passare self.dict_qsource.
                             self.dict_qsource[f"{cond_r.ID}_{cond_c.ID}"] = np.zeros(
                                 (
-                                    cond_r.gird_features["N_nod"],
+                                    cond_r.grid_features["N_nod"],
                                     cond_r.dict_N_equation["JacketComponent"],
                                 )
                             )

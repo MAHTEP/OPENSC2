@@ -1479,14 +1479,14 @@ def plot_time_animation(simulation, conductor):
     # 			title = f"JACKET SYSLOD spatial distribution")
     # else:
     # 	# strand
-    # 	conductor.axes_SYSLOD_str.plot(conductor.gird_features["xcoord"], \
+    # 	conductor.axes_SYSLOD_str.plot(conductor.grid_features["xcoord"], \
     # 		conductor.dict_Step["SYSLOD"]\
     # 		[conductor.dict_N_equation["FluidComponent"]:\
     # 		conductor.dict_N_equation["Total"]:\
     # 		conductor.dict_N_equation["NODOFS"],0], \
     # 		label = conductor.cond_time[-1])
     # 	# jacket
-    # 	conductor.axes_SYSLOD_jk.plot(conductor.gird_features["xcoord"], \
+    # 	conductor.axes_SYSLOD_jk.plot(conductor.grid_features["xcoord"], \
     # 		conductor.dict_Step["SYSLOD"]\
     # 		[conductor.dict_N_equation["FluidComponent"] + \
     # 		conductor.dict_N_equation["StrandComponent"]:conductor.dict_N_equation["Total"]: \

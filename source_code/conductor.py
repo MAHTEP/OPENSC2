@@ -468,7 +468,7 @@ class Conductor:
         self.dict_Gauss_pt = dict()
 
         # CREATE grid for the i-th conductor
-        self.gird_features = dict()
+        self.grid_features = dict()
         self.gird_input = pd.read_excel(
             os.path.join(self.BASE_PATH, self.file_input["GRID_DEFINITION"]),
             sheet_name="GRID",
@@ -1658,7 +1658,7 @@ class Conductor:
         conductor_spatial_discretization(simulation, self)
         # Total number of equations for each conductor (cdp, 09/2020)
         self.dict_N_equation["Total"] = (
-            self.dict_N_equation["NODOFS"] * self.gird_features["N_nod"]
+            self.dict_N_equation["NODOFS"] * self.grid_features["N_nod"]
         )
         # initialize conductor time values, it can be different for different \
         # conductors since the conductor time step can be different (cdp, 10/202)
@@ -1679,7 +1679,7 @@ class Conductor:
         gen_flow(self)
         # C*SET THE INITIAL VALUE OF THE FLOW VARIABLES (LINEAR P AND T)
 
-        temp_ave = np.zeros(self.gird_features["N_nod"])
+        temp_ave = np.zeros(self.grid_features["N_nod"])
         self.enthalpy_balance = 0.0
         self.enthalpy_out = 0.0
         self.enthalpy_inl = 0.0
@@ -1737,7 +1737,7 @@ class Conductor:
         # 					 self.inventory["FluidComponent"].number, \
         # 					 cc + self.inventory["FluidComponent"].number]
         # 	s_comp.dict_node_pt["temperature"] = \
-        # 																np.zeros(self.gird_features["N_nod"])
+        # 																np.zeros(self.grid_features["N_nod"])
         # 	if np.sum(weight) > 0:
         # 		# evaluate SolidComponent temperature as the weighted average on \
         # 		# conctat_perimeter with channels (cpd 07/2020)
@@ -1754,7 +1754,7 @@ class Conductor:
         # 		# scalar (cdp, 07/2020)
         # 		s_comp.TEMOUT = s_comp.dict_node_pt["temperature"][-1]
         # 	# call function f_plot to make property plots (cdp, 07/2020)
-        # 	#f_plot(s_comp, self.gird_features["xcoord"])
+        # 	#f_plot(s_comp, self.grid_features["xcoord"])
 
         # Call function SolidComponents_T_initialization to initialize \
         # SolidComponent temperature spatial distribution from FluidComponent \
@@ -1812,8 +1812,8 @@ class Conductor:
             # N.B. queste istruzioni posso inserirle in un metodo della classe.
             self.E_sol_ini = self.E_sol_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                 (
-                    self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
-                    - self.gird_features["xcoord"][0:-1]
+                    self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
+                    - self.grid_features["xcoord"][0:-1]
                 )
                 * s_comp.dict_Gauss_pt["total_density"]
                 * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -1822,8 +1822,8 @@ class Conductor:
             if s_comp.NAME != "Z_JACKET":
                 self.E_str_ini = self.E_str_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
-                        - self.gird_features["xcoord"][0:-1]
+                        self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
+                        - self.grid_features["xcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
                     * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -1832,8 +1832,8 @@ class Conductor:
             else:
                 self.E_jk_ini = self.E_jk_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
-                        - self.gird_features["xcoord"][0:-1]
+                        self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
+                        - self.grid_features["xcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
                     * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -2181,8 +2181,8 @@ class Conductor:
         for s_comp in self.inventory["SolidComponent"].collection:
             self.E_sol_fin = self.E_sol_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                 (
-                    self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
-                    - self.gird_features["xcoord"][0:-1]
+                    self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
+                    - self.grid_features["xcoord"][0:-1]
                 )
                 * s_comp.dict_Gauss_pt["total_density"]
                 * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -2191,8 +2191,8 @@ class Conductor:
             if s_comp.NAME != "Z_JACKET":
                 self.E_str_fin = self.E_str_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
-                        - self.gird_features["xcoord"][0:-1]
+                        self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
+                        - self.grid_features["xcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
                     * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -2201,8 +2201,8 @@ class Conductor:
             else:
                 self.E_jk_fin = self.E_jk_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.gird_features["xcoord"][1 : self.gird_features["N_nod"]]
-                        - self.gird_features["xcoord"][0:-1]
+                        self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
+                        - self.grid_features["xcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
                     * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -2873,7 +2873,7 @@ class Conductor:
                             self.dict_Gauss_pt["HTC"]["env_sol"][key]["conv"]
                             + self.dict_Gauss_pt["HTC"]["env_sol"][key]["rad"]
                         )
-                        * self.gird_features["Delta_x"]
+                        * self.grid_features["Delta_x"]
                         * (
                             simulation.environment.inputs["Temperature"]
                             - jacket.dict_Gauss_pt["temperature"]
@@ -2887,7 +2887,7 @@ class Conductor:
                         self.dict_Gauss_pt["HTC"]["env_sol"][key]["conv"]
                         + self.dict_Gauss_pt["HTC"]["env_sol"][key]["rad"]
                     )
-                    * self.gird_features["Delta_x"]
+                    * self.grid_features["Delta_x"]
                     * (
                         simulation.environment.inputs["Temperature"]
                         - jacket.dict_Gauss_pt["temperature"]
@@ -2925,7 +2925,7 @@ class Conductor:
                 if abs(self.dict_df_coupling["HTC_choice"].at[jk_r.ID, jk_c.ID]) == 3:
                     self.heat_rad_jk[f"{jk_r.ID}_{jk_c.ID}"] = (
                         self.dict_df_coupling["contact_perimeter"].at[jk_r.ID, jk_c.ID]
-                        * self.gird_features["Delta_x"]
+                        * self.grid_features["Delta_x"]
                         * self.dict_Gauss_pt["HTC"]["sol_sol"]["rad"][
                             self.dict_topology["sol_sol"][jk_r.ID][jk_c.ID]
                         ]
@@ -2958,7 +2958,7 @@ class Conductor:
                     self.dict_df_coupling["contact_perimeter"].at[
                         environment.KIND, jk.ID
                     ]
-                    * self.gird_features["Delta_x"]
+                    * self.grid_features["Delta_x"]
                     * (
                         self.dict_Gauss_pt["HTC"]["env_sol"][key]["conv"]
                         + self.dict_Gauss_pt["HTC"]["env_sol"][key]["rad"]
