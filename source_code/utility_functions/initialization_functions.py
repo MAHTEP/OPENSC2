@@ -535,3 +535,30 @@ def check_user_defined_grid(dfs: dict, file_path: str) -> int:
                     f"Inconsistent number of user defined nodes. The number of nodes in sheet {key} of file {file_path} must be equal to the one defined in sheet {key_ref} of the same file."
                 )
     return n_node_ref
+
+
+def check_max_node_number(
+    n_nod: int, conductor: Conductor, file_path: str, *args: str
+) -> int:
+    """Function that checks if the number of nodes of the spatial discretization is lower than the maximum allowed value.
+
+    Args:
+        n_nod (int): user defined number of nodes. Different oringin according to flag ITYMSH; see file_path for further detail.
+        conductor (Conductor): conductor object with useful informations to make the check.
+        file_path (str): path of the file from which the total number of nodes is evaluated.\n
+        * If flag ITYMSH > 0 n_nod is evaluated from the number of elements assigned to conductor in input file conductor_grid;
+        * If flag ITYMSH < 0 n_nod is set equal to the number of rows of the first sheet of user defined auxiliary input file used for the spatial discretization.
+
+    Raises:
+        ValueError: raises error message if the number of nodes excheedes the maximum allowed number of nodes.
+
+    Returns:
+        (int): number of nodes used for the spatial discretization.
+    """
+    if n_nod > conductor.grid_input["MAXNOD"]:
+        if conductor.grid_input["ITYMSH"] > 0:
+            message = f"The number of nodes should not exceed the maximum value. {n_nod = } > {conductor.grid_input['MAXNOD'] = }.\nPlease check {conductor.ID} in file {file_path}.\n"
+        else:
+            message = f"The number of nodes should not exceed the maximum value. {n_nod = } > {conductor.grid_input['MAXNOD'] = }.\nPlease check sheet {args[0]} in file {file_path}.\n"
+        raise ValueError(message)
+    return n_nod
