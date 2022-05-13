@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 import os
+import pandas as pd
 import warnings
 from typing import Union
 
@@ -11,11 +12,6 @@ from strand_component import StrandComponent
 from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
 from strand_superconductor_component import StrandSuperconductorComponent
-from utility_functions.auxiliary_functions import (
-    load_auxiliary_files,
-    build_interpolator,
-    do_interpolation,
-)
 
 logger_discretization = logging.getLogger("opensc2Logger.discretization")
 
@@ -426,47 +422,23 @@ def fixed_refined_angular_discretization(
     return tau
 
 
-def user_defined_grid(
-    conductor: Conductor,
-    comp: Union[
-        FluidComponent,
-        JacketComponent,
-        StrandMixedComponent,
-        StrandStabilizerComponent,
-        StrandSuperconductorComponent,
-    ],
-) -> Union[np.ndarray, tuple]:
+def user_defined_grid(conductor: Conductor):
     """Fuction that loads user defined spatial discretization of the generic conductor component.
 
     Args:
-        conductor (Conductor): conductor object, has all the information to evaluate the fixed refined grid.
-        comp (Union[FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent ]): generic object for wich the user defined spatial discretization should be evaluated.
-
-    Returns:
-        Union[np.ndarray, tuple]: array or tuple with the user defined spatial discretization.
+        conductor (Conductor): conductor object, has all the information to evaluate load and assign user defined grid.
 
     Notes: does not allow interpolation in space and or in time, i.e. only fixed spatial discretization is available.
     """
     # Build file path.
     file_path = os.path.join(conductor.BASE_PATH, conductor.file_input["EXTERNAL_GRID"])
-    # Load auxiliary input file.
-    coord_df, _ = load_auxiliary_files(file_path, sheetname=comp.ID)
-
-    if (
-        comp.__class__.__name__ == "FluidComponent"
-        or comp.__class__.__name__ == "JacketComponent"
-    ):
-        return coord_df.to_numpy()
-    elif (
-        comp.__class__.__name__ == "StrandMixedComponent"
-        or comp.__class__.__name__ == "StrandStabilizerComponent"
-        or comp.__class__.__name__ == "StrandSuperconductorComponent"
-    ):
-        return (
-            coord_df["xx [m]"].to_numpy(),
-            coord_df["yy [m]"].to_numpy(),
-            coord_df["zz [m]"].to_numpy(),
-        )
+    # Load all sheets of user defined grid auxiliary input file.
+    coord_dfs = pd.read_excel(file_path, sheet_name=None)
+    # Check user defined grid features.
+    conductor.grid_features["N_nod"] = check_user_defined_grid(coord_dfs, file_path)
+    # Assign spatial discretization coordinates to each conductor component.
+    for comp in conductor.inventory["all_component"].collection:
+        assign_user_defined_spatial_discretization(comp, coord_dfs)
 
 
 def check_grid_features(
