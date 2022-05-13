@@ -572,3 +572,27 @@ def check_max_node_number(
             message = f"The number of nodes should not exceed the maximum value. {n_nod = } > {conductor.grid_input['MAXNOD'] = }.\nPlease check sheet {args[0]} in file {file_path}.\n"
         raise ValueError(message)
     return n_nod
+
+
+def assign_user_defined_spatial_discretization(
+    comp: Union[
+        FluidComponent,
+        JacketComponent,
+        StrandMixedComponent,
+        StrandStabilizerComponent,
+        StrandSuperconductorComponent,
+    ],
+    dfs: dict,
+):
+    """Function that assigns the user defined coordinates in sheet comp.ID of auxiliary input file with the spatial discretization to the corresponding conductor component.
+
+    Args:
+        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which user defines spatial discretization.
+        dfs (dict): dictionary of dataframes, each dataframes has the coordinate of the corresponding coductor component.
+    """
+    if isinstance(comp, FluidComponent, JacketComponent):
+        comp.coordinate["z"] = dfs[comp.ID]["z [m]"].to_numpy()
+    elif issubclass(comp, StrandComponent):
+        comp.coordinate["x"] = dfs[comp.ID]["x [m]"].to_numpy()
+        comp.coordinate["y"] = dfs[comp.ID]["y [m]"].to_numpy()
+        comp.coordinate["z"] = dfs[comp.ID]["z [m]"].to_numpy()
