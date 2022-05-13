@@ -504,3 +504,34 @@ def check_grid_features(
         message = f"{comp.ID = }: comp.coordinate['z'][-1] does not equal zlenght!\n{comp.coordinate['z'][-1]=} m; {zlenght =} m"
         logger_discretization.warning(message)
         raise ValueError(message)
+
+
+def check_user_defined_grid(dfs: dict, file_path: str) -> int:
+    """Function that checks the consistency of the user defined spatial discretization for all user defined components.
+
+    Args:
+        dfs (dict): dictionary of dataframes, each dataframes has the coordinate of the corresponding coductor component.
+        file_path (str): path of the input file with user defined spatial discretization.
+
+    Raises:
+        ValueError: if for strand object less than three spatial coordinates are provided (x, y, z).
+        ValueError: if the number of nodes is not the same in at least one sheet of the file. The reference number of nodes is inferred from the first sheet of the file.
+
+    Returns:
+        (int): total number of nodes of the user defined spatial discretization.
+    """
+    for ii, (key, value) in enumerate(dfs.values()):
+        if ii == 0:
+            n_node_ref = value.shape[0]
+            key_ref = key
+        else:
+            if "STR" in key:
+                if value.shape[1] < 3:
+                    raise ValueError(
+                        f"User must provide three coordinates in sheep {key} of input file {file_path}.\n"
+                    )
+            if value.shape[0] != n_node_ref:
+                raise ValueError(
+                    f"Inconsistent number of user defined nodes. The number of nodes in sheet {key} of file {file_path} must be equal to the one defined in sheet {key_ref} of the same file."
+                )
+    return n_node_ref
