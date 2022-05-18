@@ -437,9 +437,12 @@ def user_defined_grid(conductor: object):
     coord_dfs = pd.read_excel(file_path, sheet_name=None)
     # Check user defined grid features.
     conductor.grid_features["N_nod"], conductor.grid_features["zcoord"] = check_user_defined_grid(coord_dfs, file_path)
+    # Evaluate the number of elements from the checked number of nodes.
+    conductor.grid_input["NELEMS"] = conductor.grid_features["N_nod"] - 1
     # Assign spatial discretization coordinates to each conductor component.
     for comp in conductor.inventory["all_component"].collection:
         assign_user_defined_spatial_discretization(comp, coord_dfs[comp.ID])
+        check_grid_features(conductor.inputs["XLENGHT"], comp)
 
 
 def check_grid_features(
