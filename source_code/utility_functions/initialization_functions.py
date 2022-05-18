@@ -489,7 +489,7 @@ def check_user_defined_grid(dfs: dict, conductor: object, file_path: str) -> int
 
     Raises:
         ValueError: if the number of sheets in used defined auxiliary input file differs from the total number of conductor components defined.
-        ValueError: if for strand object less than three spatial coordinates are provided (x, y, z).
+        ValueError: if less than three spatial coordinates are provided (x, y, z).
         ValueError: if the number of nodes is not the same in at least one sheet of the file. The reference number of nodes is inferred from the first sheet of the file.
 
     Returns:
