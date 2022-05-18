@@ -826,7 +826,7 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
         # Save data for the Space convergence analysis (cdp, 12/2020)
         # compute spatial discretization pitch (cdp, 12/2020)
         discr = (
-            cond.inputs["XLENGTH"] / cond.gird_input["NELEMS"]
+            cond.inputs["XLENGTH"] / cond.grid_input["NELEMS"]
         )
         folder_path = os.path.join(f_path, cond.ID)
         # Create the path of the file {cond.ID}_delta_x.tsv (cdp, 11/2020)
@@ -835,16 +835,16 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
         # desinence to sictinguisch among space and time convergence (cdp, 12/2020)
         des = "sc"
         # the content of the round brackets in the file name (cdp, 12/2020)
-        brackets = cond.gird_input["NELEMS"]
+        brackets = cond.grid_input["NELEMS"]
         # convergence on mass and energy balance (cdp, 12/2020)
         AA = np.zeros((1, 4))
-        AA[0, 0] = cond.gird_input["NELEMS"]
+        AA[0, 0] = cond.grid_input["NELEMS"]
         AA[0, 1] = discr
         AA[0, 2] = cond.mass_balance
         AA[0, 3] = cond.energy_balance
         # discretization values for file CONDUCTOR_ID_delta_x.tsv
         val = np.zeros((1, 2))
-        val[0, 0] = cond.gird_input["NELEMS"]
+        val[0, 0] = cond.grid_input["NELEMS"]
         val[0, 1] = discr
     elif space_conv == False:
         # Save data for the Time convergence analysis (cdp, 12/2020)

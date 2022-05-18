@@ -469,7 +469,7 @@ class Conductor:
 
         # CREATE grid for the i-th conductor
         self.grid_features = dict()
-        self.gird_input = pd.read_excel(
+        self.grid_input = pd.read_excel(
             os.path.join(self.BASE_PATH, self.file_input["GRID_DEFINITION"]),
             sheet_name="GRID",
             skiprows=2,
@@ -599,17 +599,17 @@ class Conductor:
 
         # Introduced for the electric module.
         self.total_elements = (
-            self.grid_inputs["NELEMS"] * self.inventory["Conductor"].number
+            self.grid_input["NELEMS"] * self.inventory["Conductor"].number
         )
-        self.total_nodes = (self.grid_inputs["NELEMS"] + 1) * self.inventory[
+        self.total_nodes = (self.grid_input["NELEMS"] + 1) * self.inventory[
             "Conductor"
         ].number
 
         self.total_elements_current_carriers = (
-            self.grid_inputs["NELEMS"] * self.inventory["StrandComponent"].number
+            self.grid_input["NELEMS"] * self.inventory["StrandComponent"].number
         )
         self.total_nodes_current_carriers = (
-            self.grid_inputs["NELEMS"] + 1
+            self.grid_input["NELEMS"] + 1
         ) * self.inventory["StrandComponent"].number
 
         # Convert to matrix (make them sparse matrices)

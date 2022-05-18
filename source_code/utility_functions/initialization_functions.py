@@ -7,7 +7,7 @@ from typing import Union
 
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
-from conductor import Conductor
+# from conductor import Conductor
 from strand_component import StrandComponent
 from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
@@ -46,10 +46,10 @@ def conductor_spatial_discretization(simulation, conductor):
 
     XLENGTH = conductor.inputs["XLENGTH"]
     MAXNOD = conductor.inputs["MAXNOD"]
-    ITYMSH = conductor.gird_input["ITYMSH"]
-    NELEMS = conductor.gird_input["NELEMS"]
-    XBREFI = conductor.gird_input["XBREFI"]
-    XEREFI = conductor.gird_input["XEREFI"]
+    ITYMSH = conductor.grid_input["ITYMSH"]
+    NELEMS = conductor.grid_input["NELEMS"]
+    XBREFI = conductor.grid_input["XBREFI"]
+    XEREFI = conductor.grid_input["XEREFI"]
 
     nnodes = NELEMS + 1
     # conductor spatial discretization initialization
@@ -61,7 +61,7 @@ def conductor_spatial_discretization(simulation, conductor):
             simulation, "EXTERNAL_GRID", f"x_{conductor.name} [m]"
         )
         # Evaluate the number of elements from the number of nodes
-        conductor.gird_input["NELEMS"] = nnodes - 1
+        conductor.grid_input["NELEMS"] = nnodes - 1
 
     # COMPUTE THE COORDINATES IN THE FIRST TURN
     elif ITYMSH == 0 or ITYMSH == 2 or abs(XEREFI - XBREFI) <= 1e-3:
@@ -71,10 +71,10 @@ def conductor_spatial_discretization(simulation, conductor):
     # !*LOCALLY REFINED MESH. COMPUTED ON A SINGLE TURN BASIS
     elif ITYMSH == 1 or ITYMSH == 3:
 
-        NELREF = conductor.gird_input["NELREF"]
-        SIZMIN = conductor.gird_input["SIZMIN"]
-        SIZMAX = conductor.gird_input["SIZMAX"]
-        DXINCRE = conductor.gird_input["DXINCRE"]
+        NELREF = conductor.grid_input["NELREF"]
+        SIZMIN = conductor.grid_input["SIZMIN"]
+        SIZMAX = conductor.grid_input["SIZMAX"]
+        DXINCRE = conductor.grid_input["DXINCRE"]
 
         # total number of elements to be used for coarse region of the mesh
         NELCOARS = NELEMS - NELREF
@@ -154,7 +154,7 @@ def conductor_spatial_discretization(simulation, conductor):
     # end function
 
 
-def uniform_spatial_discretization(conductor: Conductor, _=None) -> np.ndarray:
+def uniform_spatial_discretization(conductor: object, _=None) -> np.ndarray:
     """Evaluates straight uniform spatial discretization in z direction.
 
     Args:
@@ -170,7 +170,7 @@ def uniform_spatial_discretization(conductor: Conductor, _=None) -> np.ndarray:
 
 
 def uniform_angular_discretization(
-    conductor: Conductor,
+    conductor: object,
     comp: Union[
         StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent
     ],
@@ -192,7 +192,7 @@ def uniform_angular_discretization(
 
 
 def fixed_refined_spatial_discretization(
-    conductor: Conductor, zcoord: np.ndarray
+    conductor: object, zcoord: np.ndarray
 ) -> np.ndarray:
     """Function that evaluate fixed refined spatial discretization along z direction.
 
@@ -210,54 +210,54 @@ def fixed_refined_spatial_discretization(
     n_elem = dict()
 
     # total number of elements to be used for coarse region of the mesh
-    n_elem["coarse"] = conductor.gird_input["NELEMS"] - conductor.gird_input["NELREF"]
+    n_elem["coarse"] = conductor.grid_input["NELEMS"] - conductor.grid_input["NELREF"]
     # number of elements to be used in coarse region left to refined mesh zone
     n_elem["left"] = round(
-        (conductor.gird_input["XBREFI"] - 0.0)
+        (conductor.grid_input["XBREFI"] - 0.0)
         / (
             conductor.inputs["XLENGTH"]
-            - (conductor.gird_input["XEREFI"] - conductor.gird_input["XBREFI"])
+            - (conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"])
         )
         * n_elem["coarse"]
     )
     n_elem["right"] = n_elem["coarse"] - n_elem["left"]
 
-    NOD_ref = conductor.gird_input["NELREF"] + 1
+    NOD_ref = conductor.grid_input["NELREF"] + 1
 
     # Refined zone discretization
     dx_ref = (
-        conductor.gird_input["XEREFI"] - conductor.gird_input["XBREFI"]
-    ) / conductor.gird_input[
+        conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"]
+    ) / conductor.grid_input[
         "NELREF"
     ]  # m refined zone discretization pitch
-    if (dx_ref >= conductor.gird_input["SIZMIN"]) and (
-        dx_ref <= conductor.gird_input["SIZMAX"]
+    if (dx_ref >= conductor.grid_input["SIZMIN"]) and (
+        dx_ref <= conductor.grid_input["SIZMAX"]
     ):
         # refined mesh
         zcoord[
-            n_elem["left"] : n_elem["left"] + conductor.gird_input["NELREF"] + 1
+            n_elem["left"] : n_elem["left"] + conductor.grid_input["NELREF"] + 1
         ] = np.linspace(
-            conductor.gird_input["XBREFI"], conductor.gird_input["XEREFI"], NOD_ref
+            conductor.grid_input["XBREFI"], conductor.grid_input["XEREFI"], NOD_ref
         )
-    elif dx_ref < conductor.gird_input["SIZMIN"]:
+    elif dx_ref < conductor.grid_input["SIZMIN"]:
         raise ValueError(
-            f"ERROR: {dx_ref=} m in refined zone < {conductor.gird_input['SIZMIN']=} m!!!\n"
+            f"ERROR: {dx_ref=} m in refined zone < {conductor.grid_input['SIZMIN']=} m!!!\n"
         )
-    elif dx_ref > conductor.gird_input["SIZMAX"]:
+    elif dx_ref > conductor.grid_input["SIZMAX"]:
         raise ValueError(
-            f"ERROR: {dx_ref=} m in refined zone > {conductor.gird_input['SIZMAX']} m!!!\n"
+            f"ERROR: {dx_ref=} m in refined zone > {conductor.grid_input['SIZMAX']} m!!!\n"
         )
 
     if n_elem["left"] > 0:
         # Discretization of coarse region left to refined zone
-        dx_try = (conductor.gird_input["XBREFI"] - 0.0) / n_elem["left"]
+        dx_try = (conductor.grid_input["XBREFI"] - 0.0) / n_elem["left"]
         dx1 = dx_ref  # dummy to not overwrite dx_ref
         ii = 0
-        while (dx_try / dx1 > conductor.gird_input["DXINCRE"]) and (
+        while (dx_try / dx1 > conductor.grid_input["DXINCRE"]) and (
             ii <= n_elem["left"]
         ):
             ii = ii + 1
-            dx = dx1 * conductor.gird_input["DXINCRE"]
+            dx = dx1 * conductor.grid_input["DXINCRE"]
             zcoord[n_elem["left"] - ii] = zcoord[n_elem["left"] + 1 - ii] - dx
             dx1 = dx
             dx_try = (zcoord[n_elem["left"] - ii] - 0.0) / (n_elem["left"] - ii)
@@ -269,31 +269,31 @@ def fixed_refined_spatial_discretization(
     if n_elem["right"] > 0:
         # Discretization of coarse region right to refined zone
         dx_try = (
-            conductor.inputs["XLENGTH"] - conductor.gird_input["XEREFI"]
+            conductor.inputs["XLENGTH"] - conductor.grid_input["XEREFI"]
         ) / n_elem["right"]
         dx1 = dx_ref  # dummy to not overwrite dx_ref
         ii = 0
-        while (dx_try / dx1 > conductor.gird_input["DXINCRE"]) and (
+        while (dx_try / dx1 > conductor.grid_input["DXINCRE"]) and (
             ii <= n_elem["right"]
         ):
             ii = ii + 1
-            dx = dx1 * conductor.gird_input["DXINCRE"]
-            zcoord[n_elem["left"] + conductor.gird_input["NELREF"] + ii] = (
-                zcoord[n_elem["left"] + conductor.gird_input["NELREF"] + ii - 1] + dx
+            dx = dx1 * conductor.grid_input["DXINCRE"]
+            zcoord[n_elem["left"] + conductor.grid_input["NELREF"] + ii] = (
+                zcoord[n_elem["left"] + conductor.grid_input["NELREF"] + ii - 1] + dx
             )
             dx1 = dx
             dx_try = (
                 conductor.inputs["XLENGTH"]
-                - zcoord[n_elem["left"] + conductor.gird_input["NELREF"] + ii]
+                - zcoord[n_elem["left"] + conductor.grid_input["NELREF"] + ii]
             ) / (n_elem["right"] - ii)
 
         zcoord[
             n_elem["left"]
-            + conductor.gird_input["NELREF"]
-            + ii : conductor.gird_input["NELEMS"]
+            + conductor.grid_input["NELREF"]
+            + ii : conductor.grid_input["NELEMS"]
             + 1
         ] = np.linspace(
-            zcoord[n_elem["left"] + conductor.gird_input["NELREF"] + ii],
+            zcoord[n_elem["left"] + conductor.grid_input["NELREF"] + ii],
             conductor.inputs["XLENGTH"],
             n_elem["right"] - ii + 1,
         )
@@ -301,7 +301,7 @@ def fixed_refined_spatial_discretization(
 
 
 def fixed_refined_angular_discretization(
-    conductor: Conductor,
+    conductor: object,
     comp: Union[
         StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent
     ],
@@ -322,12 +322,12 @@ def fixed_refined_angular_discretization(
         np.ndarray: array of length conductor.gird_features["N_nod"] with fixed refined angular discretization for helicoidal conductor components.
     """
     n_elem = dict()
-    n_elem["coarse"] = conductor.gird_input["NELEMS"] - conductor.gird_input["NELREF"]
+    n_elem["coarse"] = conductor.grid_input["NELEMS"] - conductor.grid_input["NELREF"]
     n_elem["left"] = round(
-        (conductor.gird_input["XBREFI"] - 0.0)
+        (conductor.grid_input["XBREFI"] - 0.0)
         / (
             conductor.inputs["XLENGTH"]
-            - (conductor.gird_input["XEREFI"] - conductor.gird_input["XBREFI"])
+            - (conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"])
         )
         * n_elem["coarse"]
     )
@@ -335,16 +335,16 @@ def fixed_refined_angular_discretization(
 
     n_winding = dict()
     # number of windings left to the refined region
-    n_winding["left"] = conductor.gird_input["XBREFI"] / (
+    n_winding["left"] = conductor.grid_input["XBREFI"] / (
         2 * np.pi * comp.cyl_helix.reduced_pitch
     )
     # number of windings right to the refined region
     n_winding["right"] = (
-        conductor.inputs["XLENGTH"] - conductor.gird_input["EBREFI"]
+        conductor.inputs["XLENGTH"] - conductor.grid_input["EBREFI"]
     ) / (2 * np.pi * comp.cyl_helix.reduced_pitch)
     # number of windings in the refined region
     n_winding["ref"] = (
-        conductor.gird_input["EBREFI"] - conductor.gird_input["XBREFI"]
+        conductor.grid_input["EBREFI"] - conductor.grid_input["XBREFI"]
     ) / (2 * np.pi * comp.cyl_helix.reduced_pitch)
 
     assert (
@@ -353,24 +353,24 @@ def fixed_refined_angular_discretization(
         <= 1e-15
     )
 
-    dtau_ref = 2 * np.pi * n_winding["ref"] / conductor.gird_input["NELREF"]
+    dtau_ref = 2 * np.pi * n_winding["ref"] / conductor.grid_input["NELREF"]
 
-    if (dtau_ref >= conductor.gird_input["SIZMIN"]) and (
-        dtau_ref <= conductor.gird_input["SIZMAX"]
+    if (dtau_ref >= conductor.grid_input["SIZMIN"]) and (
+        dtau_ref <= conductor.grid_input["SIZMAX"]
     ):
 
         tau_beg = 2 * np.pi * n_winding["left"] + dtau_ref
         tau_end = 2 * np.pi * (n_winding["left"] + n_winding["ref"])
         tau[
-            n_elem["left"] + 1 : (n_elem["left"] + 1) + (conductor.gird_input["NELREF"])
-        ] = np.linspace(tau_beg, tau_end, conductor.gird_input["NELREF"] + 1)
-    elif dtau_ref < conductor.gird_input["SIZMIN"]:
+            n_elem["left"] + 1 : (n_elem["left"] + 1) + (conductor.grid_input["NELREF"])
+        ] = np.linspace(tau_beg, tau_end, conductor.grid_input["NELREF"] + 1)
+    elif dtau_ref < conductor.grid_input["SIZMIN"]:
         raise ValueError(
-            f"ERROR: {dtau_ref=} m in refined zone < {conductor.gird_input['SIZMIN']=} m!!!\n"
+            f"ERROR: {dtau_ref=} m in refined zone < {conductor.grid_input['SIZMIN']=} m!!!\n"
         )
-    elif dtau_ref > conductor.gird_input["SIZMAX"]:
+    elif dtau_ref > conductor.grid_input["SIZMAX"]:
         raise ValueError(
-            f"ERROR: {dtau_ref=} m in refined zone > {conductor.gird_input['SIZMAX']} m!!!\n"
+            f"ERROR: {dtau_ref=} m in refined zone > {conductor.grid_input['SIZMAX']} m!!!\n"
         )
 
     if n_elem["left"] > 0:
@@ -378,10 +378,10 @@ def fixed_refined_angular_discretization(
         d_tau_try = 2 * np.pi * n_winding["left"] / n_elem["left"]
         d_tau1 = dtau_ref
         ii = 0
-        while (d_tau_try / d_tau1 > conductor.gird_input["DXINCRE"]) and (
+        while (d_tau_try / d_tau1 > conductor.grid_input["DXINCRE"]) and (
             ii <= n_elem["left"]
         ):
-            d_tau = d_tau1 * conductor.gird_input["DXINCRE"]
+            d_tau = d_tau1 * conductor.grid_input["DXINCRE"]
             tau[n_elem["left"] - ii] = tau[n_elem["left"] + 1 - ii] - d_tau
             d_tau1 = d_tau
             d_tau_try = tau[n_elem["left"] - ii] / (n_elem["left"] - ii - 1)
@@ -398,31 +398,31 @@ def fixed_refined_angular_discretization(
         d_tau_try = 2 * np.pi * n_winding["right"] / n_elem["right"]
         d_tau1 = dtau_ref
         ii = 0
-        while (d_tau_try / d_tau1 > conductor.gird_input["DXINCRE"]) and (
+        while (d_tau_try / d_tau1 > conductor.grid_input["DXINCRE"]) and (
             ii <= n_elem["right"]
         ):
-            d_tau = d_tau1 * conductor.gird_input["DXINCRE"]
-            tau[(n_elem["left"] + 1) + (conductor.gird_input["NELREF"]) + ii] = (
-                tau[(n_elem["left"] + 1) + (conductor.gird_input["NELREF"]) + ii - 1]
+            d_tau = d_tau1 * conductor.grid_input["DXINCRE"]
+            tau[(n_elem["left"] + 1) + (conductor.grid_input["NELREF"]) + ii] = (
+                tau[(n_elem["left"] + 1) + (conductor.grid_input["NELREF"]) + ii - 1]
                 + d_tau
             )
             d_tau1 = d_tau
             d_tau_try = (
                 2 * np.pi * comp.cyl_helix.winding_number
-                - tau[(n_elem["left"] + 1) + (conductor.gird_input["NELREF"]) + ii]
+                - tau[(n_elem["left"] + 1) + (conductor.grid_input["NELREF"]) + ii]
             ) / (n_elem["left"] - ii - 1)
             ii = ii + 1
 
-        tau_beg = tau[(n_elem["left"] + 1) + (conductor.gird_input["NELREF"]) + ii - 1]
+        tau_beg = tau[(n_elem["left"] + 1) + (conductor.grid_input["NELREF"]) + ii - 1]
         tau_end = 2 * np.pi * comp.cyl_helix.winding_number
         tau[
-            (n_elem["left"] + 1) + (conductor.gird_input["NELREF"]) + ii - 1 : -1
+            (n_elem["left"] + 1) + (conductor.grid_input["NELREF"]) + ii - 1 : -1
         ] = np.linspace(tau_beg, tau_end, n_elem["right"] + 1 - ii + 1)
 
     return tau
 
 
-def user_defined_grid(conductor: Conductor):
+def user_defined_grid(conductor: object):
     """Fuction that loads user defined spatial discretization of the generic conductor component.
 
     Args:
@@ -479,7 +479,7 @@ def check_grid_features(
         raise ValueError(message)
 
 
-def check_user_defined_grid(dfs: dict, conductor: Conductor, file_path: str) -> int:
+def check_user_defined_grid(dfs: dict, conductor: object, file_path: str) -> int:
     """Function that checks the consistency of the user defined spatial discretization for all user defined components.
 
     Args:
@@ -520,7 +520,7 @@ def check_user_defined_grid(dfs: dict, conductor: Conductor, file_path: str) -> 
 
 
 def check_max_node_number(
-    n_nod: int, conductor: Conductor, file_path: str, *args: str
+    n_nod: int, conductor: object, file_path: str, *args: str
 ) -> int:
     """Function that checks if the number of nodes of the spatial discretization is lower than the maximum allowed value.
 
