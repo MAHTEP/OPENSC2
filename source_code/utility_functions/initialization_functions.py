@@ -13,6 +13,7 @@ from strand_component import StrandComponent
 from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
 from strand_superconductor_component import StrandSuperconductorComponent
+from cylindrical_helix import CylindricalHelix
 
 logger_discretization = logging.getLogger("opensc2Logger.discretization")
 
@@ -436,7 +437,10 @@ def user_defined_grid(conductor: object):
     # Load all sheets of user defined grid auxiliary input file.
     coord_dfs = pd.read_excel(file_path, sheet_name=None)
     # Check user defined grid features.
-    conductor.grid_features["N_nod"], conductor.grid_features["zcoord"] = check_user_defined_grid(coord_dfs, file_path)
+    (
+        conductor.grid_features["N_nod"],
+        conductor.grid_features["zcoord"],
+    ) = check_user_defined_grid(coord_dfs, file_path)
     # Evaluate the number of elements from the checked number of nodes.
     conductor.grid_input["NELEMS"] = conductor.grid_features["N_nod"] - 1
     # Assign spatial discretization coordinates to each conductor component.
@@ -483,7 +487,9 @@ def check_grid_features(
         raise ValueError(message)
 
 
-def check_user_defined_grid(dfs: dict, conductor: object, file_path: str) -> "tuple[int, np.ndarray]":
+def check_user_defined_grid(
+    dfs: dict, conductor: object, file_path: str
+) -> "tuple[int, np.ndarray]":
     """Function that checks the consistency of the user defined spatial discretization for all user defined components.
 
     Args:
@@ -579,3 +585,67 @@ def assign_user_defined_spatial_discretization(
     comp.coordinate["x"] = df["x [m]"].to_numpy()
     comp.coordinate["y"] = df["y [m]"].to_numpy()
     comp.coordinate["z"] = df["z [m]"].to_numpy()
+
+
+def build_coordinates_of_barycenter(cond:object, comp: Union[
+        FluidComponent,
+        JacketComponent,
+        StrandMixedComponent,
+        StrandStabilizerComponent,
+        StrandSuperconductorComponent,
+    ]):
+    """Function that builds the coordinates of the barycenter of conductor components.
+
+    Args:
+        cond (object): conductor object, has all the information to evaluate load and assign user defined grid.
+        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
+
+    Raises:
+        ValueError: if costetha is not equal to 1 for FluidComponent and JacketComponent.
+    """
+
+    if comp.inputs["COSTETA"] == 1.0:
+        comp.coordinate["x"] = comp.inputs["X_barycenter"] * np.ones(
+            cond.grid_features["N_nod"]
+        )
+        comp.coordinate["y"] = comp.inputs["Y_barycenter"] * np.ones(
+            cond.grid_features["N_nod"]
+        )
+        if (
+            cond.grid_input["ITYMSH"] == 0
+            or cond.grid_input["ITYMSH"] == 2
+            or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
+        ):
+            comp.coordinate["z"] = uniform_spatial_discretization(cond)
+        elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
+            comp.coordinate["z"] = fixed_refined_spatial_discretization(
+                cond, zcoord=np.zeros(cond.grid_features["N_nod"])
+            )
+    else:
+        if issubclass(comp, StrandComponent):
+            comp.cyl_helix = CylindricalHelix(
+                comp.inputs["X_barycenter"],
+                comp.inputs["Y_barycenter"],
+                cond.inputs["XLENGHT"],
+                comp.inputs["COSTHETA"],
+            )
+            if (
+                cond.grid_input["ITYMSH"] == 0
+                or cond.grid_input["ITYMSH"] == 2
+                or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
+            ):
+                tau = uniform_angular_discretization(cond, comp)
+            elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
+                tau = fixed_refined_angular_discretization(cond, comp)
+            (
+                comp.coordinate["x"],
+                comp.coordinate["y"],
+                comp.coordinate["z"],
+            ) = comp.cyl_helix.helix_parametrization(tau)
+        else:
+            raise ValueError(
+                r"$Cos(\theta)$"
+                + f"for {comp.__class__.__name__} must be 1.0; current value {comp.inputs['COSTETA'] = }\n"
+            )
+    
+    check_grid_features(cond.inputs["XLENGHT"],comp)
