@@ -506,11 +506,10 @@ def check_user_defined_grid(dfs: dict, conductor: object, file_path: str) -> int
     )
 
     for comp in conductor.inventory["all_component"].collection[1:]:
-        if issubclass(comp, StrandComponent):
-            if dfs[comp.ID].shape[1] < 3:
-                raise ValueError(
-                    f"User must provide three coordinates in sheeT {comp.ID} of input file {file_path}.\n"
-                )
+        if dfs[comp.ID].shape[1] < 3:
+            raise ValueError(
+                f"User must provide three coordinates in sheeT {comp.ID} of input file {file_path}.\n"
+            )
         if dfs[comp.ID].shape[0] != n_node_ref:
             raise ValueError(
                 f"Inconsistent number of user defined nodes. The number of nodes in sheet {comp.ID} of file {file_path} must be equal to the one defined in sheet {comp_ref.ID} of the same file."
@@ -562,9 +561,6 @@ def assign_user_defined_spatial_discretization(
         comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which user defines spatial discretization.
         dfs (dict): dictionary of dataframes, each dataframes has the coordinate of the corresponding coductor component.
     """
-    if isinstance(comp, FluidComponent, JacketComponent):
-        comp.coordinate["z"] = dfs[comp.ID]["z [m]"].to_numpy()
-    elif issubclass(comp, StrandComponent):
-        comp.coordinate["x"] = dfs[comp.ID]["x [m]"].to_numpy()
-        comp.coordinate["y"] = dfs[comp.ID]["y [m]"].to_numpy()
-        comp.coordinate["z"] = dfs[comp.ID]["z [m]"].to_numpy()
+    comp.coordinate["x"] = dfs[comp.ID]["x [m]"].to_numpy()
+    comp.coordinate["y"] = dfs[comp.ID]["y [m]"].to_numpy()
+    comp.coordinate["z"] = dfs[comp.ID]["z [m]"].to_numpy()
