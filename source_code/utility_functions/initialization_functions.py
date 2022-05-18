@@ -438,7 +438,7 @@ def user_defined_grid(conductor: object):
     conductor.grid_features["N_nod"] = check_user_defined_grid(coord_dfs, file_path)
     # Assign spatial discretization coordinates to each conductor component.
     for comp in conductor.inventory["all_component"].collection:
-        assign_user_defined_spatial_discretization(comp, coord_dfs)
+        assign_user_defined_spatial_discretization(comp, coord_dfs[comp.ID])
 
 
 def check_grid_features(
@@ -553,14 +553,14 @@ def assign_user_defined_spatial_discretization(
         StrandStabilizerComponent,
         StrandSuperconductorComponent,
     ],
-    dfs: dict,
+    df: pd.DataFrame,
 ):
     """Function that assigns the user defined coordinates in sheet comp.ID of auxiliary input file with the spatial discretization to the corresponding conductor component.
 
     Args:
         comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which user defines spatial discretization.
-        dfs (dict): dictionary of dataframes, each dataframes has the coordinate of the corresponding coductor component.
+        dfs (pd.DataFrame): dataframe with the coordinate of the corresponding coductor component.
     """
-    comp.coordinate["x"] = dfs[comp.ID]["x [m]"].to_numpy()
-    comp.coordinate["y"] = dfs[comp.ID]["y [m]"].to_numpy()
-    comp.coordinate["z"] = dfs[comp.ID]["z [m]"].to_numpy()
+    comp.coordinate["x"] = df["x [m]"].to_numpy()
+    comp.coordinate["y"] = df["y [m]"].to_numpy()
+    comp.coordinate["z"] = df["z [m]"].to_numpy()
