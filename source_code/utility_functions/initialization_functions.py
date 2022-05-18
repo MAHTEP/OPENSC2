@@ -7,6 +7,7 @@ from typing import Union
 
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
+
 # from conductor import Conductor
 from strand_component import StrandComponent
 from strand_mixed_component import StrandMixedComponent
@@ -435,7 +436,7 @@ def user_defined_grid(conductor: object):
     # Load all sheets of user defined grid auxiliary input file.
     coord_dfs = pd.read_excel(file_path, sheet_name=None)
     # Check user defined grid features.
-    conductor.grid_features["N_nod"] = check_user_defined_grid(coord_dfs, file_path)
+    conductor.grid_features["N_nod"], conductor.grid_features["zcoord"] = check_user_defined_grid(coord_dfs, file_path)
     # Assign spatial discretization coordinates to each conductor component.
     for comp in conductor.inventory["all_component"].collection:
         assign_user_defined_spatial_discretization(comp, coord_dfs[comp.ID])
@@ -479,7 +480,7 @@ def check_grid_features(
         raise ValueError(message)
 
 
-def check_user_defined_grid(dfs: dict, conductor: object, file_path: str) -> int:
+def check_user_defined_grid(dfs: dict, conductor: object, file_path: str) -> "tuple[int, np.ndarray]":
     """Function that checks the consistency of the user defined spatial discretization for all user defined components.
 
     Args:
@@ -491,9 +492,10 @@ def check_user_defined_grid(dfs: dict, conductor: object, file_path: str) -> int
         ValueError: if the number of sheets in used defined auxiliary input file differs from the total number of conductor components defined.
         ValueError: if less than three spatial coordinates are provided (x, y, z).
         ValueError: if the number of nodes is not the same in at least one sheet of the file. The reference number of nodes is inferred from the first sheet of the file.
+        ValueError: if the z component of the spatial discretization is not exactly the same for FluidComponent and JacketComponent objects.
 
     Returns:
-        (int): total number of nodes of the user defined spatial discretization.
+        tuple[int, np.ndarray]: total number of nodes of the user defined spatial discretization; z component of the conuctor spatial discretization: it is the z component of the spatial discretization of the first deifined FluidComponent object.
     """
     if len(dfs) != conductor.inventory["all_component"].number:
         raise ValueError(
@@ -504,6 +506,7 @@ def check_user_defined_grid(dfs: dict, conductor: object, file_path: str) -> int
     n_node_ref = check_max_node_number(
         dfs[comp_ref.ID].shape[0], conductor, file_path, comp_ref.ID
     )
+    z_ref = dfs[comp_ref.ID]["z [m]"].to_numpy()
 
     for comp in conductor.inventory["all_component"].collection[1:]:
         if dfs[comp.ID].shape[1] < 3:
@@ -515,7 +518,16 @@ def check_user_defined_grid(dfs: dict, conductor: object, file_path: str) -> int
                 f"Inconsistent number of user defined nodes. The number of nodes in sheet {comp.ID} of file {file_path} must be equal to the one defined in sheet {comp_ref.ID} of the same file."
             )
 
-    return n_node_ref
+        # Check that z component of spatial coordinates for FluidComponent
+        # and JacketComponent is the same of the reference component (the first
+        # FluidComponent).
+        if issubclass(comp, (FluidComponent, JacketComponent)):
+            if not np.array_equal(z_ref, dfs[comp.ID]["z [m]"].to_numpy()):
+                raise ValueError(
+                    f"User must providethe same z component of the coordinate for FluidComponent and JacketComponent objects. Please check column z [m] in sheet {comp.ID} of file {file_path}."
+                )
+
+    return n_node_ref, z_ref
 
 
 def check_max_node_number(
