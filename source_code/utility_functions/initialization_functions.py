@@ -527,14 +527,10 @@ def check_user_defined_grid(
                 f"Inconsistent number of user defined nodes. The number of nodes in sheet {comp.ID} of file {file_path} must be equal to the one defined in sheet {comp_ref.ID} of the same file."
             )
 
-        # Check that z component of spatial coordinates for FluidComponent
-        # and JacketComponent is the same of the reference component (the first
-        # FluidComponent).
-        if issubclass(comp, (FluidComponent, JacketComponent)):
-            if not np.array_equal(z_ref, dfs[comp.ID]["z [m]"].to_numpy()):
-                raise ValueError(
-                    f"User must providethe same z component of the coordinate for FluidComponent and JacketComponent objects. Please check column z [m] in sheet {comp.ID} of file {file_path}."
-                )
+        if not np.array_equal(z_ref, dfs[comp.ID]["z [m]"].to_numpy()):
+            raise ValueError(
+                f"User must provide the same z component of the coordinate for FluidComponent, JacketComponent and StrandComponent objects. Please check column z [m] in sheet {comp.ID} of file {file_path}."
+            )
 
     return n_node_ref, z_ref
 
@@ -604,7 +600,7 @@ def build_coordinates_of_barycenter(cond:object, comp: Union[
         ValueError: if costetha is not equal to 1 for FluidComponent and JacketComponent.
     """
 
-    if comp.inputs["COSTETA"] == 1.0:
+    if comp.inputs["COSTETA"] == 1:
         comp.coordinate["x"] = comp.inputs["X_barycenter"] * np.ones(
             cond.grid_features["N_nod"]
         )
