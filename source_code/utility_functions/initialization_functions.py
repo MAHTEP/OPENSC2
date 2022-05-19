@@ -18,141 +18,35 @@ from cylindrical_helix import CylindricalHelix
 logger_discretization = logging.getLogger("opensc2Logger.discretization")
 
 
-def conductor_spatial_discretization(simulation, conductor):
+def conductor_spatial_discretization(conductor:object):
+    """Function that evaluate the z component of the spatial discretization of conductor.
 
+    Args:
+        conductor (object): object whit the information to evaluate the spatial discretization and of which the spatial discretization should be evaluated.
     """
-    ##############################################################################
-    # CREATE CREATE THE MESH COORDINATES
-    # gridO function to create the grid for the solver
-    # INPUTS:
-    # NELEMS = number of elements(input parameter)
-    # XBREFI = starting coordinate of a refined zone, if any (input parameter)
-    # XEREFI = end coordinate of a refined zone, if any (input parameter)
-    # NELREF = number of elements in the refined zone, if any (input parameter)
-    # grid_input["ITYMSH"] = mesh type: =0 fixed and uniform, =1 fixed refined,
-    # =3 adapted with # initial refinement =-1 read from file
-    # -  XLENGTH = conductor length (input parameter, property of the conductor)
-    # OBSOLETE IT is in conductor instance
-    # -  NNODES = number of points in the computational grid, computed parameter # = NELEMS + 1 OBSOLETE IT is computed
-    # Icond = conductor index OBSOLETE IT is computed
-    # OUTPUT:
-    # XCOORD = output vector containing the coordinates of the NNODES grid points
-
-    #   def grid0(self, NELEMS, sizemin, sizemax, XBREFI, XEREFI, NELREF, grid_input["ITYMSH"]):
-    #     numcond = len(conductor)
-    #     NNODES = NELEMS + 1
-    ##############################################################################
-    # ITYMSH == 1 and ITYMSH == 3 by D.Placido PoliTo 06/2020.
-    ##############################################################################
-    """
-
-    XLENGTH = conductor.inputs["XLENGTH"]
-    MAXNOD = conductor.inputs["MAXNOD"]
-    ITYMSH = conductor.grid_input["ITYMSH"]
-    NELEMS = conductor.grid_input["NELEMS"]
-    XBREFI = conductor.grid_input["XBREFI"]
-    XEREFI = conductor.grid_input["XEREFI"]
-
-    nnodes = NELEMS + 1
-    # conductor spatial discretization initialization
-    xcoord = np.zeros(nnodes)
-
-    if ITYMSH == -1:
-        # User defined mesh
-        xcoord, nnodes = conductor.load_user_defined_quantity(
-            simulation, "EXTERNAL_GRID", f"x_{conductor.name} [m]"
-        )
-        # Evaluate the number of elements from the number of nodes
-        conductor.grid_input["NELEMS"] = nnodes - 1
 
     # COMPUTE THE COORDINATES IN THE FIRST TURN
-    elif ITYMSH == 0 or ITYMSH == 2 or abs(XEREFI - XBREFI) <= 1e-3:
+    if (
+        conductor.grid_input["ITYMSH"] == 0
+        or conductor.grid_input["ITYMSH"] == 2
+        or abs(conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"]) <= 1e-3
+    ):
         # Consider the case of adaptive, not-initially-refined grid
         # UNIFORM SPACING
-        xcoord = np.linspace(0.0, XLENGTH, nnodes)
+        zcoord = uniform_spatial_discretization(conductor)
     # !*LOCALLY REFINED MESH. COMPUTED ON A SINGLE TURN BASIS
-    elif ITYMSH == 1 or ITYMSH == 3:
-
-        NELREF = conductor.grid_input["NELREF"]
-        SIZMIN = conductor.grid_input["SIZMIN"]
-        SIZMAX = conductor.grid_input["SIZMAX"]
-        DXINCRE = conductor.grid_input["DXINCRE"]
-
-        # total number of elements to be used for coarse region of the mesh
-        NELCOARS = NELEMS - NELREF
-        # number of elements to be used in coarse region left to refined mesh zone
-        NELLEFT = round((XBREFI - 0.0) / (XLENGTH - (XEREFI - XBREFI)) * NELCOARS)
-        NELRIGHT = NELCOARS - NELLEFT
-
-        NOD_ref = NELREF + 1
-
-        # Refined zone discretization
-        dx_ref = (XEREFI - XBREFI) / NELREF  # m refined zone discretization pitch
-        if (dx_ref >= SIZMIN) and (dx_ref <= SIZMAX):
-            # refined mesh
-            xcoord[NELLEFT : NELLEFT + NELREF + 1] = np.linspace(
-                XBREFI, XEREFI, NOD_ref
-            )
-        elif dx_ref < SIZMIN:
-            raise ValueError("ERROR: GRID0 dx in refined zone < sizemin!!!\n")
-        elif dx_ref > SIZMAX:
-            raise ValueError("ERROR: GRID0 dx in refined zone > sizemax!!!\n")
-
-        if NELLEFT > 0:
-            # Discretization of coarse region left to refined zone
-            dx_try = (XBREFI - 0.0) / NELLEFT
-            dx1 = dx_ref  # dummy to not overwrite dx_ref
-            ii = 0
-            while (dx_try / dx1 > DXINCRE) and (ii <= NELLEFT):
-                ii = ii + 1
-                dx = dx1 * DXINCRE
-                xcoord[NELLEFT - ii] = xcoord[NELLEFT + 1 - ii] - dx
-                dx1 = dx
-                dx_try = (xcoord[NELLEFT - ii] - 0.0) / (NELLEFT - ii)
-
-            xcoord[0 : NELLEFT - ii + 1] = np.linspace(
-                0.0, xcoord[NELLEFT - ii], NELLEFT - ii + 1
-            )
-
-        if NELRIGHT > 0:
-            # Discretization of coarse region right to refined zone
-            dx_try = (XLENGTH - XEREFI) / NELRIGHT
-            dx1 = dx_ref  # dummy to not overwrite dx_ref
-            ii = 0
-            while (dx_try / dx1 > DXINCRE) and (ii <= NELRIGHT):
-                ii = ii + 1
-                dx = dx1 * DXINCRE
-                xcoord[NELLEFT + NELREF + ii] = xcoord[NELLEFT + NELREF + ii - 1] + dx
-                dx1 = dx
-                dx_try = (XLENGTH - xcoord[NELLEFT + NELREF + ii]) / (NELRIGHT - ii)
-
-            xcoord[NELLEFT + NELREF + ii : NELEMS + 1] = np.linspace(
-                xcoord[NELLEFT + NELREF + ii], XLENGTH, NELRIGHT - ii + 1
-            )
-
-    if len(xcoord) > MAXNOD:
-        warnings.warn(
-            f"Number of discretization nodes larger than maximum allowed \
-                  values:\n{len(xcoord)} > {MAXNOD}\n"
+    elif conductor.grid_input["ITYMSH"] == 1 or conductor.grid_input["ITYMSH"] == 3:
+        zcoord = fixed_refined_spatial_discretization(
+            conductor, np.zeros(conductor.grid_features["N_nod"])
         )
 
-    if xcoord[0] < 0.0 or xcoord[0] > 0.0:
-        warnings.warn(
-            f"From GRID0 XCOORD[0] ~= 0!\nXCOORD[0] = {xcoord[0]}, icond \
-                  = {conductor.ICOND}"
-        )
+    check_grid_features[conductor.inputs["XLENGHT"], zcoord[0], zcoord[-1]]
 
-    if xcoord[-1] < XLENGTH or xcoord[-1] > XLENGTH:
-        warnings.warn(
-            f"WARNING> From GRID0:  XCOORD[-1] ~= XLENGTH!\nXCOORD[-1] = \
-                  {xcoord[-1]}, icond = {conductor.ICOND}"
-        )
-        conductor.inHard = xcoord
-
-    conductor.gird_features["N_nod"] = nnodes
-    conductor.gird_features["xcoord"] = xcoord
-    conductor.gird_features["Delta_x"] = xcoord[1:] - xcoord[:-1]
-    conductor.gird_features["dx"] = conductor.gird_features["Delta_x"].max()
+    conductor.gird_features["zcoord"] = zcoord
+    conductor.gird_features["delta_z"] = (
+        conductor.gird_features["zcoord"][1:] - conductor.gird_features["zcoord"][:-1]
+    )
+    conductor.gird_features["dz"] = conductor.gird_features["delta_z"].max()
     # end function
 
 
@@ -583,13 +477,16 @@ def assign_user_defined_spatial_discretization(
     comp.coordinate["z"] = df["z [m]"].to_numpy()
 
 
-def build_coordinates_of_barycenter(cond:object, comp: Union[
+def build_coordinates_of_barycenter(
+    cond: object,
+    comp: Union[
         FluidComponent,
         JacketComponent,
         StrandMixedComponent,
         StrandStabilizerComponent,
         StrandSuperconductorComponent,
-    ]):
+    ],
+):
     """Function that builds the coordinates of the barycenter of conductor components.
 
     Args:
@@ -643,5 +540,5 @@ def build_coordinates_of_barycenter(cond:object, comp: Union[
                 r"$Cos(\theta)$"
                 + f"for {comp.__class__.__name__} must be 1.0; current value {comp.inputs['COSTETA'] = }\n"
             )
-    
-    check_grid_features(cond.inputs["XLENGHT"],comp)
+
+    check_grid_features(cond.inputs["XLENGHT"], comp)
