@@ -719,7 +719,7 @@ class SolidComponent:
             # call load_user_defined_quantity on the component.
             self.dict_node_pt["IOP"] = do_interpolation(
                 self.current_interpolator,
-                conductor.grid_features["xcoord"],
+                conductor.grid_features["zcoord"],
                 conductor.cond_time[-1],
                 self.current_interp_flag,
             )
@@ -771,7 +771,7 @@ class SolidComponent:
                 # call load_user_defined_quantity on the component.
                 self.dict_node_pt["B_field"] = do_interpolation(
                     self.bfield_interpolator,
-                    conductor.grid_features["xcoord"],
+                    conductor.grid_features["zcoord"],
                     conductor.cond_time[-1],
                     self.bfield_interp_flag,
                 )
@@ -888,7 +888,7 @@ class SolidComponent:
 
                 self.dict_node_pt["EXTFLX"][:, 0] = do_interpolation(
                     self.heat_interpolator,
-                    conductor.grid_features["xcoord"],
+                    conductor.grid_features["zcoord"],
                     conductor.cond_time[-1],
                     self.heat_interp_flag,
                 )
@@ -902,7 +902,7 @@ class SolidComponent:
                 # call method load_user_defined_quantity to compute heat and overwrite the previous values.
                 self.dict_node_pt["EXTFLX"][:, 0] = do_interpolation(
                     self.heat_interpolator,
-                    conductor.grid_features["xcoord"],
+                    conductor.grid_features["zcoord"],
                     conductor.cond_time[-1],
                     self.heat_interp_flag,
                 )
@@ -916,12 +916,12 @@ class SolidComponent:
         # Compute at each time step since the mesh can change
         lower_bound = np.min(
             np.nonzero(
-                conductor.grid_features["xcoord"] >= self.operations["XQBEG"]
+                conductor.grid_features["zcoord"] >= self.operations["XQBEG"]
             )
         )
         upper_bound = np.max(
             np.nonzero(
-                conductor.grid_features["xcoord"] <= self.operations["XQEND"]
+                conductor.grid_features["zcoord"] <= self.operations["XQEND"]
             )
         )
         if self.operations["IQFUN"] == 1:
@@ -987,7 +987,7 @@ class SolidComponent:
         # --------------------------------------------------------------------------
         # self        I      object            python object of
         #                                      class SolidComponent           -
-        # xcoord*     I      np array float    conductor spatial
+        # zcoord*     I      np array float    conductor spatial
         #                                      discretization                  m
         # JHTFLX      O      np array float    Joule heating flux
         #                                      vector                          W/m^2
@@ -995,9 +995,9 @@ class SolidComponent:
         # Invoched functions/methods: none
         #
         ############################################################################
-        # * xcoord is given by conductor.xcoord
+        # * zcoord is given by conductor.zcoord
         # N.B. JHTFLX is a SolidComponent attribute so its value can be assigned
-        # directly, it has the same of shape of xcoord and it is a np array.
+        # directly, it has the same of shape of zcoord and it is a np array.
         ############################################################################
         #
         # Author D. Placido Polito 06/2020
@@ -1058,7 +1058,7 @@ class SolidComponent:
         # --------------------------------------------------------------------------
         # self        I      object            python object of
         #                                      class SolidComponent           -
-        # xcoord*     I      np array float    conductor spatial
+        # zcoord*     I      np array float    conductor spatial
         #                                      discretization                  m
         # EEXT        O      np array float    external heating vector         MJ
         # EJHT        O      np array float    external Joule heating
@@ -1067,9 +1067,9 @@ class SolidComponent:
         # Invoched functions/methods: none
         #
         ############################################################################
-        # * xcoord is given by conductor.xcoord
+        # * zcoord is given by conductor.zcoord
         # N.B. EEXT and EJHT are SolidComponent attributes so therir value can be
-        # assigned directly they have the same of shape of xcoord and they are np
+        # assigned directly they have the same of shape of zcoord and they are np
         # arrays.
         ############################################################################
         #

@@ -248,10 +248,10 @@ class Conductor:
             )
         if (
             np.max(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"])
-            > self.inputs["XLENGTH"]
+            > self.inputs["ZLENGTH"]
         ):
             raise ValueError(
-                f"Equipotential surface coordinate cannot exceed conductor length:\n{np.max(self.operations['EQUIPOTENTIAL_SURFACE_COORDINATE'])=}m;\n{self.inputs['XLENGTH']=}m"
+                f"Equipotential surface coordinate cannot exceed conductor length:\n{np.max(self.operations['EQUIPOTENTIAL_SURFACE_COORDINATE'])=}m;\n{self.inputs['ZLENGTH']=}m"
             )
         if np.min(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]) < 0.0:
             raise ValueError(
@@ -600,14 +600,14 @@ class Conductor:
         )
         # Adjust the user defined diagnostic.
         self.Time_save = set_diagnostic(
-            self.Time_save, lb=0.0, ub=self.inputs["XLENGTH"]
+            self.Time_save, lb=0.0, ub=self.inputs["ZLENGTH"]
         )
         # Check on time evolution diagnostic.
-        if self.Time_save.max() > self.inputs["XLENGTH"]:
+        if self.Time_save.max() > self.inputs["ZLENGTH"]:
             raise ValueError(
-                f"File {self.file_input['OUTPUT']}, sheet Time, conductor {self.ID}: impossible to save time evolutions at axial coordinate {self.Time_save.max()} s since it is ouside the computational domain of the simulation [0, {self.inputs['XLENGTH']}] m.\n"
+                f"File {self.file_input['OUTPUT']}, sheet Time, conductor {self.ID}: impossible to save time evolutions at axial coordinate {self.Time_save.max()} s since it is ouside the computational domain of the simulation [0, {self.inputs['ZLENGTH']}] m.\n"
             )
-        # End if self.Time_save.max() > self.inputs["XLENGTH"]
+        # End if self.Time_save.max() > self.inputs["ZLENGTH"]
 
         # declare dictionaries to store Figure and axes objects to constructi real \
         # time figures (cdp, 10/2020)
@@ -1771,7 +1771,7 @@ class Conductor:
         # 		# scalar (cdp, 07/2020)
         # 		s_comp.TEMOUT = s_comp.dict_node_pt["temperature"][-1]
         # 	# call function f_plot to make property plots (cdp, 07/2020)
-        # 	#f_plot(s_comp, self.grid_features["xcoord"])
+        # 	#f_plot(s_comp, self.grid_features["zcoord"])
 
         # Call function SolidComponents_T_initialization to initialize \
         # SolidComponent temperature spatial distribution from FluidComponent \
@@ -1829,8 +1829,8 @@ class Conductor:
             # N.B. queste istruzioni posso inserirle in un metodo della classe.
             self.E_sol_ini = self.E_sol_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                 (
-                    self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
-                    - self.grid_features["xcoord"][0:-1]
+                    self.grid_features["zcoord"][1 : self.grid_features["N_nod"]]
+                    - self.grid_features["zcoord"][0:-1]
                 )
                 * s_comp.dict_Gauss_pt["total_density"]
                 * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -1839,8 +1839,8 @@ class Conductor:
             if s_comp.NAME != "Z_JACKET":
                 self.E_str_ini = self.E_str_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
-                        - self.grid_features["xcoord"][0:-1]
+                        self.grid_features["zcoord"][1 : self.grid_features["N_nod"]]
+                        - self.grid_features["zcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
                     * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -1849,8 +1849,8 @@ class Conductor:
             else:
                 self.E_jk_ini = self.E_jk_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
-                        - self.grid_features["xcoord"][0:-1]
+                        self.grid_features["zcoord"][1 : self.grid_features["N_nod"]]
+                        - self.grid_features["zcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
                     * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -2198,8 +2198,8 @@ class Conductor:
         for s_comp in self.inventory["SolidComponent"].collection:
             self.E_sol_fin = self.E_sol_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                 (
-                    self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
-                    - self.grid_features["xcoord"][0:-1]
+                    self.grid_features["zcoord"][1 : self.grid_features["N_nod"]]
+                    - self.grid_features["zcoord"][0:-1]
                 )
                 * s_comp.dict_Gauss_pt["total_density"]
                 * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -2208,8 +2208,8 @@ class Conductor:
             if s_comp.NAME != "Z_JACKET":
                 self.E_str_fin = self.E_str_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
-                        - self.grid_features["xcoord"][0:-1]
+                        self.grid_features["zcoord"][1 : self.grid_features["N_nod"]]
+                        - self.grid_features["zcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
                     * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -2218,8 +2218,8 @@ class Conductor:
             else:
                 self.E_jk_fin = self.E_jk_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
-                        self.grid_features["xcoord"][1 : self.grid_features["N_nod"]]
-                        - self.grid_features["xcoord"][0:-1]
+                        self.grid_features["zcoord"][1 : self.grid_features["N_nod"]]
+                        - self.grid_features["zcoord"][0:-1]
                     )
                     * s_comp.dict_Gauss_pt["total_density"]
                     * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
@@ -2890,7 +2890,7 @@ class Conductor:
                             self.dict_Gauss_pt["HTC"]["env_sol"][key]["conv"]
                             + self.dict_Gauss_pt["HTC"]["env_sol"][key]["rad"]
                         )
-                        * self.grid_features["Delta_x"]
+                        * self.grid_features["delta_z"]
                         * (
                             simulation.environment.inputs["Temperature"]
                             - jacket.dict_Gauss_pt["temperature"]
@@ -2904,7 +2904,7 @@ class Conductor:
                         self.dict_Gauss_pt["HTC"]["env_sol"][key]["conv"]
                         + self.dict_Gauss_pt["HTC"]["env_sol"][key]["rad"]
                     )
-                    * self.grid_features["Delta_x"]
+                    * self.grid_features["delta_z"]
                     * (
                         simulation.environment.inputs["Temperature"]
                         - jacket.dict_Gauss_pt["temperature"]
@@ -2942,7 +2942,7 @@ class Conductor:
                 if abs(self.dict_df_coupling["HTC_choice"].at[jk_r.ID, jk_c.ID]) == 3:
                     self.heat_rad_jk[f"{jk_r.ID}_{jk_c.ID}"] = (
                         self.dict_df_coupling["contact_perimeter"].at[jk_r.ID, jk_c.ID]
-                        * self.grid_features["Delta_x"]
+                        * self.grid_features["delta_z"]
                         * self.dict_Gauss_pt["HTC"]["sol_sol"]["rad"][
                             self.dict_topology["sol_sol"][jk_r.ID][jk_c.ID]
                         ]
@@ -2975,7 +2975,7 @@ class Conductor:
                     self.dict_df_coupling["contact_perimeter"].at[
                         environment.KIND, jk.ID
                     ]
-                    * self.grid_features["Delta_x"]
+                    * self.grid_features["delta_z"]
                     * (
                         self.dict_Gauss_pt["HTC"]["env_sol"][key]["conv"]
                         + self.dict_Gauss_pt["HTC"]["env_sol"][key]["rad"]

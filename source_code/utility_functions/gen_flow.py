@@ -137,7 +137,7 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             )
         # Compute velocity invoking method compute_velocity_gen_flow
         velocity = fluid_comp.coolant.compute_velocity_gen_flow(
-            cond.inputs["XLENGTH"],
+            cond.inputs["ZLENGTH"],
             fluid_comp.channel,
             Max_iter,
             delta_p,
@@ -347,7 +347,7 @@ def get_missing_pressure_no_hydraulic_parallel(
     # geometry coefficient, Fanning friction factor considered (cdp, 09/2020)
     g0 = (
         2.0
-        * cond.inputs["XLENGTH"]
+        * cond.inputs["ZLENGTH"]
         / (
             fluid_comp.channel.inputs["HYDIAMETER"]
             * (fluid_comp.channel.inputs["CROSSECTION"] ** 2)
@@ -648,7 +648,7 @@ def abs_intial_equal_1_hp(cond, chan_group, N_group, path, Max_iter, tol):
         )
         # Compute velocity invoking method compute_velocity_gen_flow
         velocity = fluid_comp.coolant.compute_velocity_gen_flow(
-            cond.inputs["XLENGTH"],
+            cond.inputs["ZLENGTH"],
             fluid_comp.channel,
             Max_iter,
             delta_p,
@@ -767,7 +767,7 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
         # pressure, Fanning friction factor considered (cdp, 09/2020)
         g0[ii] = (
             2.0
-            * cond.inputs["XLENGTH"]
+            * cond.inputs["ZLENGTH"]
             / (
                 fluid_comp.channel.inputs["HYDIAMETER"]
                 * (fluid_comp.channel.inputs["CROSSECTION"] ** 2)

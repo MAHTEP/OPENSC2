@@ -65,8 +65,8 @@ def solid_components_temperature_initialization(cond):
             if s_comp.operations["INTIAL"] == 1:
                 # linear spatial temperature distribution (cdp, 12/2020)
                 s_comp.dict_node_pt["temperature"] = np.interp(
-                    cond.grid_features["xcoord"],
-                    [0.0, cond.inputs["XLENGTH"]],
+                    cond.grid_features["zcoord"],
+                    [0.0, cond.inputs["ZLENGTH"]],
                     [s_comp.operations["TEMINL"], s_comp.operations["TEMOUT"]],
                 )
 

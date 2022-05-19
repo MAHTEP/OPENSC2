@@ -783,7 +783,7 @@ class Simulation:
 # other features of the simulations together with the method, that is \
 # the one considered below to shorten the path (cpd, 10/2020)
 # block = list()
-# block.append("XLENGTH_" + str(cond.inputs["XLENGTH"]))
+# block.append("ZLENGTH_" + str(cond.inputs["ZLENGTH"]))
 # if cond.self.inputs["METHOD"] == "BE":
 # 	block.append("BE")
 # elif cond.self.inputs["METHOD"] == "CN]":

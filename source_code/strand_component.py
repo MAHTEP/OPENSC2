@@ -60,7 +60,7 @@ class StrandComponent(SolidComponent):
         # --------------------------------------------------------------------------
         # comp                  I      object            python object of
         #                                                class Strands             -
-        # xcoord*               I      np array float    conductor spatial
+        # zcoord*               I      np array float    conductor spatial
         #                                                discretization            m
         # I0_OP_MODE*               I      scalar integer    flag to decide how to
         #                                                evaluate current:
@@ -90,12 +90,12 @@ class StrandComponent(SolidComponent):
         # Invoched functions/methods: Get_from_xlsx
         #
         ############################################################################
-        # * xcoord, I0_OP_MODE, IOP_TOT, I0_OP_TOT, BASE_PATH and External_current_path
-        # are given by conductor.xcoord, conductor.inputs["I0_OP_MODE"], conductor.IOP_TOT, conductor.inputs["I0_OP_TOT"],
+        # * zcoord, I0_OP_MODE, IOP_TOT, I0_OP_TOT, BASE_PATH and External_current_path
+        # are given by conductor.zcoord, conductor.inputs["I0_OP_MODE"], conductor.IOP_TOT, conductor.inputs["I0_OP_TOT"],
         # conductor.BASE_PATH and conductor.file_input["EXTERNAL_CURRENT"].
         # § IALPHAB and alphaB are component attributes: self.IALPHAB, self.dict_node_pt["alpha_B"].
         # N.B. alphaB is a Strands attribute so its value can be assigned
-        # directly, it has the same of shape of xcoord and it is a np array.
+        # directly, it has the same of shape of zcoord and it is a np array.
         ############################################################################
         #
         # Translated and optimized by D. Placido Polito 06/2020
@@ -126,7 +126,7 @@ class StrandComponent(SolidComponent):
                 # call load_user_defined_quantity on the component.
                 self.dict_node_pt["IOP"] = do_interpolation(
                     self.alphab_interpolator,
-                    conductor.grid_features["xcoord"],
+                    conductor.grid_features["zcoord"],
                     conductor.cond_time[-1],
                     self.alphab_interp_flag,
                 )
@@ -335,7 +335,7 @@ class StrandComponent(SolidComponent):
                 # call load_user_defined_quantity on the component.
                 self.dict_node_pt["Epsilon"] = do_interpolation(
                     self.eps_interpolator,
-                    conductor.grid_features["xcoord"],
+                    conductor.grid_features["zcoord"],
                     conductor.cond_time[-1],
                     self.eps_interp_flag,
                 )

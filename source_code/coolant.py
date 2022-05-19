@@ -90,22 +90,22 @@ class Coolant(FluidComponentInput):
         if self.operations["MDTIN"] >= 0.0:
             # Flow direction from x = 0 to x = L.
             self.dict_node_pt["pressure"] = np.interp(
-                conductor.grid_features["xcoord"],
-                [0.0, conductor.inputs["XLENGTH"]],
+                conductor.grid_features["zcoord"],
+                [0.0, conductor.inputs["ZLENGTH"]],
                 [self.operations["PREINL"], self.operations["PREOUT"]],
             )
         else:
             # Flow direction from x = L to x = 0.
             self.dict_node_pt["pressure"] = np.interp(
-                conductor.grid_features["xcoord"],
-                [0.0, conductor.inputs["XLENGTH"]],
+                conductor.grid_features["zcoord"],
+                [0.0, conductor.inputs["ZLENGTH"]],
                 [self.operations["PREOUT"], self.operations["PREINL"]],
             )
         # End if self.operations["MDTIN"] >= 0.
         # Compute temperature from inlet and outlet valuesby linear interpolation.
         self.dict_node_pt["temperature"] = np.interp(
-            conductor.grid_features["xcoord"],
-            [0.0, conductor.inputs["XLENGTH"]],
+            conductor.grid_features["zcoord"],
+            [0.0, conductor.inputs["ZLENGTH"]],
             [self.operations["TEMINL"], self.operations["TEMOUT"]],
         )
         # Compute density according to the mode (needed to compute the velocity from mass flow rate)
@@ -264,7 +264,7 @@ class Coolant(FluidComponentInput):
 
     def compute_velocity_gen_flow(
         self,
-        XLENGTH,
+        ZLENGTH,
         channel,
         MAXITR,
         PDROP,
@@ -278,7 +278,7 @@ class Coolant(FluidComponentInput):
         """[summary]
 
         Args:
-            XLENGTH ([type]): [description]
+            ZLENGTH ([type]): [description]
             channel ([type]): [description]
             MAXITR ([type]): [description]
             PDROP ([type]): [description]
@@ -292,7 +292,7 @@ class Coolant(FluidComponentInput):
         Returns:
             [type]: [description]
         """
-        leff = XLENGTH / self.inputs["COSTETA"]
+        leff = ZLENGTH / self.inputs["COSTETA"]
         err = 1.0
         # Initialize total friction factor with the guess value (gen_flow sub dictionary)
         channel.dict_friction_factor[nodal]["total"] = friction_guess

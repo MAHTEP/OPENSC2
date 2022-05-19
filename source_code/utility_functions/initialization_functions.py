@@ -40,7 +40,7 @@ def conductor_spatial_discretization(conductor:object):
             conductor, np.zeros(conductor.grid_features["N_nod"])
         )
 
-    check_grid_features[conductor.inputs["XLENGHT"], zcoord[0], zcoord[-1], conductor.ID]
+    check_grid_features[conductor.inputs["ZLENGTH"], zcoord[0], zcoord[-1], conductor.ID]
 
     conductor.gird_features["zcoord"] = zcoord
     conductor.gird_features["delta_z"] = (
@@ -60,7 +60,7 @@ def uniform_spatial_discretization(conductor: object) -> np.ndarray:
         np.ndarray: array with uniform spatial discretization along z direction of length conductor.gird_features["N_nod"] for straight conductor components.
     """
     return np.linspace(
-        0.0, conductor.inputs["XLENGTH"], conductor.gird_features["N_nod"]
+        0.0, conductor.inputs["ZLENGTH"], conductor.gird_features["N_nod"]
     )
 
 
@@ -110,7 +110,7 @@ def fixed_refined_spatial_discretization(
     n_elem["left"] = round(
         (conductor.grid_input["XBREFI"] - 0.0)
         / (
-            conductor.inputs["XLENGTH"]
+            conductor.inputs["ZLENGTH"]
             - (conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"])
         )
         * n_elem["coarse"]
@@ -164,7 +164,7 @@ def fixed_refined_spatial_discretization(
     if n_elem["right"] > 0:
         # Discretization of coarse region right to refined zone
         dx_try = (
-            conductor.inputs["XLENGTH"] - conductor.grid_input["XEREFI"]
+            conductor.inputs["ZLENGTH"] - conductor.grid_input["XEREFI"]
         ) / n_elem["right"]
         dx1 = dx_ref  # dummy to not overwrite dx_ref
         ii = 0
@@ -178,7 +178,7 @@ def fixed_refined_spatial_discretization(
             )
             dx1 = dx
             dx_try = (
-                conductor.inputs["XLENGTH"]
+                conductor.inputs["ZLENGTH"]
                 - zcoord[n_elem["left"] + conductor.grid_input["NELREF"] + ii]
             ) / (n_elem["right"] - ii)
 
@@ -189,7 +189,7 @@ def fixed_refined_spatial_discretization(
             + 1
         ] = np.linspace(
             zcoord[n_elem["left"] + conductor.grid_input["NELREF"] + ii],
-            conductor.inputs["XLENGTH"],
+            conductor.inputs["ZLENGTH"],
             n_elem["right"] - ii + 1,
         )
     return zcoord
@@ -221,7 +221,7 @@ def fixed_refined_angular_discretization(
     n_elem["left"] = round(
         (conductor.grid_input["XBREFI"] - 0.0)
         / (
-            conductor.inputs["XLENGTH"]
+            conductor.inputs["ZLENGTH"]
             - (conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"])
         )
         * n_elem["coarse"]
@@ -235,7 +235,7 @@ def fixed_refined_angular_discretization(
     )
     # number of windings right to the refined region
     n_winding["right"] = (
-        conductor.inputs["XLENGTH"] - conductor.grid_input["EBREFI"]
+        conductor.inputs["ZLENGTH"] - conductor.grid_input["EBREFI"]
     ) / (2 * np.pi * comp.cyl_helix.reduced_pitch)
     # number of windings in the refined region
     n_winding["ref"] = (
@@ -339,17 +339,17 @@ def user_defined_grid(conductor: object):
     # Assign spatial discretization coordinates to each conductor component.
     for comp in conductor.inventory["all_component"].collection:
         assign_user_defined_spatial_discretization(comp, coord_dfs[comp.ID])
-        check_grid_features(conductor.inputs["XLENGHT"], comp.coordinate["z"][0], comp.coordinate["z"][-1], comp.ID)
+        check_grid_features(conductor.inputs["ZLENGTH"], comp.coordinate["z"][0], comp.coordinate["z"][-1], comp.ID)
 
 
 def check_grid_features(
-    zlenght: float,
+    zlength: float,
     z0:float, z1:float, ID:str
 ):
     """Function that cheks initial anf final coordinates of the discretization to be consistent with the input values.
 
     Args:
-        zlenght (float): straight length of the cable
+        zlength (float): straight length of the cable
         z0 (float): first element of the array with the z component of the spatial discretization.
         z1 (float): last element of the array with the z component of the spatial discretization.
         ID (str): identifier of the object for which the check is make.
@@ -357,7 +357,7 @@ def check_grid_features(
     Raises:
         ValueError: if first coordinate is smaller 0.0 (below a tolerance)
         ValueError: if first coordinate is lager than 0.0 (above a tolerance)
-        ValueError: if last coordinate is smaller or larger than zlenght (within a tollerance).
+        ValueError: if last coordinate is smaller or larger than zlength (within a tollerance).
     """
 
     tol = 1e-6
@@ -370,8 +370,8 @@ def check_grid_features(
         logger_discretization.error(message)
         raise ValueError(message)
 
-    if abs(z1 - zlenght) > tol:
-        message = f"{ID = }: z1 does not equal zlenght!\n{z1 = } m; {zlenght =} m"
+    if abs(z1 - zlength) > tol:
+        message = f"{ID = }: z1 does not equal zlength!\n{z1 = } m; {zlength =} m"
         logger_discretization.warning(message)
         raise ValueError(message)
 
@@ -514,7 +514,7 @@ def build_coordinates_of_barycenter(
             comp.cyl_helix = CylindricalHelix(
                 comp.inputs["X_barycenter"],
                 comp.inputs["Y_barycenter"],
-                cond.inputs["XLENGHT"],
+                cond.inputs["ZLENGTH"],
                 comp.inputs["COSTHETA"],
             )
             if (
@@ -536,4 +536,4 @@ def build_coordinates_of_barycenter(
                 + f"for {comp.__class__.__name__} must be 1.0; current value {comp.inputs['COSTETA'] = }\n"
             )
 
-    check_grid_features(cond.inputs["XLENGHT"], comp.coordinate["z"][0], comp.coordinate["z"][-1], comp.ID)
+    check_grid_features(cond.inputs["ZLENGTH"], comp.coordinate["z"][0], comp.coordinate["z"][-1], comp.ID)

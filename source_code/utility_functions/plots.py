@@ -218,7 +218,7 @@ def make_plots(simulation, kind="Space_distr"):
                 f"Figures_Spatial_distribution_{cond.ID}_dir"
             ]
             abscissa = pd.read_csv(
-                os.path.join(root_load_path, "xcoord.tsv"), delimiter="\t"
+                os.path.join(root_load_path, "zcoord.tsv"), delimiter="\t"
             )
             # plot features (cdp, 01/2021)
             # unify the array (cdp, 11/2020)
@@ -790,7 +790,7 @@ def make_plots_te_actually(
     N_lines,
     N_axes,
     colors,
-    xcoord_full,
+    zcoord_full,
     ascissa,
     sup_title,
     leg_title,
@@ -823,10 +823,10 @@ def make_plots_te_actually(
                 header = header_full[
                     1 + nn * N_lines_tot_max : (nn + 1) * N_lines_tot_max + 1
                 ]
-                xcoord = xcoord_full[nn * N_lines_tot_max : (nn + 1) * N_lines_tot_max]
+                zcoord = zcoord_full[nn * N_lines_tot_max : (nn + 1) * N_lines_tot_max]
             else:
                 header = header_full[nn * N_lines_tot_max + 1 :]
-                xcoord = xcoord_full[nn * N_lines_tot_max :]
+                zcoord = zcoord_full[nn * N_lines_tot_max :]
             # end if nn (cdp, 01/2021)
         else:
             dict_save_fig_path = dict(
@@ -835,7 +835,7 @@ def make_plots_te_actually(
             )
             if p_name != "mass_flow_rate":
                 header = header_full[1:]
-                xcoord = xcoord_full
+                zcoord = zcoord_full
         # end if figures (cdp, 11/2020)
         if N_axes[nn] == 1:
             # one subplot -> 1 row, 1 column (cdp, 10/2020)
@@ -862,7 +862,7 @@ def make_plots_te_actually(
                         values.loc[:, head],
                         colors[ii],
                         linewidth=2,
-                        label=xcoord[ii],
+                        label=zcoord[ii],
                     )
                     ii += 1
                 # end for head (cdp, 11/2020)
@@ -888,7 +888,7 @@ def make_plots_te_actually(
                     values[header[ii]],
                     colors[ii],
                     linewidth=2,
-                    label=xcoord[ii],
+                    label=zcoord[ii],
                 )
                 if ii + N_lines[nn] < N_lines_tot[nn]:
                     ax[1].plot(
@@ -896,7 +896,7 @@ def make_plots_te_actually(
                         values[header[ii + N_lines[nn]]],
                         colors[ii],
                         linewidth=2,
-                        label=xcoord[ii + N_lines[nn]],
+                        label=zcoord[ii + N_lines[nn]],
                     )
                 # end if ii + N_lines[nn] (cdp, 01/2021)
             # end for ii (cdp, 01/2021)
@@ -923,14 +923,14 @@ def make_plots_te_actually(
                     values[header[ii]],
                     colors[ii],
                     linewidth=2,
-                    label=xcoord[ii],
+                    label=zcoord[ii],
                 )
                 ax[1].plot(
                     values["time (s)"],
                     values[header[ii + N_lines[nn]]],
                     colors[ii],
                     linewidth=2,
-                    label=xcoord[ii + N_lines[nn]],
+                    label=zcoord[ii + N_lines[nn]],
                 )
                 if ii + 2 * N_lines[nn] < N_lines_tot[nn]:
                     ax[2].plot(
@@ -938,7 +938,7 @@ def make_plots_te_actually(
                         values[header[ii + 2 * N_lines[nn]]],
                         colors[ii],
                         linewidth=2,
-                        label=xcoord[ii + 2 * N_lines[nn]],
+                        label=zcoord[ii + 2 * N_lines[nn]],
                     )
                 # end if ii + 2*N_lines[nn] (cdp, 01/2021)
             # end for ii (cdp, 01/2021)
@@ -949,7 +949,7 @@ def make_plots_te_actually(
                     values[header[-1]],
                     colors[-1],
                     linewidth=2,
-                    label=xcoord[-1],
+                    label=zcoord[-1],
                 )
             # end if N_lines_tot (cdp, 01/2021)
             # Call fuction Add_figure_features to coplete and save the figure \
@@ -975,21 +975,21 @@ def make_plots_te_actually(
                         values[header[ii]],
                         colors[ii],
                         linewidth=2,
-                        label=xcoord[ii],
+                        label=zcoord[ii],
                     )
                     ax[1].plot(
                         values["time (s)"],
                         values[header[ii + N_lines[nn]]],
                         colors[ii],
                         linewidth=2,
-                        label=xcoord[ii + N_lines[nn]],
+                        label=zcoord[ii + N_lines[nn]],
                     )
                     ax[2].plot(
                         values["time (s)"],
                         values[header[ii + 2 * N_lines[nn]]],
                         colors[ii],
                         linewidth=2,
-                        label=xcoord[ii + 2 * N_lines[nn]],
+                        label=zcoord[ii + 2 * N_lines[nn]],
                     )
                     if ii + 3 * N_lines[nn] < N_lines_tot[nn]:
                         ax[3].plot(
@@ -997,7 +997,7 @@ def make_plots_te_actually(
                             values[header[ii + 3 * N_lines[nn]]],
                             colors[ii],
                             linewidth=2,
-                            label=xcoord[ii + 3 * N_lines[nn]],
+                            label=zcoord[ii + 3 * N_lines[nn]],
                         )
                     # end if ii + 3*N_lines[nn] (cdp, 01/2021)
                 # end for ii (cdp, 01/2021)
@@ -1008,7 +1008,7 @@ def make_plots_te_actually(
                         values[header[-1]],
                         colors[-1],
                         linewidth=2,
-                        label=xcoord[-1],
+                        label=zcoord[-1],
                     )
                 # end if N_lines_tot (cdp, 01/2021)
             else:
@@ -1019,14 +1019,14 @@ def make_plots_te_actually(
                         values[header[ii]],
                         colors[ii],
                         linewidth=2,
-                        label=xcoord[ii],
+                        label=zcoord[ii],
                     )
                     ax[1].plot(
                         values["time (s)"],
                         values[header[ii + N_lines[nn] + 1]],
                         colors[ii],
                         linewidth=2,
-                        label=xcoord[ii + N_lines[nn] + 1],
+                        label=zcoord[ii + N_lines[nn] + 1],
                     )
                 # end for ii (cdp, 01/2021)
                 for ii in range(N_lines[nn]):
@@ -1035,14 +1035,14 @@ def make_plots_te_actually(
                         values[header[ii + 11]],
                         colors[ii],
                         linewidth=2,
-                        label=xcoord[ii + 11],
+                        label=zcoord[ii + 11],
                     )
                     ax[3].plot(
                         values["time (s)"],
                         values[header[ii + 14]],
                         colors[ii],
                         linewidth=2,
-                        label=xcoord[ii + 14],
+                        label=zcoord[ii + 14],
                     )
                 # end for ii (cdp, 01/2021)
             # end if N_lines_tot (cdp, 01/2021)
@@ -1479,14 +1479,14 @@ def plot_time_animation(simulation, conductor):
     # 			title = f"JACKET SYSLOD spatial distribution")
     # else:
     # 	# strand
-    # 	conductor.axes_SYSLOD_str.plot(conductor.grid_features["xcoord"], \
+    # 	conductor.axes_SYSLOD_str.plot(conductor.grid_features["zcoord"], \
     # 		conductor.dict_Step["SYSLOD"]\
     # 		[conductor.dict_N_equation["FluidComponent"]:\
     # 		conductor.dict_N_equation["Total"]:\
     # 		conductor.dict_N_equation["NODOFS"],0], \
     # 		label = conductor.cond_time[-1])
     # 	# jacket
-    # 	conductor.axes_SYSLOD_jk.plot(conductor.grid_features["xcoord"], \
+    # 	conductor.axes_SYSLOD_jk.plot(conductor.grid_features["zcoord"], \
     # 		conductor.dict_Step["SYSLOD"]\
     # 		[conductor.dict_N_equation["FluidComponent"] + \
     # 		conductor.dict_N_equation["StrandComponent"]:conductor.dict_N_equation["Total"]: \

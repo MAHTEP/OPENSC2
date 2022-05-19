@@ -33,7 +33,7 @@ class CylindricalHelix:
         self.__eval_winding_number()
         # Evaluate the length of a single winding.
         self.__eval_winding_length()
-        # Evaluate the total lenght of the helix.
+        # Evaluate the total length of the helix.
         self.__eval_helix_length()
 
     def __eval_radius(self, x0: float, y0: float):
