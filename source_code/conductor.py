@@ -25,7 +25,7 @@ from utility_functions.auxiliary_functions import (
     check_object_number,
     set_diagnostic,
 )
-from utility_functions.initialization_functions import conductor_spatial_discretization
+from utility_functions.initialization_functions import build_coordinates_of_barycenter, check_max_node_number, conductor_spatial_discretization, user_defined_grid
 from utility_functions.gen_flow import gen_flow
 from utility_functions.output import save_properties, save_convergence_data
 from utility_functions.plots import update_real_time_plots, create_legend_rtp
@@ -135,6 +135,18 @@ class Conductor:
 
         conductorlogger.debug(f"After equipotetial surface(s) definition\n")
 
+        # CREATE grid for the i-th conductor
+        self.grid_features = dict()
+        self.grid_input = pd.read_excel(
+            os.path.join(self.BASE_PATH, self.file_input["GRID_DEFINITION"]),
+            sheet_name="GRID",
+            skiprows=2,
+            header=0,
+            index_col=0,
+            usecols=["Variable name", self.ID],
+            dtype="object",
+        )[self.ID].to_dict()
+
         # Load all the sheets in file conductor_coupling.xlsx as a dictionary of dataframes.
         self.dict_df_coupling = pd.read_excel(
             os.path.join(self.BASE_PATH, self.file_input["STRUCTURE_COUPLING"]),
@@ -155,6 +167,9 @@ class Conductor:
             f"After call method {self.conductor_components_instance.__name__}"
         )
 
+        # Call private method __coordinates to build grid coordinates.
+        self.__coordinates()
+        
         # Call private method __initialize_attributes to initialize all the other useful and necessary attributes of class Conductor.
         conductorlogger.debug(
             f"Before call method {self.__initialize_attributes.__name__}"
@@ -442,6 +457,22 @@ class Conductor:
 
     # end method Conductor_components_instance (cdp, 11/2020)
 
+    def __coordinates(self):
+        """Private method that allows to evaluate the grid coordinates and assign them to the conductor objects and its comonents according to the value of flag grid_input["ITYMESH"].
+        """
+        if self.grid_input["ITYMESH"] >= 0:
+            n_nod = self.grid_input["NELEMS"]+1
+            file_path = os.path.join(self.BASE_PATH, self.file_input["GRID_DEFINITION"])
+            self.grid_features["N_nod"] = check_max_node_number(n_nod, self, file_path)
+            for comp in self.inventory["all_component"].collection:
+                build_coordinates_of_barycenter(self, comp)
+            # Evaluate conductor spatial discretization along z axis. This is used for the thermal fluid-dynamic solution.
+            conductor_spatial_discretization(self)
+        else:
+            # Call function user_defined_grid: makes ckecks on the user defined 
+            # grid and then assinge the coordinates to the conductor components.
+            user_defined_grid(self)
+
     def __initialize_attributes(self: Self, simulation: object):
         """Private method that initializes usefull attributes of conductor object.
 
@@ -466,18 +497,6 @@ class Conductor:
 
         self.dict_node_pt = dict()
         self.dict_Gauss_pt = dict()
-
-        # CREATE grid for the i-th conductor
-        self.grid_features = dict()
-        self.grid_input = pd.read_excel(
-            os.path.join(self.BASE_PATH, self.file_input["GRID_DEFINITION"]),
-            sheet_name="GRID",
-            skiprows=2,
-            header=0,
-            index_col=0,
-            usecols=["Variable name", self.ID],
-            dtype="object",
-        )[self.ID].to_dict()
 
         self.heat_rad_jk = dict()
         self.heat_exchange_jk_env = dict()
@@ -1654,8 +1673,6 @@ class Conductor:
 
         time_simulation = simulation.simulation_time[-1]
         sim_name = simulation.transient_input["SIMULATION"]
-        # Construct spatial discretization
-        conductor_spatial_discretization(simulation, self)
         # Total number of equations for each conductor (cdp, 09/2020)
         self.dict_N_equation["Total"] = (
             self.dict_N_equation["NODOFS"] * self.grid_features["N_nod"]
