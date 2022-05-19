@@ -40,7 +40,7 @@ def conductor_spatial_discretization(conductor:object):
             conductor, np.zeros(conductor.grid_features["N_nod"])
         )
 
-    check_grid_features[conductor.inputs["XLENGHT"], zcoord[0], zcoord[-1]]
+    check_grid_features[conductor.inputs["XLENGHT"], zcoord[0], zcoord[-1], conductor.ID]
 
     conductor.gird_features["zcoord"] = zcoord
     conductor.gird_features["delta_z"] = (
@@ -50,12 +50,11 @@ def conductor_spatial_discretization(conductor:object):
     # end function
 
 
-def uniform_spatial_discretization(conductor: object, _=None) -> np.ndarray:
+def uniform_spatial_discretization(conductor: object) -> np.ndarray:
     """Evaluates straight uniform spatial discretization in z direction.
 
     Args:
         conductor (Conductor): conductor object, has all the information to evaluate the unifrom mesh.
-        _ (_type_): not used input argument.
 
     Returns:
         np.ndarray: array with uniform spatial discretization along z direction of length conductor.gird_features["N_nod"] for straight conductor components.
@@ -340,24 +339,20 @@ def user_defined_grid(conductor: object):
     # Assign spatial discretization coordinates to each conductor component.
     for comp in conductor.inventory["all_component"].collection:
         assign_user_defined_spatial_discretization(comp, coord_dfs[comp.ID])
-        check_grid_features(conductor.inputs["XLENGHT"], comp)
+        check_grid_features(conductor.inputs["XLENGHT"], comp.coordinate["z"][0], comp.coordinate["z"][-1], comp.ID)
 
 
 def check_grid_features(
     zlenght: float,
-    comp: Union[
-        FluidComponent,
-        JacketComponent,
-        StrandMixedComponent,
-        StrandStabilizerComponent,
-        StrandSuperconductorComponent,
-    ],
+    z0:float, z1:float, ID:str
 ):
     """Function that cheks initial anf final coordinates of the discretization to be consistent with the input values.
 
     Args:
         zlenght (float): straight length of the cable
-        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which the spatial discretization is evaluated.
+        z0 (float): first element of the array with the z component of the spatial discretization.
+        z1 (float): last element of the array with the z component of the spatial discretization.
+        ID (str): identifier of the object for which the check is make.
 
     Raises:
         ValueError: if first coordinate is smaller 0.0 (below a tolerance)
@@ -366,17 +361,17 @@ def check_grid_features(
     """
 
     tol = 1e-6
-    if (comp.coordinate["z"][0] - 0.0) > -tol:
-        message = f"{comp.ID = }: comp.coordinate['z'][0] must be 0.0; {comp.coordinate['z'][0]=} (m) < {0.0} (m)."
+    if (z0 - 0.0) > -tol:
+        message = f"{ID = }: z0 must be 0.0; {z0 = } (m) < {0.0} (m)."
         logger_discretization.error(message)
         raise ValueError(message)
-    if (comp.coordinate["z"][0] - 0.0) > tol:
-        message = f"{comp.ID = }: comp.coordinate['z'][0] must be 0.0; {comp.coordinate['z'][0]=} (m) > {0.0} (m)."
+    if (z0 - 0.0) > tol:
+        message = f"{ID = }: z0 must be 0.0; {z0 = } (m) > {0.0} (m)."
         logger_discretization.error(message)
         raise ValueError(message)
 
-    if abs(comp.coordinate["z"][-1] - zlenght) > tol:
-        message = f"{comp.ID = }: comp.coordinate['z'][-1] does not equal zlenght!\n{comp.coordinate['z'][-1]=} m; {zlenght =} m"
+    if abs(z1 - zlenght) > tol:
+        message = f"{ID = }: z1 does not equal zlenght!\n{z1 = } m; {zlenght =} m"
         logger_discretization.warning(message)
         raise ValueError(message)
 
@@ -541,4 +536,4 @@ def build_coordinates_of_barycenter(
                 + f"for {comp.__class__.__name__} must be 1.0; current value {comp.inputs['COSTETA'] = }\n"
             )
 
-    check_grid_features(cond.inputs["XLENGHT"], comp)
+    check_grid_features(cond.inputs["XLENGHT"], comp.coordinate["z"][0], comp.coordinate["z"][-1], comp.ID)
