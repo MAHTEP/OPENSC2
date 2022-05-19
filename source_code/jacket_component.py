@@ -38,6 +38,7 @@ class JacketComponent(SolidComponent):
         self.dict_num_step = dict()
         self.radiative_heat_env = ""
         self.radiative_heat_inn = dict()
+        self.coordinate = dict()
         # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
         self.time_evol = dict(temperature=dict())
         # Dictionary initialization: inputs.

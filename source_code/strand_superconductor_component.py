@@ -37,6 +37,7 @@ class StrandSuperconductorComponent(StrandComponent):
         self.dict_node_pt = dict()
         self.dict_Gauss_pt = dict()
         self.dict_num_step = dict()
+        self.coordinate = dict()
         # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
         self.time_evol = dict(temperature=dict(), B_field=dict(), T_cur_sharing=dict())
         self.dict_scaling_input = dict()

@@ -18,7 +18,7 @@ from cylindrical_helix import CylindricalHelix
 logger_discretization = logging.getLogger("opensc2Logger.discretization")
 
 
-def conductor_spatial_discretization(conductor:object):
+def conductor_spatial_discretization(conductor: object):
     """Function that evaluate the z component of the spatial discretization of conductor.
 
     Args:
@@ -40,13 +40,11 @@ def conductor_spatial_discretization(conductor:object):
             conductor, np.zeros(conductor.grid_features["N_nod"])
         )
 
-    check_grid_features[conductor.inputs["ZLENGTH"], zcoord[0], zcoord[-1], conductor.ID]
-
-    conductor.gird_features["zcoord"] = zcoord
-    conductor.gird_features["delta_z"] = (
-        conductor.gird_features["zcoord"][1:] - conductor.gird_features["zcoord"][:-1]
+    check_grid_features(
+        conductor.inputs["ZLENGTH"], zcoord[0], zcoord[-1], conductor.ID
     )
-    conductor.gird_features["dz"] = conductor.gird_features["delta_z"].max()
+
+    conductor.grid_features["zcoord"] = zcoord
     # end function
 
 
@@ -57,10 +55,10 @@ def uniform_spatial_discretization(conductor: object) -> np.ndarray:
         conductor (Conductor): conductor object, has all the information to evaluate the unifrom mesh.
 
     Returns:
-        np.ndarray: array with uniform spatial discretization along z direction of length conductor.gird_features["N_nod"] for straight conductor components.
+        np.ndarray: array with uniform spatial discretization along z direction of length conductor.grid_features["N_nod"] for straight conductor components.
     """
     return np.linspace(
-        0.0, conductor.inputs["ZLENGTH"], conductor.gird_features["N_nod"]
+        0.0, conductor.inputs["ZLENGTH"], conductor.grid_features["N_nod"]
     )
 
 
@@ -77,12 +75,12 @@ def uniform_angular_discretization(
         comp (Union[StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent]): generic object of for wich the uniform angular discretization should be evaluated.
 
     Returns:
-        np.ndarray: array with uniform angular discretization of length conductor.gird_features["N_nod"] for helicoidal components.
+        np.ndarray: array with uniform angular discretization of length conductor.grid_features["N_nod"] for helicoidal components.
     """
     return np.linspace(
         0.0,
-        comp.cyl_helix.windings_number * 2 * np.pi,
-        conductor.gird_features["N_nod"],
+        comp.cyl_helix.winding_number * 2 * np.pi,
+        conductor.grid_features["N_nod"],
     )
 
 
@@ -93,14 +91,14 @@ def fixed_refined_spatial_discretization(
 
     Args:
         conductor (Conductor): conductor object, has all the information to evaluate the fixed refined grid.
-        zcoord (np.ndarray): array of length conductor.gird_features["N_nod"] initialized to zeros.
+        zcoord (np.ndarray): array of length conductor.grid_features["N_nod"] initialized to zeros.
 
     Raises:
         ValueError: if dz in refined region is lower than minimum dz.
         ValueError: if dz in refined region is larger than maximum dz.
 
     Returns:
-        np.ndarray: array of length conductor.gird_features["N_nod"] with fixed refined spatial discretization for straight conductor components.
+        np.ndarray: array of length conductor.grid_features["N_nod"] with fixed refined spatial discretization for straight conductor components.
     """
     n_elem = dict()
 
@@ -129,9 +127,7 @@ def fixed_refined_spatial_discretization(
         dx_ref <= conductor.grid_input["SIZMAX"]
     ):
         # refined mesh
-        zcoord[
-            n_elem["left"] : n_elem["left"] + conductor.grid_input["NELREF"] + 1
-        ] = np.linspace(
+        zcoord[n_elem["left"] : n_elem["left"] + NOD_ref] = np.linspace(
             conductor.grid_input["XBREFI"], conductor.grid_input["XEREFI"], NOD_ref
         )
     elif dx_ref < conductor.grid_input["SIZMIN"]:
@@ -207,14 +203,14 @@ def fixed_refined_angular_discretization(
     Args:
         conductor (Conductor): conductor object, has all the information to evaluate the fixed refined grid.
         comp (Union[ StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent ]): generic object for wich the fixed refined angular discretization should be evaluated.
-        tau (np.ndarray): array of length conductor.gird_features["N_nod"] initialized to zeros.
+        tau (np.ndarray): array of length conductor.grid_features["N_nod"] initialized to zeros.
 
     Raises:
         ValueError: if dtau in refined region is lower than minimum dtau.
         ValueError: if dtau in refined region is larger than maximum dtau.
 
     Returns:
-        np.ndarray: array of length conductor.gird_features["N_nod"] with fixed refined angular discretization for helicoidal conductor components.
+        np.ndarray: array of length conductor.grid_features["N_nod"] with fixed refined angular discretization for helicoidal conductor components.
     """
     n_elem = dict()
     n_elem["coarse"] = conductor.grid_input["NELEMS"] - conductor.grid_input["NELREF"]
@@ -235,11 +231,11 @@ def fixed_refined_angular_discretization(
     )
     # number of windings right to the refined region
     n_winding["right"] = (
-        conductor.inputs["ZLENGTH"] - conductor.grid_input["EBREFI"]
+        conductor.inputs["ZLENGTH"] - conductor.grid_input["XEREFI"]
     ) / (2 * np.pi * comp.cyl_helix.reduced_pitch)
     # number of windings in the refined region
     n_winding["ref"] = (
-        conductor.grid_input["EBREFI"] - conductor.grid_input["XBREFI"]
+        conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"]
     ) / (2 * np.pi * comp.cyl_helix.reduced_pitch)
 
     assert (
@@ -333,19 +329,21 @@ def user_defined_grid(conductor: object):
     (
         conductor.grid_features["N_nod"],
         conductor.grid_features["zcoord"],
-    ) = check_user_defined_grid(coord_dfs, file_path)
+    ) = check_user_defined_grid(coord_dfs, conductor, file_path)
     # Evaluate the number of elements from the checked number of nodes.
     conductor.grid_input["NELEMS"] = conductor.grid_features["N_nod"] - 1
     # Assign spatial discretization coordinates to each conductor component.
     for comp in conductor.inventory["all_component"].collection:
         assign_user_defined_spatial_discretization(comp, coord_dfs[comp.ID])
-        check_grid_features(conductor.inputs["ZLENGTH"], comp.coordinate["z"][0], comp.coordinate["z"][-1], comp.ID)
+        check_grid_features(
+            conductor.inputs["ZLENGTH"],
+            comp.coordinate["z"][0],
+            comp.coordinate["z"][-1],
+            comp.ID,
+        )
 
 
-def check_grid_features(
-    zlength: float,
-    z0:float, z1:float, ID:str
-):
+def check_grid_features(zlength: float, z0: float, z1: float, ID: str):
     """Function that cheks initial anf final coordinates of the discretization to be consistent with the input values.
 
     Args:
@@ -361,11 +359,7 @@ def check_grid_features(
     """
 
     tol = 1e-6
-    if (z0 - 0.0) > -tol:
-        message = f"{ID = }: z0 must be 0.0; {z0 = } (m) < {0.0} (m)."
-        logger_discretization.error(message)
-        raise ValueError(message)
-    if (z0 - 0.0) > tol:
+    if abs(z0 - 0.0) > tol:
         message = f"{ID = }: z0 must be 0.0; {z0 = } (m) > {0.0} (m)."
         logger_discretization.error(message)
         raise ValueError(message)
@@ -443,7 +437,7 @@ def check_max_node_number(
         (int): number of nodes used for the spatial discretization.
     """
     if n_nod > conductor.grid_input["MAXNOD"]:
-        if conductor.grid_input["ITYMSH"] > 0:
+        if conductor.grid_input["ITYMSH"] >= 0:
             message = f"The number of nodes should not exceed the maximum value. {n_nod = } > {conductor.grid_input['MAXNOD'] = }.\nPlease check {conductor.ID} in file {file_path}.\n"
         else:
             message = f"The number of nodes should not exceed the maximum value. {n_nod = } > {conductor.grid_input['MAXNOD'] = }.\nPlease check sheet {args[0]} in file {file_path}.\n"
@@ -491,14 +485,19 @@ def build_coordinates_of_barycenter(
     Raises:
         ValueError: if costetha is not equal to 1 for FluidComponent and JacketComponent.
     """
+    # This is a workaround not a clean solution
+    if isinstance(comp, FluidComponent):
+        costheta = comp.coolant.inputs["COSTETA"]
+        xb = comp.coolant.inputs["X_barycenter"]
+        yb = comp.coolant.inputs["Y_barycenter"]
+    else:
+        costheta = comp.inputs["COSTETA"]
+        xb = comp.inputs["X_barycenter"]
+        yb = comp.inputs["Y_barycenter"]
 
-    if comp.inputs["COSTETA"] == 1:
-        comp.coordinate["x"] = comp.inputs["X_barycenter"] * np.ones(
-            cond.grid_features["N_nod"]
-        )
-        comp.coordinate["y"] = comp.inputs["Y_barycenter"] * np.ones(
-            cond.grid_features["N_nod"]
-        )
+    if costheta == 1:
+        comp.coordinate["x"] = xb * np.ones(cond.grid_features["N_nod"])
+        comp.coordinate["y"] = yb * np.ones(cond.grid_features["N_nod"])
         if (
             cond.grid_input["ITYMSH"] == 0
             or cond.grid_input["ITYMSH"] == 2
@@ -510,12 +509,12 @@ def build_coordinates_of_barycenter(
                 cond, zcoord=np.zeros(cond.grid_features["N_nod"])
             )
     else:
-        if issubclass(comp, StrandComponent):
+        if isinstance(comp, StrandComponent):
             comp.cyl_helix = CylindricalHelix(
                 comp.inputs["X_barycenter"],
                 comp.inputs["Y_barycenter"],
                 cond.inputs["ZLENGTH"],
-                comp.inputs["COSTHETA"],
+                comp.inputs["COSTETA"],
             )
             if (
                 cond.grid_input["ITYMSH"] == 0
@@ -524,7 +523,9 @@ def build_coordinates_of_barycenter(
             ):
                 tau = uniform_angular_discretization(cond, comp)
             elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
-                tau = fixed_refined_angular_discretization(cond, comp)
+                tau = fixed_refined_angular_discretization(
+                    cond, comp, tau=np.zeros(cond.grid_features["N_nod"])
+                )
             (
                 comp.coordinate["x"],
                 comp.coordinate["y"],
@@ -533,7 +534,12 @@ def build_coordinates_of_barycenter(
         else:
             raise ValueError(
                 r"$Cos(\theta)$"
-                + f"for {comp.__class__.__name__} must be 1.0; current value {comp.inputs['COSTETA'] = }\n"
+                + f"for {comp.__class__.__name__} must be 1.0; current value {costheta = }\n"
             )
 
-    check_grid_features(cond.inputs["ZLENGTH"], comp.coordinate["z"][0], comp.coordinate["z"][-1], comp.ID)
+    check_grid_features(
+        cond.inputs["ZLENGTH"],
+        comp.coordinate["z"][0],
+        comp.coordinate["z"][-1],
+        comp.ID,
+    )

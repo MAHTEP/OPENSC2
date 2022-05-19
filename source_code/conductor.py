@@ -25,7 +25,12 @@ from utility_functions.auxiliary_functions import (
     check_object_number,
     set_diagnostic,
 )
-from utility_functions.initialization_functions import build_coordinates_of_barycenter, check_max_node_number, conductor_spatial_discretization, user_defined_grid
+from utility_functions.initialization_functions import (
+    build_coordinates_of_barycenter,
+    check_max_node_number,
+    conductor_spatial_discretization,
+    user_defined_grid,
+)
 from utility_functions.gen_flow import gen_flow
 from utility_functions.output import save_properties, save_convergence_data
 from utility_functions.plots import update_real_time_plots, create_legend_rtp
@@ -168,8 +173,10 @@ class Conductor:
         )
 
         # Call private method __coordinates to build grid coordinates.
+        conductorlogger.debug(f"Before call method {self.__coordinates.__name__}")
         self.__coordinates()
-        
+        conductorlogger.debug(f"After call method {self.__coordinates.__name__}")
+
         # Call private method __initialize_attributes to initialize all the other useful and necessary attributes of class Conductor.
         conductorlogger.debug(
             f"Before call method {self.__initialize_attributes.__name__}"
@@ -458,10 +465,9 @@ class Conductor:
     # end method Conductor_components_instance (cdp, 11/2020)
 
     def __coordinates(self):
-        """Private method that allows to evaluate the grid coordinates and assign them to the conductor objects and its comonents according to the value of flag grid_input["ITYMESH"].
-        """
-        if self.grid_input["ITYMESH"] >= 0:
-            n_nod = self.grid_input["NELEMS"]+1
+        """Private method that allows to evaluate the grid coordinates and assign them to the conductor objects and its comonents according to the value of flag grid_input["ITYMSH"]."""
+        if self.grid_input["ITYMSH"] >= 0:
+            n_nod = self.grid_input["NELEMS"] + 1
             file_path = os.path.join(self.BASE_PATH, self.file_input["GRID_DEFINITION"])
             self.grid_features["N_nod"] = check_max_node_number(n_nod, self, file_path)
             for comp in self.inventory["all_component"].collection:
@@ -469,9 +475,14 @@ class Conductor:
             # Evaluate conductor spatial discretization along z axis. This is used for the thermal fluid-dynamic solution.
             conductor_spatial_discretization(self)
         else:
-            # Call function user_defined_grid: makes ckecks on the user defined 
+            # Call function user_defined_grid: makes ckecks on the user defined
             # grid and then assinge the coordinates to the conductor components.
             user_defined_grid(self)
+
+        self.grid_features["delta_z"] = (
+        self.grid_features["zcoord"][1:] - self.grid_features["zcoord"][:-1]
+    )
+        self.grid_features["dz"] = self.grid_features["delta_z"].max()
 
     def __initialize_attributes(self: Self, simulation: object):
         """Private method that initializes usefull attributes of conductor object.
@@ -618,10 +629,10 @@ class Conductor:
 
         # Introduced for the electric module.
         self.total_elements = (
-            self.grid_input["NELEMS"] * self.inventory["Conductor"].number
+            self.grid_input["NELEMS"] * self.inventory["all_component"].number
         )
         self.total_nodes = (self.grid_input["NELEMS"] + 1) * self.inventory[
-            "Conductor"
+            "all_component"
         ].number
 
         self.total_elements_current_carriers = (
@@ -634,7 +645,7 @@ class Conductor:
         # Convert to matrix (make them sparse matrices)
         # +1 keeps into account the Environment object in the
         # conductor_coupling workbook.
-        self.electric_conductance = self.electric_conductance.iloc[
+        self.electric_conductance = self.dict_df_coupling["electric_conductance"].iloc[
             self.inventory["FluidComponent"].number
             + 1 : self.inventory["FluidComponent"].number
             + self.inventory["StrandComponent"].number
@@ -644,7 +655,8 @@ class Conductor:
             + self.inventory["StrandComponent"].number
             + 1,
         ].to_numpy()
-        self.electric_conductance_mode = self.electric_conductance_mode.iloc[
+        del self.dict_df_coupling["electric_conductance"]
+        self.electric_conductance_mode = self.dict_df_coupling["electric_conductance_mode"].iloc[
             self.inventory["FluidComponent"].number
             + 1 : self.inventory["FluidComponent"].number
             + self.inventory["StrandComponent"].number
@@ -654,6 +666,7 @@ class Conductor:
             + self.inventory["StrandComponent"].number
             + 1,
         ].to_numpy()
+        del self.dict_df_coupling["electric_conductance_mode"]
 
         # Initialize resistance matrix to a dummy value (sparse matrix)
         self.electric_resistance_matrix = diags(

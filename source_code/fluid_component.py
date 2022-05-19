@@ -86,6 +86,7 @@ class FluidComponent:
         self.channel = Channel(sheet, sheetOpar, dict_file_path, self.ID)
         # Instance of class Coolant (build a coolant object)
         self.coolant = Coolant(sheet, sheetOpar, dict_file_path, self.ID)
+        self.coordinate = dict()
 
     # End method __init__.
 
