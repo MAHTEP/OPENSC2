@@ -484,8 +484,11 @@ def build_coordinates_of_barycenter(
 
     Raises:
         ValueError: if costetha is not equal to 1 for FluidComponent and JacketComponent.
+
+    Note:
+        If user defines only one component of type StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent, the straight spatial discretization is used.
     """
-    # This is a workaround not a clean solution
+    # This is a workaround not a clean solution.
     if isinstance(comp, FluidComponent):
         costheta = comp.coolant.inputs["COSTETA"]
         xb = comp.coolant.inputs["X_barycenter"]
@@ -510,27 +513,44 @@ def build_coordinates_of_barycenter(
             )
     else:
         if isinstance(comp, StrandComponent):
-            comp.cyl_helix = CylindricalHelix(
-                comp.inputs["X_barycenter"],
-                comp.inputs["Y_barycenter"],
-                cond.inputs["ZLENGTH"],
-                comp.inputs["COSTETA"],
-            )
-            if (
-                cond.grid_input["ITYMSH"] == 0
-                or cond.grid_input["ITYMSH"] == 2
-                or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
-            ):
-                tau = uniform_angular_discretization(cond, comp)
-            elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
-                tau = fixed_refined_angular_discretization(
-                    cond, comp, tau=np.zeros(cond.grid_features["N_nod"])
+            if cond.inventory["StrandComponent"].number > 1:
+                comp.cyl_helix = CylindricalHelix(
+                    comp.inputs["X_barycenter"],
+                    comp.inputs["Y_barycenter"],
+                    cond.inputs["ZLENGTH"],
+                    comp.inputs["COSTETA"],
                 )
-            (
-                comp.coordinate["x"],
-                comp.coordinate["y"],
-                comp.coordinate["z"],
-            ) = comp.cyl_helix.helix_parametrization(tau)
+                if (
+                    cond.grid_input["ITYMSH"] == 0
+                    or cond.grid_input["ITYMSH"] == 2
+                    or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"])
+                    <= 1e-3
+                ):
+                    tau = uniform_angular_discretization(cond, comp)
+                elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
+                    tau = fixed_refined_angular_discretization(
+                        cond, comp, tau=np.zeros(cond.grid_features["N_nod"])
+                    )
+                (
+                    comp.coordinate["x"],
+                    comp.coordinate["y"],
+                    comp.coordinate["z"],
+                ) = comp.cyl_helix.helix_parametrization(tau)
+            elif cond.inventory["StrandComponent"].number == 1:
+                # Use straight spatial discretization in this case.
+                comp.coordinate["x"] = xb * np.ones(cond.grid_features["N_nod"])
+                comp.coordinate["y"] = yb * np.ones(cond.grid_features["N_nod"])
+                if (
+                    cond.grid_input["ITYMSH"] == 0
+                    or cond.grid_input["ITYMSH"] == 2
+                    or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"])
+                    <= 1e-3
+                ):
+                    comp.coordinate["z"] = uniform_spatial_discretization(cond)
+                elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
+                    comp.coordinate["z"] = fixed_refined_spatial_discretization(
+                        cond, zcoord=np.zeros(cond.grid_features["N_nod"])
+                    )
         else:
             raise ValueError(
                 r"$Cos(\theta)$"
