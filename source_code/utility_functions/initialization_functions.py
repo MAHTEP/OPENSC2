@@ -466,6 +466,79 @@ def assign_user_defined_spatial_discretization(
     comp.coordinate["z"] = df["z [m]"].to_numpy()
 
 
+def straight_coordinates(
+    cond: object,
+    comp: Union[
+        FluidComponent,
+        JacketComponent,
+        StrandMixedComponent,
+        StrandStabilizerComponent,
+        StrandSuperconductorComponent,
+    ],
+    xb: float,
+    yb: float,
+):
+    """Function that builds the straight coordinates of the barycenter of conductor components.
+
+    Args:
+        cond (object): conductor object, has all the information to evaluate load and assign user defined grid.
+        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
+        xb (float): x coordinate of the barycenter of the component (passed in this way due to the workaround in function build_coordinates_of_barycenter).
+        yb (float): y coordinate of the barycenter of the component (passed in this way due to the workaround in function build_coordinates_of_barycenter).
+    """
+    comp.coordinate["x"] = xb * np.ones(cond.grid_features["N_nod"])
+    comp.coordinate["y"] = yb * np.ones(cond.grid_features["N_nod"])
+    if (
+        cond.grid_input["ITYMSH"] == 0
+        or cond.grid_input["ITYMSH"] == 2
+        or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
+    ):
+        comp.coordinate["z"] = uniform_spatial_discretization(cond)
+    elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
+        comp.coordinate["z"] = fixed_refined_spatial_discretization(
+            cond, zcoord=np.zeros(cond.grid_features["N_nod"])
+        )
+
+
+def helicoidal_coordinates(
+    cond: object,
+    comp: Union[
+        StrandMixedComponent,
+        StrandStabilizerComponent,
+        StrandSuperconductorComponent,
+    ],
+):
+    """Function that builds the helicoidal coordinates of the barycenter of conductor components of kind StrandMixedComponent, StrandStabilizerComponent and StrandSuperconductorComponent.
+
+    Args:
+        cond (object): conductor object, has all the information to evaluate load and assign user defined grid.
+        comp (Union[ StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
+    """
+    comp.cyl_helix = CylindricalHelix(
+        comp.inputs["X_barycenter"],
+        comp.inputs["Y_barycenter"],
+        cond.inputs["ZLENGTH"],
+        comp.inputs["COSTETA"],
+    )
+    # Evaluate the angular discretization according to the value of flag ITYMSH.
+    if (
+        cond.grid_input["ITYMSH"] == 0
+        or cond.grid_input["ITYMSH"] == 2
+        or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
+    ):
+        tau = uniform_angular_discretization(cond, comp)
+    elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
+        tau = fixed_refined_angular_discretization(
+            cond, comp, tau=np.zeros(cond.grid_features["N_nod"])
+        )
+    # Evalute coordinates exploiting the helix parametrization.
+    (
+        comp.coordinate["x"],
+        comp.coordinate["y"],
+        comp.coordinate["z"],
+    ) = comp.cyl_helix.helix_parametrization(tau)
+
+
 def build_coordinates_of_barycenter(
     cond: object,
     comp: Union[
