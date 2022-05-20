@@ -559,7 +559,7 @@ def build_coordinates_of_barycenter(
         ValueError: if costetha is not equal to 1 for FluidComponent and JacketComponent.
 
     Note:
-        If user defines only one component of type StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent, the straight spatial discretization is used.
+        If user defines only one component of type StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent, the straight spatial discretization is used, i.e function straight_coordinates is called instead of helicoidal_coordinates.
     """
     # This is a workaround not a clean solution.
     if isinstance(comp, FluidComponent):
@@ -572,58 +572,20 @@ def build_coordinates_of_barycenter(
         yb = comp.inputs["Y_barycenter"]
 
     if costheta == 1:
-        comp.coordinate["x"] = xb * np.ones(cond.grid_features["N_nod"])
-        comp.coordinate["y"] = yb * np.ones(cond.grid_features["N_nod"])
-        if (
-            cond.grid_input["ITYMSH"] == 0
-            or cond.grid_input["ITYMSH"] == 2
-            or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
-        ):
-            comp.coordinate["z"] = uniform_spatial_discretization(cond)
-        elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
-            comp.coordinate["z"] = fixed_refined_spatial_discretization(
-                cond, zcoord=np.zeros(cond.grid_features["N_nod"])
-            )
+        # Evaluate straight spatial coordinates. The coordinates are assinged 
+        # directly to the component in the function.
+        straight_coordinates(cond, comp, xb, yb)
     else:
         if isinstance(comp, StrandComponent):
             if cond.inventory["StrandComponent"].number > 1:
-                comp.cyl_helix = CylindricalHelix(
-                    comp.inputs["X_barycenter"],
-                    comp.inputs["Y_barycenter"],
-                    cond.inputs["ZLENGTH"],
-                    comp.inputs["COSTETA"],
-                )
-                if (
-                    cond.grid_input["ITYMSH"] == 0
-                    or cond.grid_input["ITYMSH"] == 2
-                    or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"])
-                    <= 1e-3
-                ):
-                    tau = uniform_angular_discretization(cond, comp)
-                elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
-                    tau = fixed_refined_angular_discretization(
-                        cond, comp, tau=np.zeros(cond.grid_features["N_nod"])
-                    )
-                (
-                    comp.coordinate["x"],
-                    comp.coordinate["y"],
-                    comp.coordinate["z"],
-                ) = comp.cyl_helix.helix_parametrization(tau)
+                # Evaluate helicoidal spatial coordinates. The coordinates are assinged directly to the component in the function.
+                helicoidal_coordinates(cond, comp)
             elif cond.inventory["StrandComponent"].number == 1:
                 # Use straight spatial discretization in this case.
-                comp.coordinate["x"] = xb * np.ones(cond.grid_features["N_nod"])
-                comp.coordinate["y"] = yb * np.ones(cond.grid_features["N_nod"])
-                if (
-                    cond.grid_input["ITYMSH"] == 0
-                    or cond.grid_input["ITYMSH"] == 2
-                    or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"])
-                    <= 1e-3
-                ):
-                    comp.coordinate["z"] = uniform_spatial_discretization(cond)
-                elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
-                    comp.coordinate["z"] = fixed_refined_spatial_discretization(
-                        cond, zcoord=np.zeros(cond.grid_features["N_nod"])
-                    )
+                # Evaluate straight spatial coordinates. The coordinates are 
+                # assinged directly to the component in the function.
+                warnings.warn("User defined only one strand component, it is considered straight since there is no need to evaluate the inductances.")
+                straight_coordinates(cond, comp, xb, yb)
         else:
             raise ValueError(
                 r"$Cos(\theta)$"
