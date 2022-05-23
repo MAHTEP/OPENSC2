@@ -32,7 +32,11 @@ from utility_functions.initialization_functions import (
     user_defined_grid,
 )
 from utility_functions.gen_flow import gen_flow
-from utility_functions.output import save_properties, save_convergence_data
+from utility_functions.output import (
+    save_properties,
+    save_convergence_data,
+    save_geometry_discretization,
+)
 from utility_functions.plots import update_real_time_plots, create_legend_rtp
 from utility_functions.solid_components_initialization import (
     solid_components_temperature_initialization,
@@ -480,8 +484,8 @@ class Conductor:
             user_defined_grid(self)
 
         self.grid_features["delta_z"] = (
-        self.grid_features["zcoord"][1:] - self.grid_features["zcoord"][:-1]
-    )
+            self.grid_features["zcoord"][1:] - self.grid_features["zcoord"][:-1]
+        )
         self.grid_features["dz"] = self.grid_features["delta_z"].max()
 
     def __initialize_attributes(self: Self, simulation: object):
@@ -645,27 +649,35 @@ class Conductor:
         # Convert to matrix (make them sparse matrices)
         # +1 keeps into account the Environment object in the
         # conductor_coupling workbook.
-        self.electric_conductance = self.dict_df_coupling["electric_conductance"].iloc[
-            self.inventory["FluidComponent"].number
-            + 1 : self.inventory["FluidComponent"].number
-            + self.inventory["StrandComponent"].number
-            + 1,
-            self.inventory["FluidComponent"].number
-            + 1 : self.inventory["FluidComponent"].number
-            + self.inventory["StrandComponent"].number
-            + 1,
-        ].to_numpy()
+        self.electric_conductance = (
+            self.dict_df_coupling["electric_conductance"]
+            .iloc[
+                self.inventory["FluidComponent"].number
+                + 1 : self.inventory["FluidComponent"].number
+                + self.inventory["StrandComponent"].number
+                + 1,
+                self.inventory["FluidComponent"].number
+                + 1 : self.inventory["FluidComponent"].number
+                + self.inventory["StrandComponent"].number
+                + 1,
+            ]
+            .to_numpy()
+        )
         del self.dict_df_coupling["electric_conductance"]
-        self.electric_conductance_mode = self.dict_df_coupling["electric_conductance_mode"].iloc[
-            self.inventory["FluidComponent"].number
-            + 1 : self.inventory["FluidComponent"].number
-            + self.inventory["StrandComponent"].number
-            + 1,
-            self.inventory["FluidComponent"].number
-            + 1 : self.inventory["FluidComponent"].number
-            + self.inventory["StrandComponent"].number
-            + 1,
-        ].to_numpy()
+        self.electric_conductance_mode = (
+            self.dict_df_coupling["electric_conductance_mode"]
+            .iloc[
+                self.inventory["FluidComponent"].number
+                + 1 : self.inventory["FluidComponent"].number
+                + self.inventory["StrandComponent"].number
+                + 1,
+                self.inventory["FluidComponent"].number
+                + 1 : self.inventory["FluidComponent"].number
+                + self.inventory["StrandComponent"].number
+                + 1,
+            ]
+            .to_numpy()
+        )
         del self.dict_df_coupling["electric_conductance_mode"]
 
         # Initialize resistance matrix to a dummy value (sparse matrix)
@@ -1934,11 +1946,19 @@ class Conductor:
             # end for cc (cdp, 10/2020)
         # end if self.dict_Step["SYSVAR"].shape[-1] (cdp, 10/2020)
 
+        conductorlogger.debug(f"Before call function {save_geometry_discretization.__name__}.\n")
+        save_geometry_discretization(
+            self.inventory["all_component"].collection,
+            simulation.dict_path[f"Output_Initialization_{self.ID}_dir"],
+        )
+        conductorlogger.debug(f"After call function {save_geometry_discretization.__name__}.\n")
+
+        conductorlogger.debug(f"Before call function {save_properties.__name__}.\n")
         # Call function Save_properties to save conductor inizialization
         save_properties(
             self, simulation.dict_path[f"Output_Initialization_{self.ID}_dir"]
         )
-        print("Saved initialization")
+        conductorlogger.debug(f"After call function {save_properties.__name__}.\n")
 
         # Call function update_real_time_plot
         update_real_time_plots(self)

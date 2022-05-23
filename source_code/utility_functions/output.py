@@ -503,9 +503,7 @@ def save_simulation_time(simulation, conductor):
 
     ind_zcoord = {
         f"zcoord = {conductor.Time_save[ii]} (m)": np.max(
-            np.nonzero(
-                conductor.grid_features["zcoord"] <= conductor.Time_save[ii]
-            )
+            np.nonzero(conductor.grid_features["zcoord"] <= conductor.Time_save[ii])
         )
         for ii in range(conductor.Time_save.size)
     }
@@ -825,9 +823,7 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
     if space_conv:
         # Save data for the Space convergence analysis (cdp, 12/2020)
         # compute spatial discretization pitch (cdp, 12/2020)
-        discr = (
-            cond.inputs["ZLENGTH"] / cond.grid_input["NELEMS"]
-        )
+        discr = cond.inputs["ZLENGTH"] / cond.grid_input["NELEMS"]
         folder_path = os.path.join(f_path, cond.ID)
         # Create the path of the file {cond.ID}_delta_x.tsv (cdp, 11/2020)
         file_path_name = os.path.join(folder_path, f"{cond.ID}_delta_x.tsv")
@@ -965,3 +961,23 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
 
 
 # end function Save_convergence_data (cdp, 12/2020)
+
+
+def save_geometry_discretization(collection: list, file_path: str):
+    """Function used to save the coordinates of the barycenter of each conductor component in file with .tsv extension.
+    Cartesian reference frame is used.
+
+    Args:
+        collection (list): list with all the conductor component objects
+        file_path (str): path where to save the file with the geometry discretization.
+    """
+
+    [
+        pd.DataFrame(comp.coordinate).to_csv(
+            os.path.join(file_path, f"{comp.    ID}_barycenter.tsv"),
+            sep="\t",
+            index=False,
+            header=True,
+        )
+        for comp in collection
+    ]
