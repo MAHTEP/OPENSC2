@@ -520,6 +520,42 @@ class Conductor:
             [cat_kind, cat_ids], names=["Kind", "Identifier"]
         )
 
+
+    def __build_multi_index_current_carriers(self) -> pd.MultiIndex:
+        """Private method that builds multindex used in pandas dataframes used to store the nodal coordinates and the connectivity (matrix) only for conductor components of kind strand (StrandMixedComponent, StrandStabilizerComponent and StrandSuperconductroComponent).
+
+        Returns:
+            pd.MultiIndex:  pandas multindex with 'Kind' (parent class) and 'Identifier' (the component ID).
+        """
+        identifiers = [
+            obj.identifier for obj in self.inventory["StrandComponent"].collection
+        ]
+        kinds = [
+            obj.__class__.__name__
+            for obj in self.inventory["StrandComponent"].collection
+        ]
+
+        cat_kind = pd.CategoricalIndex(
+            np.tile(kinds, self.grid_inputs["NELEMS"] + 1),
+            dtype="category",
+            ordered=True,
+            categories=[
+                "StrandMixedComponent",
+                "StrandStabilizerComponent",
+                "StrandSuperconductorComponent",
+            ],
+        )
+        cat_ids = pd.CategoricalIndex(
+            np.tile(identifiers, self.grid_inputs["NELEMS"] + 1),
+            dtype="category",
+            ordered=True,
+            categories=identifiers,
+        )
+
+        return pd.MultiIndex.from_arrays(
+            [cat_kind, cat_ids], names=["Kind", "Identifier"]
+        )
+
     def __initialize_attributes(self: Self, simulation: object):
         """Private method that initializes usefull attributes of conductor object.
 
