@@ -384,7 +384,7 @@ class Channel(FluidComponentInput):
         )
         # Compute turbulent friction factor calling method self._eval_ft_newton
         self._eval_ft_newton(
-            hp, dict_coeff[self.inputs["IFRICTION"]], hd2, goverh, nodal
+            hp, dict_coeff[self.inputs["IFRICTION"]], hd2, goverh, nodal=nodal
         )
 
     # End method turbulent_friction_with_newton_hole.

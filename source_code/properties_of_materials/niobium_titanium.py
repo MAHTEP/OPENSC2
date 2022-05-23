@@ -409,7 +409,7 @@ def current_sharing_temperature_nbti(
     # Find index in op_current_density[op_ind] such that op_current_density[op_ind] > 0.0 (boolean array).
     op_ind_0 = op_current_density[op_ind] > 0.0
     if all(op_ind_0) == False:
-        return critical_temp[not op_ind_0]
+        return critical_temp[np.invert(op_ind_0)]
 
     magnetic_field[op_ind_0] = np.maximum(magnetic_field[op_ind_0], 0.01)
     temp_ub = critical_temp[op_ind_0]
