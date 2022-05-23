@@ -495,7 +495,9 @@ class Conductor:
         Returns:
             pd.MultiIndex: pandas multindex with 'Kind' (parent class) and 'Identifier' (the component ID).
         """
-        identifiers = [obj.identifier for obj in self.inventory["all_component"].collection]
+        identifiers = [
+            obj.identifier for obj in self.inventory["all_component"].collection
+        ]
         kinds = list()
         for obj in self.inventory["all_component"].collection:
             if isinstance(obj, StrandComponent):
@@ -519,7 +521,6 @@ class Conductor:
         return pd.MultiIndex.from_arrays(
             [cat_kind, cat_ids], names=["Kind", "Identifier"]
         )
-
 
     def __build_multi_index_current_carriers(self) -> pd.MultiIndex:
         """Private method that builds multindex used in pandas dataframes used to store the nodal coordinates and the connectivity (matrix) only for conductor components of kind strand (StrandMixedComponent, StrandStabilizerComponent and StrandSuperconductroComponent).
@@ -820,6 +821,63 @@ class Conductor:
         # Electric time initialization, to be understood where to actually do
         # this
         self.electric_time = 0.0  # s
+
+        conductorlogger.debug(
+            f"Before call method {self.__initialize_mesh_dataframe.__name__}\n"
+        )
+        self.__initialize_mesh_dataframe()
+        conductorlogger.debug(
+            f"After call method {self.__initialize_mesh_dataframe.__name__}\n"
+        )
+
+    def __initialize_mesh_dataframe(self):
+        """Private method that initializes pandas dataframes used to store nodal coordinates and connectivity (matrix)."""
+
+        conductorlogger.debug(
+            f"Before call method {self.__build_multi_index.__name__}\n"
+        )
+        multi_index = self.__build_multi_index()
+        conductorlogger.debug(
+            f"After call method {self.__build_multi_index.__name__}\n"
+        )
+        conductorlogger.debug(
+            f"Before call method {self.__build_multi_index_current_carriers.__name__}\n"
+        )
+        multi_index_current_carriers = self.__build_multi_index_current_carriers()
+        conductorlogger.debug(
+            f"After call method {self.__build_multi_index_current_carriers.__name__}\n"
+        )
+
+        self.nodal_coordinates = pd.DataFrame(
+            dict(
+                x=np.zeros(self.total_nodes),
+                y=np.zeros(self.total_nodes),
+                z=np.zeros(self.total_nodes),
+            ),
+            index=multi_index,
+        )
+
+        self.connectivity_matrix = pd.DataFrame(
+            dict(
+                start=np.zeros(self.total_elements, dtype=int),
+                end=np.zeros(self.total_elements, dtype=int),
+                identifiers=pd.Series(np.zeros(self.total_elements), dtype=str),
+            ),
+            index=multi_index[: -self.inventory["Conductor"].number],
+        )
+
+        self.connectivity_matrix_current_carriers = pd.DataFrame(
+            dict(
+                start=np.zeros(self.total_elements_current_carriers, dtype=int),
+                end=np.zeros(self.total_elements_current_carriers, dtype=int),
+                identifiers=pd.Series(
+                    np.zeros(self.total_elements_current_carriers), dtype=str
+                ),
+            ),
+            index=multi_index_current_carriers[
+                : -self.inventory["StrandComponent"].number
+            ],
+        )
 
     def conductors_coupling(self):
         pass
@@ -2014,12 +2072,16 @@ class Conductor:
             # end for cc (cdp, 10/2020)
         # end if self.dict_Step["SYSVAR"].shape[-1] (cdp, 10/2020)
 
-        conductorlogger.debug(f"Before call function {save_geometry_discretization.__name__}.\n")
+        conductorlogger.debug(
+            f"Before call function {save_geometry_discretization.__name__}.\n"
+        )
         save_geometry_discretization(
             self.inventory["all_component"].collection,
             simulation.dict_path[f"Output_Initialization_{self.ID}_dir"],
         )
-        conductorlogger.debug(f"After call function {save_geometry_discretization.__name__}.\n")
+        conductorlogger.debug(
+            f"After call function {save_geometry_discretization.__name__}.\n"
+        )
 
         conductorlogger.debug(f"Before call function {save_properties.__name__}.\n")
         # Call function Save_properties to save conductor inizialization
