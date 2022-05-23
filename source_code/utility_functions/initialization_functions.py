@@ -410,7 +410,7 @@ def check_user_defined_grid(
                 f"Inconsistent number of user defined nodes. The number of nodes in sheet {comp.ID} of file {file_path} must be equal to the one defined in sheet {comp_ref.ID} of the same file."
             )
 
-        if not np.array_equal(z_ref, dfs[comp.ID]["z [m]"].to_numpy()):
+        if not np.allclose(dfs[comp.ID]["z [m]"].to_numpy(), z_ref, equal_nan=True):
             raise ValueError(
                 f"User must provide the same z component of the coordinate for FluidComponent, JacketComponent and StrandComponent objects. Please check column z [m] in sheet {comp.ID} of file {file_path}."
             )
