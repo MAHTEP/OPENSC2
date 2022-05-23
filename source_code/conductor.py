@@ -14,6 +14,7 @@ import warnings
 from component_collection import ComponentCollection
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
+from strand_component import StrandComponent
 from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
 from strand_superconductor_component import StrandSuperconductorComponent
@@ -487,6 +488,37 @@ class Conductor:
             self.grid_features["zcoord"][1:] - self.grid_features["zcoord"][:-1]
         )
         self.grid_features["dz"] = self.grid_features["delta_z"].max()
+
+    def __build_multi_index(self) -> pd.MultiIndex:
+        """Private method that builds multindex used in pandas dataframes used to store the nodal coordinates and the connectivity (matrix) of each conductor component.
+
+        Returns:
+            pd.MultiIndex: pandas multindex with 'Kind' (parent class) and 'Identifier' (the component ID).
+        """
+        identifiers = [obj.identifier for obj in self.inventory["all_component"].collection]
+        kinds = list()
+        for obj in self.inventory["all_component"].collection:
+            if isinstance(obj, StrandComponent):
+                kinds.append(StrandComponent.__name__)
+            else:
+                kinds.append(obj.__class__.__name__)
+
+        cat_kind = pd.CategoricalIndex(
+            np.tile(kinds, self.grid_inputs["NELEMS"] + 1),
+            dtype="category",
+            ordered=True,
+            categories=["FluidComponent", "StrandComponent", "JacketComponent"],
+        )
+        cat_ids = pd.CategoricalIndex(
+            np.tile(identifiers, self.grid_inputs["NELEMS"] + 1),
+            dtype="category",
+            ordered=True,
+            categories=identifiers,
+        )
+
+        return pd.MultiIndex.from_arrays(
+            [cat_kind, cat_ids], names=["Kind", "Identifier"]
+        )
 
     def __initialize_attributes(self: Self, simulation: object):
         """Private method that initializes usefull attributes of conductor object.
