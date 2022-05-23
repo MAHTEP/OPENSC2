@@ -204,9 +204,9 @@ class Conductor:
         Args:
             self (Self): conductor object.
         """
-
-        del self.operations["EQUIPOTENTIAL_SURFACE_NUMBER"]
-        del self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]
+        pass
+        # del self.operations["EQUIPOTENTIAL_SURFACE_NUMBER"]
+        # del self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]
 
     def __convert_equipotential_surface_coordinate_to_array(self: Self):
         """Private method used as switch to convert values corresponding to key EQUIPOTENTIAL_SURFACE_COORDINATE to numpy array according to the original type (integer for single value or string for multiple values).
