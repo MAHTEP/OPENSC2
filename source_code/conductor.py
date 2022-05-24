@@ -2297,7 +2297,7 @@ class Conductor:
                 )
 
     def __contact_current_carriers(self):
-        """Private method that detects the contacts between componenst of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent, starting from the information on the first cross section. For the time being the component twist is not taken into account. Values stored in attribute contact_nodes_current_carriers.
+        """Private method that detects the contacts between components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent, starting from the information on the first cross section. For the time being the component twist is not taken into account. Values stored in attribute contact_nodes_current_carriers.
         Exploits method __contact_current_carriers_first_cross_section.
         """
         self.__contact_current_carriers_first_cross_section()
