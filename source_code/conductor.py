@@ -864,7 +864,7 @@ class Conductor:
                 end=np.zeros(self.total_elements, dtype=int),
                 identifiers=pd.Series(np.zeros(self.total_elements), dtype=str),
             ),
-            index=multi_index[: -self.inventory["Conductor"].number],
+            index=multi_index[: -self.inventory["all_component"].number],
         )
 
         self.connectivity_matrix_current_carriers = pd.DataFrame(
@@ -2184,23 +2184,23 @@ class Conductor:
         self.gauss_node_distance = np.zeros(self.total_nodes)
         # On the first cross section there is only the contribution from the
         # firts element
-        self.gauss_node_distance[: self.inventory["Conductor"].number] = (
-            self.node_distance[: self.inventory["Conductor"].number] / 2
+        self.gauss_node_distance[: self.inventory["all_component"].number] = (
+            self.node_distance[: self.inventory["all_component"].number] / 2
         )
 
         # All the 'inner' distances are evaluated as
         # (l_k + l_(k+1))/2, for k in [0,total_nodes]
         self.gauss_node_distance[
-            self.inventory["Conductor"].number : -self.inventory["Conductor"].number
+            self.inventory["all_component"].number : -self.inventory["all_component"].number
         ] = (
-            self.node_distance[: -self.inventory["Conductor"].number]
-            + self.node_distance[self.inventory["Conductor"].number :]
+            self.node_distance[: -self.inventory["all_component"].number]
+            + self.node_distance[self.inventory["all_component"].number :]
         ) / 2
 
         # On the last cross section there is only the contribution from the
         # last element
-        self.gauss_node_distance[-self.inventory["Conductor"].number :] = (
-            self.node_distance[-self.inventory["Conductor"].number :] / 2
+        self.gauss_node_distance[-self.inventory["all_component"].number :] = (
+            self.node_distance[-self.inventory["all_component"].number :] / 2
         )
 
     def __build_incidence_matrix(self):
@@ -2403,7 +2403,7 @@ class Conductor:
             return (
                 self.electric_conductance[indexes[0], indexes[1]]
                 * self.gauss_node_distance[
-                    arr_ind[0] :: self.inventory["Conductor"].number
+                    arr_ind[0] :: self.inventory["all_component"].number
                 ]
             )
 
