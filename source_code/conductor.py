@@ -2096,7 +2096,24 @@ class Conductor:
 
     # end method initialization
 
-    ################################################################################
+    ############################################################################
+
+    ##### ELECTRIC PREPROCESSING ############
+
+    def __build_nodal_coordinates(self, nn:int, key:str):
+        """Private method that builds the dataframe with the nodal coordinates of all conductor components.
+
+        Args:
+            nn (int): starting value of the index
+            key (str): key of the dictionary self.inventory; can be FluidComponent, StrandComponent, JacketComponent.
+        """
+
+        for ii, obj in enumerate(self.inventory[key].collection, nn):
+            for coord in ["x", "y", "z"]:
+                self.nodal_coordinates.iloc[
+                    ii :: self.inventory["all_component"].number,
+                    self.nodal_coordinates.columns.get_loc(coord),
+                ] = obj.coordinate[coord]
 
     def operating_conditions(self, simulation):
 
