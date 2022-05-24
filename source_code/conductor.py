@@ -2100,7 +2100,7 @@ class Conductor:
 
     ##### ELECTRIC PREPROCESSING ############
 
-    def __build_nodal_coordinates(self, nn:int, key:str):
+    def __build_nodal_coordinates(self, nn: int, key: str):
         """Private method that builds the dataframe with the nodal coordinates of all conductor components.
 
         Args:
@@ -2114,6 +2114,31 @@ class Conductor:
                     ii :: self.inventory["all_component"].number,
                     self.nodal_coordinates.columns.get_loc(coord),
                 ] = obj.coordinate[coord]
+
+    def __build_connectivity(self, nn: int, key: str):
+        """Private method that builds the dataframe with the connections (start and end node of each elements) of all conductor components.
+
+        Args:
+            nn (int): starting value of the index
+            key (str): key of the dictionary self.inventory; can be FluidComponent, StrandComponent, JacketComponent.
+        """
+        for ii, obj in enumerate(self.inventory[key].collection, nn):
+            nodes = np.linspace(
+                ii, ii + self.total_elements, self.grid_inputs["NELEMS"] + 1, dtype=int
+            )
+            self.connectivity_matrix.iloc[
+                ii :: self.inventory["all_component"].number,
+                self.connectivity_matrix.columns.get_loc("start"),
+            ] = nodes[:-1]
+            self.connectivity_matrix.iloc[
+                ii :: self.inventory["all_component"].number,
+                self.connectivity_matrix.columns.get_loc("end"),
+            ] = nodes[1:]
+            self.connectivity_matrix.iloc[
+                ii :: self.inventory["all_component"].number,
+                self.connectivity_matrix.columns.get_loc("identifiers"),
+            ] = obj.identifier
+        # End for
 
     def operating_conditions(self, simulation):
 
