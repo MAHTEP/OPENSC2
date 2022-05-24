@@ -2258,6 +2258,48 @@ class Conductor:
         )
 
 
+    def __contact_current_carriers_first_cross_section(self):
+        """Private method that evaluates the he contact nodes between StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent components on the first conductor cross section exploiting the contact perimeter flag value in sheet contact_perimeter_flag of input file conductor_coupling.xlsx.
+        Values stored in private attribute _contact_nodes_first.
+        """
+
+        self._contact_nodes_first = np.array([])
+        # 1+self.inventory["FluidComponent"].number keeps into account the
+        # Environment component.
+        for row in range(
+            1 + self.inventory["FluidComponent"].number,
+            1
+            + self.inventory["FluidComponent"].number
+            + self.inventory["StrandComponent"].number,
+        ):
+            ind = np.nonzero(
+                self.components_coupling.iloc[
+                    row,
+                    1
+                    + self.inventory["FluidComponent"].number : 1
+                    + self.inventory["FluidComponent"].number
+                    + self.inventory["StrandComponent"].number,
+                ].to_numpy()
+                == 1
+            )[0]
+
+            # Reduce the row index to convert from the whole system to the
+            # reduced one (only the StrandComponent components).
+            row -= 1 + self.inventory["FluidComponent"].number
+
+            if row == 0:
+                self._contact_nodes_first = np.array(
+                    [row * np.ones(ind.shape, dtype=int), ind]
+                ).T
+            else:
+                self._contact_nodes_first = np.concatenate(
+                    (
+                        self._contact_nodes_first,
+                        np.array([row * np.ones(ind.shape, dtype=int), ind]).T,
+                    )
+                )
+
+
     def operating_conditions(self, simulation):
 
         """
