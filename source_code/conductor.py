@@ -2333,6 +2333,25 @@ class Conductor:
             columns=["start", "end"],
         )
 
+
+    def __build_contact_incidence_matrix(self):
+        """Private method that builds the edge to node incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Values stored in attribute contact_incidence_matrix. Expoit sparse matrix.
+        """
+
+        # Edge-to-node incidence matrix (referred to En)
+        row_ind = np.tile(
+            np.r_[0 : self.contact_nodes_current_carriers.shape[0]], (2, 1)
+        ).flatten("F")
+        col_ind = (
+            self.contact_nodes_current_carriers.to_numpy().transpose().flatten("F")
+        )  # which column
+        self.contact_incidence_matrix = coo_matrix(
+            (
+                np.tile([-1, 1], self.contact_nodes_current_carriers.shape[0]),
+                (row_ind, col_ind),
+            )
+        ).tocsr()
+
     def operating_conditions(self, simulation):
 
         """
