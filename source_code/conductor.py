@@ -2296,6 +2296,43 @@ class Conductor:
                     )
                 )
 
+    def __contact_current_carriers(self):
+        """Private method that detects the contacts between componenst of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent, starting from the information on the first cross section. For the time being the component twist is not taken into account. Values stored in attribute contact_nodes_current_carriers.
+        Exploits method __contact_current_carriers_first_cross_section.
+        """
+        self.__contact_current_carriers_first_cross_section()
+        contact_nodes_current_carriers = np.zeros(
+            (
+                (self.grid_inputs["NELEMS"] + 1) * self._contact_nodes_first.shape[0],
+                self._contact_nodes_first.shape[1],
+            ),
+            dtype=int,
+        )
+        contact_nodes_current_carriers[
+            : self._contact_nodes_first.shape[0], :
+        ] = self._contact_nodes_first
+        for ii in range(1, self.grid_inputs["NELEMS"] + 1):
+            contact_nodes_current_carriers[
+                ii
+                * self._contact_nodes_first.shape[0] : (ii + 1)
+                * self._contact_nodes_first.shape[0],
+                :,
+            ] = (
+                contact_nodes_current_carriers[
+                    (ii - 1)
+                    * self._contact_nodes_first.shape[0] : ii
+                    * self._contact_nodes_first.shape[0],
+                    :,
+                ]
+                + self.inventory["StrandComponent"].number
+            )
+
+        self.contact_nodes_current_carriers = pd.DataFrame(
+            contact_nodes_current_carriers,
+            dtype=int,
+            columns=["start", "end"],
+        )
+
     def operating_conditions(self, simulation):
 
         """
