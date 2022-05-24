@@ -2270,7 +2270,7 @@ class Conductor:
             + self.inventory["StrandComponent"].number,
         ):
             ind = np.nonzero(
-                self.components_coupling.iloc[
+                self.dict_df_coupling["contact_perimeter_flag"].iloc[
                     row,
                     1
                     + self.inventory["FluidComponent"].number : 1
