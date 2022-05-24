@@ -2205,7 +2205,7 @@ class Conductor:
 
     def __build_incidence_matrix(self):
         """Private method that builds the incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Value stored in attribute incidence_matrix; the transposed incidence matrix is also evaluated and stored in attribute incidence_matrix_transposed. Thake adantage of sparse matrices.
-        
+
         From MatLab code given by professor F. Freschi.
         """
         # Row pointer: get_loc returns a boolean array, irow is build with
@@ -2235,6 +2235,28 @@ class Conductor:
         ).tocsr()
 
         self.incidence_matrix_transposed = self.incidence_matrix.T
+
+    def __build_electric_resistance_matrix(self):
+        """Private method that builds the elecrtic resistance matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Value stored in attribute electric_resistance_matrix. Thake adantage of sparse matrices.
+        """
+
+        resistance = np.zeros(self.total_elements_current_carriers)
+        for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
+            resistance[
+                ii :: self.inventory["StrandComponent"].number
+            ] = obj.electrical_resistance(self)
+
+        self.electric_resistance_matrix = diags(
+            resistance,
+            offsets=0,
+            shape=(
+                self.total_elements_current_carriers,
+                self.total_elements_current_carriers,
+            ),
+            format="csr",
+            dtype=float,
+        )
+
 
     def operating_conditions(self, simulation):
 
