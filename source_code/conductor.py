@@ -2165,8 +2165,7 @@ class Conductor:
             ] = obj.identifier
 
     def __compute_node_distance(self):
-        """Private method that computes the distance between nodes thaking into account all the coordinates (x,y,z). Values are stored in attribute node_distance.
-        """
+        """Private method that computes the distance between nodes thaking into account all the coordinates (x,y,z). Values are stored in attribute node_distance."""
         self.node_distance = (
             (
                 (
@@ -2237,8 +2236,7 @@ class Conductor:
         self.incidence_matrix_transposed = self.incidence_matrix.T
 
     def __build_electric_resistance_matrix(self):
-        """Private method that builds the elecrtic resistance matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Value stored in attribute electric_resistance_matrix. Thake adantage of sparse matrices.
-        """
+        """Private method that builds the elecrtic resistance matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Value stored in attribute electric_resistance_matrix. Thake adantage of sparse matrices."""
 
         resistance = np.zeros(self.total_elements_current_carriers)
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
@@ -2256,7 +2254,6 @@ class Conductor:
             format="csr",
             dtype=float,
         )
-
 
     def __contact_current_carriers_first_cross_section(self):
         """Private method that evaluates the he contact nodes between StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent components on the first conductor cross section exploiting the contact perimeter flag value in sheet contact_perimeter_flag of input file conductor_coupling.xlsx.
@@ -2298,7 +2295,6 @@ class Conductor:
                         np.array([row * np.ones(ind.shape, dtype=int), ind]).T,
                     )
                 )
-
 
     def operating_conditions(self, simulation):
 
