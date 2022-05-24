@@ -12,7 +12,10 @@ import warnings
 
 # import classes
 from component_collection import ComponentCollection
-from conductor_flags import ELECTRIC_CONDUCTANCE_UNIT_LENGTH, ELECTRIC_CONDUCTANCE_NOT_UNIT_LENGTH
+from conductor_flags import (
+    ELECTRIC_CONDUCTANCE_UNIT_LENGTH,
+    ELECTRIC_CONDUCTANCE_NOT_UNIT_LENGTH,
+)
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
 from strand_component import StrandComponent
@@ -2191,7 +2194,9 @@ class Conductor:
         # All the 'inner' distances are evaluated as
         # (l_k + l_(k+1))/2, for k in [0,total_nodes]
         self.gauss_node_distance[
-            self.inventory["all_component"].number : -self.inventory["all_component"].number
+            self.inventory["all_component"]
+            .number : -self.inventory["all_component"]
+            .number
         ] = (
             self.node_distance[: -self.inventory["all_component"].number]
             + self.node_distance[self.inventory["all_component"].number :]
@@ -2271,13 +2276,15 @@ class Conductor:
             + self.inventory["StrandComponent"].number,
         ):
             ind = np.nonzero(
-                self.dict_df_coupling["contact_perimeter_flag"].iloc[
+                self.dict_df_coupling["contact_perimeter_flag"]
+                .iloc[
                     row,
                     1
                     + self.inventory["FluidComponent"].number : 1
                     + self.inventory["FluidComponent"].number
                     + self.inventory["StrandComponent"].number,
-                ].to_numpy()
+                ]
+                .to_numpy()
                 == 1
             )[0]
 
@@ -2334,10 +2341,8 @@ class Conductor:
             columns=["start", "end"],
         )
 
-
     def __build_contact_incidence_matrix(self):
-        """Private method that builds the edge to node incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Values stored in attribute contact_incidence_matrix. Expoit sparse matrix.
-        """
+        """Private method that builds the edge to node incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Values stored in attribute contact_incidence_matrix. Expoit sparse matrix."""
 
         # Edge-to-node incidence matrix (referred to En)
         row_ind = np.tile(
@@ -2373,11 +2378,12 @@ class Conductor:
                 ** 2
             )
             .sum(axis="columns")
-            .apply(np.sqrt).to_nparray()
+            .apply(np.sqrt)
+            .to_nparray()
         )  # distance
         return distance
 
-    def __evaluate_electric_conductance(self, distance:np.ndarray)-> np.ndarray:
+    def __evaluate_electric_conductance(self, distance: np.ndarray) -> np.ndarray:
         """Private method that evaluates the electric conductance for components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent that are in contact in transverse direction. According to the value in sheet electric_conductance_mode of input file conductro_coupling.xlsx the electric conductance is evaluated in different modes:
         1) exploits function __evaluate_electric_conductance_unit_length (electric conductance is defined per unit length);
         2) exploits function __evaluate_electric_conductance_not_unit_length (electric conductance is not defined per unit length).
@@ -2391,7 +2397,7 @@ class Conductor:
 
         def __evaluate_electric_conductance_unit_length() -> np.ndarray:
             """Fuction that evaluates the electric conductance per unit length.
-            
+
             el_cond = sigma*gauss_node_distance
 
             with sigma the electric conductance per unit length.
@@ -2407,9 +2413,9 @@ class Conductor:
                 ]
             )
 
-        def __evaluate_electric_conductance_not_unit_length()-> np.ndarray:
+        def __evaluate_electric_conductance_not_unit_length() -> np.ndarray:
             """Fuction that evaluates the electric conductance when the electric conductivity sigma is not given per unit length.
-            
+
             el_cond = sigma*contact_perimeter*gauss_node_distance/contact_distance
 
             Returns:
