@@ -2141,8 +2141,7 @@ class Conductor:
         # End for
 
     def __build_connectivity_current_carriers(self):
-        """Private method that builds the dataframe with the connections (start and end node of each elements) of StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent components.
-        """
+        """Private method that builds the dataframe with the connections (start and end node of each elements) of StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent components."""
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
             nodes = np.linspace(
                 ii,
@@ -2165,9 +2164,9 @@ class Conductor:
                 ),
             ] = obj.identifier
 
-
     def __compute_node_distance(self):
-        """Private method that computes the distance between nodes thaking into account all the coordinates (x,y,z). Values are stored in attribute node_distance."""
+        """Private method that computes the distance between nodes thaking into account all the coordinates (x,y,z). Values are stored in attribute node_distance.
+        """
         self.node_distance = (
             (
                 (
@@ -2178,6 +2177,30 @@ class Conductor:
             )
             .sum(axis=1)
             .apply(np.sqrt)
+        )
+
+    def __compute_gauss_node_distance(self):
+        """Private method that evaluate the distance between consecutive gauss node (the mid point of the element), thaking into account all the coordinates (x,y,z). Values are stored in attribute gauss_node_distance."""
+        self.gauss_node_distance = np.zeros(self.total_nodes)
+        # On the first cross section there is only the contribution from the
+        # firts element
+        self.gauss_node_distance[: self.inventory["Conductor"].number] = (
+            self.node_distance[: self.inventory["Conductor"].number] / 2
+        )
+
+        # All the 'inner' distances are evaluated as
+        # (l_k + l_(k+1))/2, for k in [0,total_nodes]
+        self.gauss_node_distance[
+            self.inventory["Conductor"].number : -self.inventory["Conductor"].number
+        ] = (
+            self.node_distance[: -self.inventory["Conductor"].number]
+            + self.node_distance[self.inventory["Conductor"].number :]
+        ) / 2
+
+        # On the last cross section there is only the contribution from the
+        # last element
+        self.gauss_node_distance[-self.inventory["Conductor"].number :] = (
+            self.node_distance[-self.inventory["Conductor"].number :] / 2
         )
 
     def operating_conditions(self, simulation):
