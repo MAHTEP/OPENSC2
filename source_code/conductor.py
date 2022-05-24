@@ -2453,6 +2453,35 @@ class Conductor:
 
         return electric_conductance
 
+    def __build_electric_conductance_matrix(self):
+        """Private method that builds the electric conductance matrix for components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent that are in contact along transverse direction. Values are stored in attribute electric_conductance_matrix.
+        Exploits sparse matrix.
+        """
+
+        # reset_index is used to reset the index to numerical values instead of object identifier in order to make the correct operations and have the correct shape: distance.shape = (self.total_nodes_current_carriers,)
+        distance = self.__evaluate_transversal_distance()
+
+        electric_conductance = self.__evaluate_electric_conductance(distance)
+        np.savetxt(
+            "electric_conductance_unit_length.tsv", electric_conductance, delimiter="\t"
+        )
+
+        # Conductance matrix
+        self.electric_conductance_matrix = (
+            self.contact_incidence_matrix.T
+            @ diags(
+                electric_conductance,
+                offsets=0,
+                shape=(
+                    self.contact_nodes_current_carriers.shape[0],
+                    self.contact_nodes_current_carriers.shape[0],
+                ),
+                format="csr",
+                dtype=float,
+            )
+            @ self.contact_incidence_matrix
+        )
+
     def operating_conditions(self, simulation):
 
         """
