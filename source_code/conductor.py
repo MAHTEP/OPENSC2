@@ -2180,7 +2180,7 @@ class Conductor:
         )
 
     def __compute_gauss_node_distance(self):
-        """Private method that evaluate the distance between consecutive gauss node (the mid point of the element), thaking into account all the coordinates (x,y,z). Values are stored in attribute gauss_node_distance."""
+        """Private method that evaluates the distance between consecutive gauss node (the mid point of the element), thaking into account all the coordinates (x,y,z). Values are stored in attribute gauss_node_distance."""
         self.gauss_node_distance = np.zeros(self.total_nodes)
         # On the first cross section there is only the contribution from the
         # firts element
@@ -2202,6 +2202,39 @@ class Conductor:
         self.gauss_node_distance[-self.inventory["Conductor"].number :] = (
             self.node_distance[-self.inventory["Conductor"].number :] / 2
         )
+
+    def __build_incidence_matrix(self):
+        """Private method that builds the incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Value stored in attribute incidence_matrix; the transposed incidence matrix is also evaluated and stored in attribute incidence_matrix_transposed. Thake adantage of sparse matrices.
+        
+        From MatLab code given by professor F. Freschi.
+        """
+        # Row pointer: get_loc returns a boolean array, irow is build with
+        # values in 0:Ne for which the boolean is True (corresponds to a
+        # CurrenCarrier index).
+        irow = np.tile(
+            np.r_[0 : self.total_elements_current_carriers],
+            (2, 1),
+        ).flatten("F")
+        # Column pointer.
+        jcol = (
+            self.connectivity_matrix_current_carriers.iloc[:, 0:2]
+            .to_numpy()
+            .copy()
+            .transpose()
+            .flatten("F")
+        )
+        # Nonzeros values
+        s = np.tile([-1, 1], self.total_elements_current_carriers)
+        # Assemble matrix
+        self.incidence_matrix = coo_matrix(
+            (s, (irow, jcol)),
+            shape=(
+                self.total_elements_current_carriers,
+                self.total_nodes_current_carriers,
+            ),
+        ).tocsr()
+
+        self.incidence_matrix_transposed = self.incidence_matrix.T
 
     def operating_conditions(self, simulation):
 
