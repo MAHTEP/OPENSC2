@@ -2140,6 +2140,31 @@ class Conductor:
             ] = obj.identifier
         # End for
 
+    def __build_connectivity_current_carriers(self):
+        """Private method that builds the dataframe with the connections (start and end node of each elements) of StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent components.
+        """
+        for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
+            nodes = np.linspace(
+                ii,
+                ii + self.total_elements_current_carriers,
+                self.grid_inputs["NELEMS"] + 1,
+                dtype=int,
+            )
+            self.connectivity_matrix_current_carriers.iloc[
+                ii :: self.inventory["StrandComponent"].number,
+                self.connectivity_matrix_current_carriers.columns.get_loc("start"),
+            ] = nodes[:-1]
+            self.connectivity_matrix_current_carriers.iloc[
+                ii :: self.inventory["StrandComponent"].number,
+                self.connectivity_matrix_current_carriers.columns.get_loc("end"),
+            ] = nodes[1:]
+            self.connectivity_matrix_current_carriers.iloc[
+                ii :: self.inventory["StrandComponent"].number,
+                self.connectivity_matrix_current_carriers.columns.get_loc(
+                    "identifiers"
+                ),
+            ] = obj.identifier
+
     def operating_conditions(self, simulation):
 
         """
