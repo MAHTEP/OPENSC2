@@ -2165,6 +2165,21 @@ class Conductor:
                 ),
             ] = obj.identifier
 
+
+    def __compute_node_distance(self):
+        """Private method that computes the distance between nodes thaking into account all the coordinates (x,y,z). Values are stored in attribute node_distance."""
+        self.node_distance = (
+            (
+                (
+                    self.nodal_coordinates.iloc[self.connectivity_matrix["end"], :]
+                    - self.nodal_coordinates.iloc[self.connectivity_matrix["start"], :]
+                )
+                ** 2
+            )
+            .sum(axis=1)
+            .apply(np.sqrt)
+        )
+
     def operating_conditions(self, simulation):
 
         """
