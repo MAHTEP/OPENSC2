@@ -12,6 +12,7 @@ import warnings
 
 # import classes
 from component_collection import ComponentCollection
+from conductor_flags import ELECTRIC_CONDUCTANCE_UNIT_LENGTH, ELECTRIC_CONDUCTANCE_NOT_UNIT_LENGTH
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
 from strand_component import StrandComponent
@@ -2376,7 +2377,81 @@ class Conductor:
         )  # distance
         return distance
 
-    
+    def __evaluate_electric_conductance(self, distance:np.ndarray)-> np.ndarray:
+        """Private method that evaluates the electric conductance for components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent that are in contact in transverse direction. According to the value in sheet electric_conductance_mode of input file conductro_coupling.xlsx the electric conductance is evaluated in different modes:
+        1) exploits function __evaluate_electric_conductance_unit_length (electric conductance is defined per unit length);
+        2) exploits function __evaluate_electric_conductance_not_unit_length (electric conductance is not defined per unit length).
+
+        Args:
+            distance (np.ndarray): distance along the direction ortoghonal to the z direction, between nodes of components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent that are in contact
+
+        Returns:
+            np.ndarray: matrix with the electric conductance values.
+        """
+
+        def __evaluate_electric_conductance_unit_length() -> np.ndarray:
+            """Fuction that evaluates the electric conductance per unit length.
+            
+            el_cond = sigma*gauss_node_distance
+
+            with sigma the electric conductance per unit length.
+
+            Returns:
+                np.ndarray: matrix with the electric conductance values.
+            """
+            # el_cond = sigma*gauss_node_distance
+            return (
+                self.electric_conductance[indexes[0], indexes[1]]
+                * self.gauss_node_distance[
+                    arr_ind[0] :: self.inventory["Conductor"].number
+                ]
+            )
+
+        def __evaluate_electric_conductance_not_unit_length()-> np.ndarray:
+            """Fuction that evaluates the electric conductance when the electric conductivity sigma is not given per unit length.
+            
+            el_cond = sigma*contact_perimeter*gauss_node_distance/contact_distance
+
+            Returns:
+                np.ndarray: matrix with the electric conductance values.
+            """
+            # el_cond = sigma*contact_perimeter*gauss_node_distance
+            # /contact_distance
+            return (
+                self.electric_conductance[indexes[0], indexes[1]]
+                * self.dict_df_coupling["contact_perimeter"].iat[mat_ind[0], mat_ind[1]]
+                * (
+                    self.gauss_node_distance[
+                        arr_ind[0] :: self.inventory["all_component"].number
+                    ]
+                    + self.gauss_node_distance[
+                        arr_ind[1] :: self.inventory["all_component"].number
+                    ]
+                )
+                / 2
+                / distance[ii :: self._contact_nodes_first.shape[0]]
+            )
+
+        electric_conductance = np.zeros((self.contact_nodes_current_carriers.shape[0],))
+
+        # Switch to use the correct function to evaluate the electric
+        # conductance according to the flag set in sheet
+        # electric_conductance_mode in file conductor_coupling.xlsx
+        _ = {
+            ELECTRIC_CONDUCTANCE_UNIT_LENGTH: __evaluate_electric_conductance_unit_length,
+            ELECTRIC_CONDUCTANCE_NOT_UNIT_LENGTH: __evaluate_electric_conductance_not_unit_length,
+        }
+
+        # Evaluate electric conductance
+        for ii, indexes in enumerate(self._contact_nodes_first):
+            mat_ind = indexes + self.inventory["FluidComponent"].number + 1
+            arr_ind = indexes + self.inventory["FluidComponent"].number
+
+            electric_conductance[ii :: self._contact_nodes_first.shape[0]] = _[
+                self.electric_conductance_mode[indexes[0], indexes[1]]
+            ]()
+
+        return electric_conductance
 
     def operating_conditions(self, simulation):
 
