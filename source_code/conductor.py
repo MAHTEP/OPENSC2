@@ -2352,6 +2352,32 @@ class Conductor:
             )
         ).tocsr()
 
+    def __evaluate_transversal_distance(self) -> np.ndarray:
+        """Private method that evaluates distance along the direction ortoghonal to the z direction, between nodes of components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent that are in contact.
+
+        Returns:
+            np.ndarray: array with the evaluated distance.
+        """
+        # reset_index is used to reset the index to numerical values instead of object identifier in order to make the correct operations and have the correct shape: distance.shape = (self.total_nodes_current_carriers,)
+        distance = (
+            (
+                (
+                    self.nodal_coordinates.loc["StrandComponent"]
+                    .iloc[self.contact_nodes_current_carriers["end"], :]
+                    .reset_index(level="Identifier", drop=True)
+                    - self.nodal_coordinates.loc["StrandComponent"]
+                    .iloc[self.contact_nodes_current_carriers["start"], :]
+                    .reset_index(level="Identifier", drop=True)
+                )
+                ** 2
+            )
+            .sum(axis="columns")
+            .apply(np.sqrt).to_nparray()
+        )  # distance
+        return distance
+
+    
+
     def operating_conditions(self, simulation):
 
         """
