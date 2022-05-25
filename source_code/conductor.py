@@ -2488,6 +2488,117 @@ class Conductor:
             @ self.contact_incidence_matrix
         )
 
+    def preprocessing(self):
+        """Method that allows to evaluate most of the quatities and data structures needed for the electric calculation.
+        Builds nodal coordinates and connectiviy dataframes, the connectivity matrix only for StrandComponent, the inicidence matrices in both longitudinal and transversal directions, the resistance matrix (logitudinal) and the conductance matrix (transverse direction).
+        """
+
+        nn = 0
+
+        for key in ["FluidComponent", "StrandComponent", "JacketComponent"]:
+            conductorlogger.debug(
+                f"Before call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
+            )
+            self.__build_nodal_coordinates(nn, key)
+            conductorlogger.debug(
+                f"After call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
+            )
+
+            conductorlogger.debug(
+                f"Before call method {self.__build_connectivity.__name__} for {key} objects.\n"
+            )
+            self.__build_connectivity(nn, key)
+            conductorlogger.debug(
+                f"After call method {self.__build_connectivity.__name__} for {key} objects.\n"
+            )
+            nn += self.inventory[key].number
+            # End if
+        # End for key
+
+        # Build the connectivity matrix for the reduced system of components:
+        # keeps into account only the StrandComponent ones.
+        conductorlogger.debug(
+            f"Before call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
+        )
+        self.__build_connectivity_current_carriers()
+        conductorlogger.debug(
+            f"After call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
+        )
+
+        conductorlogger.debug(
+            f"Before convert index of dataframe self.connectivity_matrix to categorical.\n"
+        )
+        self.connectivity_matrix.loc[:, "identifiers"] = self.connectivity_matrix.loc[
+            :, "identifiers"
+        ].astype("category")
+        self.connectivity_matrix_current_carriers.loc[
+            :, "identifiers"
+        ] = self.connectivity_matrix_current_carriers.loc[:, "identifiers"].astype(
+            "category"
+        )
+        conductorlogger.debug(
+            f"After convert index of dataframe self.connectivity_matrix to categorical.\n"
+        )
+
+        conductorlogger.debug(
+            f"Before call method {self.__compute_node_distance.__name__}.\n"
+        )
+        self.__compute_node_distance()
+        conductorlogger.debug(
+            f"After call method {self.__compute_node_distance.__name__}.\n"
+        )
+
+        conductorlogger.debug(
+            f"Before call method {self.__compute_gauss_node_distance.__name__}.\n"
+        )
+        self.__compute_gauss_node_distance()
+        conductorlogger.debug(
+            f"After call method {self.__compute_gauss_node_distance.__name__}.\n"
+        )
+
+        conductorlogger.debug(
+            f"Before call method {self.__build_incidence_matrix.__name__}.\n"
+        )
+        # Build incidence matrix only for StrandComponent
+        self.__build_incidence_matrix()
+        conductorlogger.debug(
+            f"After call method {self.__build_incidence_matrix.__name__}.\n"
+        )
+
+        conductorlogger.debug(
+            f"Before call method {self.__build_electric_resistance_matrix.__name__}.\n"
+        )
+        self.__build_electric_resistance_matrix()
+        conductorlogger.debug(
+            f"After call method {self.__build_electric_resistance_matrix.__name__}.\n"
+        )
+
+        conductorlogger.debug(
+            f"Before call method {self.__contact_current_carriers.__name__}.\n"
+        )
+        self.__contact_current_carriers()
+        conductorlogger.debug(
+            f"After call method {self.__contact_current_carriers.__name__}.\n"
+        )
+
+        conductorlogger.debug(
+            f"Before call method {self.__build_contact_incidence_matrix.__name__}.\n"
+        )
+        # this method builds the contact incidence matrix for current carriers
+        # only
+        self.__build_contact_incidence_matrix()
+        conductorlogger.debug(
+            f"After call method {self.__build_contact_incidence_matrix.__name__}.\n"
+        )
+
+        conductorlogger.debug(
+            f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
+        )
+        self.__build_electric_conductance_matrix()
+        conductorlogger.debug(
+            f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
+        )
+
     def operating_conditions(self, simulation):
 
         """
