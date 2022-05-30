@@ -2704,6 +2704,24 @@ class Conductor:
 
         self.electric_stiffness_matrix = self.electric_stiffness_matrix.tocsr(copy=True)
 
+    def assign_equivalue_surfaces(self):
+        """Method that assign the prescibed equipotential surface of the conductor.
+        """
+        tol = 1e-10
+        for ii, coord in enumerate(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]):
+            # Find the index of the spatial discretization along z such that
+            # abs(z - coord) <= tol; assing the last StrandComponent.number
+            # values to the i-th row of equipotential_node_index and add
+            # self.total_elements_current_carriers to shift the indexes to the
+            # correct position (in the portion of the array dedicated to the
+            # current).
+            self.equipotential_node_index[ii, :] = (
+                (self.nodal_coordinates.loc["StrandComponent", "z"] - coord).abs() <= tol
+            ).to_numpy().nonzero()[0][
+                -self.inventory["StrandComponent"].number :
+            ] + self.total_elements_current_carriers
+
+
     def operating_conditions(self, simulation):
 
         """
