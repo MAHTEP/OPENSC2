@@ -286,7 +286,10 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
-        if fluid_comp.identifier == cond.inventory["FluidComponent"].collection[0].identifier:
+        if (
+            fluid_comp.identifier
+            == cond.inventory["FluidComponent"].collection[0].identifier
+        ):
             # declare dictionary to store the spatial diccretizations only once \
             # (cdp, 01/2021)
             dict_zcoord = dict()
@@ -301,7 +304,10 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
             )
             # Delete the old file format.
             os.remove(file_load)
-            if fluid_comp.identifier == cond.inventory["FluidComponent"].collection[0].identifier:
+            if (
+                fluid_comp.identifier
+                == cond.inventory["FluidComponent"].collection[0].identifier
+            ):
                 # store the spatial discretizations at each required time step in file \
                 # zcoord.tsv only once (cdp,01/2021)
                 dict_zcoord[f"time = {time[ii]} (s)"] = dict_df[file_name]["zcoord (m)"]
@@ -346,7 +352,10 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
             # save the data frame, without the row index name (cdp, 11/2020)
             dict_df_new[prop].to_csv(path_save, sep="\t", index=False)
         # end for prop (cdp, 11/2020)
-        if fluid_comp.identifier == cond.inventory["FluidComponent"].collection[0].identifier:
+        if (
+            fluid_comp.identifier
+            == cond.inventory["FluidComponent"].collection[0].identifier
+        ):
             # convert the dictionary to a DataFrame (cdp,01/2021)
             df_zcoord = pd.DataFrame(dict_zcoord)
             # build file name (cdp, 01/2021)
@@ -551,7 +560,9 @@ def save_simulation_time(simulation, conductor):
             # Save the headings only ones.
             pd.DataFrame(columns=headers).to_csv(
                 os.path.join(
-                    simulation.dict_path[f"Output_Time_evolution_{conductor.identifier}_dir"],
+                    simulation.dict_path[
+                        f"Output_Time_evolution_{conductor.identifier}_dir"
+                    ],
                     f"{f_comp.identifier}_friction_factor_te.tsv",
                 ),
                 sep="\t",
@@ -561,7 +572,9 @@ def save_simulation_time(simulation, conductor):
             # Save the headings only ones.
             pd.DataFrame(columns=headers_inl_out).to_csv(
                 os.path.join(
-                    simulation.dict_path[f"Output_Time_evolution_{conductor.identifier}_dir"],
+                    simulation.dict_path[
+                        f"Output_Time_evolution_{conductor.identifier}_dir"
+                    ],
                     f"{f_comp.identifier}_inlet_outlet_te.tsv",
                 ),
                 sep="\t",
@@ -606,7 +619,9 @@ def save_simulation_time(simulation, conductor):
                 conductor,
                 fluid_comp.coolant.time_evol[key],
                 os.path.join(
-                    simulation.dict_path[f"Output_Time_evolution_{conductor.identifier}_dir"],
+                    simulation.dict_path[
+                        f"Output_Time_evolution_{conductor.identifier}_dir"
+                    ],
                     f"{fluid_comp.identifier}_{key}_te.tsv",
                 ),
                 simulation.transient_input["TEND"],
@@ -627,7 +642,9 @@ def save_simulation_time(simulation, conductor):
             conductor,
             fluid_comp.channel.time_evol["friction_factor"],
             os.path.join(
-                simulation.dict_path[f"Output_Time_evolution_{conductor.identifier}_dir"],
+                simulation.dict_path[
+                    f"Output_Time_evolution_{conductor.identifier}_dir"
+                ],
                 f"{fluid_comp.identifier}_friction_factor_te.tsv",
             ),
             simulation.transient_input["TEND"],
@@ -717,7 +734,9 @@ def save_simulation_time(simulation, conductor):
                 conductor,
                 s_comp.time_evol[key],
                 os.path.join(
-                    simulation.dict_path[f"Output_Time_evolution_{conductor.identifier}_dir"],
+                    simulation.dict_path[
+                        f"Output_Time_evolution_{conductor.identifier}_dir"
+                    ],
                     f"{s_comp.identifier}_{key}_te.tsv",
                 ),
                 simulation.transient_input["TEND"],
@@ -734,7 +753,9 @@ def save_simulation_time(simulation, conductor):
         # TEND is reached: save the conductor time in file Time.tsv exploiting pandas series
         pd.Series(conductor.cond_time, name="time (s)", dtype=float).to_csv(
             os.path.join(
-                simulation.dict_path[f"Output_Time_evolution_{conductor.identifier}_dir"],
+                simulation.dict_path[
+                    f"Output_Time_evolution_{conductor.identifier}_dir"
+                ],
                 "Time.tsv",
             ),
             sep="\t",
@@ -924,7 +945,9 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
         # pressure and temperature only (cdp, 11/2020)
         folder_path = os.path.join(f_path, cond.identifier, fluid_comp.identifier)
         os.makedirs(name=folder_path, exist_ok=True)
-        file_path = os.path.join(folder_path, f"{fluid_comp.identifier}_({brackets}).tsv")
+        file_path = os.path.join(
+            folder_path, f"{fluid_comp.identifier}_({brackets}).tsv"
+        )
         A_chan = np.zeros(
             (
                 cond.grid_features["N_nod"],

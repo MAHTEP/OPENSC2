@@ -110,10 +110,7 @@ class Environment:
             characteristic_length = (
                 conductor.inputs["XLENGHT"]
                 * conductor.inputs["Width"]
-                / (
-                    2
-                    * (conductor.inputs["XLENGHT"] + conductor.inputs["Width"])
-                )
+                / (2 * (conductor.inputs["XLENGHT"] + conductor.inputs["Width"]))
             )
             # Evaluate Grashof dimensionless number lower/upper cold plate.
             grashof_lu = self.grashof_number(
@@ -507,9 +504,7 @@ class Environment:
         }
 
         # Evaluate air volumetric thermal expansion coefficient, kinematic viscosity and Prandtl number at film temperature.
-        return dict_eval_air_properties[self.inputs["Use_humidity"]](
-            film_temperature
-        )
+        return dict_eval_air_properties[self.inputs["Use_humidity"]](film_temperature)
 
     # End method eval_air_properties
 

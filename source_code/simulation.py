@@ -215,7 +215,9 @@ class Simulation:
                             # There is not contact between cond_r and cond_c (cdp,07/2020)
                             # Proposta di soluzione ma va studiata decisamente meglio!
                             # N.B. controllare anche nella chiamata a step come passare self.dict_qsource.
-                            self.dict_qsource[f"{cond_r.identifier}_{cond_c.identifier}"] = np.zeros(
+                            self.dict_qsource[
+                                f"{cond_r.identifier}_{cond_c.identifier}"
+                            ] = np.zeros(
                                 (
                                     cond_r.grid_features["N_nod"],
                                     cond_r.dict_N_equation["JacketComponent"],
@@ -255,7 +257,9 @@ class Simulation:
             # Save of the solution spatial distribution at 0.0 s (cdp, 12/2020)
             save_simulation_space(
                 conductor,
-                self.dict_path[f"Output_Spatial_distribution_{conductor.identifier}_dir"],
+                self.dict_path[
+                    f"Output_Spatial_distribution_{conductor.identifier}_dir"
+                ],
                 abs(self.n_digit),
             )
         # end for ii (cdp, 10/2020)
@@ -423,7 +427,9 @@ class Simulation:
             )
             # Call function Save_properties to save the conductor final solution \
             # (cdp, 12/2020)
-            save_properties(cond, self.dict_path[f"Output_Solution_{cond.identifier}_dir"])
+            save_properties(
+                cond, self.dict_path[f"Output_Solution_{cond.identifier}_dir"]
+            )
         # end for cond (cdp, 12/2020)
         print("Saved final solution\n")
         print("End simulation called " + self.transient_input["SIMULATION"] + "\n")

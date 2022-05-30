@@ -365,7 +365,9 @@ def check_grid_features(zlength: float, z0: float, z1: float, identifier: str):
         raise ValueError(message)
 
     if abs(z1 - zlength) > tol:
-        message = f"{identifier = }: z1 does not equal zlength!\n{z1 = } m; {zlength =} m"
+        message = (
+            f"{identifier = }: z1 does not equal zlength!\n{z1 = } m; {zlength =} m"
+        )
         logger_discretization.warning(message)
         raise ValueError(message)
 
@@ -410,7 +412,9 @@ def check_user_defined_grid(
                 f"Inconsistent number of user defined nodes. The number of nodes in sheet {comp.identifier} of file {file_path} must be equal to the one defined in sheet {comp_ref.identifier} of the same file."
             )
 
-        if not np.allclose(dfs[comp.identifier]["z [m]"].to_numpy(), z_ref, equal_nan=True):
+        if not np.allclose(
+            dfs[comp.identifier]["z [m]"].to_numpy(), z_ref, equal_nan=True
+        ):
             raise ValueError(
                 f"User must provide the same z component of the coordinate for FluidComponent, JacketComponent and StrandComponent objects. Please check column z [m] in sheet {comp.identifier} of file {file_path}."
             )
@@ -572,7 +576,7 @@ def build_coordinates_of_barycenter(
         yb = comp.inputs["Y_barycenter"]
 
     if costheta == 1:
-        # Evaluate straight spatial coordinates. The coordinates are assinged 
+        # Evaluate straight spatial coordinates. The coordinates are assinged
         # directly to the component in the function.
         straight_coordinates(cond, comp, xb, yb)
     else:
@@ -582,9 +586,11 @@ def build_coordinates_of_barycenter(
                 helicoidal_coordinates(cond, comp)
             elif cond.inventory["StrandComponent"].number == 1:
                 # Use straight spatial discretization in this case.
-                # Evaluate straight spatial coordinates. The coordinates are 
+                # Evaluate straight spatial coordinates. The coordinates are
                 # assinged directly to the component in the function.
-                warnings.warn("User defined only one strand component, it is considered straight since there is no need to evaluate the inductances.")
+                warnings.warn(
+                    "User defined only one strand component, it is considered straight since there is no need to evaluate the inductances."
+                )
                 straight_coordinates(cond, comp, xb, yb)
         else:
             raise ValueError(

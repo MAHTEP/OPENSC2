@@ -428,9 +428,7 @@ def interpolation(conductor, comp, MM, tvec, f_path, sheet, *xvec, **options):
                     ) / (tvec[ii + 1] - tvec[ii]) * (MM[0, ii + 1] - MM[0, ii])
                     for kk in range(len(xvec) - 1):
                         lb = np.min(
-                            np.nonzero(
-                                conductor.grid_features["zcoord"] >= xvec[kk]
-                            )
+                            np.nonzero(conductor.grid_features["zcoord"] >= xvec[kk])
                         )
                         ub = np.max(
                             np.nonzero(
@@ -481,9 +479,7 @@ def interpolation(conductor, comp, MM, tvec, f_path, sheet, *xvec, **options):
                     yy[0:lower_bound] = MM[0, 0]
                     for kk in range(len(xvec) - 1):
                         lb = np.min(
-                            np.nonzero(
-                                conductor.grid_features["zcoord"] >= xvec[kk]
-                            )
+                            np.nonzero(conductor.grid_features["zcoord"] >= xvec[kk])
                         )
                         ub = np.max(
                             np.nonzero(
@@ -491,8 +487,7 @@ def interpolation(conductor, comp, MM, tvec, f_path, sheet, *xvec, **options):
                             )
                         )
                         fx = (
-                            conductor.grid_features["zcoord"][lb : ub + 1]
-                            - xvec[kk]
+                            conductor.grid_features["zcoord"][lb : ub + 1] - xvec[kk]
                         ) / (xvec[kk + 1] - xvec[kk])
                         # spatial interpolation @ time = tvec[0] (cdp, 07/2020)
                         yy[lb : ub + 1] = MM[kk, 0] + (MM[kk + 1, 0] - MM[kk, 0]) * fx
@@ -502,9 +497,7 @@ def interpolation(conductor, comp, MM, tvec, f_path, sheet, *xvec, **options):
                     yy[0:lower_bound] = MM[0, -1]
                     for kk in range(len(xvec) - 1):
                         lb = np.min(
-                            np.nonzero(
-                                conductor.grid_features["zcoord"] >= xvec[kk]
-                            )
+                            np.nonzero(conductor.grid_features["zcoord"] >= xvec[kk])
                         )
                         ub = np.max(
                             np.nonzero(
@@ -512,8 +505,7 @@ def interpolation(conductor, comp, MM, tvec, f_path, sheet, *xvec, **options):
                             )
                         )
                         fx = (
-                            conductor.grid_features["zcoord"][lb : ub + 1]
-                            - xvec[kk]
+                            conductor.grid_features["zcoord"][lb : ub + 1] - xvec[kk]
                         ) / (xvec[kk + 1] - xvec[kk])
                         # spatial interpolation @ time = tvec[-1] (cdp, 07/2020)
                         yy[lb : ub + 1] = (

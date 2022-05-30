@@ -92,7 +92,9 @@ class Conductor:
         self.ICOND = ICOND
         self.NAME = sheetConductorsList[0].cell(row=1, column=1).value
         # get channels ID consistently with user definition (cdp, 09/2020)
-        self.identifier = sheetConductorsList[0].cell(row=3, column=4 + self.ICOND).value
+        self.identifier = (
+            sheetConductorsList[0].cell(row=3, column=4 + self.ICOND).value
+        )
         # Get the number of the conductor from the ID.
         self.number = int(self.identifier.split("_")[1])
         # file_input dictionary initialization (cdp, 06/2020)
@@ -966,7 +968,9 @@ class Conductor:
                 # end self.dict_df_coupling["contact_perimeter_flag"].at[fluid_comp_r.identifier, fluid_comp_c.identifier] == 1 (cdp, 09/2020)
             # end for cc (cdp, 09/2020)
             if (
-                self.dict_topology["ch_ch"]["Thermal_contact"].get(fluid_comp_r.identifier)
+                self.dict_topology["ch_ch"]["Thermal_contact"].get(
+                    fluid_comp_r.identifier
+                )
                 != None
             ):
                 # key fluid_comp_r.identifier exists (cdp, 09/2020)
@@ -1014,7 +1018,9 @@ class Conductor:
                     # There are not channels that are in thermal contact remove \
                     # key fluid_comp_r.identifier from dictionary \
                     # self.dict_topology["ch_ch"]["Thermal_contact"] (cdp, 09/2020)
-                    self.dict_topology["ch_ch"]["Thermal_contact"].pop(fluid_comp_r.identifier)
+                    self.dict_topology["ch_ch"]["Thermal_contact"].pop(
+                        fluid_comp_r.identifier
+                    )
             # end if self.dict_topology["ch_ch"]\
             # ["Thermal_contact"].get(fluid_comp_r.identifier) != None (cdp, 09/2020)
         # end for rr (cdp, 09/2020)
@@ -1204,7 +1210,9 @@ class Conductor:
                         # channel fluid_comp constitutes a group of channels in hydraulic \
                         # parallel thus it can not be a stand alone channel (cdp, 09/2020)
                         # Update dictionart check_found (cdp, 09/2020)
-                        check_found[fluid_comp.identifier].update(Hydraulic_parallel=True)
+                        check_found[fluid_comp.identifier].update(
+                            Hydraulic_parallel=True
+                        )
             if check_found[fluid_comp.identifier]["Hydraulic_parallel"] == False:
                 # Channel fluid_comp is not inside Hydraulic parallel groups (cdp, 09/2020)
                 for fluid_comp_ref in list(
@@ -1221,7 +1229,9 @@ class Conductor:
                             # channel fluid_comp constitutes a thermal contact thus it can not be \
                             # a stand alone channel (cdp, 09/2020)
                             # Update dictionart check_found (cdp, 09/2020)
-                            check_found[fluid_comp.identifier].update(Thermal_contact=True)
+                            check_found[fluid_comp.identifier].update(
+                                Thermal_contact=True
+                            )
             if (
                 check_found[fluid_comp.identifier]["Hydraulic_parallel"] == False
                 and check_found[fluid_comp.identifier]["Thermal_contact"] == False
@@ -1335,7 +1345,9 @@ class Conductor:
                 # get channel (cdp, 09/2020)
                 fluid_comp = self.inventory["FluidComponent"].collection[ch_index]
                 # Construct check dictionary (cdp, 09/2020)
-                check[fluid_comp_ref.identifier][fluid_comp.identifier] = dict(row=False, col=False)
+                check[fluid_comp_ref.identifier][fluid_comp.identifier] = dict(
+                    row=False, col=False
+                )
                 # find the index in array already["no"] of the element that must be \
                 # deleted (cdp, 09/2020)
                 i_del = np.nonzero(already["no"] == ch_index)[0]
@@ -1365,7 +1377,10 @@ class Conductor:
                 # this index value. Initialization must be done at each iteration in \
                 # order to not miss some index during the search. (cdp, 09/2020)
                 boundary.update(variable_lower=boundary["fluid_comp_ref_upper"] + 1)
-                if check[fluid_comp_ref.identifier][fluid_comp.identifier]["col"] == False:
+                if (
+                    check[fluid_comp_ref.identifier][fluid_comp.identifier]["col"]
+                    == False
+                ):
                     # The search in array full_ind["col"] is not performed yet \
                     # (cdp, 09/2020)
                     total_connections_counter = self.search_on_ind_col(
@@ -1379,7 +1394,10 @@ class Conductor:
                         total_connections_counter,
                         boundary,
                     )
-                if check[fluid_comp_ref.identifier][fluid_comp.identifier]["row"] == False:
+                if (
+                    check[fluid_comp_ref.identifier][fluid_comp.identifier]["row"]
+                    == False
+                ):
                     # The search in array full_ind["row"] is not performed yet \
                     # (cdp, 09/2020)
                     total_connections_counter = self.search_on_ind_row(
@@ -1397,7 +1415,8 @@ class Conductor:
             # Sort list Group by channel identifier (cdp, 09/2020)
             dict_topology[fluid_comp_ref.identifier].update(
                 Group=sorted(
-                    dict_topology[fluid_comp_ref.identifier]["Group"], key=lambda ch: ch.identifier
+                    dict_topology[fluid_comp_ref.identifier]["Group"],
+                    key=lambda ch: ch.identifier,
                 )
             )
             # Get the number of channels that are in hydraulic parallel for each \
@@ -1468,7 +1487,10 @@ class Conductor:
             + boundary["variable_lower"]
         )
         if len(ind_found) == 0:
-            if check[fluid_comp_ref.identifier][fluid_comp_c.identifier]["row"] == False:
+            if (
+                check[fluid_comp_ref.identifier][fluid_comp_c.identifier]["row"]
+                == False
+            ):
                 # Search if there is some value equal to ch_index in the array \
                 # full_ind["row"] calling method Search_on_ind_row (cdp, 09/2020)
                 total_connections_counter = self.search_on_ind_row(
@@ -1482,7 +1504,9 @@ class Conductor:
                     total_connections_counter,
                     boundary,
                 )
-            elif check[fluid_comp_ref.identifier][fluid_comp_c.identifier]["row"] == True:
+            elif (
+                check[fluid_comp_ref.identifier][fluid_comp_c.identifier]["row"] == True
+            ):
                 # no channel with smaller channel index is connected with ch_index \
                 # (cdp, 09/2020)
                 print(f"No other channels are connected to {fluid_comp_c.identifier}\n")
@@ -1503,7 +1527,10 @@ class Conductor:
                 # get channel
                 fluid_comp_r = self.inventory["FluidComponent"].collection[ch_index]
                 if (
-                    dict_topology[fluid_comp_ref.identifier].get(fluid_comp_r.identifier) != None
+                    dict_topology[fluid_comp_ref.identifier].get(
+                        fluid_comp_r.identifier
+                    )
+                    != None
                     and f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
                     in dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier]
                 ):
@@ -1511,20 +1538,31 @@ class Conductor:
                     # (cdp, 09/2020)
                     jj = jj + 1
                 else:
-                    if check[fluid_comp_ref.identifier].get(fluid_comp_r.identifier) == None:
+                    if (
+                        check[fluid_comp_ref.identifier].get(fluid_comp_r.identifier)
+                        == None
+                    ):
                         # Update dictionary check: add key fluid_comp_r.identifier (cdp, 09/2020)
-                        check[fluid_comp_ref.identifier][fluid_comp_r.identifier] = dict(
-                            row=False, col=False
-                        )
+                        check[fluid_comp_ref.identifier][
+                            fluid_comp_r.identifier
+                        ] = dict(row=False, col=False)
                     # construct channels link (cdp, 09/2020)
-                    if dict_topology[fluid_comp_ref.identifier].get(fluid_comp_r.identifier) == None:
+                    if (
+                        dict_topology[fluid_comp_ref.identifier].get(
+                            fluid_comp_r.identifier
+                        )
+                        == None
+                    ):
                         # key fluid_comp_r.identifier does not exist, so it is added to the dictionary \
                         # and a list is created (cdp, 09/2020)
-                        dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier] = [
-                            f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
-                        ]
+                        dict_topology[fluid_comp_ref.identifier][
+                            fluid_comp_r.identifier
+                        ] = [f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"]
                         print(
-                            dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier][-1] + "\n"
+                            dict_topology[fluid_comp_ref.identifier][
+                                fluid_comp_r.identifier
+                            ][-1]
+                            + "\n"
                         )
                         # update total_connections_counter (cdp, 09/2020)
                         total_connections_counter = total_connections_counter + 1
@@ -1532,15 +1570,21 @@ class Conductor:
                         # key fluid_comp_r.identifier exists (cdp, 09/2020)
                         if (
                             f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
-                            not in dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier]
+                            not in dict_topology[fluid_comp_ref.identifier][
+                                fluid_comp_r.identifier
+                            ]
                         ):
                             # List is updated only if the contact identifier is not already in the \
                             # list (cdp, 09/2020)
-                            dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier].append(
+                            dict_topology[fluid_comp_ref.identifier][
+                                fluid_comp_r.identifier
+                            ].append(
                                 f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
                             )
                             print(
-                                dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier][-1]
+                                dict_topology[fluid_comp_ref.identifier][
+                                    fluid_comp_r.identifier
+                                ][-1]
                                 + "\n"
                             )
                             # update total_connections_counter (cdp, 09/2020)
@@ -1555,9 +1599,14 @@ class Conductor:
                     if ch_index not in already["yes"]:
                         already["yes"][already["ii_yes"]] = ch_index
                         already.update(ii_yes=already["ii_yes"] + 1)
-                    if fluid_comp_r not in dict_topology[fluid_comp_ref.identifier]["Group"]:
+                    if (
+                        fluid_comp_r
+                        not in dict_topology[fluid_comp_ref.identifier]["Group"]
+                    ):
                         # Add channel fluid_comp_r to list Group (cdp, 09/2020)
-                        dict_topology[fluid_comp_ref.identifier]["Group"].append(fluid_comp_r)
+                        dict_topology[fluid_comp_ref.identifier]["Group"].append(
+                            fluid_comp_r
+                        )
                     # call method Search_on_ind_row with to search if channel fluid_comp_r \
                     # is linked to other channels (cdp, 09/2020)
                     total_connections_counter = self.search_on_ind_row(
@@ -1609,7 +1658,10 @@ class Conductor:
             + boundary["variable_lower"]
         )
         if len(ind_found) == 0:
-            if check[fluid_comp_ref.identifier][fluid_comp_r.identifier]["col"] == False:
+            if (
+                check[fluid_comp_ref.identifier][fluid_comp_r.identifier]["col"]
+                == False
+            ):
                 # Search if there is some value equal to ch_index in the array \
                 # full_ind["col"] calling method Search_on_ind_col (cdp, 09/2020)
                 total_connections_counter = self.search_on_ind_col(
@@ -1623,7 +1675,9 @@ class Conductor:
                     total_connections_counter,
                     boundary,
                 )
-            elif check[fluid_comp_ref.identifier][fluid_comp_r.identifier]["col"] == True:
+            elif (
+                check[fluid_comp_ref.identifier][fluid_comp_r.identifier]["col"] == True
+            ):
                 # no channel with larger channel index is connected with ch_index \
                 # (cdp, 09/2020)
                 print(f"No other channels are connected to {fluid_comp_r.identifier}\n")
@@ -1644,7 +1698,10 @@ class Conductor:
                 # get channel (cdp, 09/2020)
                 fluid_comp_c = self.inventory["FluidComponent"].collection[ch_index]
                 if (
-                    dict_topology[fluid_comp_ref.identifier].get(fluid_comp_c.identifier) != None
+                    dict_topology[fluid_comp_ref.identifier].get(
+                        fluid_comp_c.identifier
+                    )
+                    != None
                     and f"{fluid_comp_c.identifier}_{fluid_comp_r.identifier}"
                     in dict_topology[fluid_comp_ref.identifier][fluid_comp_c.identifier]
                 ):
@@ -1652,20 +1709,31 @@ class Conductor:
                     # (cdp, 09/2020)
                     jj = jj + 1
                 else:
-                    if check[fluid_comp_ref.identifier].get(fluid_comp_c.identifier) == None:
+                    if (
+                        check[fluid_comp_ref.identifier].get(fluid_comp_c.identifier)
+                        == None
+                    ):
                         # Update dictionary check: add key fluid_comp_c.identifier (cdp, 09/2020)
-                        check[fluid_comp_ref.identifier][fluid_comp_c.identifier] = dict(
-                            row=False, col=False
-                        )
+                        check[fluid_comp_ref.identifier][
+                            fluid_comp_c.identifier
+                        ] = dict(row=False, col=False)
                     # construct channels link (cdp, 09/2020)
-                    if dict_topology[fluid_comp_ref.identifier].get(fluid_comp_r.identifier) == None:
+                    if (
+                        dict_topology[fluid_comp_ref.identifier].get(
+                            fluid_comp_r.identifier
+                        )
+                        == None
+                    ):
                         # key fluid_comp_c.identifier does not exist, so it is added to the dictionary \
                         # and a list is created (cdp, 09/2020)
-                        dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier] = [
-                            f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
-                        ]
+                        dict_topology[fluid_comp_ref.identifier][
+                            fluid_comp_r.identifier
+                        ] = [f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"]
                         print(
-                            dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier][-1] + "\n"
+                            dict_topology[fluid_comp_ref.identifier][
+                                fluid_comp_r.identifier
+                            ][-1]
+                            + "\n"
                         )
                         # update total_connections_counter (cdp, 09/2020)
                         total_connections_counter = total_connections_counter + 1
@@ -1673,15 +1741,21 @@ class Conductor:
                         # key fluid_comp_c.identifier exists (cdp, 09/2020)
                         if (
                             f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
-                            not in dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier]
+                            not in dict_topology[fluid_comp_ref.identifier][
+                                fluid_comp_r.identifier
+                            ]
                         ):
                             # List is updated only if the contact identifier is not already in the \
                             # list (cdp, 09/2020)
-                            dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier].append(
+                            dict_topology[fluid_comp_ref.identifier][
+                                fluid_comp_r.identifier
+                            ].append(
                                 f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
                             )
                             print(
-                                dict_topology[fluid_comp_ref.identifier][fluid_comp_r.identifier][-1]
+                                dict_topology[fluid_comp_ref.identifier][
+                                    fluid_comp_r.identifier
+                                ][-1]
                                 + "\n"
                             )
                             # update total_connections_counter (cdp, 09/2020)
@@ -1696,9 +1770,14 @@ class Conductor:
                     if ch_index not in already["yes"]:
                         already["yes"][already["ii_yes"]] = ch_index
                         already.update(ii_yes=already["ii_yes"] + 1)
-                    if fluid_comp_c not in dict_topology[fluid_comp_ref.identifier]["Group"]:
+                    if (
+                        fluid_comp_c
+                        not in dict_topology[fluid_comp_ref.identifier]["Group"]
+                    ):
                         # Add channel fluid_comp_c to list Group (cdp, 09/2020)
-                        dict_topology[fluid_comp_ref.identifier]["Group"].append(fluid_comp_c)
+                        dict_topology[fluid_comp_ref.identifier]["Group"].append(
+                            fluid_comp_c
+                        )
                     # call method Search_on_ind_col to search if channel fluid_comp_c is \
                     # linked to other channels (cdp, 09/2020)
                     total_connections_counter = self.search_on_ind_col(
@@ -1729,13 +1808,16 @@ class Conductor:
         Method that recognize if there are some channels that are only in thermal contact with other channels. If one or both of the two considered channels belongs also to two different groups of channels in hydraulic parallel, they are not included in the list called Group, however the thermal contact is indicated in a suitable key-value pair. This is because channels that have both the properties of being in thermal contact and in hydraulic parallel should be threated considering the latter, while flow initialization is performed. (cdp, 09/2020)
         """
 
-        if self.dict_topology["ch_ch"]["Thermal_contact"].get(fluid_comp_r.identifier) == None:
+        if (
+            self.dict_topology["ch_ch"]["Thermal_contact"].get(fluid_comp_r.identifier)
+            == None
+        ):
             # Update dictionary self.dict_topology["ch_ch"]["Thermal_contact"] \
             # (cdp, 09/2020)
             # key fluid_comp_r.identifier does not already exist (cdp, 09/2020)
-            self.dict_topology["ch_ch"]["Thermal_contact"][fluid_comp_r.identifier] = dict(
-                Group=list(), Number=0, Actual_number=0
-            )
+            self.dict_topology["ch_ch"]["Thermal_contact"][
+                fluid_comp_r.identifier
+            ] = dict(Group=list(), Number=0, Actual_number=0)
         if (
             self.dict_df_coupling["open_perimeter_fract"].at[
                 fluid_comp_r.identifier, fluid_comp_c.identifier
@@ -1793,23 +1875,23 @@ class Conductor:
                 if flag_found[fluid_comp_r.identifier] == False:
                     # fluid_comp_r is not in hydraulic parallel with other channels \
                     # (cdp, 09/2020)
-                    self.dict_topology["ch_ch"]["Thermal_contact"][fluid_comp_r.identifier][
-                        "Group"
-                    ].append(fluid_comp_r)
+                    self.dict_topology["ch_ch"]["Thermal_contact"][
+                        fluid_comp_r.identifier
+                    ]["Group"].append(fluid_comp_r)
                 if flag_found[fluid_comp_c.identifier] == False:
                     # fluid_comp_c is not in hydraulic parallel with other channels
                     # (cdp, 09/2020)
-                    self.dict_topology["ch_ch"]["Thermal_contact"][fluid_comp_r.identifier][
-                        "Group"
-                    ].append(fluid_comp_c)
+                    self.dict_topology["ch_ch"]["Thermal_contact"][
+                        fluid_comp_r.identifier
+                    ]["Group"].append(fluid_comp_c)
             else:
                 # there are no groups of channels in hydraulic parallel \
                 # (cdp, 09/2020)
                 if cc == rr + 1:
                     # Add fluid_comp_r to the list Group only once (cdp, 09/2020)
-                    self.dict_topology["ch_ch"]["Thermal_contact"][fluid_comp_r.identifier][
-                        "Group"
-                    ].append(fluid_comp_r)
+                    self.dict_topology["ch_ch"]["Thermal_contact"][
+                        fluid_comp_r.identifier
+                    ]["Group"].append(fluid_comp_r)
                 # Add channel fluid_comp_c to the list Group (cdp, 09/2020)
                 self.dict_topology["ch_ch"]["Thermal_contact"][fluid_comp_r.identifier][
                     "Group"
@@ -1942,12 +2024,12 @@ class Conductor:
             for _, jacket_c in enumerate(
                 self.inventory["JacketComponent"].collection[rr + 1 :]
             ):
-                jacket_r.radiative_heat_inn[f"{jacket_r.identifier}_{jacket_c.identifier}"] = np.zeros(
-                    (jacket_r.dict_node_pt["temperature"].size, 1)
-                )
-                jacket_c.radiative_heat_inn[f"{jacket_r.identifier}_{jacket_c.identifier}"] = np.zeros(
-                    (jacket_c.dict_node_pt["temperature"].size, 1)
-                )
+                jacket_r.radiative_heat_inn[
+                    f"{jacket_r.identifier}_{jacket_c.identifier}"
+                ] = np.zeros((jacket_r.dict_node_pt["temperature"].size, 1))
+                jacket_c.radiative_heat_inn[
+                    f"{jacket_r.identifier}_{jacket_c.identifier}"
+                ] = np.zeros((jacket_c.dict_node_pt["temperature"].size, 1))
             # End for cc.
         # End for rr.
 
@@ -2688,7 +2770,11 @@ class Conductor:
                 self.inventory["JacketComponent"].collection[rr + 1 :]
             ):
                 if (
-                    abs(self.dict_df_coupling["HTC_choice"].at[jacket.identifier, jacket_c.identifier])
+                    abs(
+                        self.dict_df_coupling["HTC_choice"].at[
+                            jacket.identifier, jacket_c.identifier
+                        ]
+                    )
                     == 3
                 ):
                     # Evaluate the inner heat exchange by radiation in nodal points.
@@ -3045,7 +3131,9 @@ class Conductor:
                         ]
                         # Assign to the HTC key of dictionary dict_dummy the dictionary whit the information about heat trasfer coefficient betweent channel fluid_comp_r and solid s_comp. Interface identification is given by the key name itself: f"{fluid_comp_r.identifier}_{s_comp.identifier}". This inner dictionary consists of a single key-value pair. (cdp, 07/2020)
                         dict_dummy["HTC"]["ch_sol"][
-                            self.dict_topology["ch_sol"][fluid_comp_r.identifier][s_comp.identifier]
+                            self.dict_topology["ch_sol"][fluid_comp_r.identifier][
+                                s_comp.identifier
+                            ]
                         ] = np.maximum(
                             fluid_comp_r.channel.dict_htc_steady[flag_nodal] * mlt,
                             htc_full_transient,
@@ -3057,7 +3145,9 @@ class Conductor:
                         == -2
                     ):
                         dict_dummy["HTC"]["ch_sol"][
-                            self.dict_topology["ch_sol"][fluid_comp_r.identifier][s_comp.identifier]
+                            self.dict_topology["ch_sol"][fluid_comp_r.identifier][
+                                s_comp.identifier
+                            ]
                         ] = self.dict_df_coupling["contact_HTC"].at[
                             fluid_comp_r.identifier, s_comp.identifier
                         ] * np.ones(
@@ -3081,7 +3171,9 @@ class Conductor:
                     # new channel-channel interface (cdp, 09/2020)
                     htc_len = htc_len + 1
                     # Construct interface name: it can be found also in dict_topology["ch_ch"] but a search in dictionaties "Hydraulic_parallel" and "Thermal_contact" should be performed, which makes thinks not easy to do; it is simpler to construct interface names combining channels identifier (cdp, 09/2020)
-                    interface_name = f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
+                    interface_name = (
+                        f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
+                    )
                     if (
                         self.dict_df_coupling["HTC_choice"].at[
                             fluid_comp_r.identifier, fluid_comp_c.identifier
@@ -3157,16 +3249,22 @@ class Conductor:
                     == 1
                 ):
                     dict_dummy["HTC"]["sol_sol"]["cond"][
-                        self.dict_topology["sol_sol"][s_comp_r.identifier][s_comp_c.identifier]
+                        self.dict_topology["sol_sol"][s_comp_r.identifier][
+                            s_comp_c.identifier
+                        ]
                     ] = np.zeros(dict_dummy_comp_r[flag_nodal]["temperature"].shape)
                     dict_dummy["HTC"]["sol_sol"]["rad"][
-                        self.dict_topology["sol_sol"][s_comp_r.identifier][s_comp_c.identifier]
+                        self.dict_topology["sol_sol"][s_comp_r.identifier][
+                            s_comp_c.identifier
+                        ]
                     ] = np.zeros(dict_dummy_comp_r[flag_nodal]["temperature"].shape)
 
                     # New solid-solid interface (cdp, 09/2020)
                     htc_len = htc_len + 1
                     if (
-                        self.dict_df_coupling["HTC_choice"].at[s_comp_r.identifier, s_comp_c.identifier]
+                        self.dict_df_coupling["HTC_choice"].at[
+                            s_comp_r.identifier, s_comp_c.identifier
+                        ]
                         == 1
                     ):
                         # Thermal contact.
@@ -3175,7 +3273,9 @@ class Conductor:
                             s_comp_r.identifier, s_comp_c.identifier
                         ]
                         dict_dummy["HTC"]["sol_sol"]["cond"][
-                            self.dict_topology["sol_sol"][s_comp_r.identifier][s_comp_c.identifier]
+                            self.dict_topology["sol_sol"][s_comp_r.identifier][
+                                s_comp_c.identifier
+                            ]
                         ] = (
                             mlt
                             * htc_solid
@@ -3184,19 +3284,25 @@ class Conductor:
                             )
                         )
                     elif (
-                        self.dict_df_coupling["HTC_choice"].at[s_comp_r.identifier, s_comp_c.identifier]
+                        self.dict_df_coupling["HTC_choice"].at[
+                            s_comp_r.identifier, s_comp_c.identifier
+                        ]
                         == -1
                     ):
                         # Thermal contact.
                         dict_dummy["HTC"]["sol_sol"]["cond"][
-                            self.dict_topology["sol_sol"][s_comp_r.identifier][s_comp_c.identifier]
+                            self.dict_topology["sol_sol"][s_comp_r.identifier][
+                                s_comp_c.identifier
+                            ]
                         ] = self.dict_df_coupling["contact_HTC"].at[
                             s_comp_r.identifier, s_comp_c.identifier
                         ] * np.ones(
                             dict_dummy_comp_r[flag_nodal]["temperature"].shape
                         )
                     elif (
-                        self.dict_df_coupling["HTC_choice"].at[s_comp_r.identifier, s_comp_c.identifier]
+                        self.dict_df_coupling["HTC_choice"].at[
+                            s_comp_r.identifier, s_comp_c.identifier
+                        ]
                         == 3
                     ):
                         # Radiative heat transfer.
@@ -3257,12 +3363,16 @@ class Conductor:
                             # End if s_comp_r.inputs["Outer_perimeter"].
                         # End if emissivity.
                     elif (
-                        self.dict_df_coupling["HTC_choice"].at[s_comp_r.identifier, s_comp_c.identifier]
+                        self.dict_df_coupling["HTC_choice"].at[
+                            s_comp_r.identifier, s_comp_c.identifier
+                        ]
                         == -3
                     ):
                         # Radiative heat transfer from sheet contact_HTC of file conductor_coupling.xlsx.
                         dict_dummy["HTC"]["sol_sol"]["rad"][
-                            self.dict_topology["sol_sol"][s_comp_r.identifier][s_comp_c.identifier]
+                            self.dict_topology["sol_sol"][s_comp_r.identifier][
+                                s_comp_c.identifier
+                            ]
                         ] = self.dict_df_coupling["contact_HTC"].at[
                             s_comp_r.identifier, s_comp_c.identifier
                         ] * np.ones(
@@ -3603,12 +3713,23 @@ class Conductor:
             for _, jk_c in enumerate(
                 self.inventory["JacketComponent"].collection[rr + 1 :]
             ):
-                if abs(self.dict_df_coupling["HTC_choice"].at[jk_r.identifier, jk_c.identifier]) == 3:
+                if (
+                    abs(
+                        self.dict_df_coupling["HTC_choice"].at[
+                            jk_r.identifier, jk_c.identifier
+                        ]
+                    )
+                    == 3
+                ):
                     self.heat_rad_jk[f"{jk_r.identifier}_{jk_c.identifier}"] = (
-                        self.dict_df_coupling["contact_perimeter"].at[jk_r.identifier, jk_c.identifier]
+                        self.dict_df_coupling["contact_perimeter"].at[
+                            jk_r.identifier, jk_c.identifier
+                        ]
                         * self.grid_features["delta_z"]
                         * self.dict_Gauss_pt["HTC"]["sol_sol"]["rad"][
-                            self.dict_topology["sol_sol"][jk_r.identifier][jk_c.identifier]
+                            self.dict_topology["sol_sol"][jk_r.identifier][
+                                jk_c.identifier
+                            ]
                         ]
                         * (
                             jk_r.dict_Gauss_pt["temperature"]

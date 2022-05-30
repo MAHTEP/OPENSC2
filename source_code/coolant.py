@@ -229,9 +229,7 @@ class Coolant(FluidComponentInput):
             # Velocity directly evaluated from the value in nodal point, averaging on two consecutives nodes.
             # Velocity in Gauss points
             self.dict_Gauss_pt["velocity"] = (
-                self.dict_node_pt["velocity"][
-                    : conductor.grid_features["N_nod"] - 1
-                ]
+                self.dict_node_pt["velocity"][: conductor.grid_features["N_nod"] - 1]
                 + self.dict_node_pt["velocity"][1:]
             ) / 2.0
             self.dict_Gauss_pt = self._compute_density_and_mass_flow_rates(

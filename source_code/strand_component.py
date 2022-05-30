@@ -355,12 +355,8 @@ class StrandComponent(SolidComponent):
         elif nodal == False:
             # compute Epsilon in each Gauss point (cdp, 07/2020)
             self.dict_Gauss_pt["Epsilon"] = (
-                self.dict_node_pt["Epsilon"][
-                    0 : conductor.grid_features["N_nod"] - 1
-                ]
-                + self.dict_node_pt["Epsilon"][
-                    1 : conductor.grid_features["N_nod"] + 1
-                ]
+                self.dict_node_pt["Epsilon"][0 : conductor.grid_features["N_nod"] - 1]
+                + self.dict_node_pt["Epsilon"][1 : conductor.grid_features["N_nod"] + 1]
             ) / 2.0
 
     # end method Get_EPS (cdp, 10/2020)

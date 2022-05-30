@@ -929,7 +929,9 @@ def abs_intial_equal_3_hp(cond, chan_group, N_group, path):
             fluid_comp.coolant.operations["PREINL"] = p_inl_ave
         # Impose channel outlet pressure (cdp, 09/2020)
         fluid_comp.coolant.operations["PREOUT"] = p_inl_ave
-        print(f"Imposed outlet pressure of channel {fluid_comp.identifier} to {p_inl_ave} Pa\n")
+        print(
+            f"Imposed outlet pressure of channel {fluid_comp.identifier} to {p_inl_ave} Pa\n"
+        )
 
     # end for ii (cdp, 09/2020)
 
@@ -987,7 +989,9 @@ def abs_intial_equal_4_hp(cond, chan_group, N_group, path):
             fluid_comp.coolant.operations["PREINI"] = p_ini_ave
         # Impose inlet pressure (cdp, 09/2020)
         fluid_comp.coolant.operations["PREINL"] = p_ini_ave
-        print(f"Imposed inlet pressure of channel {fluid_comp.identifier} to {p_ini_ave} Pa.\n")
+        print(
+            f"Imposed inlet pressure of channel {fluid_comp.identifier} to {p_ini_ave} Pa.\n"
+        )
     # end for ii (cdp, 09/2020)
 
 

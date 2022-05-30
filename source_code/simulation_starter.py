@@ -5,9 +5,7 @@ from opensc2_gui import OPENSC2_GUI
 
 # from opensc2_gui_simpl import OPENSC2_GUI
 
-logging.config.fileConfig(
-    fname="logging_opensc2.conf", disable_existing_loggers=True
-)
+logging.config.fileConfig(fname="logging_opensc2.conf", disable_existing_loggers=True)
 
 # Get the logger specified in the file, this will be the parent logger.
 logger = logging.getLogger("opensc2Logger")

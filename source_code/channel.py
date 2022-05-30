@@ -1177,7 +1177,7 @@ class Channel(FluidComponentInput):
             nodal (bool, optional): [description]. Defaults to True.
         """
         # Define dictionary with the lower limit value for the Nusselt number
-        dict_nusselt_lower_limit = { 
+        dict_nusselt_lower_limit = {
             1: 8.235,
             119: self._eval_nusselt_lower_limit_119(),
             120: 2.181,

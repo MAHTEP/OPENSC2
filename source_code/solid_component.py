@@ -759,7 +759,9 @@ class SolidComponent:
                         conductor.BASE_PATH, conductor.file_input["EXTERNAL_BFIELD"]
                     )
                     # Load auxiliary input file.
-                    bfield_df, _ = load_auxiliary_files(file_path, sheetname=self.identifier)
+                    bfield_df, _ = load_auxiliary_files(
+                        file_path, sheetname=self.identifier
+                    )
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                     (
                         self.bfield_interpolator,
@@ -915,14 +917,10 @@ class SolidComponent:
 
         # Compute at each time step since the mesh can change
         lower_bound = np.min(
-            np.nonzero(
-                conductor.grid_features["zcoord"] >= self.operations["XQBEG"]
-            )
+            np.nonzero(conductor.grid_features["zcoord"] >= self.operations["XQBEG"])
         )
         upper_bound = np.max(
-            np.nonzero(
-                conductor.grid_features["zcoord"] <= self.operations["XQEND"]
-            )
+            np.nonzero(conductor.grid_features["zcoord"] <= self.operations["XQEND"])
         )
         if self.operations["IQFUN"] == 1:
             # Square wave in time and space (cdp, 11/2020)

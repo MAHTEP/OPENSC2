@@ -294,7 +294,9 @@ def make_plots(simulation, kind="Space_distr"):
                     print(f"Directory {folder_save} already exists\n")
 
                 # Construct sup title for all the axes of the figure.
-                sup_title = f"{cond.identifier} {fluid_comp.identifier} {prop}: {title_comp}"
+                sup_title = (
+                    f"{cond.identifier} {fluid_comp.identifier} {prop}: {title_comp}"
+                )
                 if kind == "Space_distr":
                     # call function Make_plots_sd_actually to make plots of spatial \
                     # distributions (cpd, 10/2020)
@@ -389,7 +391,9 @@ def make_plots(simulation, kind="Space_distr"):
                 else:
                     print(f"Directory {folder_save} already exists\n")
                 # Construct sup title for all the axes of the figure.
-                sup_title = f"{cond.identifier} {s_comp.identifier} {prop}: {title_comp}"
+                sup_title = (
+                    f"{cond.identifier} {s_comp.identifier} {prop}: {title_comp}"
+                )
                 if kind == "Space_distr":
                     # call function Make_plots_sd_actually to make plots of spatial \
                     # distributions (cpd, 10/2020)
@@ -448,7 +452,11 @@ def make_plots(simulation, kind="Space_distr"):
                     cond.inventory["SolidComponent"].collection[rr + 1 :]
                 ):
                     if (
-                        abs(cond.dict_df_coupling["HTC_choice"].at[jk_r.identifier, jk_c.identifier])
+                        abs(
+                            cond.dict_df_coupling["HTC_choice"].at[
+                                jk_r.identifier, jk_c.identifier
+                            ]
+                        )
                         == 3
                     ):
                         prop = f"Heat_rad_{jk_r.identifier}_{jk_c.identifier}"
@@ -457,9 +465,7 @@ def make_plots(simulation, kind="Space_distr"):
                         # Load file as dataframe.
                         values = pd.read_csv(file_load, delimiter="\t")
                         folder_save = os.path.join(root_save_path)
-                        sup_title = (
-                            f"{cond.identifier} {jk_r.identifier} {jk_c.identifier} Heat rad: {title_comp}"
-                        )
+                        sup_title = f"{cond.identifier} {jk_r.identifier} {jk_c.identifier} Heat rad: {title_comp}"
                         # Plot the heat exchanged by radiation between jackets.
                         make_plots_sd_actually(
                             x_gauss,
@@ -1362,15 +1368,17 @@ def plot_time_animation(simulation, conductor):
                         figsize=(5, 5),
                     )
                     # set axes features (cdp, 10/2020)
-                    conductor.dict_axes_animation["mfr"][fluid_comp.identifier].grid(True)
+                    conductor.dict_axes_animation["mfr"][fluid_comp.identifier].grid(
+                        True
+                    )
                     conductor.dict_axes_animation["mfr"][fluid_comp.identifier].set(
                         xlabel="$t\ (s)$",
                         ylabel="$mdot\ kg/s$",
                         title=f"{fluid_comp.identifier} inlet and outlet mfr time evol",
                     )
-                    conductor.dict_axes_animation["mfr"][fluid_comp.identifier].set_xlim(
-                        [0.0, simulation.transient_input["TEND"]]
-                    )
+                    conductor.dict_axes_animation["mfr"][
+                        fluid_comp.identifier
+                    ].set_xlim([0.0, simulation.transient_input["TEND"]])
                 # end for fluid_comp (cdp, 10/2020)
             # end if l_type (cdp, 10/2020)
             # set axes features (cdp, 10/2020)
