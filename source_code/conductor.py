@@ -2580,6 +2580,7 @@ class Conductor:
         nn = 0
 
         for key in ["FluidComponent", "StrandComponent", "JacketComponent"]:
+            # Build nodal coordinates
             conductorlogger.debug(
                 f"Before call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
             )
@@ -2588,6 +2589,7 @@ class Conductor:
                 f"After call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
             )
 
+            # Build connectivity matrix
             conductorlogger.debug(
                 f"Before call method {self.__build_connectivity.__name__} for {key} objects.\n"
             )
@@ -2609,6 +2611,7 @@ class Conductor:
             f"After call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
         )
 
+        # Convert index to categorical
         conductorlogger.debug(
             f"Before convert index of dataframe self.connectivity_matrix to categorical.\n"
         )
@@ -2624,6 +2627,7 @@ class Conductor:
             f"After convert index of dataframe self.connectivity_matrix to categorical.\n"
         )
 
+        # Compute node distance
         conductorlogger.debug(
             f"Before call method {self.__compute_node_distance.__name__}.\n"
         )
@@ -2635,6 +2639,8 @@ class Conductor:
         conductorlogger.debug(
             f"Before call method {self.__compute_gauss_node_distance.__name__}.\n"
         )
+
+        # Compute gauss node distance
         self.__compute_gauss_node_distance()
         conductorlogger.debug(
             f"After call method {self.__compute_gauss_node_distance.__name__}.\n"
@@ -2649,6 +2655,7 @@ class Conductor:
             f"After call method {self.__build_incidence_matrix.__name__}.\n"
         )
 
+        # Build electric resistance matrix (for the first time)
         conductorlogger.debug(
             f"Before call method {self.__build_electric_resistance_matrix.__name__}.\n"
         )
@@ -2657,6 +2664,7 @@ class Conductor:
             f"After call method {self.__build_electric_resistance_matrix.__name__}.\n"
         )
 
+        # Find contacts between StrandComponent objects.
         conductorlogger.debug(
             f"Before call method {self.__contact_current_carriers.__name__}.\n"
         )
@@ -2665,6 +2673,7 @@ class Conductor:
             f"After call method {self.__contact_current_carriers.__name__}.\n"
         )
 
+        # Build contact incidence matrix
         conductorlogger.debug(
             f"Before call method {self.__build_contact_incidence_matrix.__name__}.\n"
         )
@@ -2675,12 +2684,49 @@ class Conductor:
             f"After call method {self.__build_contact_incidence_matrix.__name__}.\n"
         )
 
+        # Build electric conductance matrix
         conductorlogger.debug(
             f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
         )
         self.__build_electric_conductance_matrix()
         conductorlogger.debug(
             f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
+        )
+
+        # Build electric stiffness matrix (for the first time)
+        conductorlogger.debug(
+            f"Before call method {self.__build_electric_stiffness_matrix.__name__}.\n"
+        )
+        self.__build_electric_stiffness_matrix()
+        conductorlogger.debug(
+            f"Before call method {self.__build_electric_stiffness_matrix.__name__}.\n"
+        )
+
+        # Assign equivalue surfaces
+        conductorlogger.debug(
+            f"Before call method {self.__assign_equivalue_surfaces.__name__}.\n"
+        )
+        self.__assign_equivalue_surfaces()
+        conductorlogger.debug(
+            f"Before call method {self.__assign_equivalue_surfaces.__name__}.\n"
+        )
+
+        # Assign fixed potential
+        conductorlogger.debug(
+            f"Before call method {self.__assign_fix_potential.__name__}.\n"
+        )
+        self.__assign_fix_potential()
+        conductorlogger.debug(
+            f"Before call method {self.__assign_fix_potential.__name__}.\n"
+        )
+
+        # Build electric known therm vector
+        conductorlogger.debug(
+            f"Before call method {self.__build_electric_known_term_vector.__name__}.\n"
+        )
+        self.__build_electric_known_term_vector()
+        conductorlogger.debug(
+            f"Before call method {self.__build_electric_known_term_vector.__name__}.\n"
         )
 
     def __build_electric_stiffness_matrix(self):
