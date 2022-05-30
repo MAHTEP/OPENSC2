@@ -2721,6 +2721,26 @@ class Conductor:
                 -self.inventory["StrandComponent"].number :
             ] + self.total_elements_current_carriers
 
+    def assign_fix_potential(self):
+        """Method that assigns the value of the fixed potential on prescribed fixed potential surfaces.
+        """
+        jj = 0
+        tol = 1e-10
+        for kk, obj in enumerate(self.inventory["StrandComponent"].collection):
+            # Assign potential values.
+            self.fixed_potential_value[
+                jj : jj + obj.operations["FIX_POTENTIAL_NUMBER"]
+            ] = obj.operations["FIX_POTENTIAL_VALUE"]
+            # Find and assign the index corresponding to fix potential
+            # coordinates.
+            for ii, coord in enumerate(obj.operations["FIX_POTENTIAL_COORDINATE"], jj):
+                self.fixed_potential_index[ii] = (
+                    (self.nodal_coordinates.loc["StrandComponent", "z"] - coord).abs()
+                    <= tol
+                ).to_numpy().nonzero()[0][kk] + self.total_elements_current_carriers
+
+            jj += obj.operations["FIX_POTENTIAL_NUMBER"]
+
 
     def operating_conditions(self, simulation):
 
