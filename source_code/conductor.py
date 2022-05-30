@@ -15,6 +15,7 @@ from component_collection import ComponentCollection
 from conductor_flags import (
     ELECTRIC_CONDUCTANCE_UNIT_LENGTH,
     ELECTRIC_CONDUCTANCE_NOT_UNIT_LENGTH,
+    IOP_CONSTANT, IOP_FROM_EXT_FUNCTION, IOP_FROM_FILE
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -2741,6 +2742,41 @@ class Conductor:
 
             jj += obj.operations["FIX_POTENTIAL_NUMBER"]
 
+    def build_electric_known_term_vector(self):
+        """Method that builds the electric known term vector according to the value of flag I0_OP_MODE:
+            * 0: constant value
+            * -1: from auxiliary file (to be implemented)
+            * -2: from user defined external function.
+        """
+
+        # Rimuovere gli if
+
+        if self.inputs["I0_OP_MODE"] == IOP_CONSTANT:
+            # positive means entering the node.
+            # This is already a boundary condition.
+            # All the current enters the first node of the first current
+            # carrier.
+            self.operating_current[0] = self.inputs["I0_OP_TOT"]
+            # All the current exits from the lats node of the last current
+            # carrier.
+            self.operating_current[-1] = -self.inputs["I0_OP_TOT"]
+        elif self.inputs["I0_OP_MODE"] == IOP_FROM_FILE:
+            pass
+            # to be implemented.
+        elif self.inputs["I0_OP_MODE"] == IOP_FROM_EXT_FUNCTION:
+
+            # All the current enters the first node of the first current
+            # carrier.
+            self.operating_current[0] = custom_current_function(self.electric_time)
+            # All the current exits from the lats node of the last current
+            # carrier.
+            self.operating_current[-1] = -custom_current_function(self.electric_time)
+            # to be implemented.
+        # End if self.dict_input["I0_OP_MODE"].
+
+        self.electric_known_term_vector[
+            self.total_elements_current_carriers :
+        ] = self.operating_current
 
     def operating_conditions(self, simulation):
 
