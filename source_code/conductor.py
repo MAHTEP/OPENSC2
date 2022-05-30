@@ -2572,7 +2572,7 @@ class Conductor:
             @ self.contact_incidence_matrix
         )
 
-    def preprocessing(self):
+    def electric_preprocessing(self):
         """Method that allows to evaluate most of the quatities and data structures needed for the electric calculation.
         Builds nodal coordinates and connectiviy dataframes, the connectivity matrix only for StrandComponent, the inicidence matrices in both longitudinal and transversal directions, the resistance matrix (logitudinal) and the conductance matrix (transverse direction).
         """
