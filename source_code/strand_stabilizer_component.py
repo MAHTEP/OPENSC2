@@ -28,7 +28,7 @@ class StrandStabilizerComponent(StrandComponent):
 
         self.NAME = name
         # get channels ID consistently with user definition (cdp, 09/2020)
-        self.ID = sheet.cell(row=3, column=4 + icomp).value
+        self.identifier = sheet.cell(row=3, column=4 + icomp).value
 
         # dictionary declaration (cdp, 11/2020)
         self.inputs = dict()
@@ -47,8 +47,8 @@ class StrandStabilizerComponent(StrandComponent):
             skiprows=2,
             header=0,
             index_col=0,
-            usecols=["Variable name", self.ID],
-        )[self.ID].to_dict()
+            usecols=["Variable name", self.identifier],
+        )[self.identifier].to_dict()
         # Dictionary initialization: operations.
         self.operations = pd.read_excel(
             dict_file_path["operation"],
@@ -56,8 +56,8 @@ class StrandStabilizerComponent(StrandComponent):
             skiprows=2,
             header=0,
             index_col=0,
-            usecols=["Variable name", self.ID],
-        )[self.ID].to_dict()
+            usecols=["Variable name", self.identifier],
+        )[self.identifier].to_dict()
 
         # Call SolidComponent class constructor to deal with StrandStabilizerComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
@@ -70,7 +70,7 @@ class StrandStabilizerComponent(StrandComponent):
             del self.operations["B_field_units"]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(Type: {self.NAME}, ID: {self.ID})"
+        return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
     def __str__(self):
         pass

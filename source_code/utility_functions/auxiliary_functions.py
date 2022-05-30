@@ -32,7 +32,7 @@ def check_repeated_headings(input_file, sheet):
     # Raise error message
     if max(list(dict_colum.values())) > 1:
         raise ValueError(
-            f"ERROR! Different objects of the same kind ({sheet['A1'].value}) can not have the same ID.\nUser defines the following:\n{dict_colum.items()}.\nPlease check the headers in sheet {sheet.title} of file {input_file}"
+            f"ERROR! Different objects of the same kind ({sheet['A1'].value}) can not have the same identifier.\nUser defines the following:\n{dict_colum.items()}.\nPlease check the headers in sheet {sheet.title} of file {input_file}"
         )
 
 
@@ -612,7 +612,7 @@ def read_interp_file(file_path, comp, *INTIAL, **options):
     # Function Read_interp_file starts here. (cdp)
 
     ff = load_workbook(file_path, data_only=True)
-    sheet = ff[comp.ID]
+    sheet = ff[comp.identifier]
     flag = sheet.cell(1, 1).value  # read the element in cell (1,1) of .xlsx file
     # get sheet boundary to read data properly (cdp, 07/2020)
     r_first = sheet.min_row + 1  # first row to be read (cdp, 07/2020)

@@ -81,11 +81,11 @@ class FluidComponent:
             cond ([type]): [description]
         """
         # Get channels ID consistently with user definition (cdp, 09/2020)
-        self.ID = sheet.cell(row=3, column=4 + icomp).value
+        self.identifier = sheet.cell(row=3, column=4 + icomp).value
         # Instance of class Channel (build a coolant object)
-        self.channel = Channel(sheet, sheetOpar, dict_file_path, self.ID)
+        self.channel = Channel(sheet, sheetOpar, dict_file_path, self.identifier)
         # Instance of class Coolant (build a coolant object)
-        self.coolant = Coolant(sheet, sheetOpar, dict_file_path, self.ID)
+        self.coolant = Coolant(sheet, sheetOpar, dict_file_path, self.identifier)
         self.coordinate = dict()
 
     # End method __init__.
@@ -96,7 +96,7 @@ class FluidComponent:
         Returns:
             [type]: [description]
         """
-        return f"{self.__class__.__name__}(Type: {self.NAME}, ID: {self.ID})"
+        return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
     # End method __repr__.
 

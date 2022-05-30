@@ -183,7 +183,7 @@ class Channel(FluidComponentInput):
         Returns:
             [type]: [description]
         """
-        return f"{self.__class__.__name__}(kind: {self.KIND}, type: {self.type}, ID: {self.identifier})"
+        return f"{self.__class__.__name__}(kind: {self.KIND}, type: {self.type}, identifier: {self.identifier})"
 
     # End method __repr__.
 

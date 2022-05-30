@@ -48,7 +48,7 @@ class Coolant(FluidComponentInput):
     # End method __init__.
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(Type: {self.type}, ID: {self.ID})"
+        return f"{self.__class__.__name__}(Type: {self.type}, identifier: {self.identifier})"
 
     # End method __repr__
 
@@ -313,7 +313,7 @@ class Coolant(FluidComponentInput):
         # End while ii.
         if ii > MAXITR and err >= TOLRNC:
             warnings.warn(
-                f"WARNING. TOLERANCE NOT ACHIEVED FOR {self.ID} IN GENFLW \
+                f"WARNING. TOLERANCE NOT ACHIEVED FOR {self.identifier} IN GENFLW \
       Fuidcomponent coolant compute_velocity:\nerr = {err}"
             )
         # End if ii.

@@ -113,7 +113,7 @@ class StrandComponent(SolidComponent):
                     )
                     # Load auxiliary input file.
                     alphab_df, flagSpecfield = load_auxiliary_files(
-                        file_path, sheetname=self.ID
+                        file_path, sheetname=self.identifier
                     )
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                     (
@@ -325,7 +325,7 @@ class StrandComponent(SolidComponent):
                     )
                     # Load auxiliary input file.
                     eps_df, flagSpecfield = load_auxiliary_files(
-                        file_path, sheetname=self.ID
+                        file_path, sheetname=self.identifier
                     )
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                     self.eps_interpolator, self.eps_interp_flag = build_interpolator(

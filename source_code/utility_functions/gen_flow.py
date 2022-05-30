@@ -87,7 +87,7 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             # inlet temperature (cdp, 06/2020)
             T_inl = fluid_comp.coolant.operations["TEMINL"]
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, 
         INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following 
         flow input from Worksheet CHAN of file \
         {cond.file_input["OPERATION"]} parameters:\nPREINL = {p_inl} Pa;
@@ -110,7 +110,7 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             p_inl = flow_par[2]
             p_out = flow_par[3]
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, 
         INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following 
         flow input parameters from Worksheet CHAN of file flow_dummy.xlsx 
         parameters:\nPREINL = {p_inl} Pa;\nPREOUT = {p_out} Pa;
@@ -155,7 +155,7 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
         )
         if abs(mdot_inl) != fluid_comp.coolant.operations["MDTIN"]:
             warnings.warn(
-                f"Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == {fluid_comp.coolant.operations['INTIAL']}. Evaluatedinlet mass flow rate is different from the one in Worksheet CHAN of input file {cond.file_input['OPERATION']}: {abs(mdot_inl)} != {fluid_comp.coolant.operations['MDTIN']}. This value is overwritten by the evaluated one with the correct sign according to the flow direction:\nMDTIN = {mdot_inl} kg/s\n"
+                f"Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == {fluid_comp.coolant.operations['INTIAL']}. Evaluatedinlet mass flow rate is different from the one in Worksheet CHAN of input file {cond.file_input['OPERATION']}: {abs(mdot_inl)} != {fluid_comp.coolant.operations['MDTIN']}. This value is overwritten by the evaluated one with the correct sign according to the flow direction:\nMDTIN = {mdot_inl} kg/s\n"
             )
             # overwriting fluid_comp inlet mass flow rate (cdp, 06/2020)
             fluid_comp.coolant.operations["MDTIN"] = mdot_inl
@@ -171,7 +171,7 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             # Inlet temperature (cdp, 09/2020)
             T_out = fluid_comp.coolant.operations["TEMOUT"]
             warnings.warn(
-                f"""Function {gen_flow}, {fluid_comp.ID}, 
+                f"""Function {gen_flow}, {fluid_comp.identifier}, 
       INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following 
       flow input from Worksheet CHAN of file 
       {cond.file_input["OPERATION"]} parameters:\nPREINL = {p_inl} Pa;
@@ -198,7 +198,7 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             # Outlet temperature (cdp, 09/2020)
             T_out = flow_par[1]
             warnings.warn(
-                f"""Function {gen_flow}, {fluid_comp.ID}, 
+                f"""Function {gen_flow}, {fluid_comp.identifier}, 
       INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following 
       flow input parameters from Worksheet CHAN of file flow_dummy.xlsx 
       parameters:\nPREINL = {p_inl} Pa;\nTEMINL = {T_inl} K;
@@ -254,7 +254,7 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             # Inlet temperature (cdp, 09/2020)
             T_out = fluid_comp.coolant.operations["TEMOUT"]
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, 
       INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following 
       flow input from Worksheet CHAN of file 
       {cond.file_input["OPERATION"]} parameters:\nPREOUT = {p_out} Pa;
@@ -281,7 +281,7 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             # Outlet temperature (cdp, 09/2020)
             T_out = flow_par[1]
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, 
       INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following 
       flow input parameters from Worksheet CHAN of file flow_dummy.xlsx 
       parameters:\nPREOUT = {p_out} Pa;\nTEMINL = {T_inl} K;
@@ -422,7 +422,7 @@ def get_missing_pressure_no_hydraulic_parallel(
         )
     if p_missing != fluid_comp.coolant.operations[key]:
         warnings.warn(
-            f"""Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == 
+            f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == 
       {fluid_comp.coolant.operations["INTIAL"]}. Evaluated {word} pressure is 
       different from the one in Worksheet CHAN of input file 
       {cond.file_input["OPERATION"]}:
@@ -521,7 +521,7 @@ def check_intial_values(cond):
             if abs(fluid_comp.coolant.operations["INTIAL"]) != INTIAL_ref:
                 # Fill the list with channel ID that have a different value of intial \
                 # wrt to the reference one (cdp, 09/2020)
-                dict_raise_error[key]["channels"].append(fluid_comp.ID)
+                dict_raise_error[key]["channels"].append(fluid_comp.identifier)
                 dict_raise_error[key]["flag_value"].append(
                     fluid_comp.coolant.operations["INTIAL"]
                 )
@@ -540,7 +540,7 @@ def check_intial_values(cond):
             )
             for ii in range(len(dict_raise_error[key]["channels"])):
                 print(
-                    f"Channel ID: {dict_raise_error[key]['channels'][ii]}; INTIAL: {dict_raise_error[key]['flag_value'][ii]} \n"
+                    f"Channel identifier: {dict_raise_error[key]['channels'][ii]}; INTIAL: {dict_raise_error[key]['flag_value'][ii]} \n"
                 )
             print("---------------------------------------------------------------\n")
         # raise error since INTIAL values are different for at least one channel
@@ -575,7 +575,7 @@ def abs_intial_equal_1_hp(cond, chan_group, N_group, path, Max_iter, tol):
             # inlet temperature (cdp, 06/2020)
             T_inl[ii] = fluid_comp.coolant.operations["TEMINL"]
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == 
         {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input 
         from Worksheet CHAN of file {cond.file_input["OPERATION"]} 
         parameters:
@@ -603,7 +603,7 @@ def abs_intial_equal_1_hp(cond, chan_group, N_group, path, Max_iter, tol):
             # inlet temperature (cdp, 06/2020)
             T_inl[ii] = flow_par[0]
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == 
         {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input 
         parameters from Worksheet CHAN of file flow_dummy.xlsx parameters:
         \nPREINL = {p_inl[ii]} Pa;
@@ -631,7 +631,7 @@ def abs_intial_equal_1_hp(cond, chan_group, N_group, path, Max_iter, tol):
             "Channels in hydraulic parallel must all have the same flow direction.\nPlease, check flag FLOWDIR in sheet CHANNEL of input file conductor_operation.xlsx.\n"
         )
         # Old (to be expanded) delta_p = 0
-        # warnings.warn(f"Pressure drop = 0\nChannels belonging to group {fluid_comp.ID} do not participate to heat exchange\n")
+        # warnings.warn(f"Pressure drop = 0\nChannels belonging to group {fluid_comp.identifier} do not participate to heat exchange\n")
     if delta_p < 0:
         raise ValueError(
             f"Error in function {gen_flow.__name__}!\nNegative pressure drop: delta_p = {delta_p}"
@@ -666,13 +666,13 @@ def abs_intial_equal_1_hp(cond, chan_group, N_group, path, Max_iter, tol):
         )
         if abs(mdot_inl) != fluid_comp.coolant.operations["MDTIN"]:
             warnings.warn(
-                f"Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == {fluid_comp.coolant.operations['INTIAL']}. Evaluated inlet mass flow rate is different from the one in Worksheet CHAN of input file {cond.file_input['OPERATION']}: {abs(mdot_inl)} != {fluid_comp.coolant.operations['MDTIN']}.\n This value is overwritten by the evaluated one with the correct sign according to the flow direction:\nMDTIN = {mdot_inl}\n"
+                f"Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == {fluid_comp.coolant.operations['INTIAL']}. Evaluated inlet mass flow rate is different from the one in Worksheet CHAN of input file {cond.file_input['OPERATION']}: {abs(mdot_inl)} != {fluid_comp.coolant.operations['MDTIN']}.\n This value is overwritten by the evaluated one with the correct sign according to the flow direction:\nMDTIN = {mdot_inl}\n"
             )
             # overwriting channel inlet mass flow rate (cdp, 06/2020)
             fluid_comp.coolant.operations["MDTIN"] = mdot_inl
         if p_inl_ave != fluid_comp.coolant.operations["PREINL"]:
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == 
         {fluid_comp.coolant.operations["INTIAL"]}. Evaluated inlet pressure is different 
         from the one in Worksheet CHAN of input file 
         {cond.file_input["OPERATION"]}:
@@ -684,7 +684,7 @@ def abs_intial_equal_1_hp(cond, chan_group, N_group, path, Max_iter, tol):
             fluid_comp.coolant.operations["PREINL"] = p_inl_ave
         if p_out_ave != fluid_comp.coolant.operations["PREOUT"]:
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == 
         {fluid_comp.coolant.operations["INTIAL"]}. Evaluated outlet pressure is different 
         from the one in Worksheet CHAN of input file 
         {cond.file_input["OPERATION"]}:
@@ -739,7 +739,7 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
             # Inlet temperature (cdp, 08/2020)
             T_inl[ii] = fluid_comp.coolant.operations["TEMINL"]
             warnings.warn(
-                f"""Function {gen_flow}, {fluid_comp.ID}, INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input parameters from Worksheet CHAN of file {cond.file_input["OPERATION"]}:\n{key_a} = {p_known[ii]} Pa;\nTEMINL = {T_inl[ii]} K;\nMDTIN = {mdot_inl[ii]} kg/s.\n"""
+                f"""Function {gen_flow}, {fluid_comp.identifier}, INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input parameters from Worksheet CHAN of file {cond.file_input["OPERATION"]}:\n{key_a} = {p_known[ii]} Pa;\nTEMINL = {T_inl[ii]} K;\nMDTIN = {mdot_inl[ii]} kg/s.\n"""
             )
         elif fluid_comp.coolant.operations["INTIAL"] < 0:
             # All values form flow_dummy.xlsx (cdp, 07/2020)
@@ -760,7 +760,7 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
             # Inlet temperature (cdp, 08/2020)
             T_inl[ii] = flow_par[0]
             warnings.warn(
-                f"""Function {gen_flow}, {fluid_comp.ID}, INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input parameters from Worksheet CHAN of file flow_dummy.xlsx parameters:\n{key_a} = {p_known[ii]} Pa;\nTEMINL = {T_inl[ii]} K;\nMDTIN = {mdot_inl[ii]} kg/s.\n"""
+                f"""Function {gen_flow}, {fluid_comp.identifier}, INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input parameters from Worksheet CHAN of file flow_dummy.xlsx parameters:\n{key_a} = {p_known[ii]} Pa;\nTEMINL = {T_inl[ii]} K;\nMDTIN = {mdot_inl[ii]} kg/s.\n"""
             )
         # end if INTIAL (cdp, 09/2020)
         # Evaluate channels geometry parameters g0 to compute outlet \
@@ -856,7 +856,7 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
         fluid_comp = chan_group[ii]
         if p_missing != fluid_comp.coolant.operations[key_b]:
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == 
         {fluid_comp.coolant.operations["INTIAL"]}. Evaluated {word} pressure is 
         different from the one in Worksheet CHAN of input file 
         {cond.file_input["OPERATION"]}:
@@ -868,7 +868,7 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
             fluid_comp.coolant.operations[key_b] = p_missing
         if mdot_inl[ii] != fluid_comp.coolant.operations["MDTIN"]:
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == 
         {fluid_comp.coolant.operations["INTIAL"]}. Evaluated inlet mass flow rate is 
         different from the one in Worksheet CHAN of input file 
         {cond.file_input["OPERATION"]}:
@@ -905,7 +905,7 @@ def abs_intial_equal_3_hp(cond, chan_group, N_group, path):
             # Impose inlet mass flow rate (cdp, 09/2020)
             fluid_comp.coolant.operations["MDTIN"] = 0.0
             print(
-                f"Imposed inlet mass flow rate of channel {fluid_comp.ID} to 0 kg/s\n"
+                f"Imposed inlet mass flow rate of channel {fluid_comp.identifier} to 0 kg/s\n"
             )
         elif fluid_comp.coolant.operations["INTIAL"] == -3:
             # in this case call Get_from_xlsx (cdp, 09/2020)
@@ -917,7 +917,7 @@ def abs_intial_equal_3_hp(cond, chan_group, N_group, path):
         fluid_comp = chan_group[ii]
         if p_inl_ave != fluid_comp.coolant.operations["PREINL"]:
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == 
         {fluid_comp.coolant.operations["INTIAL"]}. Evaluated inlet pressure is 
         different from the one in Worksheet CHAN of input file 
         {cond.file_input["OPERATION"]}:
@@ -929,7 +929,7 @@ def abs_intial_equal_3_hp(cond, chan_group, N_group, path):
             fluid_comp.coolant.operations["PREINL"] = p_inl_ave
         # Impose channel outlet pressure (cdp, 09/2020)
         fluid_comp.coolant.operations["PREOUT"] = p_inl_ave
-        print(f"Imposed outlet pressure of channel {fluid_comp.ID} to {p_inl_ave} Pa\n")
+        print(f"Imposed outlet pressure of channel {fluid_comp.identifier} to {p_inl_ave} Pa\n")
 
     # end for ii (cdp, 09/2020)
 
@@ -963,7 +963,7 @@ def abs_intial_equal_4_hp(cond, chan_group, N_group, path):
             # Impose inlet mass flow rate (cdp, 09/2020)
             fluid_comp.coolant.operations["MDTIN"] = 0.0
             print(
-                f"Imposed inlet mass flow rate of channel {fluid_comp.ID} to 0 kg/s\n"
+                f"Imposed inlet mass flow rate of channel {fluid_comp.identifier} to 0 kg/s\n"
             )
         elif fluid_comp.coolant.operations["INTIAL"] == -4:
             # in this case call Get_from_xlsx (cdp, 09/2020)
@@ -975,7 +975,7 @@ def abs_intial_equal_4_hp(cond, chan_group, N_group, path):
         fluid_comp = chan_group[ii]
         if p_ini_ave != fluid_comp.coolant.operations["PREINI"]:
             warnings.warn(
-                f"""Function {gen_flow.__name__}, {fluid_comp.ID}, INTIAL == 
+                f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == 
         {fluid_comp.coolant.operations["INTIAL"]}. Evaluated initial pressure is 
         different from the one in Worksheet CHAN of input file 
         {cond.file_input["OPERATION"]}:
@@ -987,7 +987,7 @@ def abs_intial_equal_4_hp(cond, chan_group, N_group, path):
             fluid_comp.coolant.operations["PREINI"] = p_ini_ave
         # Impose inlet pressure (cdp, 09/2020)
         fluid_comp.coolant.operations["PREINL"] = p_ini_ave
-        print(f"Imposed inlet pressure of channel {fluid_comp.ID} to {p_ini_ave} Pa.\n")
+        print(f"Imposed inlet pressure of channel {fluid_comp.identifier} to {p_ini_ave} Pa.\n")
     # end for ii (cdp, 09/2020)
 
 

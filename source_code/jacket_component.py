@@ -28,7 +28,7 @@ class JacketComponent(SolidComponent):
 
         self.NAME = name
         # get channels ID consistently with user definition (cdp, 09/2020)
-        self.ID = sheet.cell(row=3, column=4 + icomp).value
+        self.identifier = sheet.cell(row=3, column=4 + icomp).value
 
         # dictionary declaration (cdp, 11/2020)
         self.inputs = dict()
@@ -48,8 +48,8 @@ class JacketComponent(SolidComponent):
             skiprows=2,
             header=0,
             index_col=0,
-            usecols=["Variable name", self.ID],
-        )[self.ID].to_dict()
+            usecols=["Variable name", self.identifier],
+        )[self.identifier].to_dict()
         # Dictionary initialization: operations.
         self.operations = pd.read_excel(
             dict_file_path["operation"],
@@ -57,8 +57,8 @@ class JacketComponent(SolidComponent):
             skiprows=2,
             header=0,
             index_col=0,
-            usecols=["Variable name", self.ID],
-        )[self.ID].to_dict()
+            usecols=["Variable name", self.identifier],
+        )[self.identifier].to_dict()
 
         if self.operations["IBIFUN"] != -1:
             # Remove key B_field_units.
@@ -69,7 +69,7 @@ class JacketComponent(SolidComponent):
         SolidComponent(simulation, self)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(Type: {self.NAME}, ID: {self.ID})"
+        return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
     def __str__(self):
         pass
@@ -81,7 +81,7 @@ class JacketComponent(SolidComponent):
             conductor ([type]): [description]
             environment ([type]): [description]
         """
-        key = f"{environment.KIND}_{self.ID}"
+        key = f"{environment.KIND}_{self.identifier}"
         if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson.
             if conductor.cond_time[-1] == 0:
@@ -135,11 +135,11 @@ class JacketComponent(SolidComponent):
             conductor ([type]): [description]
             environment ([type]): [description]
         """
-        if self.ID < jk_inner.ID:
-            key = f"{self.ID}_{jk_inner.ID}"
+        if self.identifier < jk_inner.identifier:
+            key = f"{self.identifier}_{jk_inner.identifier}"
         else:
-            key = f"{jk_inner.ID}_{self.ID}"
-        # End if self.ID.
+            key = f"{jk_inner.identifier}_{self.identifier}"
+        # End if self.identifier.
         if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson.
             if conductor.cond_time[-1] == 0:

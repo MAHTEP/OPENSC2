@@ -41,7 +41,7 @@ def conductor_spatial_discretization(conductor: object):
         )
 
     check_grid_features(
-        conductor.inputs["ZLENGTH"], zcoord[0], zcoord[-1], conductor.ID
+        conductor.inputs["ZLENGTH"], zcoord[0], zcoord[-1], conductor.identifier
     )
 
     conductor.grid_features["zcoord"] = zcoord
@@ -334,23 +334,23 @@ def user_defined_grid(conductor: object):
     conductor.grid_input["NELEMS"] = conductor.grid_features["N_nod"] - 1
     # Assign spatial discretization coordinates to each conductor component.
     for comp in conductor.inventory["all_component"].collection:
-        assign_user_defined_spatial_discretization(comp, coord_dfs[comp.ID])
+        assign_user_defined_spatial_discretization(comp, coord_dfs[comp.identifier])
         check_grid_features(
             conductor.inputs["ZLENGTH"],
             comp.coordinate["z"][0],
             comp.coordinate["z"][-1],
-            comp.ID,
+            comp.identifier,
         )
 
 
-def check_grid_features(zlength: float, z0: float, z1: float, ID: str):
+def check_grid_features(zlength: float, z0: float, z1: float, identifier: str):
     """Function that cheks initial anf final coordinates of the discretization to be consistent with the input values.
 
     Args:
         zlength (float): straight length of the cable
         z0 (float): first element of the array with the z component of the spatial discretization.
         z1 (float): last element of the array with the z component of the spatial discretization.
-        ID (str): identifier of the object for which the check is make.
+        identifier (str): identifier of the object for which the check is make.
 
     Raises:
         ValueError: if first coordinate is smaller 0.0 (below a tolerance)
@@ -360,12 +360,12 @@ def check_grid_features(zlength: float, z0: float, z1: float, ID: str):
 
     tol = 1e-6
     if abs(z0 - 0.0) > tol:
-        message = f"{ID = }: z0 must be 0.0; {z0 = } (m) > {0.0} (m)."
+        message = f"{identifier = }: z0 must be 0.0; {z0 = } (m) > {0.0} (m)."
         logger_discretization.error(message)
         raise ValueError(message)
 
     if abs(z1 - zlength) > tol:
-        message = f"{ID = }: z1 does not equal zlength!\n{z1 = } m; {zlength =} m"
+        message = f"{identifier = }: z1 does not equal zlength!\n{z1 = } m; {zlength =} m"
         logger_discretization.warning(message)
         raise ValueError(message)
 
@@ -396,23 +396,23 @@ def check_user_defined_grid(
 
     comp_ref = conductor.inventory["FluidComponent"].collection[0]
     n_node_ref = check_max_node_number(
-        dfs[comp_ref.ID].shape[0], conductor, file_path, comp_ref.ID
+        dfs[comp_ref.identifier].shape[0], conductor, file_path, comp_ref.identifier
     )
-    z_ref = dfs[comp_ref.ID]["z [m]"].to_numpy()
+    z_ref = dfs[comp_ref.identifier]["z [m]"].to_numpy()
 
     for comp in conductor.inventory["all_component"].collection[1:]:
-        if dfs[comp.ID].shape[1] < 3:
+        if dfs[comp.identifier].shape[1] < 3:
             raise ValueError(
-                f"User must provide three coordinates in sheeT {comp.ID} of input file {file_path}.\n"
+                f"User must provide three coordinates in sheeT {comp.identifier} of input file {file_path}.\n"
             )
-        if dfs[comp.ID].shape[0] != n_node_ref:
+        if dfs[comp.identifier].shape[0] != n_node_ref:
             raise ValueError(
-                f"Inconsistent number of user defined nodes. The number of nodes in sheet {comp.ID} of file {file_path} must be equal to the one defined in sheet {comp_ref.ID} of the same file."
+                f"Inconsistent number of user defined nodes. The number of nodes in sheet {comp.identifier} of file {file_path} must be equal to the one defined in sheet {comp_ref.identifier} of the same file."
             )
 
-        if not np.allclose(dfs[comp.ID]["z [m]"].to_numpy(), z_ref, equal_nan=True):
+        if not np.allclose(dfs[comp.identifier]["z [m]"].to_numpy(), z_ref, equal_nan=True):
             raise ValueError(
-                f"User must provide the same z component of the coordinate for FluidComponent, JacketComponent and StrandComponent objects. Please check column z [m] in sheet {comp.ID} of file {file_path}."
+                f"User must provide the same z component of the coordinate for FluidComponent, JacketComponent and StrandComponent objects. Please check column z [m] in sheet {comp.identifier} of file {file_path}."
             )
 
     return n_node_ref, z_ref
@@ -438,7 +438,7 @@ def check_max_node_number(
     """
     if n_nod > conductor.grid_input["MAXNOD"]:
         if conductor.grid_input["ITYMSH"] >= 0:
-            message = f"The number of nodes should not exceed the maximum value. {n_nod = } > {conductor.grid_input['MAXNOD'] = }.\nPlease check {conductor.ID} in file {file_path}.\n"
+            message = f"The number of nodes should not exceed the maximum value. {n_nod = } > {conductor.grid_input['MAXNOD'] = }.\nPlease check {conductor.identifier} in file {file_path}.\n"
         else:
             message = f"The number of nodes should not exceed the maximum value. {n_nod = } > {conductor.grid_input['MAXNOD'] = }.\nPlease check sheet {args[0]} in file {file_path}.\n"
         raise ValueError(message)
@@ -455,7 +455,7 @@ def assign_user_defined_spatial_discretization(
     ],
     df: pd.DataFrame,
 ):
-    """Function that assigns the user defined coordinates in sheet comp.ID of auxiliary input file with the spatial discretization to the corresponding conductor component.
+    """Function that assigns the user defined coordinates in sheet comp.identifier of auxiliary input file with the spatial discretization to the corresponding conductor component.
 
     Args:
         comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which user defines spatial discretization.
@@ -596,5 +596,5 @@ def build_coordinates_of_barycenter(
         cond.inputs["ZLENGTH"],
         comp.coordinate["z"][0],
         comp.coordinate["z"][-1],
-        comp.ID,
+        comp.identifier,
     )

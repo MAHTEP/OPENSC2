@@ -178,7 +178,7 @@ class Simulation:
         self.dict_qsource = dict()
         if self.numObj == 1:
             # There is only 1 Conductor object, exploit cond instantiated above (cdp,07/2020)
-            self.dict_qsource[cond.ID] = np.zeros(
+            self.dict_qsource[cond.identifier] = np.zeros(
                 (
                     cond.grid_features["N_nod"],
                     cond.dict_N_equation["JacketComponent"],
@@ -191,7 +191,7 @@ class Simulation:
                 if all(self.contactBetweenConductors.iloc[rr, :]) == 0:
                     # There is not contact between cond_r and all the others.
                     # Consider all the columns in order to not miss the info on last raw (otherwise the last conductor will not be added as key of the dictionary).
-                    self.dict_qsource[cond_r.ID] = np.zeros(
+                    self.dict_qsource[cond_r.identifier] = np.zeros(
                         (
                             cond_r.grid_features["N_nod"],
                             cond_r.dict_N_equation["JacketComponent"],
@@ -215,7 +215,7 @@ class Simulation:
                             # There is not contact between cond_r and cond_c (cdp,07/2020)
                             # Proposta di soluzione ma va studiata decisamente meglio!
                             # N.B. controllare anche nella chiamata a step come passare self.dict_qsource.
-                            self.dict_qsource[f"{cond_r.ID}_{cond_c.ID}"] = np.zeros(
+                            self.dict_qsource[f"{cond_r.identifier}_{cond_c.identifier}"] = np.zeros(
                                 (
                                     cond_r.grid_features["N_nod"],
                                     cond_r.dict_N_equation["JacketComponent"],
@@ -255,7 +255,7 @@ class Simulation:
             # Save of the solution spatial distribution at 0.0 s (cdp, 12/2020)
             save_simulation_space(
                 conductor,
-                self.dict_path[f"Output_Spatial_distribution_{conductor.ID}_dir"],
+                self.dict_path[f"Output_Spatial_distribution_{conductor.identifier}_dir"],
                 abs(self.n_digit),
             )
         # end for ii (cdp, 10/2020)
@@ -302,7 +302,7 @@ class Simulation:
                 step(
                     conductor,
                     self.environment,
-                    self.dict_qsource[conductor.ID],
+                    self.dict_qsource[conductor.identifier],
                     self.num_step,
                 )
                 # Loop on FluidComponent (cdp, 10/2020)
@@ -377,7 +377,7 @@ class Simulation:
                     save_simulation_space(
                         conductor,
                         self.dict_path[
-                            f"Output_Spatial_distribution_{conductor.ID}_dir"
+                            f"Output_Spatial_distribution_{conductor.identifier}_dir"
                         ],
                         abs(self.n_digit),
                     )
@@ -394,7 +394,7 @@ class Simulation:
                 # 		# reached time values to save the solution and plot it \
                 # 			# cdp, 08/2020)
                 # 			flag_rename = Save_simulation_space(conductor, \
-                # 									self.dict_path[f"Output_Spatial_distribution_{conductor.ID}_dir"], \
+                # 									self.dict_path[f"Output_Spatial_distribution_{conductor.identifier}_dir"], \
                 # 									Who = "User")
                 # 			# Saved the solution, this time is no longer considered \
                 # 			# (cdp, 08/2020)
@@ -418,12 +418,12 @@ class Simulation:
             # save simulation spatial distribution at TEND (cdp, 01/2021)
             save_simulation_space(
                 cond,
-                self.dict_path[f"Output_Spatial_distribution_{cond.ID}_dir"],
+                self.dict_path[f"Output_Spatial_distribution_{cond.identifier}_dir"],
                 abs(self.n_digit),
             )
             # Call function Save_properties to save the conductor final solution \
             # (cdp, 12/2020)
-            save_properties(cond, self.dict_path[f"Output_Solution_{cond.ID}_dir"])
+            save_properties(cond, self.dict_path[f"Output_Solution_{cond.identifier}_dir"])
         # end for cond (cdp, 12/2020)
         print("Saved final solution\n")
         print("End simulation called " + self.transient_input["SIMULATION"] + "\n")
@@ -438,7 +438,7 @@ class Simulation:
             cond.post_processing(self)
             reorganize_spatial_distribution(
                 cond,
-                self.dict_path[f"Output_Spatial_distribution_{cond.ID}_dir"],
+                self.dict_path[f"Output_Spatial_distribution_{cond.identifier}_dir"],
                 self.n_digit,
             )
             # Plot conductor solution spatial distribution (cdp, 12/2020)
@@ -552,19 +552,19 @@ class Simulation:
             dict_make ([type]): [description]
             dict_benchmark ([type]): [description]
         """
-        # Loop to create sub folders initialization, Spatial_distribution, Time_evolution and Benchmark in Output and Figures directories; each folder in f_names_list, will contain folder conductor.ID.
+        # Loop to create sub folders initialization, Spatial_distribution, Time_evolution and Benchmark in Output and Figures directories; each folder in f_names_list, will contain folder conductor.identifier.
         for f_name in list_f_names:
             for conductor in self.list_of_Conductors:
                 # Build list_key_val exploiting list comprehension. List of tuples: index [0] is the key of the dictionary, index [1] is the corresponding value that is the path to Output or Figures sub directories.
                 list_key_val = [
                     (
-                        f"{folder.capitalize()}_{f_name}_{conductor.ID}_dir",
+                        f"{folder.capitalize()}_{f_name}_{conductor.identifier}_dir",
                         os.path.join(
                             self.dict_path["Sub_dir"],
                             self.transient_input["SIMULATION"],
                             folder.capitalize(),
                             f_name,
-                            conductor.ID,
+                            conductor.identifier,
                         ),
                     )
                     for folder in list_folder
@@ -611,14 +611,14 @@ class Simulation:
         # Build list_key_val exploiting list comprehension. List of tuples: index [0] is the key of the dictionary, index [1] is the corresponding value that is the path to Output or Figures sub directories.
         list_key_val = [
             (
-                f"{folder.capitalize()}_{f_name}_benchmark_{conductor.ID}_dir",
+                f"{folder.capitalize()}_{f_name}_benchmark_{conductor.identifier}_dir",
                 os.path.join(
                     self.dict_path["Sub_dir"],
                     self.transient_input["SIMULATION"],
                     folder.capitalize(),
                     f_name,
                     "Benchmark",
-                    conductor.ID,
+                    conductor.identifier,
                 ),
             )
             for folder in list_folder

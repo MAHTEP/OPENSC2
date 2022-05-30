@@ -227,7 +227,7 @@ def step(conductor, environment, qsource, num_step):
         ):
             if (
                 conductor.dict_df_coupling["contact_perimeter_flag"].at[
-                    fluid_comp_r.ID, fluid_comp_c.ID
+                    fluid_comp_r.identifier, fluid_comp_c.identifier
                 ]
                 == 1
             ):
@@ -235,8 +235,8 @@ def step(conductor, environment, qsource, num_step):
                 # dict_topology["ch_ch"] but a search in dictionaties \
                 # "Hydraulic_parallel" and "Thermal_contact" should be performed, \
                 # which makes thinks not easy to do; it is simpler to construct \
-                # interface names combining channels ID (cdp, 09/2020)
-                interface_name = f"{fluid_comp_r.ID}_{fluid_comp_c.ID}"
+                # interface names combining channels identifier (cdp, 09/2020)
+                interface_name = f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
                 # K', K'' and K''' initialization to zeros only if there is an \
                 # interface between fluid_comp_r and fluid_comp_c; parameters usefull to \
                 # constuct recurrent coefficients of matrix S elements (cdp, 09/2020)
@@ -523,7 +523,7 @@ def step(conductor, environment, qsource, num_step):
                     # dict_topology["ch_ch"] but a search in dictionaties \
                     # "Hydraulic_parallel" and "Thermal_contact" should be performed, \
                     # which makes thinks not easy to do; it is simpler to construct \
-                    # interface names combining channels ID (cdp, 09/2020)
+                    # interface names combining channels identifier (cdp, 09/2020)
                     interface_name = natural_sort(fluid_comp_j, fluid_comp_k)
                     flag_ch_ch_contact = conductor.dict_interf_peri["ch_ch"][
                         "Open"
@@ -838,9 +838,9 @@ def step(conductor, environment, qsource, num_step):
             # end for kk (cdp, 07/2020)
             for ll, s_comp in enumerate(conductor.inventory["SolidComponent"].collection):
                 # chan_sol_topology is equivalent to \
-                # conductor.dict_topology["ch_sol"][fluid_comp_r.ID][s_comp.ID] \
+                # conductor.dict_topology["ch_sol"][fluid_comp_r.identifier][s_comp.identifier] \
                 # but it is shorter so I decide to use it here (cdp, 09/2020)
-                chan_sol_topology = f"{fluid_comp_j.ID}_{s_comp.ID}"
+                chan_sol_topology = f"{fluid_comp_j.identifier}_{s_comp.identifier}"
                 flag_chan_sol_contact = conductor.dict_interf_peri["ch_sol"].get(
                     chan_sol_topology, str_check
                 )
@@ -975,7 +975,7 @@ def step(conductor, environment, qsource, num_step):
             for mm, s_comp_m in enumerate(conductor.inventory["SolidComponent"].collection):
                 if mm != ll:
                     # s_comp_topology is equivalent to \
-                    # conductor.dict_topology["sol_sol"][s_comp_m.ID][s_comp_l.ID] \
+                    # conductor.dict_topology["sol_sol"][s_comp_m.identifier][s_comp_l.identifier] \
                     # but it is shorter so I decide to use it here (cdp, 09/2020)
                     s_comp_topology = natural_sort(s_comp_l, s_comp_m)
                     flag_sol_sol_contact = conductor.dict_interf_peri["sol_sol"].get(
@@ -1007,7 +1007,7 @@ def step(conductor, environment, qsource, num_step):
                 # end if mm != ll (cdp, 07/2020)
             # end for mm (cdp, 07/2020)
             for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponent"].collection):
-                chan_sol_topology = f"{fluid_comp_j.ID}_{s_comp_l.ID}"
+                chan_sol_topology = f"{fluid_comp_j.identifier}_{s_comp_l.identifier}"
                 flag_chan_sol_contact = conductor.dict_interf_peri["ch_sol"].get(
                     chan_sol_topology, str_check
                 )
@@ -1043,13 +1043,13 @@ def step(conductor, environment, qsource, num_step):
             if s_comp_l.NAME == conductor.inventory["JacketComponent"].name:
                 if (
                     conductor.dict_df_coupling["contact_perimeter_flag"].at[
-                        environment.KIND, s_comp_l.ID
+                        environment.KIND, s_comp_l.identifier
                     ]
                     == 1
                 ):
                     if (
                         conductor.dict_df_coupling["HTC_choice"].at[
-                            environment.KIND, s_comp_l.ID
+                            environment.KIND, s_comp_l.identifier
                         ]
                         == 2
                         and conductor.inputs["Is_rectangular"]
@@ -1060,15 +1060,15 @@ def step(conductor, environment, qsource, num_step):
                             + 2
                             * conductor.inputs["Height"]
                             * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                f"{environment.KIND}_{s_comp_l.ID}"
+                                f"{environment.KIND}_{s_comp_l.identifier}"
                             ]["conv"]["side"][ii]
                             + conductor.inputs["width"]
                             * (
                                 conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.ID}"
+                                    f"{environment.KIND}_{s_comp_l.identifier}"
                                 ]["conv"]["bottom"][ii]
                                 + conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.ID}"
+                                    f"{environment.KIND}_{s_comp_l.identifier}"
                                 ]["conv"]["top"][ii]
                             )
                         )
@@ -1076,13 +1076,13 @@ def step(conductor, environment, qsource, num_step):
                         SMAT[neq, neq] = (
                             SMAT[neq, neq]
                             + conductor.dict_interf_peri["env_sol"][
-                                f"{environment.KIND}_{s_comp_l.ID}"
+                                f"{environment.KIND}_{s_comp_l.identifier}"
                             ]
                             * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                f"{environment.KIND}_{s_comp_l.ID}"
+                                f"{environment.KIND}_{s_comp_l.identifier}"
                             ]["conv"][ii]
                         )
-                # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.ID]
+                # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.identifier]
             # End s_comp_l.NAME
 
             # END S MATRIX: solid components equation (cdp, 07/2020)
@@ -1131,14 +1131,14 @@ def step(conductor, environment, qsource, num_step):
                     )
                     if (
                         conductor.dict_df_coupling["contact_perimeter_flag"].at[
-                            environment.KIND, s_comp_l.ID
+                            environment.KIND, s_comp_l.identifier
                         ]
                         == 1
                     ):
                         # Add the contribution of the external heating by convection to the known term vector.
                         if (
                             conductor.dict_df_coupling["HTC_choice"].at[
-                                environment.KIND, s_comp_l.ID
+                                environment.KIND, s_comp_l.identifier
                             ]
                             == 2
                             and conductor.inputs["Is_rectangular"]
@@ -1147,7 +1147,7 @@ def step(conductor, environment, qsource, num_step):
                             coef = 2 * conductor.inputs[
                                 "Height"
                             ] * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                f"{environment.KIND}_{s_comp_l.ID}"
+                                f"{environment.KIND}_{s_comp_l.identifier}"
                             ][
                                 "conv"
                             ][
@@ -1158,19 +1158,19 @@ def step(conductor, environment, qsource, num_step):
                                 "width"
                             ] * (
                                 conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.ID}"
+                                    f"{environment.KIND}_{s_comp_l.identifier}"
                                 ]["conv"]["bottom"][ii]
                                 + conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.ID}"
+                                    f"{environment.KIND}_{s_comp_l.identifier}"
                                 ]["conv"]["top"][ii]
                             )
                         else:
                             coef = (
                                 conductor.dict_interf_peri["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.ID}"
+                                    f"{environment.KIND}_{s_comp_l.identifier}"
                                 ]
                                 * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.ID}"
+                                    f"{environment.KIND}_{s_comp_l.identifier}"
                                 ]["conv"][ii]
                             )
                         # End if conductor.inputs["Is_rectangular"]
@@ -1191,7 +1191,7 @@ def step(conductor, environment, qsource, num_step):
                             SVEC[0][neq, 1]
                             + coef * environment.inputs["Temperature"]
                         )  # W/m
-                    # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.ID] == 1
+                    # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.identifier] == 1
                 else:
                     # Compute only at the current time step (cdp, 10/2020)
                     SVEC[neq, 0] = (
@@ -1204,14 +1204,14 @@ def step(conductor, environment, qsource, num_step):
                     )
                     if (
                         conductor.dict_df_coupling["contact_perimeter_flag"].at[
-                            environment.KIND, s_comp_l.ID
+                            environment.KIND, s_comp_l.identifier
                         ]
                         == 1
                     ):
                         # Add the contribution of the external heating by convection to the known term vector.
                         if (
                             conductor.dict_df_coupling["HTC_choice"].at[
-                                environment.KIND, s_comp_l.ID
+                                environment.KIND, s_comp_l.identifier
                             ]
                             == 2
                             and conductor.inputs["Is_rectangular"]
@@ -1220,7 +1220,7 @@ def step(conductor, environment, qsource, num_step):
                             coef = 2 * conductor.inputs[
                                 "Height"
                             ] * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                f"{environment.KIND}_{s_comp_l.ID}"
+                                f"{environment.KIND}_{s_comp_l.identifier}"
                             ][
                                 "conv"
                             ][
@@ -1231,19 +1231,19 @@ def step(conductor, environment, qsource, num_step):
                                 "width"
                             ] * (
                                 conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.ID}"
+                                    f"{environment.KIND}_{s_comp_l.identifier}"
                                 ]["conv"]["bottom"][ii]
                                 + conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.ID}"
+                                    f"{environment.KIND}_{s_comp_l.identifier}"
                                 ]["conv"]["top"][ii]
                             )
                         else:
                             coef = (
                                 conductor.dict_interf_peri["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.ID}"
+                                    f"{environment.KIND}_{s_comp_l.identifier}"
                                 ]
                                 * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.ID}"
+                                    f"{environment.KIND}_{s_comp_l.identifier}"
                                 ]["conv"][ii]
                             )
                         # End if conductor.inputs["Is_rectangular"]
@@ -1254,7 +1254,7 @@ def step(conductor, environment, qsource, num_step):
                         SVEC[neq, 1] = (
                             SVEC[neq, 1] + coef * environment.inputs["Temperature"]
                         )  # W/m
-                    # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.ID] == 1
+                    # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.identifier] == 1
             # cl end august 24 2019
             # END S VECTOR: solid components equation (cdp, 07/2020)
         # end for ll (cdp, 07/2020)
@@ -2209,12 +2209,12 @@ def step(conductor, environment, qsource, num_step):
     Known = Known / ASCALING
 
     old_temperature_gauss = {
-        obj.ID: obj.coolant.dict_Gauss_pt["temperature"]
+        obj.identifier: obj.coolant.dict_Gauss_pt["temperature"]
         for obj in conductor.inventory["FluidComponent"].collection
     }
     old_temperature_gauss.update(
         {
-            obj.ID: obj.dict_Gauss_pt["temperature"]
+            obj.identifier: obj.dict_Gauss_pt["temperature"]
             for obj in conductor.inventory["SolidComponent"].collection
         }
     )
@@ -2430,7 +2430,7 @@ def step(conductor, environment, qsource, num_step):
         fluid_comp.coolant.dict_Gauss_pt["temperature_change"] = (
             fluid_comp.coolant.dict_node_pt["temperature"][:-1]
             + fluid_comp.coolant.dict_node_pt["temperature"][1:]
-        ) / 2.0 - old_temperature_gauss[fluid_comp.ID]
+        ) / 2.0 - old_temperature_gauss[fluid_comp.identifier]
     for ll, comp in enumerate(conductor.inventory["SolidComponent"].collection):
         # temperature (cdp, 08/2020)
         conductor.dict_norm["Change"][
@@ -2468,7 +2468,7 @@ def step(conductor, environment, qsource, num_step):
 
         comp.dict_Gauss_pt["temperature_change"] = (
             comp.dict_node_pt["temperature"][:-1] + comp.dict_node_pt["temperature"][1:]
-        ) / 2.0 - old_temperature_gauss[comp.ID]
+        ) / 2.0 - old_temperature_gauss[comp.identifier]
 
     # COMPUTE THE NORM OF THE SOLUTION CHANGE, THE EIGENVALUES AND RECOVER THE \
     # VARIABLES FROM THE SYSTEM SOLUTION (END)
@@ -2687,23 +2687,23 @@ def natural_sort(comp_a, comp_b):
     # Use the regexes to sort naturally (human like) the IDs of the components to be able to deal with all the interfaces in a general way.
     match_a = re.search(
         r"(?P<Fluid_component>CHAN)?(?P<Mixed_sc_stab>STR_MIX)?(?P<Super_conductor>STR_SC)?(?P<StrandStabilizerComponent>STR_STAB)?(?P<JacketComponent>Z_JACKET)?_(\d+)",
-        comp_a.ID,
+        comp_a.identifier,
     )
     # r'((CHAN)?(STR_MIX)?(STR_SC)?(STR_STAB)?(Z_JACKET)?)_(\d)+'
     match_b = re.search(
         r"(?P<Fluid_component>CHAN)?(?P<Mixed_sc_stab>STR_MIX)?(?P<Super_conductor>STR_SC)?(?P<StrandStabilizerComponent>STR_STAB)?(?P<JacketComponent>Z_JACKET)?_(\d+)",
-        comp_b.ID,
+        comp_b.identifier,
     )
 
     if match_a.group(comp_a.KIND) < match_b.group(comp_b.KIND):
-        return f"{comp_a.ID}_{comp_b.ID}"
+        return f"{comp_a.identifier}_{comp_b.identifier}"
     elif match_a.group(comp_a.KIND) > match_b.group(comp_b.KIND):
-        return f"{comp_b.ID}_{comp_a.ID}"
+        return f"{comp_b.identifier}_{comp_a.identifier}"
     else:
         # Equal string part, sort by number
         if int(match_a.group(6)) < int(match_b.group(6)):
-            return f"{comp_a.ID}_{comp_b.ID}"
+            return f"{comp_a.identifier}_{comp_b.identifier}"
         else:
-            return f"{comp_b.ID}_{comp_a.ID}"
+            return f"{comp_b.identifier}_{comp_a.identifier}"
         # end if
     # end if

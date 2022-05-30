@@ -29,7 +29,7 @@ class StrandSuperconductorComponent(StrandComponent):
 
         self.NAME = name
         # get channels ID consistently with user definition (cdp, 09/2020)
-        self.ID = sheet.cell(row=3, column=4 + icomp).value
+        self.identifier = sheet.cell(row=3, column=4 + icomp).value
 
         # dictionary declaration (cdp, 11/2020)
         self.inputs = dict()
@@ -48,8 +48,8 @@ class StrandSuperconductorComponent(StrandComponent):
             skiprows=2,
             header=0,
             index_col=0,
-            usecols=["Variable name", self.ID],
-        )[self.ID].to_dict()
+            usecols=["Variable name", self.identifier],
+        )[self.identifier].to_dict()
         # Dictionary initialization: operations.
         self.operations = pd.read_excel(
             dict_file_path["operation"],
@@ -57,8 +57,8 @@ class StrandSuperconductorComponent(StrandComponent):
             skiprows=2,
             header=0,
             index_col=0,
-            usecols=["Variable name", self.ID],
-        )[self.ID].to_dict()
+            usecols=["Variable name", self.identifier],
+        )[self.identifier].to_dict()
         self.ASC = self.inputs["CROSSECTION"]
         if self.operations["IBIFUN"] != -1:
             # Remove key B_field_units.
@@ -68,7 +68,7 @@ class StrandSuperconductorComponent(StrandComponent):
         SolidComponent(simulation, self)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(Type: {self.NAME}, ID: {self.ID})"
+        return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
     def __str__(self):
         pass

@@ -20,22 +20,22 @@ def plot_properties(simulation, cond, what="initialization"):
     flag_chan = False
     if what == "initialization":
         dict_path = dict(
-            Load=simulation.dict_path[f"Output_Initialization_{cond.ID}_dir"],
-            Save=simulation.dict_path[f"Figures_Initialization_{cond.ID}_dir"],
+            Load=simulation.dict_path[f"Output_Initialization_{cond.identifier}_dir"],
+            Save=simulation.dict_path[f"Figures_Initialization_{cond.identifier}_dir"],
         )
     elif what == "solution":
         dict_path = dict(
-            Load=simulation.dict_path[f"Output_Solution_{cond.ID}_dir"],
-            Save=simulation.dict_path[f"Figures_Solution_{cond.ID}_dir"],
+            Load=simulation.dict_path[f"Output_Solution_{cond.identifier}_dir"],
+            Save=simulation.dict_path[f"Figures_Solution_{cond.identifier}_dir"],
         )
     # end if what (cdp, 12/2020)
     # Loop on FluidComponent (cdp, 12/2020)
     for fluid_comp in cond.inventory["FluidComponent"].collection:
         # load values
-        file_load = os.path.join(dict_path["Load"], f"{fluid_comp.ID}.tsv")
+        file_load = os.path.join(dict_path["Load"], f"{fluid_comp.identifier}.tsv")
         # Load data in file_load as pandas DataFrame
         load_chan = pd.read_csv(filepath_or_buffer=file_load, delimiter="\t")
-        folder_save = os.path.join(dict_path["Save"], fluid_comp.ID)
+        folder_save = os.path.join(dict_path["Save"], fluid_comp.identifier)
         # Create target Directory if do not exist (cdp, 07/2020)
         if not os.path.exists(folder_save):
             os.makedirs(folder_save)
@@ -57,7 +57,7 @@ def plot_properties(simulation, cond, what="initialization"):
             Figure, ax = plt.subplots(
                 num=(
                     simulation.transient_input["SIMULATION"]
-                    + f" {cond.ID}, {fluid_comp.ID}:"
+                    + f" {cond.identifier}, {fluid_comp.identifier}:"
                     f" {p_name[:ind]}"
                 ),
                 figsize=(7.0, 6.0),
@@ -67,7 +67,7 @@ def plot_properties(simulation, cond, what="initialization"):
             ax.set(
                 xlabel="$x\ (m)$",
                 ylabel=f"{y_name} {units}",
-                title=f"{cond.ID}, {fluid_comp.ID}: {p_name[:ind]}",
+                title=f"{cond.identifier}, {fluid_comp.identifier}: {p_name[:ind]}",
             )
             plt.savefig(save_fig_path_svg, orientation="portrait", transparent=False)
             # plt.savefig(save_fig_path_pdf, orientation = "portrait", \
@@ -77,10 +77,10 @@ def plot_properties(simulation, cond, what="initialization"):
     # Loop on SolidComponent (cdp, 12/2020)
     for s_comp in cond.inventory["SolidComponent"].collection:
         # load values
-        file_load = os.path.join(dict_path["Load"], f"{s_comp.ID}.tsv")
+        file_load = os.path.join(dict_path["Load"], f"{s_comp.identifier}.tsv")
         # Load data in file_load as pandas DataFrame
         load_s_comp = pd.read_csv(filepath_or_buffer=file_load, delimiter="\t")
-        folder_save = os.path.join(dict_path["Save"], s_comp.ID)
+        folder_save = os.path.join(dict_path["Save"], s_comp.identifier)
         # Create target Directory if do not exist (cdp, 07/2020)
         if not os.path.exists(folder_save):
             os.makedirs(folder_save)
@@ -100,7 +100,7 @@ def plot_properties(simulation, cond, what="initialization"):
             Figure, ax = plt.subplots(
                 num=(
                     simulation.transient_input["SIMULATION"]
-                    + f" {cond.ID}, {s_comp.ID}:"
+                    + f" {cond.identifier}, {s_comp.identifier}:"
                     f" {p_name[:ind]}"
                 ),
                 figsize=(7.0, 6.0),
@@ -112,7 +112,7 @@ def plot_properties(simulation, cond, what="initialization"):
             ax.set(
                 xlabel="$x\ (m)$",
                 ylabel=f"{y_name} {units}",
-                title=f"{cond.ID}, {s_comp.ID}: {p_name[:ind]}",
+                title=f"{cond.identifier}, {s_comp.identifier}: {p_name[:ind]}",
             )
             plt.savefig(save_fig_path_svg, orientation="portrait", transparent=False)
             # plt.savefig(save_fig_path_pdf, orientation = "portrait", \
@@ -206,16 +206,16 @@ def make_plots(simulation, kind="Space_distr"):
     dict_values = {}  # dictionary declaration (cdp, 09/2020)
     # loop on conductorts objects (cdp,11/2020)
     for cond in simulation.list_of_Conductors:
-        dict_values[cond.ID] = {}  # dictionary declaration (cdp, 09/2020)
+        dict_values[cond.identifier] = {}  # dictionary declaration (cdp, 09/2020)
         if kind == "Space_distr":
             # unify the array (cdp, 11/2020)
             kind_save = np.around(cond.Space_save, simulation.n_digit)
             root_load_path = simulation.dict_path[
-                f"Output_Spatial_distribution_{cond.ID}_dir"
+                f"Output_Spatial_distribution_{cond.identifier}_dir"
             ]
             des = "sd"
             root_save_path = simulation.dict_path[
-                f"Figures_Spatial_distribution_{cond.ID}_dir"
+                f"Figures_Spatial_distribution_{cond.identifier}_dir"
             ]
             abscissa = pd.read_csv(
                 os.path.join(root_load_path, "zcoord.tsv"), delimiter="\t"
@@ -233,11 +233,11 @@ def make_plots(simulation, kind="Space_distr"):
             # unify the array (cdp, 11/2020)
             kind_save = cond.Time_save
             root_load_path = simulation.dict_path[
-                f"Output_Time_evolution_{cond.ID}_dir"
+                f"Output_Time_evolution_{cond.identifier}_dir"
             ]
             des = "te"
             root_save_path = simulation.dict_path[
-                f"Figures_Time_evolution_{cond.ID}_dir"
+                f"Figures_Time_evolution_{cond.identifier}_dir"
             ]
             # plot features (cdp, 01/2021)
             # unify the array (cdp, 11/2020)
@@ -274,18 +274,18 @@ def make_plots(simulation, kind="Space_distr"):
         # Loop on FluidComponent (cdp, 11/2020)
         for fluid_comp in cond.inventory["FluidComponent"].collection:
             # dictionary declaration (cdp, 09/2020)
-            dict_values[cond.ID][fluid_comp.ID] = {}
+            dict_values[cond.identifier][fluid_comp.identifier] = {}
             # Load properties value for channels (cdp, 09/2020)
             for prop in prop_chan:
                 # load file (cdp, 09/2020)
                 file_load = os.path.join(
-                    root_load_path, f"{fluid_comp.ID}_{prop}_{des}.tsv"
+                    root_load_path, f"{fluid_comp.identifier}_{prop}_{des}.tsv"
                 )
                 # dictionary declaration (cdp, 09/2020)
-                dict_values[cond.ID][fluid_comp.ID][prop] = pd.read_csv(
+                dict_values[cond.identifier][fluid_comp.identifier][prop] = pd.read_csv(
                     filepath_or_buffer=file_load, delimiter="\t"
                 )
-                folder_save = os.path.join(root_save_path, fluid_comp.ID)
+                folder_save = os.path.join(root_save_path, fluid_comp.identifier)
                 # Create target Directory if do not exist (cdp, 09/2020)
                 if not os.path.exists(folder_save):
                     os.makedirs(folder_save)
@@ -294,13 +294,13 @@ def make_plots(simulation, kind="Space_distr"):
                     print(f"Directory {folder_save} already exists\n")
 
                 # Construct sup title for all the axes of the figure.
-                sup_title = f"{cond.ID} {fluid_comp.ID} {prop}: {title_comp}"
+                sup_title = f"{cond.identifier} {fluid_comp.identifier} {prop}: {title_comp}"
                 if kind == "Space_distr":
                     # call function Make_plots_sd_actually to make plots of spatial \
                     # distributions (cpd, 10/2020)
                     make_plots_sd_actually(
                         abscissa,
-                        dict_values[cond.ID][fluid_comp.ID][prop],
+                        dict_values[cond.identifier][fluid_comp.identifier][prop],
                         prop,
                         folder_save,
                         N_lines_tot_max,
@@ -328,7 +328,7 @@ def make_plots(simulation, kind="Space_distr"):
                         # Number of axes (cdp, 01/2021)
                         N_ax = np.ones(1, dtype=int)
                         make_plots_te_actually(
-                            dict_values[cond.ID][fluid_comp.ID][prop],
+                            dict_values[cond.identifier][fluid_comp.identifier][prop],
                             prop,
                             folder_save,
                             N_l_t_m,
@@ -343,7 +343,7 @@ def make_plots(simulation, kind="Space_distr"):
                         )
                     else:
                         make_plots_te_actually(
-                            dict_values[cond.ID][fluid_comp.ID][prop],
+                            dict_values[cond.identifier][fluid_comp.identifier][prop],
                             prop,
                             folder_save,
                             N_lines_tot_max,
@@ -363,7 +363,7 @@ def make_plots(simulation, kind="Space_distr"):
         # end for fluid_comp (cdp, 10/2020)
         # Loop on SolidComponent (cdp, 11/2020)
         for s_comp in cond.inventory["SolidComponent"].collection:
-            dict_values[cond.ID][s_comp.ID] = {}
+            dict_values[cond.identifier][s_comp.identifier] = {}
             if s_comp.NAME != cond.inventory["JacketComponent"].name:
                 # StrandComponent objects (cdp, 09/2020)
                 # Load properties value for strands (cdp, 09/2020)
@@ -375,13 +375,13 @@ def make_plots(simulation, kind="Space_distr"):
             for prop in prop_s_comp:
                 # load file (cdp, 09/2020)
                 file_load = os.path.join(
-                    root_load_path, f"{s_comp.ID}_{prop}_{des}.tsv"
+                    root_load_path, f"{s_comp.identifier}_{prop}_{des}.tsv"
                 )
                 # dictionary declaration (cdp, 09/2020)
-                dict_values[cond.ID][s_comp.ID][prop] = pd.read_csv(
+                dict_values[cond.identifier][s_comp.identifier][prop] = pd.read_csv(
                     filepath_or_buffer=file_load, delimiter="\t"
                 )
-                folder_save = os.path.join(root_save_path, s_comp.ID)
+                folder_save = os.path.join(root_save_path, s_comp.identifier)
                 # Create target Directory if do not exist (cdp, 09/2020)
                 if not os.path.exists(folder_save):
                     os.makedirs(folder_save)
@@ -389,13 +389,13 @@ def make_plots(simulation, kind="Space_distr"):
                 else:
                     print(f"Directory {folder_save} already exists\n")
                 # Construct sup title for all the axes of the figure.
-                sup_title = f"{cond.ID} {s_comp.ID} {prop}: {title_comp}"
+                sup_title = f"{cond.identifier} {s_comp.identifier} {prop}: {title_comp}"
                 if kind == "Space_distr":
                     # call function Make_plots_sd_actually to make plots of spatial \
                     # distributions (cpd, 10/2020)
                     make_plots_sd_actually(
                         abscissa,
-                        dict_values[cond.ID][s_comp.ID][prop],
+                        dict_values[cond.identifier][s_comp.identifier][prop],
                         prop,
                         folder_save,
                         N_lines_tot_max,
@@ -413,7 +413,7 @@ def make_plots(simulation, kind="Space_distr"):
                     # call function Make_plots_te_actually to make plots of time \
                     # evolutions (cpd, 10/2020)
                     make_plots_te_actually(
-                        dict_values[cond.ID][s_comp.ID][prop],
+                        dict_values[cond.identifier][s_comp.identifier][prop],
                         prop,
                         folder_save,
                         N_lines_tot_max,
@@ -448,17 +448,17 @@ def make_plots(simulation, kind="Space_distr"):
                     cond.inventory["SolidComponent"].collection[rr + 1 :]
                 ):
                     if (
-                        abs(cond.dict_df_coupling["HTC_choice"].at[jk_r.ID, jk_c.ID])
+                        abs(cond.dict_df_coupling["HTC_choice"].at[jk_r.identifier, jk_c.identifier])
                         == 3
                     ):
-                        prop = f"Heat_rad_{jk_r.ID}_{jk_c.ID}"
+                        prop = f"Heat_rad_{jk_r.identifier}_{jk_c.identifier}"
                         # Build file path.
                         file_load = os.path.join(root_load_path, f"{prop}_{des}.tsv")
                         # Load file as dataframe.
                         values = pd.read_csv(file_load, delimiter="\t")
                         folder_save = os.path.join(root_save_path)
                         sup_title = (
-                            f"{cond.ID} {jk_r.ID} {jk_c.ID} Heat rad: {title_comp}"
+                            f"{cond.identifier} {jk_r.identifier} {jk_c.identifier} Heat rad: {title_comp}"
                         )
                         # Plot the heat exchanged by radiation between jackets.
                         make_plots_sd_actually(
@@ -481,17 +481,17 @@ def make_plots(simulation, kind="Space_distr"):
                 # End for cc.
             if (
                 cond.dict_df_coupling["contact_perimeter_flag"].at[
-                    simulation.environment.KIND, jk_r.ID
+                    simulation.environment.KIND, jk_r.identifier
                 ]
                 == 1
             ):
-                prop = f"Heat_exch_{simulation.environment.KIND}_{jk_r.ID}"
+                prop = f"Heat_exch_{simulation.environment.KIND}_{jk_r.identifier}"
                 # Build file path.
                 file_load = os.path.join(root_load_path, f"{prop}_{des}.tsv")
                 # Load file as dataframe.
                 values = pd.read_csv(file_load, delimiter="\t")
                 folder_save = os.path.join(root_save_path)
-                sup_title = f"{cond.ID} {simulation.environment.KIND} {jk_r.ID} Heat exch: {title_comp}"
+                sup_title = f"{cond.identifier} {simulation.environment.KIND} {jk_r.identifier} Heat exch: {title_comp}"
                 # Plot the heat exchanged by radiation between jackets.
                 make_plots_sd_actually(
                     x_gauss,
@@ -1168,7 +1168,7 @@ def create_real_time_plots_max_temperature(simulation, conductor, comp):
         comp (object): can be any object instance of classes FluidComponent, MixSCStabilizet, StrandSuperconductorComponent StrandStabilizerComponent or JacketComponent.
     """
     comp.figure_max_temp, comp.axes_max_temp = plt.subplots(
-        num=f"{simulation.transient_input['SIMULATION']} ({conductor.number}): maximum {comp.ID} temperature",
+        num=f"{simulation.transient_input['SIMULATION']} ({conductor.number}): maximum {comp.identifier} temperature",
         figsize=(5, 5),
     )
     # set axes features (cdp, 10/2020)
@@ -1176,7 +1176,7 @@ def create_real_time_plots_max_temperature(simulation, conductor, comp):
     comp.axes_max_temp.set(
         xlabel="$t\ (s)$",
         ylabel="$T_{max}\ (K)$",
-        title=f"{conductor.ID} {comp.ID} max temperature time evol",
+        title=f"{conductor.identifier} {comp.identifier} max temperature time evol",
     )
     comp.axes_max_temp.set_xlim([0.0, simulation.transient_input["TEND"]])
 
@@ -1193,7 +1193,7 @@ def create_real_time_plots_inlet_outlet_mfr(simulation, conductor, f_comp):
         f_comp (object): object fluid_component instance of class FluidComponent.
     """
     f_comp.figure_io_mfr, f_comp.axes_io_mfr = plt.subplots(
-        num=f"{simulation.transient_input['SIMULATION']} ({conductor.number}): {f_comp.ID} mass flow rates",
+        num=f"{simulation.transient_input['SIMULATION']} ({conductor.number}): {f_comp.identifier} mass flow rates",
         figsize=(5, 5),
     )
 
@@ -1202,7 +1202,7 @@ def create_real_time_plots_inlet_outlet_mfr(simulation, conductor, f_comp):
     f_comp.axes_io_mfr.set(
         xlabel="$t\ (s)$",
         ylabel="$mdot\ (kg/s)$",
-        title=f"{conductor.ID} {f_comp.ID} inlet and outlet mfr time evol",
+        title=f"{conductor.identifier} {f_comp.identifier} inlet and outlet mfr time evol",
     )
     f_comp.axes_io_mfr.set_xlim([0.0, simulation.transient_input["TEND"]])
 
@@ -1354,21 +1354,21 @@ def plot_time_animation(simulation, conductor):
                 # conductor.dict_axes_animation["mfr"][l_type] = dict()
                 for fluid_comp in conductor.inventory["FluidComponent"].collection:
                     (
-                        conductor.dict_Figure_animation["mfr"][fluid_comp.ID],
-                        conductor.dict_axes_animation["mfr"][fluid_comp.ID],
+                        conductor.dict_Figure_animation["mfr"][fluid_comp.identifier],
+                        conductor.dict_axes_animation["mfr"][fluid_comp.identifier],
                     ) = plt.subplots(
-                        num=f"{simulation.transient_input['SIMULATION']} ({conductor.number}): {fluid_comp.ID} "
+                        num=f"{simulation.transient_input['SIMULATION']} ({conductor.number}): {fluid_comp.identifier} "
                         + f"mass flow rate",
                         figsize=(5, 5),
                     )
                     # set axes features (cdp, 10/2020)
-                    conductor.dict_axes_animation["mfr"][fluid_comp.ID].grid(True)
-                    conductor.dict_axes_animation["mfr"][fluid_comp.ID].set(
+                    conductor.dict_axes_animation["mfr"][fluid_comp.identifier].grid(True)
+                    conductor.dict_axes_animation["mfr"][fluid_comp.identifier].set(
                         xlabel="$t\ (s)$",
                         ylabel="$mdot\ kg/s$",
-                        title=f"{fluid_comp.ID} inlet and outlet mfr time evol",
+                        title=f"{fluid_comp.identifier} inlet and outlet mfr time evol",
                     )
-                    conductor.dict_axes_animation["mfr"][fluid_comp.ID].set_xlim(
+                    conductor.dict_axes_animation["mfr"][fluid_comp.identifier].set_xlim(
                         [0.0, simulation.transient_input["TEND"]]
                     )
                 # end for fluid_comp (cdp, 10/2020)
@@ -1389,21 +1389,21 @@ def plot_time_animation(simulation, conductor):
             for fluid_comp in conductor.inventory["FluidComponent"].collection:
                 # make the plot of channels maximum temperature (cdp, 10/2020)
                 # conductor.dict_axes_animation["T_max"][l_type].plot(
-                #     conductor.cond_time[-1], fluid_comp.coolant.dict_node_pt["temperature"].max(), conductor.color[ii], label = fluid_comp.ID) # choose the color
+                #     conductor.cond_time[-1], fluid_comp.coolant.dict_node_pt["temperature"].max(), conductor.color[ii], label = fluid_comp.identifier) # choose the color
                 conductor.dict_axes_animation["T_max"][l_type].plot(
                     conductor.cond_time[-1],
                     fluid_comp.coolant.dict_node_pt["temperature"].max(),
-                    label=fluid_comp.ID,
+                    label=fluid_comp.identifier,
                 )
                 # make plot of inlet and outlet mass flow rate; each channel has its \
                 # own figures (cdp, 10/2020)
-                conductor.dict_axes_animation["mfr"][fluid_comp.ID].plot(
+                conductor.dict_axes_animation["mfr"][fluid_comp.identifier].plot(
                     conductor.cond_time[-1],
                     fluid_comp.coolant.dict_node_pt["mass_flow_rate"][0],
                     conductor.color[0],
                     label="Inlet",
                 )
-                conductor.dict_axes_animation["mfr"][fluid_comp.ID].plot(
+                conductor.dict_axes_animation["mfr"][fluid_comp.identifier].plot(
                     conductor.cond_time[-1],
                     fluid_comp.coolant.dict_node_pt["mass_flow_rate"][-1],
                     conductor.color[1],
@@ -1416,16 +1416,16 @@ def plot_time_animation(simulation, conductor):
                     )
                     # conductor.dict_axes_animation["T_max"][l_type].tick_params(\
                     #   labelsize = 8, colors = "r", length = 4)
-                    conductor.dict_axes_animation["mfr"][fluid_comp.ID].legend(
+                    conductor.dict_axes_animation["mfr"][fluid_comp.identifier].legend(
                         loc="best", fontsize=8, framealpha=0.2
                     )
                 # end if conductor.cond_time[-1] (cdp, 10/2020)
-                # conductor.dict_canvas["mfr"][fluid_comp.ID] = FigureCanvasTkAgg(\
-                # 										conductor.dict_Figure_animation["mfr"][fluid_comp.ID], \
+                # conductor.dict_canvas["mfr"][fluid_comp.identifier] = FigureCanvasTkAgg(\
+                # 										conductor.dict_Figure_animation["mfr"][fluid_comp.identifier], \
                 # 										master = gui.chan_sheet)
-                # conductor.dict_canvas["mfr"][fluid_comp.ID].get_tk_widget().grid(row = 1, \
+                # conductor.dict_canvas["mfr"][fluid_comp.identifier].get_tk_widget().grid(row = 1, \
                 # 	column = ii)
-                # conductor.dict_canvas["mfr"][fluid_comp.ID].draw()
+                # conductor.dict_canvas["mfr"][fluid_comp.identifier].draw()
             # end for ii (cdp, 10/2020)
             # conductor.dict_canvas["T_max"][l_type] = FigureCanvasTkAgg(\
             # 											conductor.dict_Figure_animation["T_max"][l_type], \
@@ -1438,11 +1438,11 @@ def plot_time_animation(simulation, conductor):
             for strand in conductor.inventory["StrandComponent"].collection:
                 # plot the maximum strand temperature (cdp, 10/2020)
                 # conductor.dict_axes_animation["T_max"][l_type].plot(
-                #     conductor.cond_time[-1], strand.dict_node_pt["temperature"].max(), conductor.color[ii], label = strand.ID) # choose the color.
+                #     conductor.cond_time[-1], strand.dict_node_pt["temperature"].max(), conductor.color[ii], label = strand.identifier) # choose the color.
                 conductor.dict_axes_animation["T_max"][l_type].plot(
                     conductor.cond_time[-1],
                     strand.dict_node_pt["temperature"].max(),
-                    label=strand.ID,
+                    label=strand.identifier,
                 )
             # end for strand (cdp, 10/2020)
             if conductor.cond_time[-1] == 0:
@@ -1468,7 +1468,7 @@ def plot_time_animation(simulation, conductor):
     # if conductor.cond_time[-1] == 0:
     # 	conductor.Figure_SYSLOD, (conductor.axes_SYSLOD_str, \
     # 	conductor.axes_SYSLOD_jk) = \
-    # 		plt.subplots(num = f"{simulation.transient_input['SIMULATION']}: {conductor.ID} SYSLOD spatial distribution", nrows = 2, ncols = 1, sharex = True, figsize = (8, 6))
+    # 		plt.subplots(num = f"{simulation.transient_input['SIMULATION']}: {conductor.identifier} SYSLOD spatial distribution", nrows = 2, ncols = 1, sharex = True, figsize = (8, 6))
     # 	conductor.axes_SYSLOD_str.grid(True)
     # 	conductor.axes_SYSLOD_str.set(xlabel = "$x\ m$", \
     # 			ylabel = "$SYSLOD W/m$", \
