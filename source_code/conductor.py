@@ -2683,8 +2683,8 @@ class Conductor:
             f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
         )
 
-    def build_electric_stiffness_matrix(self):
-        """Method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix.
+    def __build_electric_stiffness_matrix(self):
+        """Private method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix.
         """
 
         self.electric_stiffness_matrix[
@@ -2706,8 +2706,8 @@ class Conductor:
 
         self.electric_stiffness_matrix = self.electric_stiffness_matrix.tocsr(copy=True)
 
-    def assign_equivalue_surfaces(self):
-        """Method that assign the prescibed equipotential surface of the conductor.
+    def __assign_equivalue_surfaces(self):
+        """Private method that assign the prescibed equipotential surface of the conductor.
         """
         tol = 1e-10
         for ii, coord in enumerate(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]):
@@ -2723,8 +2723,8 @@ class Conductor:
                 -self.inventory["StrandComponent"].number :
             ] + self.total_elements_current_carriers
 
-    def assign_fix_potential(self):
-        """Method that assigns the value of the fixed potential on prescribed fixed potential surfaces.
+    def __assign_fix_potential(self):
+        """Private method that assigns the value of the fixed potential on prescribed fixed potential surfaces.
         """
         jj = 0
         tol = 1e-10
@@ -2743,8 +2743,8 @@ class Conductor:
 
             jj += obj.operations["FIX_POTENTIAL_NUMBER"]
 
-    def build_electric_known_term_vector(self):
-        """Method that builds the electric known term vector according to the value of flag I0_OP_MODE:
+    def __build_electric_known_term_vector(self):
+        """Private method that builds the electric known term vector according to the value of flag I0_OP_MODE:
             * 0: constant value
             * -1: from auxiliary file (to be implemented)
             * -2: from user defined external function.
