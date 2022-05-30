@@ -512,13 +512,13 @@ class Conductor:
                 kinds.append(obj.__class__.__name__)
 
         cat_kind = pd.CategoricalIndex(
-            np.tile(kinds, self.grid_inputs["NELEMS"] + 1),
+            np.tile(kinds, self.grid_input["NELEMS"] + 1),
             dtype="category",
             ordered=True,
             categories=["FluidComponent", "StrandComponent", "JacketComponent"],
         )
         cat_ids = pd.CategoricalIndex(
-            np.tile(identifiers, self.grid_inputs["NELEMS"] + 1),
+            np.tile(identifiers, self.grid_input["NELEMS"] + 1),
             dtype="category",
             ordered=True,
             categories=identifiers,
@@ -543,7 +543,7 @@ class Conductor:
         ]
 
         cat_kind = pd.CategoricalIndex(
-            np.tile(kinds, self.grid_inputs["NELEMS"] + 1),
+            np.tile(kinds, self.grid_input["NELEMS"] + 1),
             dtype="category",
             ordered=True,
             categories=[
@@ -553,7 +553,7 @@ class Conductor:
             ],
         )
         cat_ids = pd.CategoricalIndex(
-            np.tile(identifiers, self.grid_inputs["NELEMS"] + 1),
+            np.tile(identifiers, self.grid_input["NELEMS"] + 1),
             dtype="category",
             ordered=True,
             categories=identifiers,
@@ -2210,7 +2210,7 @@ class Conductor:
         """
         for ii, obj in enumerate(self.inventory[key].collection, nn):
             nodes = np.linspace(
-                ii, ii + self.total_elements, self.grid_inputs["NELEMS"] + 1, dtype=int
+                ii, ii + self.total_elements, self.grid_input["NELEMS"] + 1, dtype=int
             )
             self.connectivity_matrix.iloc[
                 ii :: self.inventory["all_component"].number,
@@ -2232,7 +2232,7 @@ class Conductor:
             nodes = np.linspace(
                 ii,
                 ii + self.total_elements_current_carriers,
-                self.grid_inputs["NELEMS"] + 1,
+                self.grid_input["NELEMS"] + 1,
                 dtype=int,
             )
             self.connectivity_matrix_current_carriers.iloc[
@@ -2393,7 +2393,7 @@ class Conductor:
         self.__contact_current_carriers_first_cross_section()
         contact_nodes_current_carriers = np.zeros(
             (
-                (self.grid_inputs["NELEMS"] + 1) * self._contact_nodes_first.shape[0],
+                (self.grid_input["NELEMS"] + 1) * self._contact_nodes_first.shape[0],
                 self._contact_nodes_first.shape[1],
             ),
             dtype=int,
@@ -2401,7 +2401,7 @@ class Conductor:
         contact_nodes_current_carriers[
             : self._contact_nodes_first.shape[0], :
         ] = self._contact_nodes_first
-        for ii in range(1, self.grid_inputs["NELEMS"] + 1):
+        for ii in range(1, self.grid_input["NELEMS"] + 1):
             contact_nodes_current_carriers[
                 ii
                 * self._contact_nodes_first.shape[0] : (ii + 1)
