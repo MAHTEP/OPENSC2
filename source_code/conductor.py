@@ -2681,6 +2681,29 @@ class Conductor:
             f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
         )
 
+    def build_electric_stiffness_matrix(self):
+        """Method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix.
+        """
+
+        self.electric_stiffness_matrix[
+            : self.total_elements_current_carriers,
+            : self.total_elements_current_carriers,
+        ] = self.electric_resistance_matrix
+        self.electric_stiffness_matrix[
+            : self.total_elements_current_carriers,
+            self.total_elements_current_carriers :,
+        ] = self.incidence_matrix
+        self.electric_stiffness_matrix[
+            self.total_elements_current_carriers :,
+            : self.total_elements_current_carriers,
+        ] = -self.incidence_matrix_transposed
+        self.electric_stiffness_matrix[
+            self.total_elements_current_carriers :,
+            self.total_elements_current_carriers :,
+        ] = self.electric_conductance_matrix
+
+        self.electric_stiffness_matrix = self.electric_stiffness_matrix.tocsr(copy=True)
+
     def operating_conditions(self, simulation):
 
         """
