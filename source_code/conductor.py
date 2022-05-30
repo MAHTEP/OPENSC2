@@ -31,6 +31,7 @@ from utility_functions.auxiliary_functions import (
     check_object_number,
     set_diagnostic,
 )
+from utility_functions.electric_auxiliary_functions import custom_current_function
 from utility_functions.initialization_functions import (
     build_coordinates_of_barycenter,
     check_max_node_number,
