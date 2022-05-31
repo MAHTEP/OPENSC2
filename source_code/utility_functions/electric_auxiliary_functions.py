@@ -5,6 +5,7 @@ from typing import Union
 
 from ..conductor import Conductor
 
+
 def custom_current_function(time: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """User defined custom function for the current beavior in time (and maybe in space).
 
@@ -20,7 +21,7 @@ def custom_current_function(time: Union[float, np.ndarray]) -> Union[float, np.n
     return CURRENT_AMPLITUDE * np.cos(2 * np.pi * FREQUENCY * time)
 
 
-def fixed_value(conductor: Conductor)->np.ndarray:
+def fixed_value(conductor: Conductor) -> np.ndarray:
     """Function that assigns at the fixed_potential_index the values of the potential assigned by the user. The function also modifies the dimensions of the stiffness matrix and right hand side to account for equipotential  surfaces. This final form of the matrix and vectors are used to solve the electrical problem.
 
     Args:
@@ -90,12 +91,17 @@ def fixed_value(conductor: Conductor)->np.ndarray:
     conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix[:, idx]
     conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix[idx, :]
     # To remove zero values eventually introduced diring matrix reduction.
-    conductor.electric_stiffness_matrix = sparse.csr_matrix(conductor.electric_stiffness_matrix.toarray())
+    conductor.electric_stiffness_matrix = sparse.csr_matrix(
+        conductor.electric_stiffness_matrix.toarray()
+    )
     conductor.electric_known_term_vector = conductor.electric_known_term_vector[idx]
 
     return idx
 
-def solution_completion(conductor:Conductor, idx:np.ndarray, electric_solution:np.ndarray):
+
+def solution_completion(
+    conductor: Conductor, idx: np.ndarray, electric_solution: np.ndarray
+):
     """Function that assembles the complete electric solution keeping into account the fixed potential values and the equipotential surfaces.
 
     Args:
