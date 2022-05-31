@@ -130,3 +130,32 @@ def solution_completion(
 
         # End for
     # End if
+
+def electric_steady_state_solution(conductor:Conductor):
+    """Function that solves the electric problem in the steady state case. Exploits sparse matrix with scipy sparse."
+
+    Args:
+        conductor (Conductor): object with all the information needed to solve the electric problem.
+    """
+    if conductor.electric_known_term_vector.shape[0] == []:
+        conductor.electric_known_term_vector = np.zeros(
+            conductor.electric_stiffness_matrix.shape[0]
+        )
+
+    conductor.electric_solution = np.zeros(
+        conductor.electric_known_term_vector.shape[0]
+    )
+
+    # Apply Diriclet boundary conditions
+    idx = fixed_value(conductor)
+
+    # Introduced alias to electric_known_term_vector to exploit the same 
+    # solution function in both the steady state and the transient case,
+    conductor.electric_right_hand_side = conductor.electric_known_term_vector
+    electric_solution = spsolve(
+        conductor.electric_stiffness_matrix,
+        conductor.electric_right_hand_side,
+        permc_spec="NATURAL",
+    )
+
+    solution_completion(conductor, idx, electric_solution)
