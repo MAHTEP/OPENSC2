@@ -447,3 +447,18 @@ def current_sharing_temperature_nbti(
 
 
 # End function current_sharing_temperature_nbti.
+
+def electrical_resistivity_nbti(curr_dens:np.ndarray, crit_curr_dens:np.ndarray, E0: float = 1e-5, nn:int = 20)-> np.ndarray:
+    """Function that evaluathe the electrical resistivity of NbTi in Ohm*m.
+
+    Args:
+        curr_dens (np.ndarray): current density of the strand.
+        crit_curr_dens (np.ndarray): critical current density of the strand.
+        E0 (float, optional): electric field. Defaults to 1e-5.
+        nn (int, optional): exponent of the correlation. Defaults to 20.
+
+    Returns:
+        np.ndarray: electrical resistivity of NbTi in Ohm*m.
+    """
+    # Is this valid in general or it is valid only in steady state (static) conditions?
+    return E0/crit_curr_dens * (curr_dens/crit_curr_dens) ** (nn - 1)

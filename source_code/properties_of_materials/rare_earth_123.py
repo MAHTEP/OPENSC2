@@ -418,3 +418,20 @@ def density_re123():
 
 
 # end function rho_RE123 (cdp, 01/2021)
+
+def electrical_resistivity_re123(curr_dens:np.ndarray, crit_curr_dens:np.ndarray, E0: float = 1e-5, nn:int = 20,eps:float = 0)-> np.ndarray:
+    """Function that evaluathe the electrical resistivity of RE123 in Ohm*m.
+
+    Args:
+        curr_dens (np.ndarray): current density of the strand.
+        crit_curr_dens (np.ndarray): critical current density of the strand.
+        E0 (float, optional): electric field. Defaults to 1e-5.
+        nn (int, optional): exponent of the correlation. Defaults to 20.
+        eps (float, optional): to be understand what is it. Defaults to 0 (for the time being).
+
+
+    Returns:
+        np.ndarray: electrical resistivity of RE123 in Ohm*m.
+    """
+    # Is this valid in general or it is valid only in steady state (static) conditions?
+    return E0/(crit_curr_dens + eps) * (curr_dens/crit_curr_dens) ** (nn - 1)
