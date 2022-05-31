@@ -3,9 +3,6 @@ from scipy import linalg, sparse
 from scipy.sparse.linalg import spsolve
 from typing import Union
 
-from ..conductor import Conductor
-
-
 def custom_current_function(time: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """User defined custom function for the current beavior in time (and maybe in space).
 
@@ -21,11 +18,11 @@ def custom_current_function(time: Union[float, np.ndarray]) -> Union[float, np.n
     return CURRENT_AMPLITUDE * np.cos(2 * np.pi * FREQUENCY * time)
 
 
-def fixed_value(conductor: Conductor) -> np.ndarray:
+def fixed_value(conductor: object) -> np.ndarray:
     """Function that assigns at the fixed_potential_index the values of the potential assigned by the user. The function also modifies the dimensions of the stiffness matrix and right hand side to account for equipotential  surfaces. This final form of the matrix and vectors are used to solve the electrical problem.
 
     Args:
-        conductor (Conductor): object with all the information needed to solve the electric problem.
+        conductor (object): object with all the information needed to solve the electric problem.
 
     Returns:
         np.ndarray: array with the not removed rows and columns from the stifness matrix and right and side.
@@ -100,12 +97,12 @@ def fixed_value(conductor: Conductor) -> np.ndarray:
 
 
 def solution_completion(
-    conductor: Conductor, idx: np.ndarray, electric_solution: np.ndarray
+    conductor: object, idx: np.ndarray, electric_solution: np.ndarray
 ):
     """Function that assembles the complete electric solution keeping into account the fixed potential values and the equipotential surfaces.
 
     Args:
-        conductor (Conductor): object with all the information needed to solve the electric problem.
+        conductor (object): object with all the information needed to solve the electric problem.
         idx (np.ndarray): array with the not removed rows and columns from the stifness matrix and right and side.
         electric_solution (np.ndarray): electric solution obtained from function steady_state_solution or transient_solution.
     """
@@ -132,11 +129,11 @@ def solution_completion(
     # End if
 
 
-def electric_steady_state_solution(conductor: Conductor):
+def electric_steady_state_solution(conductor: object):
     """Function that solves the electric problem in the steady state case. Exploits sparse matrix with scipy sparse."
 
     Args:
-        conductor (Conductor): object with all the information needed to solve the electric problem.
+        conductor (object): object with all the information needed to solve the electric problem.
     """
     if conductor.electric_known_term_vector.shape[0] == []:
         conductor.electric_known_term_vector = np.zeros(
@@ -162,11 +159,11 @@ def electric_steady_state_solution(conductor: Conductor):
     solution_completion(conductor, idx, electric_solution)
 
 
-def electric_transient_solution(conductor: Conductor):
+def electric_transient_solution(conductor: object):
     """Function that solves the electric problem in the transient case. Exploits sparse matrix with scipy sparse."
 
     Args:
-        conductor (Conductor): object with all the information needed to solve the electric problem.
+        conductor (object): object with all the information needed to solve the electric problem.
     """
     TIME_STEP_NUMBER = np.ceil(
         conductor.electric_time_end / conductor.electric_time_step
