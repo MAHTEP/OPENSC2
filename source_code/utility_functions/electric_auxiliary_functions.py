@@ -131,7 +131,8 @@ def solution_completion(
         # End for
     # End if
 
-def electric_steady_state_solution(conductor:Conductor):
+
+def electric_steady_state_solution(conductor: Conductor):
     """Function that solves the electric problem in the steady state case. Exploits sparse matrix with scipy sparse."
 
     Args:
@@ -149,7 +150,7 @@ def electric_steady_state_solution(conductor:Conductor):
     # Apply Diriclet boundary conditions
     idx = fixed_value(conductor)
 
-    # Introduced alias to electric_known_term_vector to exploit the same 
+    # Introduced alias to electric_known_term_vector to exploit the same
     # solution function in both the steady state and the transient case,
     conductor.electric_right_hand_side = conductor.electric_known_term_vector
     electric_solution = spsolve(
@@ -161,13 +162,15 @@ def electric_steady_state_solution(conductor:Conductor):
     solution_completion(conductor, idx, electric_solution)
 
 
-def electric_transient_solution(conductor:Conductor):
+def electric_transient_solution(conductor: Conductor):
     """Function that solves the electric problem in the transient case. Exploits sparse matrix with scipy sparse."
 
     Args:
         conductor (Conductor): object with all the information needed to solve the electric problem.
     """
-    TIME_STEP_NUMBER = np.ceil(conductor.electric_time_end/conductor.electric_time_step).astype(int)
+    TIME_STEP_NUMBER = np.ceil(
+        conductor.electric_time_end / conductor.electric_time_step
+    ).astype(int)
 
     if conductor.electric_known_term_vector.shape[0] == []:
         conductor.electric_known_term_vector = np.zeros(
@@ -180,25 +183,37 @@ def electric_transient_solution(conductor:Conductor):
 
     # Electric known term initializazion
     conductor._build_electric_known_term_vector()
-    conductor.electric_known_term_vector_old = conductor.electric_known_term_vector.copy()
+    conductor.electric_known_term_vector_old = (
+        conductor.electric_known_term_vector.copy()
+    )
 
     electric_stiffness_matrix = conductor.electric_stiffness_matrix.copy()
     # Final form of the electric stiffness matrix
-    conductor.electric_stiffness_matrix = conductor.electric_mass_matrix / conductor.electric_time_step + conductor.electric_theta * electric_stiffness_matrix
-    foo = conductor.electric_mass_matrix / conductor.electric_time_step - (1.0 - conductor.electric_theta) * electric_stiffness_matrix
+    conductor.electric_stiffness_matrix = (
+        conductor.electric_mass_matrix / conductor.electric_time_step
+        + conductor.electric_theta * electric_stiffness_matrix
+    )
+    foo = (
+        conductor.electric_mass_matrix / conductor.electric_time_step
+        - (1.0 - conductor.electric_theta) * electric_stiffness_matrix
+    )
 
     # Electric_known_term must be zeros when fixed_value is called.
-    conductor.electric_known_term_vector = np.zeros(conductor.electric_known_term_vector_old.shape)
+    conductor.electric_known_term_vector = np.zeros(
+        conductor.electric_known_term_vector_old.shape
+    )
     # Apply Diriclet boundary conditions
     idx = fixed_value(conductor)
 
     # fixed_value changes the electric_known_term_vector
     electric_known_term_vector_reduced = conductor.electric_known_term_vector.copy()
     # Restore original size of the electric known term vector
-    conductor.electric_known_term_vector = np.zeros(conductor.electric_known_term_vector_old.shape)
+    conductor.electric_known_term_vector = np.zeros(
+        conductor.electric_known_term_vector_old.shape
+    )
 
     # Electric loop
-    for _ in range(1,TIME_STEP_NUMBER):
+    for _ in range(1, TIME_STEP_NUMBER):
 
         conductor.electric_time += conductor.electric_time_step
 
@@ -207,13 +222,15 @@ def electric_transient_solution(conductor:Conductor):
         # Build and manipulate the right hand side
         conductor._build_right_hand_side(foo, electric_known_term_vector_reduced, idx)
 
-        conductor.electric_known_term_vector_old = conductor.electric_known_term_vector.copy()
+        conductor.electric_known_term_vector_old = (
+            conductor.electric_known_term_vector.copy()
+        )
 
         # solution
         electric_solution = spsolve(
-        conductor.electric_stiffness_matrix,
-        conductor.electric_right_hand_side,
-        permc_spec="NATURAL",
-    )
+            conductor.electric_stiffness_matrix,
+            conductor.electric_right_hand_side,
+            permc_spec="NATURAL",
+        )
 
         solution_completion(conductor, idx, electric_solution)
