@@ -245,8 +245,9 @@ class Simulation:
         # Search if User asks to save the solution spatial distribution at TEND \
         # (cdp, 10/2020)
         # loop on conductors (cdp, 10/2020)
-        for ii in range(self.numObj):
-            conductor = self.list_of_Conductors[ii]
+        for conductor in self.list_of_Conductors:
+            # Perform electric preprocessing.
+            conductor.electric_preprocessing()
             # Compute radiative heat exchanged between jackets.
             conductor.compute_radiative_heat_exhange_jk()
             # Compute radiative heat exchanged outer jacket and environment.
