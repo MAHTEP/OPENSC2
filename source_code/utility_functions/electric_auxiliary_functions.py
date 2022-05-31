@@ -94,3 +94,33 @@ def fixed_value(conductor: Conductor)->np.ndarray:
     conductor.electric_known_term_vector = conductor.electric_known_term_vector[idx]
 
     return idx
+
+def solution_completion(conductor:Conductor, idx:np.ndarray, electric_solution:np.ndarray):
+    """Function that assembles the complete electric solution keeping into account the fixed potential values and the equipotential surfaces.
+
+    Args:
+        conductor (Conductor): object with all the information needed to solve the electric problem.
+        idx (np.ndarray): array with the not removed rows and columns from the stifness matrix and right and side.
+        electric_solution (np.ndarray): electric solution obtained from function steady_state_solution or transient_solution.
+    """
+    # Check solution array data type.
+    if np.iscomplex(electric_solution).any():
+        conductor.electric_solution = conductor.electric_solution.astype(complex)
+    # End if
+    # Assemble complete solution.
+    conductor.electric_solution[idx] = electric_solution
+
+    # Imposing fix nodal potentials.
+    if conductor.fixed_potential_index.size > 0:
+        conductor.electric_solution[
+            conductor.fixed_potential_index
+        ] = conductor.fixed_potential_value
+    # End if
+
+    # Add equivalues
+    if conductor.operations["EQUIPOTENTIAL_SURFACE_FLAG"]:
+        for _, row in enumerate(conductor.equipotential_node_index):
+            conductor.electric_solution[row[1:]] = conductor.electric_solution[row[0]]
+
+        # End for
+    # End if
