@@ -119,3 +119,54 @@ class StackComponent(StrandComponent:StrandComponent):
         StrandComponent (StrandComponent): class that defines general methods for strand and stack objects.
     """
     KIND = "Stack"
+    def __init__(self, simulation, sheet, icomp:int, name:str, dict_file_path:dict):
+        """Method that makes instance of class StackComponent.
+
+        Args:
+            simulation (Simulation): simulation object.
+            sheet (Worksheet): worksheet with input data.
+            icomp (int): component index.
+            name (str): component name.
+            dict_file_path (dict): dictionary with paths to load the input files.
+        """
+
+        self.NAME = name
+        # get channels ID consistently with user definition (cdp, 09/2020)
+        self.identifier = sheet.cell(row=3, column=4 + icomp).value
+
+        # dictionary declaration 
+        self.inputs = dict()
+        self.operations = dict()
+        self.dict_node_pt = dict()
+        self.dict_Gauss_pt = dict()
+        self.dict_num_step = dict()
+        self.coordinate = dict()
+        # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
+        self.time_evol = dict(temperature=dict(), B_field=dict(), T_cur_sharing=dict())
+        self.dict_scaling_input = dict()
+        # Dictionary initialization: inputs.
+        self.inputs = pd.read_excel(
+            dict_file_path["input"],
+            sheet_name=sheet.title,
+            skiprows=2,
+            header=0,
+            index_col=0,
+            usecols=["Variable name", self.identifier],
+        )[self.identifier].to_dict()
+        # Dictionary initialization: operations.
+        self.operations = pd.read_excel(
+            dict_file_path["operation"],
+            sheet_name=sheet.title,
+            skiprows=2,
+            header=0,
+            index_col=0,
+            usecols=["Variable name", self.identifier],
+        )[self.identifier].to_dict()
+
+        # Call SolidComponent class constructor to deal with StrandMixedComponent time \
+        # steps for current, external heating and so on
+        SolidComponent(simulation, self)
+        if self.operations["IBIFUN"] != -1:
+            # Remove key B_field_units.
+            del self.operations["B_field_units"]
+        # end if
