@@ -111,3 +111,11 @@ ELECTRICAL_RESISTIVITY_FUNC = dict(
     sn60pb40=electrical_resistivity_sn60pb40,
     ss=electrical_resistivity_ss,
 )
+
+class StackComponent(StrandComponent:StrandComponent):
+    """Class that defines StackComponents objects to model HTS stacks of tapes.
+
+    Args:
+        StrandComponent (StrandComponent): class that defines general methods for strand and stack objects.
+    """
+    KIND = "Stack"
