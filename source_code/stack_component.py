@@ -67,3 +67,47 @@ from properties_of_materials.aluminium import (
     density_al,
     electrical_resistivity_al,
 )
+
+DENSITY_FUNC = dict(
+    ag=density_ag,
+    al=density_al,
+    cu=density_cu,
+    ge=density_ge,
+    hc276=density_hc276,
+    re123=density_re123,
+    sn60pb40=density_sn60pb40,
+    ss=density_ss,
+)
+
+THERMAL_CONDUCTIVITY_FUNC = dict(
+    ag=thermal_conductivity_ag,
+    al=thermal_conductivity_al,
+    cu=thermal_conductivity_cu,
+    ge=thermal_conductivity_ge,
+    hc276=thermal_conductivity_hc276,
+    re123=thermal_conductivity_re123,
+    sn60pb40=thermal_conductivity_sn60pb40,
+    ss=thermal_conductivity_ss,
+)
+
+ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
+    ag=isobaric_specific_heat_ag,
+    al=isobaric_specific_heat_al,
+    cu=isobaric_specific_heat_cu,
+    ge=isobaric_specific_heat_ge,
+    hc276=isobaric_specific_heat_hc276,
+    re123=isobaric_specific_heat_re123,
+    sn60pb40=isobaric_specific_heat_sn60pb40,
+    ss=isobaric_specific_heat_ss,
+)
+
+ELECTRICAL_RESISTIVITY_FUNC = dict(
+    ag=electrical_resistivity_ag,
+    al=electrical_resistivity_al,
+    cu=electrical_resistivity_cu,
+    # ge=electrical_resistivity_ge, not defined
+    hc276=electrical_resistivity_hc276,
+    re123=electrical_resistivity_re123,
+    sn60pb40=electrical_resistivity_sn60pb40,
+    ss=electrical_resistivity_ss,
+)
