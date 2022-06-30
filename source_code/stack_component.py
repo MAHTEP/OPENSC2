@@ -170,3 +170,61 @@ class StackComponent(StrandComponent:StrandComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
         # end if
+
+     def __reorganize_input(self):
+        """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization.
+        """
+
+        # Create numpy array of string with the identifier of tape material
+        self.tape_material = np.array(
+            [value for key, value in self.inputs.items() if key.endswith("material")],
+            dtype=str,
+        )
+        # Get the indexes corresponding to "none" used for consistency check.
+        self.__index_material_none = np.nonzero(self.tape_material == "none")[0]
+        # Remove "none" items, used to identify not used layer
+        self.tape_material = self.tape_material[
+            np.nonzero(self.tape_material != "none")[0]
+        ]
+        
+        # Create numpy array of float with values of thickness of tape
+        # layers in m^2; order is consistent with values in self.tape_material.
+        self.material_thickness = np.array(
+            [value for key, value in self.inputs.items() if key.endswith("thickness")],
+            dtype=float,
+        )
+        # Get the indexes corresponding to 0 used for consistency check.
+        self.__index_thickness_0 = np.nonzero(self.material_thickness == 0)[0]
+        self.material_thickness = self.material_thickness[
+            np.nonzero(self.material_thickness)[0]
+        ]
+        
+        # Total tape thickness in m
+        self.tape_thickness = self.material_thickness.sum()
+        
+        # Create numpy array with density functions according to the tape
+        # material; order is consistent with values in self.tape_material.
+        self.density_function = np.array(
+            [DENSITY_FUNC[key] for key in self.tape_material]
+        )
+        
+        # Create numpy array with electrical resistivity functions according to 
+        # the tape material; order is consistent with values in 
+        # self.tape_material.
+        self.electrical_resistivity_function = np.array(
+            [ELECTRICAL_RESISTIVITY_FUNC[key] for key in self.tape_material]
+        )
+        
+        # Create numpy array with isobaric specific heat functions according to 
+        # the tape material; order is consistent with values in 
+        # self.tape_material.
+        self.isobaric_specific_heat_function = np.array(
+            [ISOBARIC_SPECIFIC_HEAT_FUNC[key] for key in self.tape_material]
+        )
+        
+        # Create numpy array with thermal conductivity functions according to 
+        # the tape material; order is consistent with values in 
+        # self.tape_material.
+        self.thermal_conductivity_function = np.array(
+            [THERMAL_CONDUCTIVITY_FUNC[key] for key in self.tape_material]
+        )
