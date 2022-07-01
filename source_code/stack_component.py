@@ -112,14 +112,17 @@ ELECTRICAL_RESISTIVITY_FUNC = dict(
     ss=electrical_resistivity_ss,
 )
 
+
 class StackComponent(StrandComponent):
     """Class that defines StackComponents objects to model HTS stacks of tapes.
 
     Args:
         StrandComponent (StrandComponent): class that defines general methods for strand and stack objects.
     """
+
     KIND = "Stack"
-    def __init__(self, simulation, sheet, icomp:int, name:str, dict_file_path:dict):
+
+    def __init__(self, simulation, sheet, icomp: int, name: str, dict_file_path: dict):
         """Method that makes instance of class StackComponent.
 
         Args:
@@ -134,7 +137,7 @@ class StackComponent(StrandComponent):
         # get channels ID consistently with user definition (cdp, 09/2020)
         self.identifier = sheet.cell(row=3, column=4 + icomp).value
 
-        # dictionary declaration 
+        # dictionary declaration
         self.inputs = dict()
         self.operations = dict()
         self.dict_node_pt = dict()
@@ -172,8 +175,7 @@ class StackComponent(StrandComponent):
         # end if
 
     def __reorganize_input(self):
-        """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization.
-        """
+        """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization."""
 
         # Create numpy array of string with the identifier of tape material
         self.tape_material = np.array(
@@ -186,7 +188,7 @@ class StackComponent(StrandComponent):
         self.tape_material = self.tape_material[
             np.nonzero(self.tape_material != "none")[0]
         ]
-        
+
         # Create numpy array of float with values of thickness of tape
         # layers in m^2; order is consistent with values in self.tape_material.
         self.material_thickness = np.array(
@@ -198,33 +200,111 @@ class StackComponent(StrandComponent):
         self.material_thickness = self.material_thickness[
             np.nonzero(self.material_thickness)[0]
         ]
-        
+
         # Total tape thickness in m
         self.tape_thickness = self.material_thickness.sum()
-        
+
         # Create numpy array with density functions according to the tape
         # material; order is consistent with values in self.tape_material.
         self.density_function = np.array(
             [DENSITY_FUNC[key] for key in self.tape_material]
         )
-        
-        # Create numpy array with electrical resistivity functions according to 
-        # the tape material; order is consistent with values in 
+
+        # Create numpy array with electrical resistivity functions according to
+        # the tape material; order is consistent with values in
         # self.tape_material.
         self.electrical_resistivity_function = np.array(
             [ELECTRICAL_RESISTIVITY_FUNC[key] for key in self.tape_material]
         )
-        
-        # Create numpy array with isobaric specific heat functions according to 
-        # the tape material; order is consistent with values in 
+
+        # Create numpy array with isobaric specific heat functions according to
+        # the tape material; order is consistent with values in
         # self.tape_material.
         self.isobaric_specific_heat_function = np.array(
             [ISOBARIC_SPECIFIC_HEAT_FUNC[key] for key in self.tape_material]
         )
-        
-        # Create numpy array with thermal conductivity functions according to 
-        # the tape material; order is consistent with values in 
+
+        # Create numpy array with thermal conductivity functions according to
+        # the tape material; order is consistent with values in
         # self.tape_material.
         self.thermal_conductivity_function = np.array(
             [THERMAL_CONDUCTIVITY_FUNC[key] for key in self.tape_material]
+        )
+
+    def __check_consistecy(self, conductor):
+        """Private method that checks consistency of stack and or tape user definition.
+
+        Args:
+            conductor (Conductor): instance of class Conductor.
+
+        Raises:
+            ValueError: if number of tape materials given in input is not consistent with user declared materials.
+            ValueError: if number of tape materials given in input is not consistent with not zero user defined material thicknes.
+            ValueError: if the indexes of "none" material are not equal to the indexes of thickness equal to 0.
+            ValueError: if number of tapes given in input is not consistent with the evaluated one.
+            ValueError: if stack cross section given in input is not consistent with the evaluated one.
+        """
+        # Check that number of tape materials given in input is consistent with
+        # user declared materials.
+        if self.tape_material.size != self.inputs["N_materal_tape"]:
+            # Message to be completed!
+            raise ValueError(
+                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the tape ({self.inputs['N_materal_tape'] = }) is inconsistent with the number of defined materials ({self.tape_material.size = }).\nPlease check..."
+            )
+
+        # Check that number of tape materials given in input is consistent with
+        # not zero user defined material thicknes.
+        if self.material_thickness.size != self.inputs["N_materal_tape"]:
+            # Message to be completed!
+            raise ValueError(
+                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the tape ({self.inputs['N_materal_tape'] = }) is inconsistent with the number of defined thicknesses ({self.material_thickness.size = }).\nPlease check..."
+            )
+
+        # Check that the indexes of "none" material are equal to the indexes of
+        # thickness equal to 0.
+        if any(self.__index_material_none != self.__index_thickness_0):
+            # Message to be completed!
+            raise ValueError(
+                f"{conductor.identifier = } -> {self.identifier = }\nDefined materials and defined thicknesses must be consistent.\nPlease check..."
+            )
+
+        # Following quantities are useful to cross check the number of tapes
+        # and the stack cross section given in input by the user.
+
+        # Tape cross section in # m^2
+        self.tape_cross_section = self.tape_thickness * self.inputs["Stack_width"]
+        # Evaluate the number of tapes constituing the stack, used for consistency check.
+        self.__tape_number = round(
+            self.inputs["Cross_section"] / self.tape_cross_section
+        )
+        # Evaluate the total cross section of the stack of tapes, used for consistency check.
+        self.__cross_section = self.tape_cross_section * self.__tape_number
+
+        # Check that number of tapes given in input is consistent with the
+        # evaluated one.
+        if self.__tape_number != self.inputs["N_tape"]:
+            # Message to be completed!
+            raise ValueError(
+                f"{conductor.identifier = } -> {self.identifier = }\nInconsistent number of tape: user defines {self.inputs['N_tape'] = } while computed one is {self.__tape_number = }.\nPlease check..."
+            )
+
+        # Check that stack cross section given in input is consistent with the
+        # evaluated one.
+        tol = 1e-3
+        if (
+            abs(self.__cross_section - self.inputs["Cross_section"])
+            / self.inputs["Cross_section"]
+            > tol
+        ):
+            # Message to be completed!
+            raise ValueError(
+                f"{conductor.identifier = } -> {self.identifier = }\nInconsistent number of tape: user defines {self.inputs['N_tape'] = } while computed one is {self.__tape_number = }.\nPlease check..."
+            )
+
+        # Delete no longer useful attributes.
+        del (
+            self.__index_material_none,
+            self.__index_thickness_0,
+            self.__tape_number,
+            self.__cross_section,
         )
