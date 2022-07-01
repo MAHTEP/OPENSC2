@@ -181,6 +181,9 @@ class StackComponent(StrandComponent):
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
+    def __str__(self):
+        pass
+
     def __reorganize_input(self):
         """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization."""
 
