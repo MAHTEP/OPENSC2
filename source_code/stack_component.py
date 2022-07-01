@@ -347,6 +347,37 @@ class StackComponent(StrandComponent):
             / self.tape_thickness
         )
 
+    def stack_isobaric_specific_heat(self, property: dict) -> np.ndarray:
+        """Method that evaluates homogenized isobaric specific heat of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with homogenized isobaric specific heat of the stack of tapes in J/kg/K.
+        """
+        # Check on homogenized density evaluation before homogenized isobaric
+        # specific heat, since some therms are in common and are not evaluated
+        # twices.
+        if self.__density_numerator_sum <= 0.0:
+            raise ValueError(
+                f"Cal method {self.stack_density.__name__} before evaluation of homogenized stack isobaric specific heat.\n"
+            )
+
+        isobaric_specific_heat = np.array(
+            [
+                func(property["temperature"].size)
+                for func in self.isobaric_specific_heat_function
+            ]
+        )
+        # Evaluate homogenized isobaric specific heat of the stack.
+        return (
+            np.array(
+                list(map(np.multiply, isobaric_specific_heat, self.__density_numerator))
+            ).sum(axis=0)
+            / self.__density_numerator_sum
+        )
+
     def stack_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
 
