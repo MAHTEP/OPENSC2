@@ -186,6 +186,10 @@ class StackComponent(StrandComponent):
         self.__reorganize_input()
         self.__check_consistecy(conductor)
 
+        # Flag to check if evaluation of homogenized isobaric specific heat can 
+        # be done or not (depends on homogenized density evaluation).
+        self.__stack_density_flag = False
+
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
@@ -336,16 +340,19 @@ class StackComponent(StrandComponent):
         Returns:
             np.ndarray: array with homogenized density of the stack of tapes in kg/m^3.
         """
+        # Set fleag to true to allow evaluation of homogenized isobaric 
+        # specific heat.
+        self.__stack_density_flag = True
         density = np.array(
             [func(property["temperature"].size) for func in self.density_function]
         )
         # Evaluate homogenized density of the stack.
-        return (
-            np.array(list(map(np.multiply, density, self.material_thickness))).sum(
-                axis=0
-            )
-            / self.tape_thickness
+
+        self.__density_numerator = np.array(
+            list(map(np.multiply, density, self.material_thickness))
         )
+        self.__density_numerator_sum = self.__density_numerator.sum(axis=0)
+        return self.__density_numerator_sum / self.tape_thickness
 
     def stack_isobaric_specific_heat(self, property: dict) -> np.ndarray:
         """Method that evaluates homogenized isobaric specific heat of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
@@ -359,11 +366,14 @@ class StackComponent(StrandComponent):
         # Check on homogenized density evaluation before homogenized isobaric
         # specific heat, since some therms are in common and are not evaluated
         # twices.
-        if self.__density_numerator_sum <= 0.0:
+        if self.__stack_density_flag == False:
             raise ValueError(
                 f"Cal method {self.stack_density.__name__} before evaluation of homogenized stack isobaric specific heat.\n"
             )
 
+        # Set flag to false to trigger error in the next homogenized isobaric 
+        # specific heat evaluation if not done properly.
+        self.__stack_density_flag = False
         isobaric_specific_heat = np.array(
             [
                 func(property["temperature"].size)
