@@ -177,6 +177,9 @@ class StackComponent(StrandComponent):
 
         self.__reorganize_input()
         self.__check_consistecy(conductor)
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
     def __reorganize_input(self):
         """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization."""
@@ -312,3 +315,4 @@ class StackComponent(StrandComponent):
             self.__tape_number,
             self.__cross_section,
         )
+
