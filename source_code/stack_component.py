@@ -122,7 +122,7 @@ class StackComponent(StrandComponent):
 
     KIND = "Stack"
 
-    def __init__(self, simulation, sheet, icomp: int, name: str, dict_file_path: dict):
+    def __init__(self, simulation, sheet, icomp: int, name: str, dict_file_path: dict,conductor:object):
         """Method that makes instance of class StackComponent.
 
         Args:
@@ -131,6 +131,7 @@ class StackComponent(StrandComponent):
             icomp (int): component index.
             name (str): component name.
             dict_file_path (dict): dictionary with paths to load the input files.
+            conductor(object): inscance of class Conductor
         """
 
         self.NAME = name
@@ -173,6 +174,9 @@ class StackComponent(StrandComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
         # end if
+
+        self.__reorganize_input()
+        self.__check_consistecy(conductor)
 
     def __reorganize_input(self):
         """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization."""
