@@ -82,7 +82,7 @@ DENSITY_FUNC = dict(
 THERMAL_CONDUCTIVITY_FUNC = dict(
     ag=thermal_conductivity_ag,
     al=thermal_conductivity_al,
-    cu=thermal_conductivity_cu,
+    cu=thermal_conductivity_cu_nist,
     ge=thermal_conductivity_ge,
     hc276=thermal_conductivity_hc276,
     re123=thermal_conductivity_re123,
@@ -93,7 +93,7 @@ THERMAL_CONDUCTIVITY_FUNC = dict(
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
     ag=isobaric_specific_heat_ag,
     al=isobaric_specific_heat_al,
-    cu=isobaric_specific_heat_cu,
+    cu=isobaric_specific_heat_cu_nist,
     ge=isobaric_specific_heat_ge,
     hc276=isobaric_specific_heat_hc276,
     re123=isobaric_specific_heat_re123,
@@ -104,7 +104,7 @@ ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
 ELECTRICAL_RESISTIVITY_FUNC = dict(
     ag=electrical_resistivity_ag,
     al=electrical_resistivity_al,
-    cu=electrical_resistivity_cu,
+    cu=electrical_resistivity_cu_nist,
     # ge=electrical_resistivity_ge, not defined
     hc276=electrical_resistivity_hc276,
     re123=electrical_resistivity_re123,
@@ -112,7 +112,7 @@ ELECTRICAL_RESISTIVITY_FUNC = dict(
     ss=electrical_resistivity_ss,
 )
 
-class StackComponent(StrandComponent:StrandComponent):
+class StackComponent(StrandComponent):
     """Class that defines StackComponents objects to model HTS stacks of tapes.
 
     Args:
@@ -171,7 +171,7 @@ class StackComponent(StrandComponent:StrandComponent):
             del self.operations["B_field_units"]
         # end if
 
-     def __reorganize_input(self):
+    def __reorganize_input(self):
         """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization.
         """
 
