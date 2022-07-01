@@ -347,4 +347,31 @@ class StackComponent(StrandComponent):
             / self.tape_thickness
         )
 
-    
+    def stack_thermal_conductivity(self, property: dict) -> np.ndarray:
+        """Method that evaluates the homogenized thermal conductivity of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with homogenized thermal conductivity of the stack of tapes in W/m/K.
+        """
+        thermal_conductivity = np.zeros(
+            (self.inputs["N_materal_tape"], property["temperature"].size)
+        )
+        for ii, func in enumerate(self.thermal_conductivity_function):
+            if "cu" in func.__name__:
+                thermal_conductivity[ii, :] = func(
+                    property["temperature"],
+                    property["B_field"],
+                    self.inputs["RRR"],
+                )
+            else:
+                thermal_conductivity[ii, :] = func(property["temperature"])
+        # Evaluate homogenized thermal conductivity of the stack.
+        return (
+            np.array(
+                list(map(np.multiply, thermal_conductivity, self.material_thickness))
+            ).sum(axis=0)
+            / self.tape_thickness
+        )
