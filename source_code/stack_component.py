@@ -122,7 +122,15 @@ class StackComponent(StrandComponent):
 
     KIND = "Stack"
 
-    def __init__(self, simulation, sheet, icomp: int, name: str, dict_file_path: dict,conductor:object):
+    def __init__(
+        self,
+        simulation,
+        sheet,
+        icomp: int,
+        name: str,
+        dict_file_path: dict,
+        conductor: object,
+    ):
         """Method that makes instance of class StackComponent.
 
         Args:
@@ -177,7 +185,7 @@ class StackComponent(StrandComponent):
 
         self.__reorganize_input()
         self.__check_consistecy(conductor)
-    
+
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
@@ -319,3 +327,24 @@ class StackComponent(StrandComponent):
             self.__cross_section,
         )
 
+    def stack_density(self, property: dict) -> np.ndarray:
+        """Method that evaluates the homogenized denstiy of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with homogenized density of the stack of tapes in kg/m^3.
+        """
+        density = np.array(
+            [func(property["temperature"].size) for func in self.density_function]
+        )
+        # Evaluate homogenized density of the stack.
+        return (
+            np.array(list(map(np.multiply, density, self.material_thickness))).sum(
+                axis=0
+            )
+            / self.tape_thickness
+        )
+
+    
