@@ -185,7 +185,7 @@ class StackComponent(StrandComponent):
         self.__reorganize_input()
         self.__check_consistecy(conductor)
 
-        # Flag to check if evaluation of homogenized isobaric specific heat can 
+        # Flag to check if evaluation of homogenized isobaric specific heat can
         # be done or not (depends on homogenized density evaluation).
         self.__stack_density_flag = False
 
@@ -209,10 +209,16 @@ class StackComponent(StrandComponent):
         self.tape_material = self.tape_material[
             np.nonzero(self.tape_material != "none")[0]
         ]
-        # Create numpy array of string with the identifier of tape materials 
+        # Create numpy array of string with the identifier of tape materials
         # that are not superconducting.
         self.tape_material_not_sc = np.array(
-            [value for key, value in self.inputs.items() if key.endswith("material") and key != "HTS_material" and value != "none"],
+            [
+                value
+                for key, value in self.inputs.items()
+                if key.endswith("material")
+                and key != "HTS_material"
+                and value != "none"
+            ],
             dtype=str,
         )
 
@@ -231,10 +237,14 @@ class StackComponent(StrandComponent):
         # Total tape thickness in m.
         self.tape_thickness = self.material_thickness.sum()
 
-        # Create numpy array of float with values of thickness of not 
+        # Create numpy array of float with values of thickness of not
         # superconducting tape layers in m; order is consistent with values in self.tape_material_not_sc.
         self.material_thickness_not_sc = np.array(
-            [value for key, value in self.inputs.items() if key.endswith("thickness") and key != "HTS_thickness" and value > 0.0],
+            [
+                value
+                for key, value in self.inputs.items()
+                if key.endswith("thickness") and key != "HTS_thickness" and value > 0.0
+            ],
             dtype=float,
         )
         # Total not superconducting tape thickness in m.
@@ -354,7 +364,7 @@ class StackComponent(StrandComponent):
         Returns:
             np.ndarray: array with homogenized density of the stack of tapes in kg/m^3.
         """
-        # Set fleag to true to allow evaluation of homogenized isobaric 
+        # Set fleag to true to allow evaluation of homogenized isobaric
         # specific heat.
         self.__stack_density_flag = True
         density = np.array(
@@ -385,7 +395,7 @@ class StackComponent(StrandComponent):
                 f"Cal method {self.stack_density.__name__} before evaluation of homogenized stack isobaric specific heat.\n"
             )
 
-        # Set flag to false to trigger error in the next homogenized isobaric 
+        # Set flag to false to trigger error in the next homogenized isobaric
         # specific heat evaluation if not done properly.
         self.__stack_density_flag = False
         isobaric_specific_heat = np.array(
@@ -443,7 +453,7 @@ class StackComponent(StrandComponent):
             np.ndarray: array with homogenized electrical resistivity of not superconducting materials of the stack of tapes in Ohm*m.
         """
         elestrical_resistivity = np.zeros(
-            (self.inputs["N_materal_tape"]-1, property["temperature"].size)
+            (self.inputs["N_materal_tape"] - 1, property["temperature"].size)
         )
         for ii, func in enumerate(self.electrical_resistivity_function_not_sc):
             if "cu" in func.__name__:
@@ -457,8 +467,16 @@ class StackComponent(StrandComponent):
         # Evaluate homogenized electrical resistivity of the stack:
         # rho_el_eq = s_not_sc * (sum(s_i/rho_el_i))^-1 for any i not sc
         return (
-            np.reciprocal(np.array(
-                list(map(np.divide, self.material_thickness_not_sc, elestrical_resistivity))
-            ).sum(axis=0))
+            np.reciprocal(
+                np.array(
+                    list(
+                        map(
+                            np.divide,
+                            self.material_thickness_not_sc,
+                            elestrical_resistivity,
+                        )
+                    )
+                ).sum(axis=0)
+            )
             * self.tape_thickness_not_sc
         )
