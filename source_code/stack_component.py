@@ -376,7 +376,7 @@ class StackComponent(StrandComponent):
         self.__stack_density_flag = False
         isobaric_specific_heat = np.array(
             [
-                func(property["temperature"].size)
+                func(property["temperature"])
                 for func in self.isobaric_specific_heat_function
             ]
         )
