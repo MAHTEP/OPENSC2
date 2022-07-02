@@ -107,7 +107,6 @@ ELECTRICAL_RESISTIVITY_FUNC = dict(
     cu=electrical_resistivity_cu_nist,
     # ge=electrical_resistivity_ge, not defined
     hc276=electrical_resistivity_hc276,
-    re123=electrical_resistivity_re123,
     sn60pb40=electrical_resistivity_sn60pb40,
     ss=electrical_resistivity_ss,
 )
@@ -210,9 +209,15 @@ class StackComponent(StrandComponent):
         self.tape_material = self.tape_material[
             np.nonzero(self.tape_material != "none")[0]
         ]
+        # Create numpy array of string with the identifier of tape materials 
+        # that are not superconducting.
+        self.tape_material_not_sc = np.array(
+            [value for key, value in self.inputs.items() if key.endswith("material") and key != "HTS_material" and value != "none"],
+            dtype=str,
+        )
 
         # Create numpy array of float with values of thickness of tape
-        # layers in m^2; order is consistent with values in self.tape_material.
+        # layers in m; order is consistent with values in self.tape_material.
         self.material_thickness = np.array(
             [value for key, value in self.inputs.items() if key.endswith("thickness")],
             dtype=float,
@@ -223,8 +228,17 @@ class StackComponent(StrandComponent):
             np.nonzero(self.material_thickness)[0]
         ]
 
-        # Total tape thickness in m
+        # Total tape thickness in m.
         self.tape_thickness = self.material_thickness.sum()
+
+        # Create numpy array of float with values of thickness of not 
+        # superconducting tape layers in m; order is consistent with values in self.tape_material_not_sc.
+        self.material_thickness_not_sc = np.array(
+            [value for key, value in self.inputs.items() if key.endswith("thickness") and key != "HTS_thickness" and value > 0.0],
+            dtype=float,
+        )
+        # Total not superconducting tape thickness in m.
+        self.tape_thickness_not_sc = self.material_thickness_not_sc.sum()
 
         # Create numpy array with density functions according to the tape
         # material; order is consistent with values in self.tape_material.
@@ -235,8 +249,8 @@ class StackComponent(StrandComponent):
         # Create numpy array with electrical resistivity functions according to
         # the tape material; order is consistent with values in
         # self.tape_material.
-        self.electrical_resistivity_function = np.array(
-            [ELECTRICAL_RESISTIVITY_FUNC[key] for key in self.tape_material]
+        self.electrical_resistivity_function_not_sc = np.array(
+            [ELECTRICAL_RESISTIVITY_FUNC[key] for key in self.tape_material_not_sc]
         )
 
         # Create numpy array with isobaric specific heat functions according to
