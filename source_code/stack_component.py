@@ -360,8 +360,8 @@ class StackComponent(StrandComponent):
         density = np.array(
             [func(property["temperature"].size) for func in self.density_function]
         )
-        # Evaluate homogenized density of the stack.
-
+        # Evaluate homogenized density of the stack:
+        # rho_eq = sum(s_i*rho_i)/s
         self.__density_numerator = np.array(
             list(map(np.multiply, density, self.material_thickness))
         )
@@ -394,7 +394,8 @@ class StackComponent(StrandComponent):
                 for func in self.isobaric_specific_heat_function
             ]
         )
-        # Evaluate homogenized isobaric specific heat of the stack.
+        # Evaluate homogenized isobaric specific heat of the stack:
+        # cp_eq = sum(s_i*rho_i*cp_i)/sum(s_i*rho_i)
         return (
             np.array(
                 list(map(np.multiply, isobaric_specific_heat, self.__density_numerator))
@@ -423,7 +424,8 @@ class StackComponent(StrandComponent):
                 )
             else:
                 thermal_conductivity[ii, :] = func(property["temperature"])
-        # Evaluate homogenized thermal conductivity of the stack.
+        # Evaluate homogenized thermal conductivity of the stack:
+        # k_eq = sum(s_i*k_i)/s
         return (
             np.array(
                 list(map(np.multiply, thermal_conductivity, self.material_thickness))
