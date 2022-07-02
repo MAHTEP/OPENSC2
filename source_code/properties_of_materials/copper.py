@@ -56,10 +56,10 @@ def thermal_conductivity_cu_nist(t, b, rrr):
     P4 = -0.165
     P5 = 70
     P6 = 1.756
-    P7 = 0.838 / (betat ** 0.1661)
+    P7 = 0.838 / (betat**0.1661)
 
     W0 = beta / t
-    Wi = (P1 * t ** P2) / (1 + (P1 * P3 * t ** (P2 + P4) * np.exp(-((P5 / t) ** P6))))
+    Wi = (P1 * t**P2) / (1 + (P1 * P3 * t ** (P2 + P4) * np.exp(-((P5 / t) ** P6))))
     Wi0 = P7 * Wi * W0 / (Wi + W0)
     kk = (
         1.0
@@ -268,7 +268,7 @@ def rhoecu0_nist(t, rrr):
     rho = np.zeros(t.shape)  # variables initialization
 
     rho0 = P0 / rrr
-    rhoi = (P1 * t ** P2) / (1.0 + P1 * P3 * t ** (P2 - P4) * np.exp(-((P5 / t) ** P6)))
+    rhoi = (P1 * t**P2) / (1.0 + P1 * P3 * t ** (P2 - P4) * np.exp(-((P5 / t) ** P6)))
     rhoi0 = P7 * rhoi * rho0 / (rhoi + rho0)
     rho = rho0 + rhoi + rhoi0
 
@@ -276,12 +276,17 @@ def rhoecu0_nist(t, rrr):
 
 
 # Function rho_cu starts here
-def density_cu():
+def density_cu(nn: int) -> np.ndarray:
     """
-    Copper density kg/m^3. It is assumed constant.
-    Autor: D. Placido Polito 21/01/2021
+    Function that evaluates copper density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: alluminium density array in kg/m^3.
     """
-    return 8900.0
+    return 8900.0 * np.zeros(nn)
 
 
 # end function rho_Cu (cdp, 01/2021)

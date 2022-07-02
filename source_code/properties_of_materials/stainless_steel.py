@@ -29,9 +29,9 @@ def thermal_conductivity_ss(t):
 
     kk = (
         AA * TT / (a + TT) ** na
-        + BB * TT ** 2 / (b + TT) ** nb
-        + CC * TT ** 3 / (c + TT) ** nc
-        + DD * TT ** 4 / (d + TT) ** nd
+        + BB * TT**2 / (b + TT) ** nb
+        + CC * TT**3 / (c + TT) ** nc
+        + DD * TT**4 / (d + TT) ** nd
     )
 
     return kk  # end of the function
@@ -71,17 +71,17 @@ def isobaric_specific_heat_ss(T):
     TMAX = 1253.0
 
     if max(T) <= TMIN:
-        cp = 0.498 * T + 3.71e-4 * T ** 3
+        cp = 0.498 * T + 3.71e-4 * T**3
     elif max(T) < T0:
         T = np.minimum(T, TMAX)
-        cp = A1 * T + A2 * T ** 3
+        cp = A1 * T + A2 * T**3
     else:
         T = np.minimum(T, TMAX)
         cp = (
             AA * T / (a + T) ** na
-            + BB * T ** 2 / (b + T) ** nb
-            + CC * T ** 3 / (c + T) ** nc
-            + DD * T ** 4 / (d + T) ** nd
+            + BB * T**2 / (b + T) ** nb
+            + CC * T**3 / (c + T) ** nc
+            + DD * T**4 / (d + T) ** nd
         )
 
     return cp  # end of the function
@@ -101,17 +101,23 @@ def electrical_resistivity_ss(t):
     A = 4.7589144
     B = 0.0099003
     NB = 0.95536674
-    RHOESS = (A + B * t ** NB) * 1.0e-7
+    RHOESS = (A + B * t**NB) * 1.0e-7
     return RHOESS
 
 
 # Function rho_ss starts here
-def density_ss():
+def density_ss(nn: int) -> np.nodarrayF:
+
     """
-    Stailness steel density kg/m^3. It is assumed constant.
-    Autor: D. Placido Polito 21/01/2021
+    Function that evaluates stainless steel density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: stainless steel density array in kg/m^3.
     """
-    return 7800.0
+    return 7800.0 * np.ones(nn)
 
 
 # end function rho_ss (cdp, 01/2021)

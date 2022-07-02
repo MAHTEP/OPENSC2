@@ -53,9 +53,7 @@ def BCNBSN(T, EPSLON, TC0M, BC20M):
         return BC
 
     # CRITICAL FIELD BC2(T,EPSLON)
-    BC[index] = (
-        BC20M * SNBSN(EPSLON[index]) * (1.0e0 - TLCASE[index] ** 1.52e0)
-    )
+    BC[index] = BC20M * SNBSN(EPSLON[index]) * (1.0e0 - TLCASE[index] ** 1.52e0)
 
     return BC
 
@@ -119,7 +117,7 @@ def thermal_conductivity_nb3sn(TT):
     TT = np.maximum(TT, TMIN)
 
     intervals = [(TT <= T0), (TT > T0)]
-    behavior = [lambda TT: A * TT ** n / (B + TT) ** m, lambda TT: C * np.log(TT) + D]
+    behavior = [lambda TT: A * TT**n / (B + TT) ** m, lambda TT: C * np.log(TT) + D]
     CONDNBSN = np.piecewise(TT, intervals, behavior)
 
     return CONDNBSN
@@ -199,12 +197,12 @@ def isobaric_specific_heat_nb3sn(T, TCS, TC, TC0):
     T = np.minimum(T, TMAX)
     intervals_CPN = [(T <= 10.0), (T > 10.0) & (T <= 20.0), (T > 20.0)]
     behavior_CPN = [
-        lambda T: 7.5475e-3 * T ** 2,
-        lambda T: (-0.3 + 0.00375 * T ** 2) / 0.09937,
+        lambda T: 7.5475e-3 * T**2,
+        lambda T: (-0.3 + 0.00375 * T**2) / 0.09937,
         lambda T: AA * T / (a + T) ** na
-        + BB * T ** 2 / (b + T) ** nb
-        + CC * T ** 3 / (c + T) ** nc
-        + DD * T ** 4 / (d + T) ** nd,
+        + BB * T**2 / (b + T) ** nb
+        + CC * T**3 / (c + T) ** nc
+        + DD * T**4 / (d + T) ** nd,
     ]
 
     # NORMAL COMPONENT OF CP
@@ -215,8 +213,8 @@ def isobaric_specific_heat_nb3sn(T, TCS, TC, TC0):
 
     intervals_CPNTC = [(TC <= 10.0), (TC > 10.0) & (TC <= 20.0)]
     behavior_CPNTC = [
-        lambda TC: 7.5475e-3 * TC ** 2,
-        lambda TC: (-0.3 + 0.00375 * TC ** 2) / 0.09937,
+        lambda TC: 7.5475e-3 * TC**2,
+        lambda TC: (-0.3 + 0.00375 * TC**2) / 0.09937,
     ]
     CPNTC = np.piecewise(TC, intervals_CPNTC, behavior_CPNTC)
 
@@ -236,9 +234,7 @@ def isobaric_specific_heat_nb3sn(T, TCS, TC, TC0):
     # For those index evaluate piecewise fuction CPNTC, elsewere it is = 0 by initialization
     # CPNTC[ind_TCa] = np.piecewise(TC[ind_TCa], intervals_CPNTC, behavior_CPNTC)
     # For those index evaluate CPS, elsewere it is = 0 by initialization
-    CPS[ind_TCa] = (CPNTC[ind_TCa] + DELCP[ind_TCa]) * (
-        T[ind_TCa] / TC[ind_TCa]
-    ) ** 3
+    CPS[ind_TCa] = (CPNTC[ind_TCa] + DELCP[ind_TCa]) * (T[ind_TCa] / TC[ind_TCa]) ** 3
 
     # COMPOSE THE COMPONENTS
     # Find index in T such that T <= TCS
@@ -248,14 +244,15 @@ def isobaric_specific_heat_nb3sn(T, TCS, TC, TC0):
     # Find index in T such that T > TCS and t <= TC
     ind_inter = np.nonzero((T > TCS) & (T <= TC))[0]
     # Find index in TCS such that TCS < TC
-    IND = np.nonzero(TCS[ind_inter] < TC[ind_inter])  # this is a numpy array (cdp, 06/2020)
+    IND = np.nonzero(
+        TCS[ind_inter] < TC[ind_inter]
+    )  # this is a numpy array (cdp, 06/2020)
     ind = ind_inter[IND]  # this is an array (cdp, 06/2020)
     # For those index evaluate F, elsewere it is = 1 by initialization
     F[ind] = (T[ind] - TCS[ind]) / (TC[ind] - TCS[ind])
     # For index in ind_inter evaluate CPNBSN
     CPNBSN[ind_inter] = (
-        F[ind_inter] * CPN[ind_inter]
-        + (1.0 - F[ind_inter]) * CPS[ind_inter]
+        F[ind_inter] * CPN[ind_inter] + (1.0 - F[ind_inter]) * CPS[ind_inter]
     )
     # Find index in T such that T > TC
     ind_TCb = np.nonzero(T > TC)[0]  # this is a numpy array (cdp, 06/2020)
@@ -344,7 +341,9 @@ def critical_current_density_nb3sn(T, B, EPSLON, TC0M, BC20M, C0):
         BCNBSN(T[TLCASE_ind], EPSLON[TLCASE_ind], TC0M, BC20M)
     )
     # Find element index such that BLCASE[TLCASE_ind[0]] < 1.0, only for those index JC will be evaluated, elsewere JC = 0.0 by initialization (cdp, 06/2020)
-    ind = np.nonzero(BLCASE[TLCASE_ind] < 1.0)[0]  # this is a numpy array (cdp, 06/2020)
+    ind = np.nonzero(BLCASE[TLCASE_ind] < 1.0)[
+        0
+    ]  # this is a numpy array (cdp, 06/2020)
     BLCASE_ind = TLCASE_ind[ind]  # this is an array (cdp, 06/2020)
     if BLCASE_ind.size == 0:  # empty index array (cdp, 06/2020)
         return JC
@@ -419,14 +418,14 @@ def SNBSN(EPSLON):
     # EPSm = 3.97e-3 #[] real - tensile strain at which the maximum critical
 
     # %*ESSE(EPSsh) !crb (July 24, 2011)
-    EPSsh = Ca2 * EPS0a / np.sqrt(Ca1 ** 2.0e0 - Ca2 ** 2.0e0)
+    EPSsh = Ca2 * EPS0a / np.sqrt(Ca1**2.0e0 - Ca2**2.0e0)
 
     # %*ESSE(EPSLON) !crb (July 24, 2011)
     SS = 1.0e0 + 1.0e0 / (1.0e0 - Ca1 * EPS0a) * (
         Ca1
         * (
-            np.sqrt(EPSsh ** 2.0e0 + EPS0a ** 2.0e0)
-            - np.sqrt((EPSLON - EPSsh) ** 2.0e0 + EPS0a ** 2.0e0)
+            np.sqrt(EPSsh**2.0e0 + EPS0a**2.0e0)
+            - np.sqrt((EPSLON - EPSsh) ** 2.0e0 + EPS0a**2.0e0)
         )
         - Ca2 * EPSLON
     )
@@ -528,7 +527,9 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
     """
 
     def critical_current_density_bisection_nb3sn(TT, BB, EPSLON, JOP, TC0M, BC20M, C):
-        return critical_current_density_nb3sn([TT], [BB], [EPSLON], TC0M, BC20M, C) - JOP
+        return (
+            critical_current_density_nb3sn([TT], [BB], [EPSLON], TC0M, BC20M, C) - JOP
+        )
 
     # ppp = 0.56
     # qqq = 1.75
@@ -570,7 +571,9 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
     )
     # * CHECK THAT JOP IS BELOW THE UPPER CRITICAL VALUE
     # Find element index such that 0 < JOP < JC[Bstar_ind] (cdp, 06/2020)
-    ind = np.nonzero((JOP[Bstar_ind] < JC[Bstar_ind]) & (JOP[Bstar_ind] > 0.0))[0]  # this is a numpy array (cdp, 06/2020)
+    ind = np.nonzero((JOP[Bstar_ind] < JC[Bstar_ind]) & (JOP[Bstar_ind] > 0.0))[
+        0
+    ]  # this is a numpy array (cdp, 06/2020)
     JC_ind = Bstar_ind[ind]  # this is an array (cdp, 06/2020)
     if JC_ind.size == 0:
         return TCS
@@ -583,9 +586,7 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
 
         T_lower = np.array([3.5])
 
-        ex_args = (
-            B[vv], EPSLON[vv], JOP[vv], TC0M, BC20M, C
-        )
+        ex_args = (B[vv], EPSLON[vv], JOP[vv], TC0M, BC20M, C)
         # Evaluate current sharing temperature with bisection method.
         TCS[vv] = optimize.bisect(
             critical_current_density_bisection_nb3sn,
@@ -600,17 +601,25 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
 
 
 # Function rho_Nb3Sn starts here
-def density_nb3sn():
+def density_nb3sn(nn: int) -> np.ndarray:
     """
-    Nb3Sn density kg/m^3. It is assumed constant.
-    Autor: D. Placido Polito 21/01/2021
+    Function that evaluates Nb3Sn density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: Nb3Sn density array in kg/m^3.
     """
-    return 8950.0
+    return 8950.0 * np.ones(nn)
 
 
 # end function rho_Nb3Sn (cdp, 01/2021)
 
-def electrical_resistivity_nb3sn(curr_dens:np.ndarray, crit_curr_dens:np.ndarray, E0: float = 1e-5, nn:int = 20)-> np.ndarray:
+
+def electrical_resistivity_nb3sn(
+    curr_dens: np.ndarray, crit_curr_dens: np.ndarray, E0: float = 1e-5, nn: int = 20
+) -> np.ndarray:
     """Function that evaluathe the electrical resistivity of Nb3Sn in Ohm*m.
 
     Args:
@@ -623,4 +632,4 @@ def electrical_resistivity_nb3sn(curr_dens:np.ndarray, crit_curr_dens:np.ndarray
         np.ndarray: electrical resistivity of Nb3Sn in Ohm*m.
     """
     # Is this valid in general or it is valid only in steady state (static) conditions?
-    return E0/crit_curr_dens * (curr_dens/crit_curr_dens) ** (nn - 1)
+    return E0 / crit_curr_dens * (curr_dens / crit_curr_dens) ** (nn - 1)

@@ -112,18 +112,18 @@ def thermal_conductivity_re123(TT):
     intervals = [(TT <= 70.0), (TT > 70.0)]
     behaviour = [
         lambda TT: (
-            A[0] * TT ** 5
-            + B[0] * TT ** 4
-            + C[0] * TT ** 3
-            + D[0] * TT ** 2
+            A[0] * TT**5
+            + B[0] * TT**4
+            + C[0] * TT**3
+            + D[0] * TT**2
             + E[0] * TT
             + F[0]
         ),
         lambda TT: (
-            A[1] * TT ** 5
-            + B[1] * TT ** 4
-            + C[1] * TT ** 3
-            + D[1] * TT ** 2
+            A[1] * TT**5
+            + B[1] * TT**4
+            + C[1] * TT**3
+            + D[1] * TT**2
             + E[1] * TT
             + F[1]
         ),
@@ -184,7 +184,7 @@ def isobaric_specific_heat_re123(TT):
     EE = 0.239331954284042
     FF = -1.096191721280114
 
-    CPRE123 = AA * TT ** 5 + BB * TT ** 4 + CC * TT ** 3 + DD * TT ** 2 + EE * TT + FF
+    CPRE123 = AA * TT**5 + BB * TT**4 + CC * TT**3 + DD * TT**2 + EE * TT + FF
 
     return CPRE123
 
@@ -277,7 +277,9 @@ def critical_current_density_re123(T, B, TC0M, BC20M, c0):
     )
 
     # Find element index such that BLCASE[TLCASE_ind] < 1.0, only for those index JCRE123 will be evaluated, elsewere JCRE123 = 0.0 by initialization (cdp, 06/2020)
-    ind = np.nonzero(BLCASE[TLCASE_ind] < 1.0)[0]  # this is a numpy array (cdp, 06/2020)
+    ind = np.nonzero(BLCASE[TLCASE_ind] < 1.0)[
+        0
+    ]  # this is a numpy array (cdp, 06/2020)
     BLCASE_ind = TLCASE_ind[ind]  # this is an array (cdp, 06/2020)
     if BLCASE_ind.size == 0:  # empty index array (cdp, 06/2020)
         return JCRE123
@@ -293,7 +295,9 @@ def critical_current_density_re123(T, B, TC0M, BC20M, c0):
 
     # * CHECK THAT JCRE123 > 0
     # Find element index such that JCRE123[BLCASE_ind] < 0, for these index JCRE123 = 0.0 (cdp, 2020)
-    ind = np.nonzero(JCRE123[BLCASE_ind] < 0.0)[0]  # this is a numpy array (cdp, 06/2020)
+    ind = np.nonzero(JCRE123[BLCASE_ind] < 0.0)[
+        0
+    ]  # this is a numpy array (cdp, 06/2020)
     JC_ind = BLCASE_ind[ind]  # this is an array (cdp, 06/2020)
     JCRE123[JC_ind] = 0.0
 
@@ -404,22 +408,33 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
         )
     # End for ii.
 
-
     return TCSRE123
 
 
 # Function rho_RE123 starts here
-def density_re123():
+def density_re123(nn: int) -> np.ndarray:
     """
-    RE123 density kg/m^3. It is assumed constant.
-    Autor: D. Placido Polito 21/01/2021
+    Function that evaluates YBCO density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: YBCO density array in kg/m^3.
     """
-    return 6380.0
+    return 6380.0 * np.ones(nn)
 
 
 # end function rho_RE123 (cdp, 01/2021)
 
-def electrical_resistivity_re123(curr_dens:np.ndarray, crit_curr_dens:np.ndarray, E0: float = 1e-5, nn:int = 20,eps:float = 0)-> np.ndarray:
+
+def electrical_resistivity_re123(
+    curr_dens: np.ndarray,
+    crit_curr_dens: np.ndarray,
+    E0: float = 1e-5,
+    nn: int = 20,
+    eps: float = 0,
+) -> np.ndarray:
     """Function that evaluathe the electrical resistivity of RE123 in Ohm*m.
 
     Args:
@@ -434,4 +449,4 @@ def electrical_resistivity_re123(curr_dens:np.ndarray, crit_curr_dens:np.ndarray
         np.ndarray: electrical resistivity of RE123 in Ohm*m.
     """
     # Is this valid in general or it is valid only in steady state (static) conditions?
-    return E0/(crit_curr_dens + eps) * (curr_dens/crit_curr_dens) ** (nn - 1)
+    return E0 / (crit_curr_dens + eps) * (curr_dens / crit_curr_dens) ** (nn - 1)

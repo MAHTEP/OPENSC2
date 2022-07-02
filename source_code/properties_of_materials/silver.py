@@ -44,23 +44,23 @@ def thermal_conductivity_ag(TT):
         (TT >= 273.0) & (TT < 1234.0),
     ]
     behavior = [
-        lambda TT: 3.5389 * TT ** 4
-        - 8.2624e1 * TT ** 3
-        + 2.7138e2 * TT ** 2
+        lambda TT: 3.5389 * TT**4
+        - 8.2624e1 * TT**3
+        + 2.7138e2 * TT**2
         + 3.6897e3 * TT,
-        lambda TT: -1.3578 * TT ** 3 + 1.2791e2 * TT ** 2 - 4.1285e3 * TT + 4.7377e4,
-        lambda TT: 1.8407e-4 * TT ** 4
-        - 5.9684e-2 * TT ** 3
-        + 7.241 * TT ** 2
+        lambda TT: -1.3578 * TT**3 + 1.2791e2 * TT**2 - 4.1285e3 * TT + 4.7377e4,
+        lambda TT: 1.8407e-4 * TT**4
+        - 5.9684e-2 * TT**3
+        + 7.241 * TT**2
         - 3.9169e2 * TT
         + 8.4877e3,
-        lambda TT: 1.4878e-7 * TT ** 4
-        - 1.2548e-4 * TT ** 3
-        + 3.9209e-2 * TT ** 2
+        lambda TT: 1.4878e-7 * TT**4
+        - 1.2548e-4 * TT**3
+        + 3.9209e-2 * TT**2
         - 5.4107 * TT
         + 7.0959e2,
-        lambda TT: 9.3528e-9 * TT ** 3
-        - 2.6629e-5 * TT ** 2
+        lambda TT: 9.3528e-9 * TT**3
+        - 2.6629e-5 * TT**2
         - 5.4314e-2 * TT
         + 4.4529e2,
     ]
@@ -106,12 +106,12 @@ def isobaric_specific_heat_ag(TT):
 
     intervals = [(TT <= 50.0), (TT > 50.0) & (TT < 285.0), (TT >= 285.0)]
     behavior = [
-        lambda TT: 0.047220784283425 * TT ** 2
+        lambda TT: 0.047220784283425 * TT**2
         - 0.018765676876719 * TT
         - 1.946839691056091,
-        lambda TT: -0.000000104620955 * TT ** 4
-        + 0.000091884831207 * TT ** 3
-        - 0.030295300516950 * TT ** 2
+        lambda TT: -0.000000104620955 * TT**4
+        + 0.000091884831207 * TT**3
+        - 0.030295300516950 * TT**2
         + 4.598581892940776 * TT
         - 52.331891977926269,
         lambda TT: (2.343447902350777e2 - 2.343414867962295e2)
@@ -168,24 +168,24 @@ def electrical_resistivity_ag(TT):
         (TT >= 200.0) & (TT < 1235.0),
     ]
     behavior = [
-        lambda TT: 6.144183e-015 * TT ** 3
-        - 6.690094e-014 * TT ** 2
+        lambda TT: 6.144183e-015 * TT**3
+        - 6.690094e-014 * TT**2
         + 2.259567e-013 * TT
         + 9.822048e-012,
-        lambda TT: 2.026667e-014 * TT ** 3
-        - 6.160000e-013 * TT ** 2
+        lambda TT: 2.026667e-014 * TT**3
+        - 6.160000e-013 * TT**2
         + 7.473333e-012 * TT
         - 2.330000e-011,
-        lambda TT: -1.200000e-014 * TT ** 3
-        + 2.210952e-012 * TT ** 2
+        lambda TT: -1.200000e-014 * TT**3
+        + 2.210952e-012 * TT**2
         - 7.586429e-011 * TT
         + 8.015476e-010,
-        lambda TT: 6.841184e-017 * TT ** 3
-        - 4.447028e-014 * TT ** 2
+        lambda TT: 6.841184e-017 * TT**3
+        - 4.447028e-014 * TT**2
         + 6.974508e-011 * TT
         - 2.428741e-009,
-        lambda TT: 8.269045e-018 * TT ** 3
-        - 3.077059e-015 * TT ** 2
+        lambda TT: 8.269045e-018 * TT**3
+        - 3.077059e-015 * TT**2
         + 6.074742e-011 * TT
         - 1.812752e-009,
     ]
@@ -196,12 +196,17 @@ def electrical_resistivity_ag(TT):
 
 
 # Function rho_ag starts here
-def density_ag():
+def density_ag(nn: int) -> np.ndarray:
     """
-    Silver density kg/m^3. It is assumed constant.
-    Autor: D. Placido Polito 21/01/2021
+    Function that evaluates silver density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: silver density array in kg/m^3.
     """
-    return 10630.0
+    return 10630.0 * np.ones(nn)
 
 
 # end function rho_Ag (cdp, 01/2021)

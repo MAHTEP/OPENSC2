@@ -36,12 +36,12 @@ def thermal_conductivity_hc276(TT):
 
     intervals = [(TT <= 60.0), (TT > 60.0) & (TT < 300.0), (TT >= 300.0)]
     behavior = [
-        lambda T: 0.000028975912976 * T ** 3
-        - 0.004655231435231 * T ** 2
+        lambda T: 0.000028975912976 * T**3
+        - 0.004655231435231 * T**2
         + 0.293992451992451 * T
         + 0.166939393939405,
-        lambda T: 0.000000124577333 * T ** 3
-        - 0.000079993515434 * T ** 2
+        lambda T: 0.000000124577333 * T**3
+        - 0.000079993515434 * T**2
         + 0.035243632195403 * T
         + 5.503358179018721,
         lambda T: (12.240619439579623 - 12.219768038241552) / (300 - 299) * (T - 300)
@@ -88,12 +88,12 @@ def isobaric_specific_heat_hc276(TT):
 
     intervals = [(TT <= 60.0), (TT > 60.0) & (TT < 300.0), (TT >= 300.0)]
     behavior = [
-        lambda T: 0.000092969696970 * T ** 3
-        + 0.046381858141858 * T ** 2
+        lambda T: 0.000092969696970 * T**3
+        + 0.046381858141858 * T**2
         - 0.738681152181147 * T
         + 4.091909090909040,
-        lambda T: 0.0000302086983 * T ** 3
-        - 0.0226456716880 * T ** 2
+        lambda T: 0.0000302086983 * T**3
+        - 0.0226456716880 * T**2
         + 6.0225562313795 * T
         - 179.3891242698739,
         lambda T: (4.049021473239762e2 - 4.043151575124803e002)
@@ -146,12 +146,17 @@ def electrical_resistivity_hc276(TT):
 
 
 # Function rho_HC276 starts here
-def density_hc276():
+def density_hc276(nn: int) -> np.ndarray:
     """
-    HC276 density kg/m^3. It is assumed constant.
-    Autor: D. Placido Polito 21/01/2021
+    Function that evaluates hastelloy HC276 density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: hastelloy HC276 density array in kg/m^3.
     """
-    return 8890.0
+    return 8890.0 * np.ones(nn)
 
 
 # end function rho_HC276 (cdp, 01/2021)

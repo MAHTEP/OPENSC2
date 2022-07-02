@@ -209,15 +209,21 @@ def isobaric_specific_heat_nbti(T, B, TCS, TC):
 
 
 # Function rho_NbTi starts here
-def density_nbti():
+def density_nbti(nn: int) -> np.ndarray:
     """
-    NbTi density kg/m^3. It is assumed constant.
-    Autor: D. Placido Polito 21/01/2021
+    Function that evaluates NbTi density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: NbTi density array in kg/m^3.
     """
-    return 6160.0
+    return 6160.0 * np.ones(nn)
 
 
 # end function rho_NbTi (cdp, 01/2021)
+
 
 def reduced_temperature_nbti(temperature, T_c0):
 
@@ -257,7 +263,9 @@ def critical_magnetic_field_nbti(temperature, B_c20, T_c0, nn=1.7):
 
 def reduced_magnetic_field_nbti(magnetic_field, temperature, B_c20, T_c0, nn=1.7):
 
-    return magnetic_field / critical_magnetic_field_nbti(temperature, B_c20, T_c0, nn=nn)
+    return magnetic_field / critical_magnetic_field_nbti(
+        temperature, B_c20, T_c0, nn=nn
+    )
 
 
 # End function reduced_magnetic_field_nbti
@@ -405,7 +413,9 @@ def current_sharing_temperature_nbti(
         )
         return curr_shar_temp
 
-    critical_temp = critical_temperature_nbti(magnetic_field[op_ind], B_c20, T_c0, nn=nn)
+    critical_temp = critical_temperature_nbti(
+        magnetic_field[op_ind], B_c20, T_c0, nn=nn
+    )
     # Find index in op_current_density[op_ind] such that op_current_density[op_ind] > 0.0 (boolean array).
     op_ind_0 = op_current_density[op_ind] > 0.0
     if all(op_ind_0) == False:
@@ -448,7 +458,10 @@ def current_sharing_temperature_nbti(
 
 # End function current_sharing_temperature_nbti.
 
-def electrical_resistivity_nbti(curr_dens:np.ndarray, crit_curr_dens:np.ndarray, E0: float = 1e-5, nn:int = 20)-> np.ndarray:
+
+def electrical_resistivity_nbti(
+    curr_dens: np.ndarray, crit_curr_dens: np.ndarray, E0: float = 1e-5, nn: int = 20
+) -> np.ndarray:
     """Function that evaluathe the electrical resistivity of NbTi in Ohm*m.
 
     Args:
@@ -461,4 +474,4 @@ def electrical_resistivity_nbti(curr_dens:np.ndarray, crit_curr_dens:np.ndarray,
         np.ndarray: electrical resistivity of NbTi in Ohm*m.
     """
     # Is this valid in general or it is valid only in steady state (static) conditions?
-    return E0/crit_curr_dens * (curr_dens/crit_curr_dens) ** (nn - 1)
+    return E0 / crit_curr_dens * (curr_dens / crit_curr_dens) ** (nn - 1)

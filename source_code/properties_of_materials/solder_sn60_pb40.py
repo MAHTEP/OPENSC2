@@ -147,12 +147,17 @@ def electrical_resistivity_sn60pb40(TT):
 
 
 # Function rho_Sn60Pb40 starts here
-def density_sn60pb40():
+def density_sn60pb40(nn:int) -> np.ndarray:
     """
-    Sn60Pb40 density kg/m^3. It is assumed constant.
-    Autor: D. Placido Polito 21/01/2021
+    Function that evaluates Sn60Pb40 density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: Sn60Pb40 density array in kg/m^3.
     """
-    return 7310.0 * 0.6 + 11340.0 * 0.4
+    return (7310.0 * 0.6 + 11340.0 * 0.4) * np.ones(nn)
 
 
 # end function rho_Sn60Pb40 (cdp, 01/2021)

@@ -84,12 +84,17 @@ def isobaric_specific_heat_ge(t):
 
 
 # Function rho_ge starts here
-def density_ge():
+def density_ge(nn:int)->np.ndarray:
     """
-    Glass-epoxy density kg/m^3. It is assumed constant.
-    Autor: D. Placido Polito 21/01/2021
+    Function that evaluates glass-epoxy density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: glass-epoxy density array in kg/m^3.
     """
-    return 2000.0
+    return 2000.0 * np.ones(nn)
 
 
 # end function rho_ge (cdp, 01/2021)
