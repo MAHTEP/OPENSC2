@@ -430,3 +430,33 @@ class StackComponent(StrandComponent):
             ).sum(axis=0)
             / self.tape_thickness
         )
+
+    def stack_electrical_resistivity_not_sc(self, property: dict) -> np.ndarray:
+        """Method that evaluates the homogenized electrical resistivity for not superconducting materials of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with homogenized electrical resistivity of not superconducting materials of the stack of tapes in Ohm*m.
+        """
+        elestrical_resistivity = np.zeros(
+            (self.inputs["N_materal_tape"]-1, property["temperature"].size)
+        )
+        for ii, func in enumerate(self.electrical_resistivity_function_not_sc):
+            if "cu" in func.__name__:
+                elestrical_resistivity[ii, :] = func(
+                    property["temperature"],
+                    property["B_field"],
+                    self.inputs["RRR"],
+                )
+            else:
+                elestrical_resistivity[ii, :] = func(property["temperature"])
+        # Evaluate homogenized electrical resistivity of the stack:
+        # rho_el_eq = s_not_sc * (sum(s_i/rho_el_i))^-1 for any i not sc
+        return (
+            np.reciprocal(np.array(
+                list(map(np.divide, self.material_thickness_not_sc, elestrical_resistivity))
+            ).sum(axis=0))
+            * self.tape_thickness_not_sc
+        )
