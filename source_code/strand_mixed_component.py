@@ -2,6 +2,35 @@ from solid_component import SolidComponent
 from strand_component import StrandComponent
 import pandas as pd
 
+# Aluminium properties
+from properties_of_materials.aluminium import (
+    thermal_conductivity_al,
+    isobaric_specific_heat_al,
+    density_al,
+    electrical_resistivity_al,
+)
+
+# Cu properties
+from properties_of_materials.copper import (
+    thermal_conductivity_cu_nist,
+    isobaric_specific_heat_cu_nist,
+    density_cu,
+    electrical_resistivity_cu_nist,
+)
+
+# NbTi properties
+from properties_of_materials.niobium_titanium import (
+    thermal_conductivity_nbti,
+    isobaric_specific_heat_nbti,
+    density_nbti,
+)
+
+# Nb3Sn properties
+from properties_of_materials.niobium3_tin import (
+    thermal_conductivity_nb3sn,
+    isobaric_specific_heat_nb3sn,
+    density_nb3sn,
+)
 
 class StrandMixedComponent(StrandComponent):
 
