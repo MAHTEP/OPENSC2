@@ -81,7 +81,7 @@ class StrandMixedComponent(StrandComponent):
 
     KIND = "Mixed_sc_stab"
 
-    def __init__(self, simulation, sheet, icomp, name, dict_file_path):
+    def __init__(self, simulation, sheet, icomp, name, dict_file_path, conductor):
 
         self.NAME = name
         # get channels ID consistently with user definition (cdp, 09/2020)
@@ -127,6 +127,10 @@ class StrandMixedComponent(StrandComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
         # end if (cdp, 07/2020)
+
+        self.__strand_density_flag = False
+        self.__reorganize_input()
+        self.__check_consistecy(conductor)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
