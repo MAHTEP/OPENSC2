@@ -216,3 +216,26 @@ class StrandMixedComponent(StrandComponent):
             raise ValueError(
                 f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the strand mixed ({self.inputs['NUM_MATERIAL_TYPE'] = }) is inconsistent with the number of defined materials ({self.tape_material.size = }).\nPlease check..."
             )
+    
+    def strand_density(self, property: dict) -> np.ndarray:
+        """Method that evaluates the homogenized denstiy of the strand mixed, in the case it is made by two materials (stabilizer and superconductor). Homogenization is based on material cross sections.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with homogenized density of strand mixed in kg/m^3.
+        """
+        # Set fleag to true to allow evaluation of homogenized isobaric
+        # specific heat.
+        self.__strand_density_flag = True
+        density = np.array(
+            [func(property["temperature"].size) for func in self.density_function]
+        )
+        # Evaluate homogenized density of the strand mixed:
+        # rho_eq = (rho_sc + stab_non_stab * rho_stab)/(1 + stab_non_stab)
+        self.__density_numerator = np.array(
+            list(map(np.multiply, density, self.homogenization_cefficients))
+        )
+        self.__density_numerator_sum = self.__density_numerator.sum(axis=0)
+        return self.__density_numerator_sum / self.homogenization_cefficients_sum
