@@ -194,3 +194,21 @@ class StrandMixedComponent(StrandComponent):
         self.thermal_conductivity_function = np.array(
             [THERMAL_CONDUCTIVITY_FUNC[key] for key in self.strand_material]
         )
+
+    def __check_consistecy(self, conductor):
+        """Private method that checks consistency of strand mixed user definition.
+
+        Args:
+            conductor (Conductor): instance of class Conductor.
+
+        Raises:
+            ValueError: if number of strand midex materials given in input is not consistent with user declared materials.
+            
+        """
+        # Check that number of type materials given in input is consistent with
+        # user declared materials.
+        if self.strand_material.size != self.inputs["NUM_MATERIAL_TYPE"]:
+            # Message to be completed!
+            raise ValueError(
+                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the strand mixed ({self.inputs['NUM_MATERIAL_TYPE'] = }) is inconsistent with the number of defined materials ({self.tape_material.size = }).\nPlease check..."
+            )
