@@ -1,6 +1,8 @@
+import numpy as np
+import pandas as pd
+
 from solid_component import SolidComponent
 from strand_component import StrandComponent
-import pandas as pd
 
 # Aluminium properties
 from properties_of_materials.aluminium import (
