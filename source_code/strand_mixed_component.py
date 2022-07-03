@@ -32,6 +32,32 @@ from properties_of_materials.niobium3_tin import (
     density_nb3sn,
 )
 
+DENSITY_FUNC = dict(
+    al=density_al,
+    cu=density_cu,
+    nb3sn=density_nb3sn,
+    nbti=density_nbti,
+)
+
+THERMAL_CONDUCTIVITY_FUNC = dict(
+    al=thermal_conductivity_al,
+    cu=thermal_conductivity_cu_nist,
+    nb3sn=thermal_conductivity_nb3sn,
+    nbti=thermal_conductivity_nbti,
+)
+
+ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
+    al=isobaric_specific_heat_al,
+    cu=isobaric_specific_heat_cu_nist,
+    nb3sn=isobaric_specific_heat_nb3sn,
+    nbti=isobaric_specific_heat_nbti,
+)
+
+ELECTRICAL_RESISTIVITY_FUNC = dict(
+    al=electrical_resistivity_al,
+    cu=electrical_resistivity_cu_nist,
+)
+
 class StrandMixedComponent(StrandComponent):
 
     # Class for mixed strands objects
