@@ -379,7 +379,7 @@ class StackComponent(StrandComponent):
         return self.__density_numerator_sum / self.tape_thickness
 
     def stack_isobaric_specific_heat(self, property: dict) -> np.ndarray:
-        """Method that evaluates homogenized isobaric specific heat of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
+        """Method that evaluates homogenized isobaric specific heat of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the mass of tape layers.
 
         Args:
             property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
