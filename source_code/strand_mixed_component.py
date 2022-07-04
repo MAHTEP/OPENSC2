@@ -247,7 +247,7 @@ class StrandMixedComponent(StrandComponent):
             property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
 
         Returns:
-            np.ndarray: array with homogenized isobaric specific heat of the strand mixed of tapes in J/kg/K.
+            np.ndarray: array with homogenized isobaric specific heat of the strand mixed in J/kg/K.
         """
         # Check on homogenized density evaluation before homogenized isobaric
         # specific heat, since some therms are in common and are not evaluated
@@ -282,7 +282,7 @@ class StrandMixedComponent(StrandComponent):
             property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
 
         Returns:
-            np.ndarray: array with homogenized thermal conductivity of the strand mixed of tapes in W/m/K.
+            np.ndarray: array with homogenized thermal conductivity of the strand mixed in W/m/K.
         """
         thermal_conductivity = np.zeros(
             (self.inputs["NUM_MATERIAL_TYPES"], property["temperature"].size)
