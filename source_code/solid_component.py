@@ -140,522 +140,522 @@ class SolidComponent:
             dict_dummy = self.dict_Gauss_pt
             self.dict_Gauss_pt = self.eval_properties(dict_dummy, inventory)
 
-    def eval_properties(self, dict_dummy, inventory):
+    # def eval_properties_old(self, dict_dummy, inventory):
 
-        """
-        Method that actually evaluate total_density, specific_heat and thermal conductivity of SolidComponent class objects regardless of the location (nodal or Gauss points) (cdp, 07/2020)
-        """
-        # keys = list(self.inputs.keys())
-        # if self.NAME == inventory["StrandMixedComponent"].name:
-        if isinstance(self, StrandMixedComponent):
-            # STR_MIX: stabilizer and superconductor strand (cdp, 07/2020)
-            # initialization (cdp, 07/2020)
-            rho_num = 0.0
-            cp_num = np.zeros(dict_dummy["temperature"].shape)
-            kk_num = np.zeros(dict_dummy["temperature"].shape)
-            rhoe_num = np.zeros(dict_dummy["temperature"].shape)
-            R_stab_non_stab = self.inputs["STAB_NON_STAB"]
+    #     """
+    #     Method that actually evaluate total_density, specific_heat and thermal conductivity of SolidComponent class objects regardless of the location (nodal or Gauss points) (cdp, 07/2020)
+    #     """
+    #     # keys = list(self.inputs.keys())
+    #     # if self.NAME == inventory["StrandMixedComponent"].name:
+    #     if isinstance(self, StrandMixedComponent):
+    #         # STR_MIX: stabilizer and superconductor strand (cdp, 07/2020)
+    #         # initialization (cdp, 07/2020)
+    #         rho_num = 0.0
+    #         cp_num = np.zeros(dict_dummy["temperature"].shape)
+    #         kk_num = np.zeros(dict_dummy["temperature"].shape)
+    #         rhoe_num = np.zeros(dict_dummy["temperature"].shape)
+    #         R_stab_non_stab = self.inputs["STAB_NON_STAB"]
 
-            for ntype in range(self.inputs["NUM_MATERIAL_TYPES"]):
-                if ntype == 0:
-                    # stabilizer properties evaluation (cdp, 07/2020)
-                    if self.inputs["ISUPERCONDUCTOR"] != "HTS":
-                        # to keep into account that if 3 we know all the crossections \
-                        # (cdp, 07/2020)
-                        if self.inputs["ISTABILIZER"] == "Cu":  # Cu (cdp, 07/2020)
-                            rho_num = rho_num + density_cu() * R_stab_non_stab
-                            cp_num = (
-                                cp_num
-                                + density_cu()
-                                * R_stab_non_stab
-                                * isobaric_specific_heat_cu_nist(
-                                    dict_dummy["temperature"]
-                                )
-                            )
-                            kk_num = (
-                                kk_num
-                                + R_stab_non_stab
-                                * thermal_conductivity_cu_nist(
-                                    dict_dummy["temperature"],
-                                    dict_dummy["B_field"],
-                                    self.inputs["RRR"],
-                                )
-                            )
-                            rhoe_num = (
-                                rhoe_num
-                                + R_stab_non_stab
-                                * electrical_resistivity_cu_nist(
-                                    dict_dummy["temperature"],
-                                    dict_dummy["B_field"],
-                                    self.inputs["RRR"],
-                                )
-                            )
-                        elif self.inputs["ISTABILIZER"] == "Al":  # Al (cdp, 07/2020)
-                            rho_num = rho_num + density_al() * R_stab_non_stab
-                            cp_num = (
-                                cp_num
-                                + density_al()
-                                * R_stab_non_stab
-                                * isobaric_specific_heat_al(dict_dummy["temperature"])
-                            )
-                            kk_num = kk_num + R_stab_non_stab * thermal_conductivity_al(
-                                dict_dummy["temperature"]
-                            )
-                            rhoe_num = (
-                                rhoe_num
-                                + R_stab_non_stab
-                                * electrical_resistivity_al(dict_dummy["temperature"])
-                            )
-                        else:
-                            raise ValueError(
-                                f"""ERROR: material corresponding to
-              {list(self.inputs.keys())[2]} = 
-              {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
-                            )
-                    else:  # self.inputs["ISUPERCONDUCTOR"] == 3 (cdp, 08/2020)
-                        Ar_sc = 1.1088e-06
-                        Ar_hs = 5.5440e-05
-                        Ar_so = 7.7904e-05
-                        Ar_ag = 1.1088e-06
-                        Ar_tot = Ar_sc + Ar_hs + Ar_so + Ar_ag
-                        A_stab = self.inputs["CROSSECTION"] - Ar_tot
-                        if self.inputs["ISTABILIZER"] == "Cu":  # Cu (cdp, 07/2020)
-                            rho_num = rho_num + density_cu() * A_stab
-                            cp_num = (
-                                cp_num
-                                + density_cu()
-                                * A_stab
-                                * isobaric_specific_heat_cu_nist(
-                                    dict_dummy["temperature"]
-                                )
-                            )
-                            kk_num = kk_num + A_stab * thermal_conductivity_cu_nist(
-                                dict_dummy["temperature"],
-                                dict_dummy["B_field"],
-                                self.inputs["RRR"],
-                            )
-                            rhoe_num = (
-                                rhoe_num
-                                + A_stab
-                                * electrical_resistivity_cu_nist(
-                                    dict_dummy["temperature"],
-                                    dict_dummy["B_field"],
-                                    self.inputs["RRR"],
-                                )
-                            )
-                        elif self.inputs["ISTABILIZER"] == "Al":  # Al (cdp, 07/2020)
-                            rho_num = rho_num + density_al() * A_stab
-                            cp_num = (
-                                cp_num
-                                + density_al()
-                                * A_stab
-                                * isobaric_specific_heat_al(dict_dummy["temperature"])
-                            )
-                            kk_num = kk_num + A_stab * thermal_conductivity_al(
-                                dict_dummy["temperature"]
-                            )
-                            rhoe_num = rhoe_num + A_stab * electrical_resistivity_al(
-                                dict_dummy["temperature"]
-                            )
-                        else:
-                            raise ValueError(
-                                f"""ERROR: material corresponding to
-              {list(self.inputs.keys())[2]} = 
-              {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
-                            )
-                else:  # ntype > 0 (cdp, 08/2020)
-                    # superconductor properties evaluation (cdp, 07/2020)
-                    if self.inputs["ISUPERCONDUCTOR"] == "NbTi":
-                        # LTS: NbTi (cdp, 07/2020)
-                        rho_num = rho_num + density_nbti()
-                        cp_num = cp_num + density_nbti() * isobaric_specific_heat_nbti(
-                            dict_dummy["temperature"],
-                            dict_dummy["B_field"],
-                            dict_dummy["T_cur_sharing_min"],
-                            dict_dummy["T_critical"],
-                        )
-                        kk_num = kk_num + thermal_conductivity_nbti(
-                            dict_dummy["temperature"]
-                        )
-                    elif self.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
-                        # LTS: Nb3Sn (cdp, 07/2020)
-                        rho_num = rho_num + density_nb3sn()
-                        cp_num = (
-                            cp_num
-                            + density_nb3sn()
-                            * isobaric_specific_heat_nb3sn(
-                                dict_dummy["temperature"],
-                                dict_dummy["T_cur_sharing_min"],
-                                dict_dummy["T_critical"],
-                                self.inputs["Tc0m"],
-                            )
-                        )
-                        kk_num = kk_num + thermal_conductivity_nb3sn(
-                            dict_dummy["temperature"]
-                        )
-                    elif self.inputs["ISUPERCONDUCTOR"] == "HTS":
-                        # HTS: RE123 EU DEMO CS (SPC design, 2016) (cdp, 07/2020)
-                        rho_num = rho_num + (
-                            density_re123() * Ar_sc
-                            + density_hc276() * Ar_hs
-                            + density_ag() * Ar_ag
-                            + density_sn60pb40() * Ar_so
-                        )
-                        cp_num = cp_num + (
-                            density_re123()
-                            * isobaric_specific_heat_re123(dict_dummy["temperature"])
-                            * Ar_sc
-                            + density_hc276()
-                            * isobaric_specific_heat_hc276(dict_dummy["temperature"])
-                            * Ar_hs
-                            + density_sn60pb40()
-                            * isobaric_specific_heat_sn60pb40(dict_dummy["temperature"])
-                            * Ar_so
-                            + density_ag()
-                            * isobaric_specific_heat_ag(dict_dummy["temperature"])
-                            * Ar_ag
-                        )
-                        kk_num = kk_num + (
-                            thermal_conductivity_re123(dict_dummy["temperature"])
-                            * Ar_sc
-                            + thermal_conductivity_hc276(dict_dummy["temperature"])
-                            * Ar_hs
-                            + thermal_conductivity_sn60pb40(dict_dummy["temperature"])
-                            * Ar_so
-                            + thermal_conductivity_ag(dict_dummy["temperature"]) * Ar_ag
-                        )
-                        rhoe_num = rhoe_num + (
-                            electrical_resistivity_hc276(dict_dummy["temperature"])
-                            * Ar_hs
-                            + electrical_resistivity_sn60pb40(dict_dummy["temperature"])
-                            * Ar_so
-                            + electrical_resistivity_ag(dict_dummy["temperature"])
-                            * Ar_ag
-                        )
-                    elif self.inputs["ISUPERCONDUCTOR"] == "scaling.dat":
-                        # user defined scaling
-                        # not implemented
-                        # userscaling_margin()
-                        print("Not implemented yet\n")
-                    else:
-                        raise ValueError(
-                            f"""ERROR: material corresponding to
-            {list(self.inputs.keys())[6]} = 
-            {self.inputs["ISUPERCONDUCTOR"]} is not defined yet.\n"""
-                        )
-                # end if ntype (cdp, 07/2020)
-            # end for ntype (cdp, 07/2020)
-            # STR_MIX properties evaluation (cdp, 07/2020)
-            if self.inputs["ISUPERCONDUCTOR"] != "HTS":
-                dict_dummy.update(total_density=rho_num / (1 + R_stab_non_stab))
-                dict_dummy.update(
-                    total_thermal_conductivity=kk_num / (1 + R_stab_non_stab)
-                )
-                dict_dummy.update(
-                    total_electrical_resistivity=rhoe_num / (1 + R_stab_non_stab)
-                )
-            else:
-                dict_dummy.update(total_density=rho_num / self.inputs["CROSSECTION"])
-                dict_dummy.update(
-                    total_thermal_conductivity=kk_num / self.inputs["CROSSECTION"]
-                )
-                dict_dummy.update(
-                    total_electrical_resistivity=rhoe_num / self.inputs["CROSSECTION"]
-                )
-            # This expression is always the same, what change is the way in which \
-            # cp_num and rho_num are evaluated (cdp, 07/2020)
-            dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
-        # elif self.NAME == inventory["StrandSuperconductorComponent"].name:
-        elif isinstance(self, StrandSuperconductorComponent):
-            # STR_SC: superconductor strand (cdp, 07/2020)
-            if self.inputs["ISUPERCONDUCTOR"] == "NbTi":
-                # LTS: NbTi (cdp, 07/2020)
-                dict_dummy.update(total_density=density_nbti())
-                dict_dummy.update(
-                    total_isobaric_specific_heat=isobaric_specific_heat_nbti(
-                        dict_dummy["temperature"],
-                        dict_dummy["B_field"],
-                        dict_dummy["T_cur_sharing_min"],
-                        dict_dummy["T_critical"],
-                    )
-                )
-                dict_dummy.update(
-                    total_thermal_conductivity=thermal_conductivity_nbti(
-                        dict_dummy["temperature"]
-                    )
-                )
-            elif self.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
-                # LTS: Nb3Sn (cdp, 07/2020)
-                dict_dummy.update(total_density=density_nb3sn())
-                dict_dummy.update(
-                    total_isobaric_specific_heat=isobaric_specific_heat_nb3sn(
-                        dict_dummy["temperature"],
-                        dict_dummy["T_cur_sharing_min"],
-                        dict_dummy["T_critical"],
-                        self.inputs["Tc0m"],
-                    )
-                )
-                dict_dummy.update(
-                    total_thermal_conductivity=thermal_conductivity_nb3sn(
-                        dict_dummy["temperature"]
-                    )
-                )
-            elif self.inputs["ISUPERCONDUCTOR"] == "HTS":
-                # HTS: RE123 EU DEMO CS (SPC design, 2016) (cdp, 07/2020)
-                Ar_sc = 1.1088e-06
-                Ar_hs = 5.5440e-05
-                Ar_so = 7.7904e-05
-                Ar_ag = 1.1088e-06
-                Ar_tot = Ar_sc + Ar_hs + Ar_so + Ar_ag
-                rho_num = (
-                    density_re123() * Ar_sc
-                    + density_hc276() * Ar_hs
-                    + density_ag() * Ar_ag
-                    + density_sn60pb40() * Ar_so
-                )
-                # Keep in mind that specific heat is averaged on mass (cdp, 08/2020)
-                cp_num = (
-                    density_re123()
-                    * Ar_sc
-                    * isobaric_specific_heat_re123(dict_dummy["temperature"])
-                    + density_hc276()
-                    * Ar_hs
-                    * isobaric_specific_heat_hc276(dict_dummy["temperature"])
-                    + density_sn60pb40()
-                    * Ar_so
-                    * isobaric_specific_heat_sn60pb40(dict_dummy["temperature"])
-                    + density_ag()
-                    * Ar_ag
-                    * isobaric_specific_heat_ag(dict_dummy["temperature"])
-                )
-                dict_dummy.update(total_density=rho_num / Ar_tot)
-                dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
-                dict_dummy.update(
-                    total_thermal_conductivity=(
-                        thermal_conductivity_re123(dict_dummy["temperature"]) * Ar_sc
-                        + thermal_conductivity_hc276(dict_dummy["temperature"]) * Ar_hs
-                        + thermal_conductivity_sn60pb40(dict_dummy["temperature"])
-                        * Ar_so
-                        + thermal_conductivity_ag(dict_dummy["temperature"]) * Ar_ag
-                    )
-                    / Ar_tot
-                )
+    #         for ntype in range(self.inputs["NUM_MATERIAL_TYPES"]):
+    #             if ntype == 0:
+    #                 # stabilizer properties evaluation (cdp, 07/2020)
+    #                 if self.inputs["ISUPERCONDUCTOR"] != "HTS":
+    #                     # to keep into account that if 3 we know all the crossections \
+    #                     # (cdp, 07/2020)
+    #                     if self.inputs["ISTABILIZER"] == "Cu":  # Cu (cdp, 07/2020)
+    #                         rho_num = rho_num + density_cu() * R_stab_non_stab
+    #                         cp_num = (
+    #                             cp_num
+    #                             + density_cu()
+    #                             * R_stab_non_stab
+    #                             * isobaric_specific_heat_cu_nist(
+    #                                 dict_dummy["temperature"]
+    #                             )
+    #                         )
+    #                         kk_num = (
+    #                             kk_num
+    #                             + R_stab_non_stab
+    #                             * thermal_conductivity_cu_nist(
+    #                                 dict_dummy["temperature"],
+    #                                 dict_dummy["B_field"],
+    #                                 self.inputs["RRR"],
+    #                             )
+    #                         )
+    #                         rhoe_num = (
+    #                             rhoe_num
+    #                             + R_stab_non_stab
+    #                             * electrical_resistivity_cu_nist(
+    #                                 dict_dummy["temperature"],
+    #                                 dict_dummy["B_field"],
+    #                                 self.inputs["RRR"],
+    #                             )
+    #                         )
+    #                     elif self.inputs["ISTABILIZER"] == "Al":  # Al (cdp, 07/2020)
+    #                         rho_num = rho_num + density_al() * R_stab_non_stab
+    #                         cp_num = (
+    #                             cp_num
+    #                             + density_al()
+    #                             * R_stab_non_stab
+    #                             * isobaric_specific_heat_al(dict_dummy["temperature"])
+    #                         )
+    #                         kk_num = kk_num + R_stab_non_stab * thermal_conductivity_al(
+    #                             dict_dummy["temperature"]
+    #                         )
+    #                         rhoe_num = (
+    #                             rhoe_num
+    #                             + R_stab_non_stab
+    #                             * electrical_resistivity_al(dict_dummy["temperature"])
+    #                         )
+    #                     else:
+    #                         raise ValueError(
+    #                             f"""ERROR: material corresponding to
+    #           {list(self.inputs.keys())[2]} = 
+    #           {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
+    #                         )
+    #                 else:  # self.inputs["ISUPERCONDUCTOR"] == 3 (cdp, 08/2020)
+    #                     Ar_sc = 1.1088e-06
+    #                     Ar_hs = 5.5440e-05
+    #                     Ar_so = 7.7904e-05
+    #                     Ar_ag = 1.1088e-06
+    #                     Ar_tot = Ar_sc + Ar_hs + Ar_so + Ar_ag
+    #                     A_stab = self.inputs["CROSSECTION"] - Ar_tot
+    #                     if self.inputs["ISTABILIZER"] == "Cu":  # Cu (cdp, 07/2020)
+    #                         rho_num = rho_num + density_cu() * A_stab
+    #                         cp_num = (
+    #                             cp_num
+    #                             + density_cu()
+    #                             * A_stab
+    #                             * isobaric_specific_heat_cu_nist(
+    #                                 dict_dummy["temperature"]
+    #                             )
+    #                         )
+    #                         kk_num = kk_num + A_stab * thermal_conductivity_cu_nist(
+    #                             dict_dummy["temperature"],
+    #                             dict_dummy["B_field"],
+    #                             self.inputs["RRR"],
+    #                         )
+    #                         rhoe_num = (
+    #                             rhoe_num
+    #                             + A_stab
+    #                             * electrical_resistivity_cu_nist(
+    #                                 dict_dummy["temperature"],
+    #                                 dict_dummy["B_field"],
+    #                                 self.inputs["RRR"],
+    #                             )
+    #                         )
+    #                     elif self.inputs["ISTABILIZER"] == "Al":  # Al (cdp, 07/2020)
+    #                         rho_num = rho_num + density_al() * A_stab
+    #                         cp_num = (
+    #                             cp_num
+    #                             + density_al()
+    #                             * A_stab
+    #                             * isobaric_specific_heat_al(dict_dummy["temperature"])
+    #                         )
+    #                         kk_num = kk_num + A_stab * thermal_conductivity_al(
+    #                             dict_dummy["temperature"]
+    #                         )
+    #                         rhoe_num = rhoe_num + A_stab * electrical_resistivity_al(
+    #                             dict_dummy["temperature"]
+    #                         )
+    #                     else:
+    #                         raise ValueError(
+    #                             f"""ERROR: material corresponding to
+    #           {list(self.inputs.keys())[2]} = 
+    #           {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
+    #                         )
+    #             else:  # ntype > 0 (cdp, 08/2020)
+    #                 # superconductor properties evaluation (cdp, 07/2020)
+    #                 if self.inputs["ISUPERCONDUCTOR"] == "NbTi":
+    #                     # LTS: NbTi (cdp, 07/2020)
+    #                     rho_num = rho_num + density_nbti()
+    #                     cp_num = cp_num + density_nbti() * isobaric_specific_heat_nbti(
+    #                         dict_dummy["temperature"],
+    #                         dict_dummy["B_field"],
+    #                         dict_dummy["T_cur_sharing_min"],
+    #                         dict_dummy["T_critical"],
+    #                     )
+    #                     kk_num = kk_num + thermal_conductivity_nbti(
+    #                         dict_dummy["temperature"]
+    #                     )
+    #                 elif self.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
+    #                     # LTS: Nb3Sn (cdp, 07/2020)
+    #                     rho_num = rho_num + density_nb3sn()
+    #                     cp_num = (
+    #                         cp_num
+    #                         + density_nb3sn()
+    #                         * isobaric_specific_heat_nb3sn(
+    #                             dict_dummy["temperature"],
+    #                             dict_dummy["T_cur_sharing_min"],
+    #                             dict_dummy["T_critical"],
+    #                             self.inputs["Tc0m"],
+    #                         )
+    #                     )
+    #                     kk_num = kk_num + thermal_conductivity_nb3sn(
+    #                         dict_dummy["temperature"]
+    #                     )
+    #                 elif self.inputs["ISUPERCONDUCTOR"] == "HTS":
+    #                     # HTS: RE123 EU DEMO CS (SPC design, 2016) (cdp, 07/2020)
+    #                     rho_num = rho_num + (
+    #                         density_re123() * Ar_sc
+    #                         + density_hc276() * Ar_hs
+    #                         + density_ag() * Ar_ag
+    #                         + density_sn60pb40() * Ar_so
+    #                     )
+    #                     cp_num = cp_num + (
+    #                         density_re123()
+    #                         * isobaric_specific_heat_re123(dict_dummy["temperature"])
+    #                         * Ar_sc
+    #                         + density_hc276()
+    #                         * isobaric_specific_heat_hc276(dict_dummy["temperature"])
+    #                         * Ar_hs
+    #                         + density_sn60pb40()
+    #                         * isobaric_specific_heat_sn60pb40(dict_dummy["temperature"])
+    #                         * Ar_so
+    #                         + density_ag()
+    #                         * isobaric_specific_heat_ag(dict_dummy["temperature"])
+    #                         * Ar_ag
+    #                     )
+    #                     kk_num = kk_num + (
+    #                         thermal_conductivity_re123(dict_dummy["temperature"])
+    #                         * Ar_sc
+    #                         + thermal_conductivity_hc276(dict_dummy["temperature"])
+    #                         * Ar_hs
+    #                         + thermal_conductivity_sn60pb40(dict_dummy["temperature"])
+    #                         * Ar_so
+    #                         + thermal_conductivity_ag(dict_dummy["temperature"]) * Ar_ag
+    #                     )
+    #                     rhoe_num = rhoe_num + (
+    #                         electrical_resistivity_hc276(dict_dummy["temperature"])
+    #                         * Ar_hs
+    #                         + electrical_resistivity_sn60pb40(dict_dummy["temperature"])
+    #                         * Ar_so
+    #                         + electrical_resistivity_ag(dict_dummy["temperature"])
+    #                         * Ar_ag
+    #                     )
+    #                 elif self.inputs["ISUPERCONDUCTOR"] == "scaling.dat":
+    #                     # user defined scaling
+    #                     # not implemented
+    #                     # userscaling_margin()
+    #                     print("Not implemented yet\n")
+    #                 else:
+    #                     raise ValueError(
+    #                         f"""ERROR: material corresponding to
+    #         {list(self.inputs.keys())[6]} = 
+    #         {self.inputs["ISUPERCONDUCTOR"]} is not defined yet.\n"""
+    #                     )
+    #             # end if ntype (cdp, 07/2020)
+    #         # end for ntype (cdp, 07/2020)
+    #         # STR_MIX properties evaluation (cdp, 07/2020)
+    #         if self.inputs["ISUPERCONDUCTOR"] != "HTS":
+    #             dict_dummy.update(total_density=rho_num / (1 + R_stab_non_stab))
+    #             dict_dummy.update(
+    #                 total_thermal_conductivity=kk_num / (1 + R_stab_non_stab)
+    #             )
+    #             dict_dummy.update(
+    #                 total_electrical_resistivity=rhoe_num / (1 + R_stab_non_stab)
+    #             )
+    #         else:
+    #             dict_dummy.update(total_density=rho_num / self.inputs["CROSSECTION"])
+    #             dict_dummy.update(
+    #                 total_thermal_conductivity=kk_num / self.inputs["CROSSECTION"]
+    #             )
+    #             dict_dummy.update(
+    #                 total_electrical_resistivity=rhoe_num / self.inputs["CROSSECTION"]
+    #             )
+    #         # This expression is always the same, what change is the way in which \
+    #         # cp_num and rho_num are evaluated (cdp, 07/2020)
+    #         dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
+    #     # elif self.NAME == inventory["StrandSuperconductorComponent"].name:
+    #     elif isinstance(self, StrandSuperconductorComponent):
+    #         # STR_SC: superconductor strand (cdp, 07/2020)
+    #         if self.inputs["ISUPERCONDUCTOR"] == "NbTi":
+    #             # LTS: NbTi (cdp, 07/2020)
+    #             dict_dummy.update(total_density=density_nbti())
+    #             dict_dummy.update(
+    #                 total_isobaric_specific_heat=isobaric_specific_heat_nbti(
+    #                     dict_dummy["temperature"],
+    #                     dict_dummy["B_field"],
+    #                     dict_dummy["T_cur_sharing_min"],
+    #                     dict_dummy["T_critical"],
+    #                 )
+    #             )
+    #             dict_dummy.update(
+    #                 total_thermal_conductivity=thermal_conductivity_nbti(
+    #                     dict_dummy["temperature"]
+    #                 )
+    #             )
+    #         elif self.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
+    #             # LTS: Nb3Sn (cdp, 07/2020)
+    #             dict_dummy.update(total_density=density_nb3sn())
+    #             dict_dummy.update(
+    #                 total_isobaric_specific_heat=isobaric_specific_heat_nb3sn(
+    #                     dict_dummy["temperature"],
+    #                     dict_dummy["T_cur_sharing_min"],
+    #                     dict_dummy["T_critical"],
+    #                     self.inputs["Tc0m"],
+    #                 )
+    #             )
+    #             dict_dummy.update(
+    #                 total_thermal_conductivity=thermal_conductivity_nb3sn(
+    #                     dict_dummy["temperature"]
+    #                 )
+    #             )
+    #         elif self.inputs["ISUPERCONDUCTOR"] == "HTS":
+    #             # HTS: RE123 EU DEMO CS (SPC design, 2016) (cdp, 07/2020)
+    #             Ar_sc = 1.1088e-06
+    #             Ar_hs = 5.5440e-05
+    #             Ar_so = 7.7904e-05
+    #             Ar_ag = 1.1088e-06
+    #             Ar_tot = Ar_sc + Ar_hs + Ar_so + Ar_ag
+    #             rho_num = (
+    #                 density_re123() * Ar_sc
+    #                 + density_hc276() * Ar_hs
+    #                 + density_ag() * Ar_ag
+    #                 + density_sn60pb40() * Ar_so
+    #             )
+    #             # Keep in mind that specific heat is averaged on mass (cdp, 08/2020)
+    #             cp_num = (
+    #                 density_re123()
+    #                 * Ar_sc
+    #                 * isobaric_specific_heat_re123(dict_dummy["temperature"])
+    #                 + density_hc276()
+    #                 * Ar_hs
+    #                 * isobaric_specific_heat_hc276(dict_dummy["temperature"])
+    #                 + density_sn60pb40()
+    #                 * Ar_so
+    #                 * isobaric_specific_heat_sn60pb40(dict_dummy["temperature"])
+    #                 + density_ag()
+    #                 * Ar_ag
+    #                 * isobaric_specific_heat_ag(dict_dummy["temperature"])
+    #             )
+    #             dict_dummy.update(total_density=rho_num / Ar_tot)
+    #             dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
+    #             dict_dummy.update(
+    #                 total_thermal_conductivity=(
+    #                     thermal_conductivity_re123(dict_dummy["temperature"]) * Ar_sc
+    #                     + thermal_conductivity_hc276(dict_dummy["temperature"]) * Ar_hs
+    #                     + thermal_conductivity_sn60pb40(dict_dummy["temperature"])
+    #                     * Ar_so
+    #                     + thermal_conductivity_ag(dict_dummy["temperature"]) * Ar_ag
+    #                 )
+    #                 / Ar_tot
+    #             )
 
-                dict_dummy.update(
-                    total_electrical_resistivity=(
-                        electrical_resistivity_hc276(dict_dummy["temperature"]) * Ar_hs
-                        + electrical_resistivity_sn60pb40(dict_dummy["temperature"])
-                        * Ar_so
-                        + electrical_resistivity_ag(dict_dummy["temperature"]) * Ar_ag
-                    )
-                    / Ar_tot
-                )
-            elif self.inputs["ISUPERCONDUCTOR"] == "scaling.dat":
-                # user defined scaling
-                # not implemented
-                # userscaling_margin()
-                print("Not implemented yet\n")
-            else:
-                raise ValueError(
-                    f"""ERROR: material corresponding to
-        {list(self.inputs.keys())[3]} = 
-        {self.inputs["ISUPERCONDUCTOR"]} is not defined yet.\n"""
-                )
-        # elif self.NAME == inventory["StrandStabilizerComponent"].name:
-        elif isinstance(self, StrandStabilizerComponent):
-            # STR_STAB: stabilizer strand (cdp, 07/2020)
-            if self.inputs["ISTABILIZER"] == "Cu":
-                # Cu strand (cdp, 07/2020)
-                dict_dummy.update(total_density=density_cu())
-                dict_dummy.update(
-                    total_isobaric_specific_heat=isobaric_specific_heat_cu_nist(
-                        dict_dummy["temperature"]
-                    )
-                )
-                dict_dummy.update(
-                    total_thermal_conductivity=thermal_conductivity_cu_nist(
-                        dict_dummy["temperature"],
-                        dict_dummy["B_field"],
-                        self.inputs["RRR"],
-                    )
-                )
-                dict_dummy.update(
-                    total_electrical_resistivity=electrical_resistivity_cu_nist(
-                        dict_dummy["temperature"],
-                        dict_dummy["B_field"],
-                        self.inputs["RRR"],
-                    )
-                )
-            elif self.inputs["ISTABILIZER"] == "Al":
-                # Al strand (cdp, 07/2020)
-                dict_dummy.update(total_density=density_al())
-                dict_dummy.update(
-                    total_isobaric_specific_heat=isobaric_specific_heat_al(
-                        dict_dummy["temperature"]
-                    )
-                )
-                dict_dummy.update(
-                    total_thermal_conductivity=thermal_conductivity_al(
-                        dict_dummy["temperature"]
-                    )
-                )
-                dict_dummy.update(
-                    total_electrical_resistivity=electrical_resistivity_al(
-                        dict_dummy["temperature"]
-                    )
-                )
-            else:
-                raise ValueError(
-                    f"""ERROR: material corresponding to
-          {list(self.inputs.keys())[2]} = 
-          {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
-                )
-        # elif self.NAME == inventory["JacketComponent"].name:
-        elif isinstance(self, JacketComponent):
-            # Z_JKT: jacket (cdp, 07/2020)
-            # initialization (cdp, 07/2020)
-            self.inputs.update(CROSSECTION=0.0)
-            # self.inputs["CROSSECTION"] = 0.0
-            rho_num = 0.0
-            cp_num = np.zeros(dict_dummy["temperature"].shape)
-            kk_num = np.zeros(dict_dummy["temperature"].shape)
+    #             dict_dummy.update(
+    #                 total_electrical_resistivity=(
+    #                     electrical_resistivity_hc276(dict_dummy["temperature"]) * Ar_hs
+    #                     + electrical_resistivity_sn60pb40(dict_dummy["temperature"])
+    #                     * Ar_so
+    #                     + electrical_resistivity_ag(dict_dummy["temperature"]) * Ar_ag
+    #                 )
+    #                 / Ar_tot
+    #             )
+    #         elif self.inputs["ISUPERCONDUCTOR"] == "scaling.dat":
+    #             # user defined scaling
+    #             # not implemented
+    #             # userscaling_margin()
+    #             print("Not implemented yet\n")
+    #         else:
+    #             raise ValueError(
+    #                 f"""ERROR: material corresponding to
+    #     {list(self.inputs.keys())[3]} = 
+    #     {self.inputs["ISUPERCONDUCTOR"]} is not defined yet.\n"""
+    #             )
+    #     # elif self.NAME == inventory["StrandStabilizerComponent"].name:
+    #     elif isinstance(self, StrandStabilizerComponent):
+    #         # STR_STAB: stabilizer strand (cdp, 07/2020)
+    #         if self.inputs["ISTABILIZER"] == "Cu":
+    #             # Cu strand (cdp, 07/2020)
+    #             dict_dummy.update(total_density=density_cu())
+    #             dict_dummy.update(
+    #                 total_isobaric_specific_heat=isobaric_specific_heat_cu_nist(
+    #                     dict_dummy["temperature"]
+    #                 )
+    #             )
+    #             dict_dummy.update(
+    #                 total_thermal_conductivity=thermal_conductivity_cu_nist(
+    #                     dict_dummy["temperature"],
+    #                     dict_dummy["B_field"],
+    #                     self.inputs["RRR"],
+    #                 )
+    #             )
+    #             dict_dummy.update(
+    #                 total_electrical_resistivity=electrical_resistivity_cu_nist(
+    #                     dict_dummy["temperature"],
+    #                     dict_dummy["B_field"],
+    #                     self.inputs["RRR"],
+    #                 )
+    #             )
+    #         elif self.inputs["ISTABILIZER"] == "Al":
+    #             # Al strand (cdp, 07/2020)
+    #             dict_dummy.update(total_density=density_al())
+    #             dict_dummy.update(
+    #                 total_isobaric_specific_heat=isobaric_specific_heat_al(
+    #                     dict_dummy["temperature"]
+    #                 )
+    #             )
+    #             dict_dummy.update(
+    #                 total_thermal_conductivity=thermal_conductivity_al(
+    #                     dict_dummy["temperature"]
+    #                 )
+    #             )
+    #             dict_dummy.update(
+    #                 total_electrical_resistivity=electrical_resistivity_al(
+    #                     dict_dummy["temperature"]
+    #                 )
+    #             )
+    #         else:
+    #             raise ValueError(
+    #                 f"""ERROR: material corresponding to
+    #       {list(self.inputs.keys())[2]} = 
+    #       {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
+    #             )
+    #     # elif self.NAME == inventory["JacketComponent"].name:
+    #     elif isinstance(self, JacketComponent):
+    #         # Z_JKT: jacket (cdp, 07/2020)
+    #         # initialization (cdp, 07/2020)
+    #         self.inputs.update(CROSSECTION=0.0)
+    #         # self.inputs["CROSSECTION"] = 0.0
+    #         rho_num = 0.0
+    #         cp_num = np.zeros(dict_dummy["temperature"].shape)
+    #         kk_num = np.zeros(dict_dummy["temperature"].shape)
 
-            rhoe_num = np.zeros(dict_dummy["temperature"].shape)
+    #         rhoe_num = np.zeros(dict_dummy["temperature"].shape)
 
-            if self.inputs["NUM_MATERIAL_TYPES"] == 1:
-                if self.inputs["IMATERIAL_JK"] != "None":
-                    if self.inputs["IMATERIAL_JK"] == "steinless_steel":
-                        # stainless steel (cdp, 07/2020)
-                        self.inputs.update(CROSSECTION=self.inputs["CROSSECTION_JK"])
-                        rho_num = rho_num + density_ss() * self.inputs["CROSSECTION_JK"]
-                        cp_num = (
-                            cp_num
-                            + density_ss()
-                            * isobaric_specific_heat_ss(dict_dummy["temperature"])
-                            * self.inputs["CROSSECTION_JK"]
-                        )
-                        kk_num = (
-                            kk_num
-                            + thermal_conductivity_ss(dict_dummy["temperature"])
-                            * self.inputs["CROSSECTION_JK"]
-                        )
-                        rhoe_num = (
-                            rhoe_num
-                            + electrical_resistivity_ss(dict_dummy["temperature"])
-                            * self.inputs["CROSSECTION_JK"]
-                        )
-                    else:
-                        raise ValueError(
-                            f"ERROR: material corresponding to {list(self.inputs.keys())[3]} = {self.inputs['IMATERIAL_JK']} is not defined yet.\n"
-                        )
-                if self.inputs["IMATERIAL_IN"] != "None":
-                    if self.inputs["IMATERIAL_IN"] == "glass_epoxy":
-                        # Glass-epoxy (cdp, 07/2020)
-                        self.inputs.update(CROSSECTION=self.inputs["CROSSECTION_IN"])
-                        rho_num = rho_num + density_ge() * self.inputs["CROSSECTION_IN"]
-                        cp_num = (
-                            cp_num
-                            + density_ge()
-                            * isobaric_specific_heat_ge(dict_dummy["temperature"])
-                            * self.inputs["CROSSECTION_IN"]
-                        )
-                        kk_num = (
-                            kk_num
-                            + thermal_conductivity_ge(dict_dummy["temperature"])
-                            * self.inputs["CROSSECTION_IN"]
-                        )
-                        # dummy value for electrical resistivity, high value since it is \
-                        # an insulator (cdp, 08/2020)
-                        rhoe_num = rhoe_num + 1e10 * self.inputs["CROSSECTION_IN"]
-                    else:
-                        raise ValueError(
-                            f"ERROR: material corresponding to {list(self.inputs.keys())[4]} = {self.inputs['IMATERIAL_IN']} is not defined yet.\n"
-                        )
-            elif self.inputs["NUM_MATERIAL_TYPES"] == 2:
-                for ntype in range(self.inputs["NUM_MATERIAL_TYPES"]):
-                    if ntype == 0:
-                        if self.inputs["IMATERIAL_JK"] == "steinless_steel":
-                            # stainless steel (cdp, 07/2020)
-                            self.inputs.update(
-                                CROSSECTION=self.inputs["CROSSECTION"]
-                                + self.inputs["CROSSECTION_JK"]
-                            )
-                            rho_num = (
-                                rho_num + density_ss() * self.inputs["CROSSECTION_JK"]
-                            )
-                            cp_num = (
-                                cp_num
-                                + density_ss()
-                                * isobaric_specific_heat_ss(dict_dummy["temperature"])
-                                * self.inputs["CROSSECTION_JK"]
-                            )
-                            kk_num = (
-                                kk_num
-                                + thermal_conductivity_ss(dict_dummy["temperature"])
-                                * self.inputs["CROSSECTION_JK"]
-                            )
-                            rhoe_num = (
-                                rhoe_num
-                                + electrical_resistivity_ss(dict_dummy["temperature"])
-                                * self.inputs["CROSSECTION_JK"]
-                            )
-                        else:
-                            raise ValueError(
-                                f"""ERROR: material corresponding to
-              {list(self.inputs.keys())[3]} = 
-              {self.inputs["IMATERIAL_JK"]} is not defined yet.\n"""
-                            )
-                    elif ntype == self.inputs["NUM_MATERIAL_TYPES"] - 1:
-                        if self.inputs["IMATERIAL_IN"] == "glass_epoxy":
-                            # Glass-epoxy (cdp, 07/2020)
-                            self.inputs.update(
-                                CROSSECTION=self.inputs["CROSSECTION"]
-                                + self.inputs["CROSSECTION_IN"]
-                            )
-                            rho_num = (
-                                rho_num + density_ge() * self.inputs["CROSSECTION_IN"]
-                            )
-                            cp_num = (
-                                cp_num
-                                + density_ge()
-                                * isobaric_specific_heat_ge(dict_dummy["temperature"])
-                                * self.inputs["CROSSECTION_IN"]
-                            )
-                            kk_num = (
-                                kk_num
-                                + thermal_conductivity_ge(dict_dummy["temperature"])
-                                * self.inputs["CROSSECTION_IN"]
-                            )
-                            # dummy value for electrical resistivity, high value since it is \
-                            # an insulator (cdp, 08/2020)
-                            rhoe_num = rhoe_num + 1e5 * self.inputs["CROSSECTION_IN"]
-                        else:
-                            raise ValueError(
-                                f"""ERROR: material corresponding to
-              {list(self.inputs.keys())[4]} = 
-              {self.inputs["IMATERIAL_IN"]} is not defined yet.\n"""
-                            )
-                    # end if ntype (cdp, 07/2020)
-                # end for ntype (cdp, 07/2020)
+    #         if self.inputs["NUM_MATERIAL_TYPES"] == 1:
+    #             if self.inputs["IMATERIAL_JK"] != "None":
+    #                 if self.inputs["IMATERIAL_JK"] == "steinless_steel":
+    #                     # stainless steel (cdp, 07/2020)
+    #                     self.inputs.update(CROSSECTION=self.inputs["CROSSECTION_JK"])
+    #                     rho_num = rho_num + density_ss() * self.inputs["CROSSECTION_JK"]
+    #                     cp_num = (
+    #                         cp_num
+    #                         + density_ss()
+    #                         * isobaric_specific_heat_ss(dict_dummy["temperature"])
+    #                         * self.inputs["CROSSECTION_JK"]
+    #                     )
+    #                     kk_num = (
+    #                         kk_num
+    #                         + thermal_conductivity_ss(dict_dummy["temperature"])
+    #                         * self.inputs["CROSSECTION_JK"]
+    #                     )
+    #                     rhoe_num = (
+    #                         rhoe_num
+    #                         + electrical_resistivity_ss(dict_dummy["temperature"])
+    #                         * self.inputs["CROSSECTION_JK"]
+    #                     )
+    #                 else:
+    #                     raise ValueError(
+    #                         f"ERROR: material corresponding to {list(self.inputs.keys())[3]} = {self.inputs['IMATERIAL_JK']} is not defined yet.\n"
+    #                     )
+    #             if self.inputs["IMATERIAL_IN"] != "None":
+    #                 if self.inputs["IMATERIAL_IN"] == "glass_epoxy":
+    #                     # Glass-epoxy (cdp, 07/2020)
+    #                     self.inputs.update(CROSSECTION=self.inputs["CROSSECTION_IN"])
+    #                     rho_num = rho_num + density_ge() * self.inputs["CROSSECTION_IN"]
+    #                     cp_num = (
+    #                         cp_num
+    #                         + density_ge()
+    #                         * isobaric_specific_heat_ge(dict_dummy["temperature"])
+    #                         * self.inputs["CROSSECTION_IN"]
+    #                     )
+    #                     kk_num = (
+    #                         kk_num
+    #                         + thermal_conductivity_ge(dict_dummy["temperature"])
+    #                         * self.inputs["CROSSECTION_IN"]
+    #                     )
+    #                     # dummy value for electrical resistivity, high value since it is \
+    #                     # an insulator (cdp, 08/2020)
+    #                     rhoe_num = rhoe_num + 1e10 * self.inputs["CROSSECTION_IN"]
+    #                 else:
+    #                     raise ValueError(
+    #                         f"ERROR: material corresponding to {list(self.inputs.keys())[4]} = {self.inputs['IMATERIAL_IN']} is not defined yet.\n"
+    #                     )
+    #         elif self.inputs["NUM_MATERIAL_TYPES"] == 2:
+    #             for ntype in range(self.inputs["NUM_MATERIAL_TYPES"]):
+    #                 if ntype == 0:
+    #                     if self.inputs["IMATERIAL_JK"] == "steinless_steel":
+    #                         # stainless steel (cdp, 07/2020)
+    #                         self.inputs.update(
+    #                             CROSSECTION=self.inputs["CROSSECTION"]
+    #                             + self.inputs["CROSSECTION_JK"]
+    #                         )
+    #                         rho_num = (
+    #                             rho_num + density_ss() * self.inputs["CROSSECTION_JK"]
+    #                         )
+    #                         cp_num = (
+    #                             cp_num
+    #                             + density_ss()
+    #                             * isobaric_specific_heat_ss(dict_dummy["temperature"])
+    #                             * self.inputs["CROSSECTION_JK"]
+    #                         )
+    #                         kk_num = (
+    #                             kk_num
+    #                             + thermal_conductivity_ss(dict_dummy["temperature"])
+    #                             * self.inputs["CROSSECTION_JK"]
+    #                         )
+    #                         rhoe_num = (
+    #                             rhoe_num
+    #                             + electrical_resistivity_ss(dict_dummy["temperature"])
+    #                             * self.inputs["CROSSECTION_JK"]
+    #                         )
+    #                     else:
+    #                         raise ValueError(
+    #                             f"""ERROR: material corresponding to
+    #           {list(self.inputs.keys())[3]} = 
+    #           {self.inputs["IMATERIAL_JK"]} is not defined yet.\n"""
+    #                         )
+    #                 elif ntype == self.inputs["NUM_MATERIAL_TYPES"] - 1:
+    #                     if self.inputs["IMATERIAL_IN"] == "glass_epoxy":
+    #                         # Glass-epoxy (cdp, 07/2020)
+    #                         self.inputs.update(
+    #                             CROSSECTION=self.inputs["CROSSECTION"]
+    #                             + self.inputs["CROSSECTION_IN"]
+    #                         )
+    #                         rho_num = (
+    #                             rho_num + density_ge() * self.inputs["CROSSECTION_IN"]
+    #                         )
+    #                         cp_num = (
+    #                             cp_num
+    #                             + density_ge()
+    #                             * isobaric_specific_heat_ge(dict_dummy["temperature"])
+    #                             * self.inputs["CROSSECTION_IN"]
+    #                         )
+    #                         kk_num = (
+    #                             kk_num
+    #                             + thermal_conductivity_ge(dict_dummy["temperature"])
+    #                             * self.inputs["CROSSECTION_IN"]
+    #                         )
+    #                         # dummy value for electrical resistivity, high value since it is \
+    #                         # an insulator (cdp, 08/2020)
+    #                         rhoe_num = rhoe_num + 1e5 * self.inputs["CROSSECTION_IN"]
+    #                     else:
+    #                         raise ValueError(
+    #                             f"""ERROR: material corresponding to
+    #           {list(self.inputs.keys())[4]} = 
+    #           {self.inputs["IMATERIAL_IN"]} is not defined yet.\n"""
+    #                         )
+    #                 # end if ntype (cdp, 07/2020)
+    #             # end for ntype (cdp, 07/2020)
 
-            # JacketComponent properties evaluation
-            dict_dummy.update(total_density=rho_num / self.inputs["CROSSECTION"])
-            dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
-            dict_dummy.update(
-                total_thermal_conductivity=kk_num / self.inputs["CROSSECTION"]
-            )
-            dict_dummy.update(
-                total_electrical_resistivity=rhoe_num / self.inputs["CROSSECTION"]
-            )
-        else:
-            raise NameError(
-                f"""ERROR: there are no objects with this name:
-            {self.NAME}.\n"""
-            )
+    #         # JacketComponent properties evaluation
+    #         dict_dummy.update(total_density=rho_num / self.inputs["CROSSECTION"])
+    #         dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
+    #         dict_dummy.update(
+    #             total_thermal_conductivity=kk_num / self.inputs["CROSSECTION"]
+    #         )
+    #         dict_dummy.update(
+    #             total_electrical_resistivity=rhoe_num / self.inputs["CROSSECTION"]
+    #         )
+    #     else:
+    #         raise NameError(
+    #             f"""ERROR: there are no objects with this name:
+    #         {self.NAME}.\n"""
+    #         )
 
-        return dict_dummy
+    #     return dict_dummy
 
-    # end Eval_properties
+    # # end Eval_properties
 
     def get_current(self, conductor):
 
