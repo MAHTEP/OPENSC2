@@ -340,3 +340,28 @@ class JacketComponent(SolidComponent):
             self.__index_cross_section_0,
             self.__cross_section,
         )
+
+    def jacket_density(self, property: dict) -> np.ndarray:
+        """Method that evaluates the homogenized denstiy of the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with homogenized density of jacket in kg/m^3.
+        """
+        # Set fleag to true to allow evaluation of homogenized isobaric
+        # specific heat.
+        self.__jacket_density_flag = True
+        density = np.array(
+            [func(property["temperature"].size) for func in self.density_function]
+        )
+        # Evaluate homogenized density of the strand mixed:
+        # rho_eq = (A_jk*rho_jk + A_in*rho_in)/(A_jk + A_in)
+        self.__density_numerator = np.array(
+            list(map(np.multiply, density, self.cross_sections))
+        )
+        self.__density_numerator_sum = self.__density_numerator.sum(axis=0)
+        return self.__density_numerator_sum / self.inputs["CROSSECTION"]
+
+    
