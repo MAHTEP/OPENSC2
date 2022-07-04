@@ -364,4 +364,38 @@ class JacketComponent(SolidComponent):
         self.__density_numerator_sum = self.__density_numerator.sum(axis=0)
         return self.__density_numerator_sum / self.inputs["CROSSECTION"]
 
-    
+    def jacket_isobaric_specific_heat(self, property: dict) -> np.ndarray:
+        """Method that evaluates homogenized isobaric specific heat of the jacket, in the case it is made at most by two materials (jacket and insulation). Homogenization is based on material mass.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with homogenized isobaric specific heat of the jacket in J/kg/K.
+        """
+        # Check on homogenized density evaluation before homogenized isobaric
+        # specific heat, since some therms are in common and are not evaluated
+        # twices.
+        if self.__jacket_density_flag == False:
+            raise ValueError(
+                f"Call method {self.jacket_density.__name__} before evaluation of homogenized jacket isobaric specific heat.\n"
+            )
+
+        # Set flag to false to trigger error in the next homogenized isobaric
+        # specific heat evaluation if not done properly.
+        self.__jacket_density_flag = False
+        isobaric_specific_heat = np.array(
+            [
+                func(property["temperature"])
+                for func in self.isobaric_specific_heat_function
+            ]
+        )
+        # Evaluate homogenized isobaric specific heat of the strand mixed:
+        # cp_eq = (cp_jk*A_jk*rho_jk + cp_in*A_in*rho_in)/(A_jk*rho_jk + 
+        # A_in*rho_in)
+        return (
+            np.array(
+                list(map(np.multiply, isobaric_specific_heat, self.__density_numerator))
+            ).sum(axis=0)
+            / self.__density_numerator_sum
+        )
