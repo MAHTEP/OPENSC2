@@ -98,7 +98,8 @@ class StrandStabilizerComponent(StrandComponent):
         # Call SolidComponent class constructor to deal with StrandStabilizerComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
         SolidComponent(simulation, self)
-        if self.inputs["ISTABILIZER"] != "Cu":
+        self.inputs["ISTABILIZER"] = self.inputs["ISTABILIZER"].lower()
+        if self.inputs["ISTABILIZER"] != "cu":
             # remove key RRR from inputs if stabilizer is not Cu (cdp, 07/2020)
             self.inputs.pop("RRR")
         if self.operations["IBIFUN"] != -1:
@@ -111,4 +112,3 @@ class StrandStabilizerComponent(StrandComponent):
     def __str__(self):
         pass
 
-    # agiungere metodi per calcolo proprietà nel gauss point
