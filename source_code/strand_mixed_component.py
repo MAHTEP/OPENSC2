@@ -144,7 +144,7 @@ class StrandMixedComponent(StrandComponent):
         # Create numpy array of string with the identifier of tape material:
         # [stabilizer_material, superconductor_material]
         self.strand_material = np.array(
-            [value for key, value in self.inputs.items() if key.endswith("material")],
+            [value.lower() for key, value in self.inputs.items() if key.endswith("material")],
             dtype=str,
         )
         
@@ -152,7 +152,7 @@ class StrandMixedComponent(StrandComponent):
         # that are not superconducting.
         self.strand_material_not_sc = np.array(
             [
-                value
+                value.lower()
                 for key, value in self.inputs.items()
                 if key.endswith("material")
                 and key != "Superconducting_material"

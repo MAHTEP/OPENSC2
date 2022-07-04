@@ -200,7 +200,7 @@ class StackComponent(StrandComponent):
 
         # Create numpy array of string with the identifier of tape material
         self.tape_material = np.array(
-            [value for key, value in self.inputs.items() if key.endswith("material")],
+            [value.lower() for key, value in self.inputs.items() if key.endswith("material")],
             dtype=str,
         )
         # Get the indexes corresponding to "none" used for consistency check.
@@ -213,7 +213,7 @@ class StackComponent(StrandComponent):
         # that are not superconducting.
         self.tape_material_not_sc = np.array(
             [
-                value
+                value.lower()
                 for key, value in self.inputs.items()
                 if key.endswith("material")
                 and key != "HTS_material"
