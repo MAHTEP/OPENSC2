@@ -304,3 +304,22 @@ class StrandMixedComponent(StrandComponent):
             ).sum(axis=0)
             / self.homogenization_cefficients_sum
         )
+
+    def strand_electrical_resistivity_not_sc(self, property: dict) -> np.ndarray:
+        """Method that evaluates electrical resisitivity of the stabilizer material of the strand mixed.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with electrical resisitivity of the stabilizer of the strand mixed in Ohm*m.
+        """
+        if self.strand_material_not_sc == "cu":
+            return ELECTRICAL_RESISTIVITY_FUNC[self.strand_material_not_sc](
+                property["temperature"],
+                property["B_field"],
+                self.inputs["RRR"],
+            )
+        else:
+            return ELECTRICAL_RESISTIVITY_FUNC[self.strand_material_not_sc](property["temperature"])
+    
