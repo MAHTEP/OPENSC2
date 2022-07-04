@@ -101,6 +101,7 @@ class JacketComponent(SolidComponent):
         # Call SolidComponent class constructor to deal with JacketComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
         SolidComponent(simulation, self)
+
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
@@ -229,40 +230,40 @@ class JacketComponent(SolidComponent):
         # Create numpy array of string with the identifier of jacket material:
         # [jacket_material, insulation_material]
         self.materials = np.array(
-            [self.inputs["Jacket_material"].lower(), self.inputs["Insulation_material"].lower()],
+            [
+                self.inputs["Jacket_material"].lower(),
+                self.inputs["Insulation_material"].lower(),
+            ],
             dtype=str,
         )
 
         # Get the indexes corresponding to "none" used for consistency check.
         self.__index_material_none = np.nonzero(self.materials == "none")[0]
         # Remove "none" items, used to identify not used layer
-        self.materials = self.materials[
-            np.nonzero(self.materials != "none")[0]
-        ]
+        self.materials = self.materials[np.nonzero(self.materials != "none")[0]]
 
         # Create numpy array of float with coefficient values used in
         # homogenization; order is consistent with values in
         # self.materials:
         # [jacket_cross_section, insulation_cross_section]
         self.cross_sections = np.array(
-            [self.inputs["Jacket_cross_section"], self.inputs["Insulation_cross_section"]],
+            [
+                self.inputs["Jacket_cross_section"],
+                self.inputs["Insulation_cross_section"],
+            ],
             dtype=float,
         )
 
-         # Get the indexes corresponding to 0 used for consistency check.
+        # Get the indexes corresponding to 0 used for consistency check.
         self.__index_cross_section_0 = np.nonzero(self.cross_sections == 0)[0]
-        self.cross_sections = self.cross_sections[
-            np.nonzero(self.cross_sections)[0]
-        ]
+        self.cross_sections = self.cross_sections[np.nonzero(self.cross_sections)[0]]
 
         # Total value of homogenization coefficients.
         self.__cross_section = self.cross_sections.sum()
 
         # Create numpy array with density functions according to jacket
         # materials; order is consistent with values in self.materials.
-        self.density_function = np.array(
-            [DENSITY_FUNC[key] for key in self.materials]
-        )
+        self.density_function = np.array([DENSITY_FUNC[key] for key in self.materials])
 
         # Create numpy array with electrical resistivity functions according to
         # jacket materials; order is consistent with values in
@@ -284,7 +285,7 @@ class JacketComponent(SolidComponent):
         self.thermal_conductivity_function = np.array(
             [THERMAL_CONDUCTIVITY_FUNC[key] for key in self.materials]
         )
-    
+
     def __check_consistecy(self, conductor):
         """Private method that checks consistency of jacket user definition.
 
@@ -297,7 +298,7 @@ class JacketComponent(SolidComponent):
             ValueError: if the indexes of "none" material are not equal to the indexes of thickness equal to 0.
             ValueError: if jacket cross section given in input is not consistent with the evaluated one.
         """
-        # Check that number of jacket materials given in input is consistent 
+        # Check that number of jacket materials given in input is consistent
         # with user declared materials.
         if self.materials.size != self.inputs["NUM_MATERIAL_TYPES"]:
             # Message to be completed!
@@ -305,7 +306,7 @@ class JacketComponent(SolidComponent):
                 f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the jacket ({self.inputs['NUM_MATERIAL_TYPES'] = }) is inconsistent with the number of defined materials ({self.materials.size = }).\nPlease check..."
             )
 
-        # Check that number of jacket materials given in input is consistent 
+        # Check that number of jacket materials given in input is consistent
         # with not zero user defined material cross sections.
         if self.cross_sections.size != self.inputs["NUM_MATERIAL_TYPES"]:
             # Message to be completed!
@@ -391,7 +392,7 @@ class JacketComponent(SolidComponent):
             ]
         )
         # Evaluate homogenized isobaric specific heat of the strand mixed:
-        # cp_eq = (cp_jk*A_jk*rho_jk + cp_in*A_in*rho_in)/(A_jk*rho_jk + 
+        # cp_eq = (cp_jk*A_jk*rho_jk + cp_in*A_in*rho_in)/(A_jk*rho_jk +
         # A_in*rho_in)
         return (
             np.array(
@@ -399,7 +400,6 @@ class JacketComponent(SolidComponent):
             ).sum(axis=0)
             / self.__density_numerator_sum
         )
-
 
     def jacket_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
@@ -411,7 +411,11 @@ class JacketComponent(SolidComponent):
             np.ndarray: array with homogenized thermal conductivity of the jacket in W/m/K.
         """
         thermal_conductivity = np.array(
-            [func(property["temperature"].size) for func in self.thermal_conductivity_function])
+            [
+                func(property["temperature"].size)
+                for func in self.thermal_conductivity_function
+            ]
+        )
         # Evaluate homogenized thermal conductivity of the strand mixed:
         # k_eq = (A_jk*k_jk + A_in*k_in)/(A_jk + A_in)
         return (
@@ -438,7 +442,11 @@ class JacketComponent(SolidComponent):
         """
 
         elestrical_resistivity = np.array(
-            [func(property["temperature"].size) for func in self.electrical_resistivity_function])
+            [
+                func(property["temperature"].size)
+                for func in self.electrical_resistivity_function
+            ]
+        )
         # Evaluate homogenized electrical resistivity of the jacket:
         # rho_el_eq = (A_jk + A_in) * ((A_jk/rho_el_jk + A_in/rho_el_in))^-1
         return (

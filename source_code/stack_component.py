@@ -200,7 +200,11 @@ class StackComponent(StrandComponent):
 
         # Create numpy array of string with the identifier of tape material
         self.tape_material = np.array(
-            [value.lower() for key, value in self.inputs.items() if key.endswith("material")],
+            [
+                value.lower()
+                for key, value in self.inputs.items()
+                if key.endswith("material")
+            ],
             dtype=str,
         )
         # Get the indexes corresponding to "none" used for consistency check.
@@ -320,9 +324,7 @@ class StackComponent(StrandComponent):
         # Tape cross section in # m^2
         self.tape_cross_section = self.tape_thickness * self.inputs["Stack_width"]
         # Evaluate the number of tapes constituing the stack, used for consistency check.
-        self.__tape_number = round(
-            self.inputs["CROSSECTION"] / self.tape_cross_section
-        )
+        self.__tape_number = round(self.inputs["CROSSECTION"] / self.tape_cross_section)
         # Evaluate the total cross section of the stack of tapes, used for consistency check.
         self.__cross_section = self.tape_cross_section * self.__tape_number
 

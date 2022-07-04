@@ -39,6 +39,7 @@ ELECTRICAL_RESISTIVITY_FUNC = dict(
     cu=electrical_resistivity_cu_nist,
 )
 
+
 class StrandStabilizerComponent(StrandComponent):
 
     # Class for copper strands objects
@@ -132,7 +133,9 @@ class StrandStabilizerComponent(StrandComponent):
         Returns:
             np.ndarray: array with isobaric specific heat of the stabilizer in kg/m^3.
         """
-        return ISOBARIC_SPECIFIC_HEAT_FUNC[self.inputs["ISTABILIZER"]](property["temperature"].size)
+        return ISOBARIC_SPECIFIC_HEAT_FUNC[self.inputs["ISTABILIZER"]](
+            property["temperature"].size
+        )
 
     def strand_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates thermal conductivity of the stabilizer.
@@ -153,7 +156,7 @@ class StrandStabilizerComponent(StrandComponent):
             return THERMAL_CONDUCTIVITY_FUNC[self.inputs["ISTABILIZER"]](
                 property["temperature"]
             )
-    
+
     def strand_electrical_resistivity(self, property: dict) -> np.ndarray:
         """Method that evaluates electrical resistivity of the stabilizer.
 
