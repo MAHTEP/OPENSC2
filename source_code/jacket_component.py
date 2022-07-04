@@ -51,7 +51,7 @@ class JacketComponent(SolidComponent):
 
     KIND = "JacketComponent"
 
-    def __init__(self, simulation, sheet, icomp, name, dict_file_path):
+    def __init__(self, simulation, sheet, icomp, name, dict_file_path, conductor):
 
         self.NAME = name
         # get channels ID consistently with user definition (cdp, 09/2020)
@@ -91,10 +91,16 @@ class JacketComponent(SolidComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
 
+        self.__reorganize_input()
+        self.__check_consistecy(conductor)
+
+        # Flag to check if evaluation of homogenized isobaric specific heat can
+        # be done or not (depends on homogenized density evaluation).
+        self.__jacket_density_flag = False
+
         # Call SolidComponent class constructor to deal with JacketComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
         SolidComponent(simulation, self)
-
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
