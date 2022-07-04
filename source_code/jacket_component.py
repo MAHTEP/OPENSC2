@@ -220,7 +220,7 @@ class JacketComponent(SolidComponent):
     def __reorganize_input(self):
         """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization."""
 
-        # Create numpy array of string with the identifier of tape material:
+        # Create numpy array of string with the identifier of jacket material:
         # [jacket_material, insulation_material]
         self.materials = np.array(
             [self.inputs["Jacket_material"].lower(), self.inputs["Insulation_material"].lower()],
@@ -277,4 +277,60 @@ class JacketComponent(SolidComponent):
         # self.materials.
         self.thermal_conductivity_function = np.array(
             [THERMAL_CONDUCTIVITY_FUNC[key] for key in self.materials]
+        )
+    
+    def __check_consistecy(self, conductor):
+        """Private method that checks consistency of jacket user definition.
+
+        Args:
+            conductor (Conductor): instance of class Conductor.
+
+        Raises:
+            ValueError: if number of jacket materials given in input is not consistent with user declared materials.
+            ValueError: if number of jacket materials given in input is not consistent with not zero user defined material thicknes.
+            ValueError: if the indexes of "none" material are not equal to the indexes of thickness equal to 0.
+            ValueError: if jacket cross section given in input is not consistent with the evaluated one.
+        """
+        # Check that number of jacket materials given in input is consistent 
+        # with user declared materials.
+        if self.materials.size != self.inputs["NUM_MATERIAL_TYPES"]:
+            # Message to be completed!
+            raise ValueError(
+                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the jacket ({self.inputs['NUM_MATERIAL_TYPES'] = }) is inconsistent with the number of defined materials ({self.materials.size = }).\nPlease check..."
+            )
+
+        # Check that number of jacket materials given in input is consistent 
+        # with not zero user defined material cross sections.
+        if self.cross_sections.size != self.inputs["NUM_MATERIAL_TYPES"]:
+            # Message to be completed!
+            raise ValueError(
+                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the jacket ({self.inputs['NUM_MATERIAL_TYPES'] = }) is inconsistent with the number of defined cross sections ({self.cross_sections.size = }).\nPlease check..."
+            )
+
+        # Check that the indexes of "none" material are equal to the indexes of
+        # cross sections equal to 0.
+        if any(self.__index_material_none != self.__index_cross_section_0):
+            # Message to be completed!
+            raise ValueError(
+                f"{conductor.identifier = } -> {self.identifier = }\nDefined materials and defined cross sections must be consistent.\nPlease check..."
+            )
+
+        # Check that jacket cross section given in input is consistent with the
+        # evaluated one.
+        tol = 1e-3
+        if (
+            abs(self.__cross_section - self.inputs["CROSSECTION"])
+            / self.inputs["CROSSECTION"]
+            > tol
+        ):
+            # Message to be completed!
+            raise ValueError(
+                f"{conductor.identifier = } -> {self.identifier = }\nInconsistent cross section value: user defines {self.inputs['CROSSECTION'] = } while computed one is {self.__cross_section = }.\nPlease check..."
+            )
+
+        # Delete no longer useful attributes.
+        del (
+            self.__index_material_none,
+            self.__index_cross_section_0,
+            self.__cross_section,
         )
