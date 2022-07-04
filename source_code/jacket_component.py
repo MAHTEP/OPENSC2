@@ -426,3 +426,32 @@ class JacketComponent(SolidComponent):
             ).sum(axis=0)
             / self.inputs["CROSSECTION"]
         )
+
+    def jaket_electrical_resistivity(self, property: dict) -> np.ndarray:
+        """Method that evaluates the homogenized electrical resistivity otf the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with homogenized electrical resistivity of the jacket in Ohm*m.
+        """
+
+        elestrical_resistivity = np.array(
+            [func(property["temperature"].size) for func in self.electrical_resistivity_function])
+        # Evaluate homogenized electrical resistivity of the jacket:
+        # rho_el_eq = (A_jk + A_in) * ((A_jk/rho_el_jk + A_in/rho_el_in))^-1
+        return (
+            np.reciprocal(
+                np.array(
+                    list(
+                        map(
+                            np.divide,
+                            self.cross_sections,
+                            elestrical_resistivity,
+                        )
+                    )
+                ).sum(axis=0)
+            )
+            * self.inputs["CROSSECTION"]
+        )
