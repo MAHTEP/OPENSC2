@@ -60,6 +60,7 @@ ELECTRICAL_RESISTIVITY_FUNC = dict(
     cu=electrical_resistivity_cu_nist,
 )
 
+
 class StrandMixedComponent(StrandComponent):
 
     # Class for mixed strands objects
@@ -144,28 +145,31 @@ class StrandMixedComponent(StrandComponent):
         # Create numpy array of string with the identifier of tape material:
         # [stabilizer_material, superconductor_material]
         self.strand_material = np.array(
-            [value.lower() for key, value in self.inputs.items() if key.endswith("material")],
+            [
+                value.lower()
+                for key, value in self.inputs.items()
+                if key.endswith("material")
+            ],
             dtype=str,
         )
-        
+
         # Create numpy array of string with the identifier of tape materials
         # that are not superconducting.
         self.strand_material_not_sc = np.array(
             [
                 value.lower()
                 for key, value in self.inputs.items()
-                if key.endswith("material")
-                and key != "Superconducting_material"
+                if key.endswith("material") and key != "Superconducting_material"
             ],
             dtype=str,
         )
 
-        # Create numpy array of float with coefficient values used in 
-        # homogenization; order is consistent with values in 
+        # Create numpy array of float with coefficient values used in
+        # homogenization; order is consistent with values in
         # self.strand_material:
         # [stab_non_stab, 1.0]
         self.homogenization_cefficients = np.array(
-           [self.inputs["STAB_NON_STAB"], 1.0],
+            [self.inputs["STAB_NON_STAB"], 1.0],
             dtype=float,
         )
 
@@ -207,7 +211,7 @@ class StrandMixedComponent(StrandComponent):
 
         Raises:
             ValueError: if number of strand midex materials given in input is not consistent with user declared materials.
-            
+
         """
         # Check that number of type materials given in input is consistent with
         # user declared materials.
@@ -216,7 +220,7 @@ class StrandMixedComponent(StrandComponent):
             raise ValueError(
                 f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the strand mixed ({self.inputs['NUM_MATERIAL_TYPES'] = }) is inconsistent with the number of defined materials ({self.tape_material.size = }).\nPlease check..."
             )
-    
+
     def strand_density(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized denstiy of the strand mixed, in the case it is made by two materials (stabilizer and superconductor). Homogenization is based on material cross sections.
 
@@ -300,7 +304,13 @@ class StrandMixedComponent(StrandComponent):
         # k_eq = (K_sc + stab_non_stab * K_stab)/(1 + stab_non_stab)
         return (
             np.array(
-                list(map(np.multiply, thermal_conductivity, self.homogenization_cefficients))
+                list(
+                    map(
+                        np.multiply,
+                        thermal_conductivity,
+                        self.homogenization_cefficients,
+                    )
+                )
             ).sum(axis=0)
             / self.homogenization_cefficients_sum
         )
@@ -321,5 +331,6 @@ class StrandMixedComponent(StrandComponent):
                 self.inputs["RRR"],
             )
         else:
-            return ELECTRICAL_RESISTIVITY_FUNC[self.strand_material_not_sc](property["temperature"])
-    
+            return ELECTRICAL_RESISTIVITY_FUNC[self.strand_material_not_sc](
+                property["temperature"]
+            )
