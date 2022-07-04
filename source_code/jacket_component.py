@@ -1,3 +1,4 @@
+from pickle import DICT
 from solid_component import SolidComponent
 import pandas as pd
 import numpy as np
@@ -16,7 +17,18 @@ from properties_of_materials.glass_epoxy import (
     thermal_conductivity_ge,
     isobaric_specific_heat_ge,
     density_ge,
+    electrical_resistivity_ge,
 )
+
+DENSITY_FUNC = dict(ge=density_ge, ss=density_ss)
+ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
+    ge=isobaric_specific_heat_ge, ss=isobaric_specific_heat_ss
+)
+THERMAL_CONDUCTIVITY_FUNC = dict(ge=thermal_conductivity_ge, ss=thermal_conductivity_ss)
+ELECTRICAL_RESISTIVITY_FUNC = dict(
+    ge=electrical_resistivity_ge, ss=electrical_resistivity_ss
+)
+
 
 class JacketComponent(SolidComponent):
 
@@ -204,5 +216,3 @@ class JacketComponent(SolidComponent):
         # end if conductor.inputs["METHOD"].
 
     # End method _radiative_source_therm.
-
-    # agiungere metodi per calcolo proprietà nel gauss point
