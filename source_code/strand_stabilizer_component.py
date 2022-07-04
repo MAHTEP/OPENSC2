@@ -111,6 +111,7 @@ class StrandStabilizerComponent(StrandComponent):
 
     def __str__(self):
         pass
+
     def strand_density(self, property: dict) -> np.ndarray:
         """Method that evaluates density of the stabilizer.
 
@@ -121,3 +122,14 @@ class StrandStabilizerComponent(StrandComponent):
             np.ndarray: array with density of the stabilizer in kg/m^3.
         """
         return DENSITY_FUNC[self.inputs["ISTABILIZER"]](property["temperature"].size)
+
+    def strand_isobaric_specific_heat(self, property: dict) -> np.ndarray:
+        """Method that evaluates isobaric specific heat of the stabilizer.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with isobaric specific heat of the stabilizer in kg/m^3.
+        """
+        return ISOBARIC_SPECIFIC_HEAT_FUNC[self.inputs["ISTABILIZER"]](property["temperature"].size)
