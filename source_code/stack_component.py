@@ -321,7 +321,7 @@ class StackComponent(StrandComponent):
         self.tape_cross_section = self.tape_thickness * self.inputs["Stack_width"]
         # Evaluate the number of tapes constituing the stack, used for consistency check.
         self.__tape_number = round(
-            self.inputs["Cross_section"] / self.tape_cross_section
+            self.inputs["CROSSECTION"] / self.tape_cross_section
         )
         # Evaluate the total cross section of the stack of tapes, used for consistency check.
         self.__cross_section = self.tape_cross_section * self.__tape_number
@@ -338,13 +338,13 @@ class StackComponent(StrandComponent):
         # evaluated one.
         tol = 1e-3
         if (
-            abs(self.__cross_section - self.inputs["Cross_section"])
-            / self.inputs["Cross_section"]
+            abs(self.__cross_section - self.inputs["CROSSECTION"])
+            / self.inputs["CROSSECTION"]
             > tol
         ):
             # Message to be completed!
             raise ValueError(
-                f"{conductor.identifier = } -> {self.identifier = }\nInconsistent number of tape: user defines {self.inputs['N_tape'] = } while computed one is {self.__tape_number = }.\nPlease check..."
+                f"{conductor.identifier = } -> {self.identifier = }\nInconsistent cross section values: user defines {self.inputs['CROSSECTION'] = } while computed one is {self.__cross_section = }.\nPlease check..."
             )
 
         # Delete no longer useful attributes.
