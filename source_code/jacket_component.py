@@ -3,6 +3,21 @@ import pandas as pd
 import numpy as np
 
 
+# Stainless steel properties
+from properties_of_materials.stainless_steel import (
+    thermal_conductivity_ss,
+    isobaric_specific_heat_ss,
+    density_ss,
+    electrical_resistivity_ss,
+)
+
+# Glass-epoxy properties
+from properties_of_materials.glass_epoxy import (
+    thermal_conductivity_ge,
+    isobaric_specific_heat_ge,
+    density_ge,
+)
+
 class JacketComponent(SolidComponent):
 
     # Class for jacket objects
