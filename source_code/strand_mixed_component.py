@@ -252,14 +252,14 @@ class StrandMixedComponent(StrandComponent):
         # Check on homogenized density evaluation before homogenized isobaric
         # specific heat, since some therms are in common and are not evaluated
         # twices.
-        if self.__stack_density_flag == False:
+        if self.__strand_density_flag == False:
             raise ValueError(
                 f"Call method {self.strand_density.__name__} before evaluation of homogenized strand mixed isobaric specific heat.\n"
             )
 
         # Set flag to false to trigger error in the next homogenized isobaric
         # specific heat evaluation if not done properly.
-        self.__stack_density_flag = False
+        self.__strand_density_flag = False
         isobaric_specific_heat = np.array(
             [
                 func(property["temperature"])
