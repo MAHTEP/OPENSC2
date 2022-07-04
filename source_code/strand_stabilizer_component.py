@@ -111,4 +111,13 @@ class StrandStabilizerComponent(StrandComponent):
 
     def __str__(self):
         pass
+    def strand_density(self, property: dict) -> np.ndarray:
+        """Method that evaluates density of the stabilizer.
 
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with density of the stabilizer in kg/m^3.
+        """
+        return DENSITY_FUNC[self.inputs["ISTABILIZER"]](property["temperature"].size)
