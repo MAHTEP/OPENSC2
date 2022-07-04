@@ -153,3 +153,23 @@ class StrandStabilizerComponent(StrandComponent):
             return THERMAL_CONDUCTIVITY_FUNC[self.inputs["ISTABILIZER"]](
                 property["temperature"]
             )
+    
+    def strand_electrical_resistivity(self, property: dict) -> np.ndarray:
+        """Method that evaluates electrical resistivity of the stabilizer.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with electrical resistivity of the stabilizer in Ohm*m.
+        """
+        if self.inputs["ISTABILIZER"] == "cu":
+            return ELECTRICAL_RESISTIVITY_FUNC[self.inputs["ISTABILIZER"]](
+                property["temperature"],
+                property["B_field"],
+                self.inputs["RRR"],
+            )
+        else:
+            return ELECTRICAL_RESISTIVITY_FUNC[self.inputs["ISTABILIZER"]](
+                property["temperature"]
+            )
