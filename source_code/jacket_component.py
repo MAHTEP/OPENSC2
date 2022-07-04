@@ -399,3 +399,30 @@ class JacketComponent(SolidComponent):
             ).sum(axis=0)
             / self.__density_numerator_sum
         )
+
+
+    def jacket_thermal_conductivity(self, property: dict) -> np.ndarray:
+        """Method that evaluates the homogenized thermal conductivity of the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with homogenized thermal conductivity of the jacket in W/m/K.
+        """
+        thermal_conductivity = np.array(
+            [func(property["temperature"].size) for func in self.thermal_conductivity_function])
+        # Evaluate homogenized thermal conductivity of the strand mixed:
+        # k_eq = (A_jk*k_jk + A_in*k_in)/(A_jk + A_in)
+        return (
+            np.array(
+                list(
+                    map(
+                        np.multiply,
+                        thermal_conductivity,
+                        self.cross_sections,
+                    )
+                )
+            ).sum(axis=0)
+            / self.inputs["CROSSECTION"]
+        )
