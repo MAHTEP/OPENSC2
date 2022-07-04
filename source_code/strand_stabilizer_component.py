@@ -19,6 +19,25 @@ from properties_of_materials.copper import (
     electrical_resistivity_cu_nist,
 )
 
+DENSITY_FUNC = dict(
+    al=density_al,
+    cu=density_cu,
+)
+
+THERMAL_CONDUCTIVITY_FUNC = dict(
+    al=thermal_conductivity_al,
+    cu=thermal_conductivity_cu_nist,
+)
+
+ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
+    al=isobaric_specific_heat_al,
+    cu=isobaric_specific_heat_cu_nist,
+)
+
+ELECTRICAL_RESISTIVITY_FUNC = dict(
+    al=electrical_resistivity_al,
+    cu=electrical_resistivity_cu_nist,
+)
 
 class StrandStabilizerComponent(StrandComponent):
 
