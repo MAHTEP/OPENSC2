@@ -133,3 +133,23 @@ class StrandStabilizerComponent(StrandComponent):
             np.ndarray: array with isobaric specific heat of the stabilizer in kg/m^3.
         """
         return ISOBARIC_SPECIFIC_HEAT_FUNC[self.inputs["ISTABILIZER"]](property["temperature"].size)
+
+    def strand_thermal_conductivity(self, property: dict) -> np.ndarray:
+        """Method that evaluates thermal conductivity of the stabilizer.
+
+        Args:
+            property (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
+
+        Returns:
+            np.ndarray: array with thermal conductivity of the stabilizer in W/m/K.
+        """
+        if self.inputs["ISTABILIZER"] == "cu":
+            return THERMAL_CONDUCTIVITY_FUNC[self.inputs["ISTABILIZER"]](
+                property["temperature"],
+                property["B_field"],
+                self.inputs["RRR"],
+            )
+        else:
+            return THERMAL_CONDUCTIVITY_FUNC[self.inputs["ISTABILIZER"]](
+                property["temperature"]
+            )
