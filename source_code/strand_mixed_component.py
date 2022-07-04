@@ -142,7 +142,7 @@ class StrandMixedComponent(StrandComponent):
     def __reorganize_input(self):
         """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization."""
 
-        # Create numpy array of string with the identifier of tape material:
+        # Create numpy array of string with the identifier of strand mixed material:
         # [stabilizer_material, superconductor_material]
         self.strand_material = np.array(
             [
@@ -153,7 +153,7 @@ class StrandMixedComponent(StrandComponent):
             dtype=str,
         )
 
-        # Create numpy array of string with the identifier of tape materials
+        # Create numpy array of string with the identifier of strand mixed materials
         # that are not superconducting.
         self.strand_material_not_sc = np.array(
             [
@@ -176,28 +176,28 @@ class StrandMixedComponent(StrandComponent):
         # Total value of homogenization coefficients.
         self.homogenization_cefficients_sum = self.homogenization_cefficients.sum()
 
-        # Create numpy array with density functions according to the tape
+        # Create numpy array with density functions according to the strand mixed
         # material; order is consistent with values in self.strand_material.
         self.density_function = np.array(
             [DENSITY_FUNC[key] for key in self.strand_material]
         )
 
         # Create numpy array with electrical resistivity functions according to
-        # the tape material; order is consistent with values in
+        # the strand mixed material; order is consistent with values in
         # self.strand_material.
         self.electrical_resistivity_function_not_sc = np.array(
             [ELECTRICAL_RESISTIVITY_FUNC[key] for key in self.strand_material_not_sc]
         )
 
         # Create numpy array with isobaric specific heat functions according to
-        # the tape material; order is consistent with values in
+        # the strand mixed material; order is consistent with values in
         # self.strand_material.
         self.isobaric_specific_heat_function = np.array(
             [ISOBARIC_SPECIFIC_HEAT_FUNC[key] for key in self.strand_material]
         )
 
         # Create numpy array with thermal conductivity functions according to
-        # the tape material; order is consistent with values in
+        # the strand mixed material; order is consistent with values in
         # self.strand_material.
         self.thermal_conductivity_function = np.array(
             [THERMAL_CONDUCTIVITY_FUNC[key] for key in self.strand_material]
