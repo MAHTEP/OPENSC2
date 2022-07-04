@@ -140,8 +140,8 @@ class SolidComponent:
             dict_dummy = self.dict_Gauss_pt
             self.dict_Gauss_pt = self.eval_properties(dict_dummy, inventory)
 
-    def eval_properties(self, dict_dummy:dict)->dict:
-        """Method that actually evaluate total_density, specific_heat and thermal conductivity of SolidComponent class objects regardless of the location (nodal or Gauss points)
+    def eval_properties(self, dict_dummy: dict) -> dict:
+        """Method that actually evaluate total_density, specific_heat and thermal conductivity of SolidComponent class objects regardless of the location (nodal or Gauss points).
 
         Args:
             dict_dummy (dict): dictionary with material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
@@ -151,23 +151,57 @@ class SolidComponent:
         """
 
         if isinstance(self, StrandMixedComponent, StrandStabilizerComponent):
-            dict_dummy.update(total_density = self.strand_density(dict_dummy))
-            dict_dummy.update(total_isobaric_specific_heat = self.strand_isobaric_specific_heat(dict_dummy))
-            dict_dummy.update(total_thermal_conductivity = self.strand_thermal_conductivity(dict_dummy))
+            dict_dummy.update(total_density=self.strand_density(dict_dummy))
+            dict_dummy.update(
+                total_isobaric_specific_heat=self.strand_isobaric_specific_heat(
+                    dict_dummy
+                )
+            )
+            dict_dummy.update(
+                total_thermal_conductivity=self.strand_thermal_conductivity(dict_dummy)
+            )
             if isinstance(self, StrandMixedComponent):
-                dict_dummy.update(total_electrical_resistivity = self.electrical_resistivity_function_not_sc(dict_dummy))
+                dict_dummy.update(
+                    total_electrical_resistivity=self.electrical_resistivity_function_not_sc(
+                        dict_dummy
+                    )
+                )
             elif isinstance(self, StrandStabilizerComponent):
-                dict_dummy.update(total_electrical_resistivity = self.strand_electrical_resistivity(dict_dummy))
+                dict_dummy.update(
+                    total_electrical_resistivity=self.strand_electrical_resistivity(
+                        dict_dummy
+                    )
+                )
         elif isinstance(self, StackComponent):
-            dict_dummy.update(total_density = self.stack_density(dict_dummy))
-            dict_dummy.update(total_isobaric_specific_heat = self.stack_isobaric_specific_heat(dict_dummy))
-            dict_dummy.update(total_thermal_conductivity = self.stack_thermal_conductivity(dict_dummy))
-            dict_dummy.update(total_electrical_resistivity = self.stack_electrical_resistivity_not_sc(dict_dummy))
+            dict_dummy.update(total_density=self.stack_density(dict_dummy))
+            dict_dummy.update(
+                total_isobaric_specific_heat=self.stack_isobaric_specific_heat(
+                    dict_dummy
+                )
+            )
+            dict_dummy.update(
+                total_thermal_conductivity=self.stack_thermal_conductivity(dict_dummy)
+            )
+            dict_dummy.update(
+                total_electrical_resistivity=self.stack_electrical_resistivity_not_sc(
+                    dict_dummy
+                )
+            )
         elif isinstance(self, JacketComponent):
-            dict_dummy.update(total_density = self.jacket_density(dict_dummy))
-            dict_dummy.update(total_isobaric_specific_heat = self.jacket_isobaric_specific_heat(dict_dummy))
-            dict_dummy.update(total_thermal_conductivity = self.jacket_thermal_conductivity(dict_dummy))
-            dict_dummy.update(total_electrical_resistivity = self.jaket_electrical_resistivity(dict_dummy))
+            dict_dummy.update(total_density=self.jacket_density(dict_dummy))
+            dict_dummy.update(
+                total_isobaric_specific_heat=self.jacket_isobaric_specific_heat(
+                    dict_dummy
+                )
+            )
+            dict_dummy.update(
+                total_thermal_conductivity=self.jacket_thermal_conductivity(dict_dummy)
+            )
+            dict_dummy.update(
+                total_electrical_resistivity=self.jaket_electrical_resistivity(
+                    dict_dummy
+                )
+            )
 
         return dict_dummy
 
@@ -240,7 +274,7 @@ class SolidComponent:
     #                     else:
     #                         raise ValueError(
     #                             f"""ERROR: material corresponding to
-    #           {list(self.inputs.keys())[2]} = 
+    #           {list(self.inputs.keys())[2]} =
     #           {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
     #                         )
     #                 else:  # self.inputs["ISUPERCONDUCTOR"] == 3 (cdp, 08/2020)
@@ -291,7 +325,7 @@ class SolidComponent:
     #                     else:
     #                         raise ValueError(
     #                             f"""ERROR: material corresponding to
-    #           {list(self.inputs.keys())[2]} = 
+    #           {list(self.inputs.keys())[2]} =
     #           {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
     #                         )
     #             else:  # ntype > 0 (cdp, 08/2020)
@@ -371,7 +405,7 @@ class SolidComponent:
     #                 else:
     #                     raise ValueError(
     #                         f"""ERROR: material corresponding to
-    #         {list(self.inputs.keys())[6]} = 
+    #         {list(self.inputs.keys())[6]} =
     #         {self.inputs["ISUPERCONDUCTOR"]} is not defined yet.\n"""
     #                     )
     #             # end if ntype (cdp, 07/2020)
@@ -489,7 +523,7 @@ class SolidComponent:
     #         else:
     #             raise ValueError(
     #                 f"""ERROR: material corresponding to
-    #     {list(self.inputs.keys())[3]} = 
+    #     {list(self.inputs.keys())[3]} =
     #     {self.inputs["ISUPERCONDUCTOR"]} is not defined yet.\n"""
     #             )
     #     # elif self.NAME == inventory["StrandStabilizerComponent"].name:
@@ -538,7 +572,7 @@ class SolidComponent:
     #         else:
     #             raise ValueError(
     #                 f"""ERROR: material corresponding to
-    #       {list(self.inputs.keys())[2]} = 
+    #       {list(self.inputs.keys())[2]} =
     #       {self.inputs["ISTABILIZER"]} is not defined yet.\n"""
     #             )
     #     # elif self.NAME == inventory["JacketComponent"].name:
@@ -633,7 +667,7 @@ class SolidComponent:
     #                     else:
     #                         raise ValueError(
     #                             f"""ERROR: material corresponding to
-    #           {list(self.inputs.keys())[3]} = 
+    #           {list(self.inputs.keys())[3]} =
     #           {self.inputs["IMATERIAL_JK"]} is not defined yet.\n"""
     #                         )
     #                 elif ntype == self.inputs["NUM_MATERIAL_TYPES"] - 1:
@@ -663,7 +697,7 @@ class SolidComponent:
     #                     else:
     #                         raise ValueError(
     #                             f"""ERROR: material corresponding to
-    #           {list(self.inputs.keys())[4]} = 
+    #           {list(self.inputs.keys())[4]} =
     #           {self.inputs["IMATERIAL_IN"]} is not defined yet.\n"""
     #                         )
     #                 # end if ntype (cdp, 07/2020)
