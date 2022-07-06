@@ -15,7 +15,9 @@ from component_collection import ComponentCollection
 from conductor_flags import (
     ELECTRIC_CONDUCTANCE_UNIT_LENGTH,
     ELECTRIC_CONDUCTANCE_NOT_UNIT_LENGTH,
-    IOP_CONSTANT, IOP_FROM_EXT_FUNCTION, IOP_FROM_FILE
+    IOP_CONSTANT,
+    IOP_FROM_EXT_FUNCTION,
+    IOP_FROM_FILE,
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -479,12 +481,21 @@ class Conductor:
     # end method Conductor_components_instance (cdp, 11/2020)
 
     def __get_total_cross_section(self):
-        """Private method that evaluates: 1) the total cross section of strands and stacks object of the conductor; 2) the total cross section of superconducting materials of the conductor.
-        """
-        
-        self.total_so_area = np.array([obj.inputs["CROSSECTION"] for obj in self.inventory["StrandComponent"].collection]).sum()
-        self.total_so_area = np.array([obj.sc_cross_section for obj in self.inventory["StrandComponent"].collection if isinstance(obj, (StackComponent, StrandMixedComponent))]).sum()
-        
+        """Private method that evaluates: 1) the total cross section of strands and stacks object of the conductor; 2) the total cross section of superconducting materials of the conductor."""
+
+        self.total_so_area = np.array(
+            [
+                obj.inputs["CROSSECTION"]
+                for obj in self.inventory["StrandComponent"].collection
+            ]
+        ).sum()
+        self.total_so_area = np.array(
+            [
+                obj.sc_cross_section
+                for obj in self.inventory["StrandComponent"].collection
+                if isinstance(obj, (StackComponent, StrandMixedComponent))
+            ]
+        ).sum()
 
     def __coordinates(self):
         """Private method that allows to evaluate the grid coordinates and assign them to the conductor objects and its comonents according to the value of flag grid_input["ITYMSH"]."""
@@ -2739,8 +2750,7 @@ class Conductor:
         )
 
     def __build_electric_stiffness_matrix(self):
-        """Private method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix.
-        """
+        """Private method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix."""
 
         self.electric_stiffness_matrix[
             : self.total_elements_current_carriers,
@@ -2762,8 +2772,7 @@ class Conductor:
         self.electric_stiffness_matrix = self.electric_stiffness_matrix.tocsr(copy=True)
 
     def __assign_equivalue_surfaces(self):
-        """Private method that assign the prescibed equipotential surface of the conductor.
-        """
+        """Private method that assign the prescibed equipotential surface of the conductor."""
         tol = 1e-10
         for ii, coord in enumerate(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]):
             # Find the index of the spatial discretization along z such that
@@ -2773,14 +2782,14 @@ class Conductor:
             # correct position (in the portion of the array dedicated to the
             # current).
             self.equipotential_node_index[ii, :] = (
-                (self.nodal_coordinates.loc["StrandComponent", "z"] - coord).abs() <= tol
+                (self.nodal_coordinates.loc["StrandComponent", "z"] - coord).abs()
+                <= tol
             ).to_numpy().nonzero()[0][
                 -self.inventory["StrandComponent"].number :
             ] + self.total_elements_current_carriers
 
     def __assign_fix_potential(self):
-        """Private method that assigns the value of the fixed potential on prescribed fixed potential surfaces.
-        """
+        """Private method that assigns the value of the fixed potential on prescribed fixed potential surfaces."""
         jj = 0
         tol = 1e-10
         for kk, obj in enumerate(self.inventory["StrandComponent"].collection):
@@ -2800,9 +2809,9 @@ class Conductor:
 
     def __build_electric_known_term_vector(self):
         """Private method that builds the electric known term vector according to the value of flag I0_OP_MODE:
-            * 0: constant value
-            * -1: from auxiliary file (to be implemented)
-            * -2: from user defined external function.
+        * 0: constant value
+        * -1: from auxiliary file (to be implemented)
+        * -2: from user defined external function.
         """
 
         # Rimuovere gli if
