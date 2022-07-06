@@ -2,10 +2,10 @@ import numpy as np
 import os
 
 from jacket_component import JacketComponent
+from strand_component import StrandComponent
 from stack_component import StackComponent
 from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
-from strand_superconductor_component import StrandSuperconductorComponent
 
 from utility_functions.auxiliary_functions import (
     get_from_xlsx,
