@@ -722,6 +722,30 @@ class SolidComponent:
 
     # # end Eval_properties
 
+    def get_current_fractions(self, total_sc_area:float, total_so_area:float):
+        """Method that evaluates: 1) fraction of the total current that flows in superconductor cross section of each strand or stack object if in superconducting regime (op_current_fraction_sc); 2) fraction of the total current that flows in the total cross section (superconductor and not superconductor or stabilizer materials) of each strand or stack object if in current sharing regime (op_current_fraction_sh). Both are methods of the generic object.
+
+        Note: for the time being both fractions are set to 0.0 for objects of kind JacketComponent.
+
+        Args:
+            total_sc_area (float): total superconductor cross section of the conductor.
+            total_so_area (float): total cross section of strands and or stacks of the conductor.
+        """
+        
+        # Fraction of the total current that goes in the superconductor cross 
+        # section in superconducting regime.
+        if isinstance(self, (StrandMixedComponent, StackComponent)):
+            self.op_current_fraction_sc = self.sc_cross_section / total_sc_area
+        elif isinstance(self, (JacketComponent, StrandStabilizerComponent)):
+            self.op_current_fraction_sc = 0.0
+        
+        # Fraction of the total current that goes in the strand or thape cross 
+        # section in current sharing regime.
+        if isinstance(self, StrandComponent):
+            self.op_current_fraction_sh = self.inputs["CROSSECTION"] / total_so_area
+        else: # jacket object.
+            self.op_current_fraction_sh = 0.0
+
     def get_current(self, conductor):
 
         """
