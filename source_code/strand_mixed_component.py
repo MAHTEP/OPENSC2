@@ -117,7 +117,14 @@ class StrandMixedComponent(StrandComponent):
             usecols=["Variable name", self.identifier],
         )[self.identifier].to_dict()
 
-        self.ASC = self.inputs["CROSSECTION"] / (1.0 + self.inputs["STAB_NON_STAB"])
+        # Superconductor cross section in m^2
+        self.sc_cross_section = self.inputs["CROSSECTION"] / (
+            1.0 + self.inputs["STAB_NON_STAB"]
+        )
+        # Stabilizer cross section in m^2
+        self.stabilizer_cross_section = (
+            self.inputs["CROSSECTION"] - self.sc_cross_section
+        )
         # Call SolidComponent class constructor to deal with StrandMixedComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
         SolidComponent(simulation, self)

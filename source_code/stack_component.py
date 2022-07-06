@@ -189,6 +189,19 @@ class StackComponent(StrandComponent):
         # be done or not (depends on homogenized density evaluation).
         self.__stack_density_flag = False
 
+        # Superconductor total cross section in m^2
+        self.sc = (
+            self.inputs["HTS_thickness"]
+            * self.inputs["Stack_width"]
+            * self.inputs["N_tapes"]
+        )
+        # Stabilizer (not sc) total cross section in m^2
+        self.stabilizer_cross_section = (
+            self.tape_thickness_not_sc
+            * self.inputs["Stack_width"]
+            * self.inputs["N_tapes"]
+        )
+
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
 
