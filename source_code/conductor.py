@@ -188,6 +188,8 @@ class Conductor:
             f"After call method {self.conductor_components_instance.__name__}"
         )
 
+        self.__get_total_cross_section()
+
         # Call private method __coordinates to build grid coordinates.
         conductorlogger.debug(f"Before call method {self.__coordinates.__name__}")
         self.__coordinates()
