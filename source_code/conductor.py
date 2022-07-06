@@ -477,6 +477,14 @@ class Conductor:
 
     # end method Conductor_components_instance (cdp, 11/2020)
 
+    def __get_total_cross_section(self):
+        """Private method that evaluates: 1) the total cross section of strands and stacks object of the conductor; 2) the total cross section of superconducting materials of the conductor.
+        """
+        
+        self.total_so_area = np.array([obj.inputs["CROSSECTION"] for obj in self.inventory["StrandComponent"].collection]).sum()
+        self.total_so_area = np.array([obj.sc_cross_section for obj in self.inventory["StrandComponent"].collection if isinstance(obj, (StackComponent, StrandMixedComponent))]).sum()
+        
+
     def __coordinates(self):
         """Private method that allows to evaluate the grid coordinates and assign them to the conductor objects and its comonents according to the value of flag grid_input["ITYMSH"]."""
         if self.grid_input["ITYMSH"] >= 0:
