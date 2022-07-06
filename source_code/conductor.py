@@ -19,6 +19,7 @@ from conductor_flags import (
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
+from stack_component import StackComponent
 from strand_component import StrandComponent
 from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
