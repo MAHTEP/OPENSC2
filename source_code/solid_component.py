@@ -162,13 +162,13 @@ class SolidComponent:
             )
             if isinstance(self, StrandMixedComponent):
                 dict_dummy.update(
-                    total_electrical_resistivity=self.electrical_resistivity_function_not_sc(
+                    electrical_resistivity_stabilizer=self.electrical_resistivity_function_not_sc(
                         dict_dummy
                     )
                 )
             elif isinstance(self, StrandStabilizerComponent):
                 dict_dummy.update(
-                    total_electrical_resistivity=self.strand_electrical_resistivity(
+                    electrical_resistivity_stabilizer=self.strand_electrical_resistivity(
                         dict_dummy
                     )
                 )
@@ -183,7 +183,7 @@ class SolidComponent:
                 total_thermal_conductivity=self.stack_thermal_conductivity(dict_dummy)
             )
             dict_dummy.update(
-                total_electrical_resistivity=self.stack_electrical_resistivity_not_sc(
+                electrical_resistivity_stabilizer=self.stack_electrical_resistivity_not_sc(
                     dict_dummy
                 )
             )
