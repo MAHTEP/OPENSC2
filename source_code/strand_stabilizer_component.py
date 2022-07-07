@@ -176,3 +176,18 @@ class StrandStabilizerComponent(StrandComponent):
             return ELECTRICAL_RESISTIVITY_FUNC[self.inputs["ISTABILIZER"]](
                 property["temperature"]
             )
+
+    def get_electric_resistance(self, conductor:object) -> np.ndarray:
+        f"""Method that evaluate the electric resistance in Gauss node only, used to build the electric_resistance_matrix.
+
+        Args:
+            conductor (object): class Conductor object from which node distance is stored to do the calculation.
+
+        Returns:
+            np.ndarray: array of electrical resistance in Ohm of length {conductor.grid_input["NELEMS"] = }.
+        """
+        return (
+            self.dict_Gauss_pt["electrical_resistivity_stabilizer"]
+            * conductor.node_distance[("StrandComponent", self.identifier)]
+            / self.inputs["CROSSECTION"]
+        )
