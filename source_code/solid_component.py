@@ -722,7 +722,7 @@ class SolidComponent:
 
     # # end Eval_properties
 
-    def get_current_fractions(self, total_sc_area:float, total_so_area:float):
+    def get_current_fractions(self, total_sc_area: float, total_so_area: float):
         """Method that evaluates: 1) fraction of the total current that flows in superconductor cross section of each strand or stack object if in superconducting regime (op_current_fraction_sc); 2) fraction of the total current that flows in the total cross section (superconductor and not superconductor or stabilizer materials) of each strand or stack object if in current sharing regime (op_current_fraction_sh). Both are methods of the generic object.
 
         Note: for the time being both fractions are set to 0.0 for objects of kind JacketComponent.
@@ -731,71 +731,29 @@ class SolidComponent:
             total_sc_area (float): total superconductor cross section of the conductor.
             total_so_area (float): total cross section of strands and or stacks of the conductor.
         """
-        
-        # Fraction of the total current that goes in the superconductor cross 
+
+        # Fraction of the total current that goes in the superconductor cross
         # section in superconducting regime.
         if isinstance(self, (StrandMixedComponent, StackComponent)):
             self.op_current_fraction_sc = self.sc_cross_section / total_sc_area
         elif isinstance(self, (JacketComponent, StrandStabilizerComponent)):
             self.op_current_fraction_sc = 0.0
-        
-        # Fraction of the total current that goes in the strand or thape cross 
+
+        # Fraction of the total current that goes in the strand or thape cross
         # section in current sharing regime.
         if isinstance(self, StrandComponent):
             self.op_current_fraction_sh = self.inputs["CROSSECTION"] / total_so_area
-        else: # jacket object.
+        else:  # jacket object.
             self.op_current_fraction_sh = 0.0
 
-    def get_current(self, conductor):
+    def get_current(self, conductor: object):
+        """Method that evaluates the current source therm at each thermal time step according to flag I0_OP_MODE set as input by the user.
 
-        """
-        ############################################################################
-        #              Get_I(self, conductor)
-        ############################################################################
-        #
-        # Method that initialize electrical current in python objects of class
-        # SolidComponent.
-        #
-        ############################################################################
-        # VARIABLE              I/O    TYPE              DESCRIPTION            UNIT
-        # --------------------------------------------------------------------------
-        # self                  I     object             python object of
-        #                                                class SolidComponent     -
-        # I0_OP_MODE*               I     scalar integer     flag to decide how to
-        #                                                evaluate current:
-        #                                                == 0 -> constant;
-        #                                                == 1 -> exponential decay;
-        #                                                == -1 -> read from
-        #                                                I_file_dummy.xlsx         -
-        # IOP_TOT*              I     scalar float       total operation
-        #                                                current         A
-        # TAUDET*               I     scalar float                                s
-        # TAUDUM*               I     scalar float                                s
-        # IOP0_FRACTION§        I     scalar float      fraction of IOP0
-        #                                               transported @ time = 0
-        #                                               by self                    -
-        # BASE_PATH*              I    string            path of folder Description
-        #                                               of Components              -
-        # External_current_path* I    string            name of the external
-        #                                               file from which
-        #                                               interpolate current value  -
-        # IOP§                   O    scalar float      component current          A
-        #############################################################################
-        # Invoched functions/methods: Get_from_xlsx
-        #
-        ############################################################################
-        # * I0_OP_MODE, IOP_TOT, TAUDET, TAUDUM, BASE_PATH and External_current_path are
-        # given by conductor.inputs["I0_OP_MODE"], conductor.IOP_TOT, conductor.inputs["TAUDET"], conductor.inputs["TAUDUM"],
-        # conductor.BASE_PATH and conductor.file_input["EXTERNAL_CURRENT"].
-        # § IOP0_FRACTION and IOP are component attributes: self.dict_node_pt["IOP"]0_FRACTION,
-        #  .
-        # N.B. IOP is a SolidComponent attribute so its value can be assigned
-        # directly, it is a scalar floar since there is no current redistribution.
-        ############################################################################
-        #
-        # Translated and optimized by D. Placido Polito 06/2020
-        #
-        ############################################################################
+        Args:
+            conductor (object): ConductorComponent object with all informations to make the calculation.
+
+        Raises:
+            ValueError: if a not valid value is given to flag I0_OP_MODE.
         """
 
         # Initialize to zero independently of the value of flag I0_OP_MODE
