@@ -798,6 +798,8 @@ class SolidComponent:
         ############################################################################
         """
 
+        # Initialize to zero independently of the value of flag I0_OP_MODE
+        self.dict_node_pt["op_current"] = np.zeros(conductor.grid_features["N_nod"])
         if conductor.inputs["I0_OP_MODE"] == -1:
 
             if conductor.cond_time[-1] == 0:
@@ -815,33 +817,53 @@ class SolidComponent:
                     self.current_interp_flag,
                 ) = build_interpolator(current_df, self.operations["IOP_INTERPOLATION"])
 
-            # call load_user_defined_quantity on the component.
-            self.dict_node_pt["IOP"] = do_interpolation(
+            # Evaluate current of generic solid component object by
+            # interpolation.
+            self.op_current_so = do_interpolation(
                 self.current_interpolator,
                 conductor.grid_features["zcoord"],
                 conductor.cond_time[-1],
                 self.current_interp_flag,
             )
+            # Evaluate current in the Gauss nodal points.
+            self.op_current_so_gauss = (
+                self.op_current_so[:-1] + self.op_current_so[1:]
+            ) / 2.0
+            # This is exploited in the electric resistance evaluation.
+            if isinstance(self, (StackComponent, StrandMixedComponent)):
+                # Build an alias for convenience when dealing with electric
+                # resistance evaluation.
+                self.op_current_sc = self.op_current_so
+                self.op_current_sc_gauss = self.op_current_so_gauss
 
-            # evaluate IOP_TOT as the sum of first value of current vector \
-            # self.dict_node_pt["IOP"] of each SolidComponent. This is because there \
-            # is no current redistribution along the conductor \
-            # (self.dict_node_pt["IOP"] have se same value in each index).\
-            # (cdp, 06/2020)
-            conductor.IOP_TOT = conductor.IOP_TOT + self.dict_node_pt["IOP"][0]
+            conductor.IOP_TOT = conductor.IOP_TOT + self.op_current_so
             if flagSpecfield == 2:
                 print("still to be decided what to do here\n")
         elif conductor.inputs["I0_OP_MODE"] == 0:
-            self.dict_node_pt["IOP"] = (
-                conductor.IOP_TOT * self.operations["IOP0_FRACTION"]
+            # Evaluate both attributes self.op_current_so and
+            # self.op_current_sc for convenience in the evaluation of
+            # electrical resistivity.
+            self.op_current_so = (
+                conductor.IOP_TOT
+                * self.op_current_fraction_sh
+                * np.ones(conductor.grid_features["N_nod"])
             )
+            self.op_current_so_gauss = (
+                self.op_current_so[:-1] + self.op_current_so[1:]
+            ) / 2.0
+            if isinstance(self, (StackComponent, StrandMixedComponent)):
+                self.op_current_sc = (
+                    conductor.IOP_TOT
+                    * self.op_current_fraction_sc
+                    * np.ones(conductor.grid_features["N_nod"])
+                )
+                self.op_current_sc_gauss = (
+                    self.op_current_sc[:-1] + self.op_current_sc[1:]
+                ) / 2.0
         else:
             raise ValueError(
                 f"Not defined value for flag I0_OP_MODE: {conductor.inputs['I0_OP_MODE']=}.\n"
             )
-        # Conversion of float to float array if necessary, this avoid following \
-        # error: TypeError: 'float' object is not subscriptable (cdp, 08/2020)
-        self.dict_node_pt["IOP"] = np.array([self.dict_node_pt["IOP"]])
 
     # end Get_I
 
