@@ -2069,6 +2069,12 @@ class Conductor:
         # Loop on SolidComponent (cdp, 01/2021)
         # N.B. questo loop si potrebbe fare usando map.
         for s_comp in self.inventory["SolidComponent"].collection:
+            # Compute fractions of the total current that flows in 
+            # superconductor cross section of each strand or stack object if in 
+            # superconducting regime and fractions of the total current that 
+            # flows in the total cross section of each strand or stack object 
+            # if in current sharing regime.
+            s_comp.get_current_fractions(self.total_sc_area, self.total_so_area)
             # compute, average density, thermal conductivity, specifi heat at \
             # constant pressure and electrical resistivity at initial \
             # SolidComponent temperature in nodal points (cdp, 01/2021)
