@@ -341,3 +341,49 @@ class StrandMixedComponent(StrandComponent):
             return ELECTRICAL_RESISTIVITY_FUNC[self.strand_material_not_sc](
                 property["temperature"]
             )
+
+    def superconductor_power_low(
+        self,
+        current: np.ndarray,
+        critical_current: np.ndarray,
+        critical_current_density: np.ndarray,
+        ind: np.ndarray,
+    ) -> np.ndarray:
+        """Method that evaluate the electrical resistivity of superconducting material according to the power law.
+
+        Args:
+            current (np.ndarray): electric current in superconducting material
+            critical_current (np.ndarray): critical current of superconducting material.
+            critical_current_density (np.ndarray): critical current density in superconducting material
+            ind (np.ndarray): array with the index of the location at which electrical resistivity should be evaluated.
+
+        Raises:
+            ValueError: if arrays current and critical_current does not have the same shape.
+            ValueError: if arrays current and critical_current_density does not have the same shape.
+            ValueError: if arrays critical_current and critical_current_density does not have the same shape.
+
+        Returns:
+            np.ndarray: electrical resistivity of superconducting material in Ohm*m.
+        """
+        # Check input arrays shape consistency
+        if current.shape != critical_current.shape:
+            raise ValueError(
+                f"Arrays current and critical_current must have the same shape.\n{current.shape = };\n{critical_current.shape = }.\n"
+            )
+        elif current.shape != critical_current_density.shape:
+            raise ValueError(
+                f"Arrays current and critical_current_density must have the same shape.\n{current.shape = };\n{critical_current_density.shape = }.\n"
+            )
+        elif critical_current.shape != critical_current_density.shape:
+            raise ValueError(
+                f"Arrays critical_current and critical_current_density must have the same shape.\n{critical_current.shape = };\n{critical_current_density.shape = }.\n"
+            )
+
+        # Evaluate superconductin electrical resistivity according to the power
+        # low scaling:
+        # rho_el_sc = E_0 / j_c * (I_sc/I_c)**(n-1) Ohm*m
+        return (
+            self.inputs["E0"]
+            / critical_current_density[ind]
+            * (current[ind] / critical_current[ind]) ** (self.inputs["nn"] - 1)
+        )
