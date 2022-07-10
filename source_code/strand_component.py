@@ -418,3 +418,46 @@ class StrandComponent(SolidComponent):
             * conductor.node_distance[("StrandComponent", self.identifier)][ind]
             / self.inputs["CROSSECTION"]
         )
+
+    def parallel_electric_resistance(
+        self, conductor: object, electrical_resistivity_keys: list, ind: np.ndarray
+    ) -> np.ndarray:
+        f"""Method that evaluate electric resistance in the case of a parallel of two electric conducting materials, as is the case for StackComponent and StrandMixedComponent in current sharing regime.
+
+        Args:
+            conductor (object): class Conductor object in which distance between consecutive nodes is stored to do the calculation.
+            electrical_resistivity_key (list): list of dictionary key for the electrical resistivity of the materials (typical values for the application of this software are electrical_resistivity_superconductor and electrical_resistivity_stabilizer).
+            ind (np.ndarray): array with the index of the location in wich electric resistance should be evaluated with this method.
+
+        Raises:
+            ValueError: if list electrical_resistivity_keys does not have exactly two items.
+            ValueError: if items in list electrical_resistivity_keys are not of type string.
+
+        Returns:
+            np.ndarray: array of the electric resistance in Ohm of shape {ind.shape = }. The maximum lenght of the outcome is {conductor.grid_input["NELEMS"] = }.
+        """
+        if len(list) != 2:
+            # Check list lenght.
+            raise ValueError(
+                f"List electrical_resistivity_keys must have 2 items; {len(list) = }.\n"
+            )
+
+        if not all(isinstance(item, str) for item in electrical_resistivity_keys):
+            # Check that all items in list are string.
+            raise ValueError(
+                f"All items in list electrical_resistivity_keys must be of type string. {electrical_resistivity_keys = }.\n"
+            )
+
+        # Electric resistance matrix initialization.
+        electric_resistances = np.zeros((ind.size, 2))
+        # Evaluate electri resistances
+        for ii, item in enumerate(electrical_resistivity_keys):
+            electric_resistances[:, ii] = self.electric_resistance(conductor, item, ind)
+
+        # Evaluate parallel electric resistance:
+        # R_eq = R1*R2/(R1+R2)
+        return (
+            electric_resistances[:, 0]
+            * electric_resistances[:, 1]
+            / (electric_resistances.sum(axis=1))
+        )
