@@ -668,3 +668,22 @@ class StackComponent(StrandComponent):
             )
 
         return self.inputs["nn"] * sc_current ** (self.inputs["nn"] - 1) + psi
+
+    def __d2_sc_current_residual(
+        self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray]
+    ) -> Union[float, np.ndarray]:
+        """Private method that defines the second derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
+
+        Args:
+            sc_current (Union[float, np.ndarray]): superconducting current (guess).
+            psi (Union[float, np.ndarray]): costant value in the equation, not needed for this fuction
+
+        Returns:
+            Union[float, np.ndarray]: second derivative of the residual.
+        """
+
+        return (
+            self.inputs["nn"]
+            * (self.inputs["nn"] - 1)
+            * sc_current ** (self.inputs["nn"] - 2)
+        )
