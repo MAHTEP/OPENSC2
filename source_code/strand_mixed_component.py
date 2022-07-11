@@ -516,10 +516,7 @@ class StrandMixedComponent(StrandComponent):
                 f"Arrays sc_current and psi must have the same shape.\n {sc_current.shape = };\n{psi.shape}.\n"
             )
 
-        return (
-            self.inputs["nn"]*sc_current ** (self.inputs["nn"] - 1)
-            + psi
-        )
+        return self.inputs["nn"] * sc_current ** (self.inputs["nn"] - 1) + psi
 
     def __d2_sc_current_residual(
         self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray]
@@ -535,5 +532,7 @@ class StrandMixedComponent(StrandComponent):
         """
 
         return (
-            self.inputs["nn"]*(self.inputs["nn"] - 1)*sc_current ** (self.inputs["nn"] - 2)
+            self.inputs["nn"]
+            * (self.inputs["nn"] - 1)
+            * sc_current ** (self.inputs["nn"] - 2)
         )
