@@ -730,7 +730,7 @@ class StackComponent(StrandComponent):
         )
 
         ## SUPERCONDUCTING REGIME ##
-        
+
         # Strand current in superconducting regime is the one carriend by the
         # superconducting material only.
         self.dict_node_pt["IOP"][ind_sc_node] = self.op_current_sc[ind_sc_node]
@@ -772,11 +772,11 @@ class StackComponent(StrandComponent):
 
         ## SHARING OR NORMAL REGIME ##
 
-        # Strand current in sharing regime is the one carried by the both the 
+        # Strand current in sharing regime is the one carried by the both the
         # superconducting and the stabilizer materials.
         self.dict_node_pt["IOP"][ind_sh_node] = self.op_current_so[ind_sh_node]
-        
-        # Evaluate how the current is distributed solving the current divider 
+
+        # Evaluate how the current is distributed solving the current divider
         # problem in both nodal and Gauss points.
         sc_current_node, stab_current_node = self.solve_current_divider(
             self.dict_node_pt["electrical_resistivity_stabilizer"],
@@ -789,7 +789,7 @@ class StackComponent(StrandComponent):
             ind_sh_gauss,
         )
 
-        # Evaluate the electrical resistivity of the superconductor according 
+        # Evaluate the electrical resistivity of the superconductor according
         # to the power low in both nodal and Gauss points in Ohm*m.
         self.dict_node_pt["electrical_resistivity_superconductor"][
             ind_sh_node
