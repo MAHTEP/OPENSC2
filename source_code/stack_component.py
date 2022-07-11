@@ -1,6 +1,9 @@
 # Import libraries
+from ctypes import Union
 import numpy as np
 import pandas as pd
+from scipy import optimize
+from typing import Tuple
 
 # Import classes
 from solid_component import SolidComponent
