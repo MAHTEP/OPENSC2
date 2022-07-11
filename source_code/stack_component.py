@@ -541,3 +541,61 @@ class StackComponent(StrandComponent):
             / critical_current_density[ind]
             * (current[ind] / critical_current[ind]) ** (self.inputs["nn"] - 1)
         )
+
+    def solve_current_divider(
+        self,
+        rho_el_stabilizer: np.ndarray,
+        critical_current: np.ndarray,
+        ind: np.ndarray,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Method that solves the not linear system of the current divider between superconduting and stabilizer material in the case of current sharing regime.
+
+        Args:
+            rho_el_stabilizer (np.ndarray): array with stabilizer electrical resistivity in Ohm*m.
+            critical_current (np.ndarray): array with superconductor critical current in A.
+            ind (np.ndarray): array with the index of the location in which supercondutor current and stabilizer current should be evaluated with this method.
+
+        Raises:
+            ValueError: if arrays rho_el_stabilizer and critical_current does not have the same shape.
+
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: superconducting current array in A, stabilizer current array in A.
+        """
+        # Check array shape
+        if rho_el_stabilizer.shape != critical_current.shape:
+            raise ValueError(
+                f"Arrays rho_el_stabilizer and critical_current must have the same shape.\n {rho_el_stabilizer.shape = };\n{critical_current.shape}.\n"
+            )
+
+        # Evaluate constant value:
+        # psi = rho_el_stab*I_c^n/(E_0*A_stab)
+        psi = (
+            rho_el_stabilizer[ind]
+            * critical_current[ind] ** self.inputs["nn"]
+            / self.inuts["E0"]
+            / self.stabilizer_cross_section
+        )
+
+        for _, val in enumerate(ind):
+            # Evaluate superconducting current guess with bisection method.
+            # Set the maximum itaration to 10 and disp to False in order to not
+            # rise an error due to not reached convergence.
+            sc_current_guess = optimize.bisect(
+                self.__sc_current_residual,
+                0.0,
+                self.op_current_so[val],
+                (psi[val]),
+                maxiter=10,
+                disp=False,
+            )
+        # Evaluate superconducting with Halley's method
+        sc_current = optimize.newton(
+            self.__sc_current_residual,
+            sc_current_guess,
+            psi,
+            fprime=self.__d_sc_current_residual,
+            fprime2=self.__d2_sc_current_residual,
+        )
+
+        return sc_current, self.op_current_so[ind] - sc_current
