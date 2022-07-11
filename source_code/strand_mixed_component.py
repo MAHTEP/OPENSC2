@@ -448,3 +448,39 @@ class StrandMixedComponent(StrandComponent):
         )
 
         return sc_current, self.op_current_so[ind] - sc_current
+
+    def __sc_current_residual(
+        self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray]
+    ) -> Union[float, np.ndarray]:
+        """Private method that defines the residual function for the evaluation of the superconducting current with bysection and/or Newton-Rampson methods.
+
+        Args:
+            sc_current (Union[float, np.ndarray]): superconducting current (guess).
+            psi (Union[float, np.ndarray]): costant value in the equation
+
+        Raises:
+            ValueError: if arguments sc_current and psi are not both of the same type (float).
+            ValueError: if arguments sc_current and psi are not both of the same type (np.ndarray).
+            ValueError: if arrays sc_current and psi does not have the same shape.
+
+        Returns:
+            Union[float, np.ndarray]: residual value
+        """
+        # Checks on input arguments.
+        if isinstance(sc_current, float) != isinstance(psi, float):
+            raise ValueError(
+                f"Arguments sc_current and psi must be of the same type (float).\n{type(sc_current) = };\n{type(psi) = }.\n"
+            )
+        if isinstance(sc_current, np.ndarray) != isinstance(psi, np.ndarray):
+            raise ValueError(
+                f"Arguments sc_current and psi must be of the same type (n.ndarray).\n{type(sc_current) = };\n{type(psi) = }.\n"
+            )
+        elif sc_current.shape != psi.shape:
+            raise ValueError(
+                f"Arrays sc_current and psi must have the same shape.\n {sc_current.shape = };\n{psi.shape}.\n"
+            )
+
+        return (
+            sc_current ** self.inputs["nn"]
+            + (sc_current - self.self.op_current_so) * psi
+        )
