@@ -313,7 +313,7 @@ class StrandComponent(SolidComponent):
     # End method eval_tcs
 
     def get_eps(self, conductor, nodal=True):
-        # For each strand of type StrandMixedComponent or StrandSuperconductorComponent (cdp, 06/2020)
+        # For each strand of type StrandMixedComponent or StackComponent (cdp, 06/2020)
         if nodal:
             # compute Epsilon in each node (cdp, 07/2020)
             if self.operations["IEPS"] < 0:  # strain from file strain.dat

@@ -2686,12 +2686,12 @@ def gbacsb(conductor, A, B):
 def natural_sort(comp_a, comp_b):
     # Use the regexes to sort naturally (human like) the IDs of the components to be able to deal with all the interfaces in a general way.
     match_a = re.search(
-        r"(?P<Fluid_component>CHAN)?(?P<Mixed_sc_stab>STR_MIX)?(?P<Super_conductor>STR_SC)?(?P<StrandStabilizerComponent>STR_STAB)?(?P<JacketComponent>Z_JACKET)?_(\d+)",
+        r"(?P<Fluid_component>CHAN)?(?P<Stack>STACK)(?P<Mixed_sc_stab>STR_MIX)??(?P<StrandStabilizerComponent>STR_STAB)?(?P<JacketComponent>Z_JACKET)?_(\d+)",
         comp_a.identifier,
     )
-    # r'((CHAN)?(STR_MIX)?(STR_SC)?(STR_STAB)?(Z_JACKET)?)_(\d)+'
+    # r'((CHAN)?(STACK)?(STR_MIX)?(STR_STAB)?(Z_JACKET)?)_(\d)+'
     match_b = re.search(
-        r"(?P<Fluid_component>CHAN)?(?P<Mixed_sc_stab>STR_MIX)?(?P<Super_conductor>STR_SC)?(?P<StrandStabilizerComponent>STR_STAB)?(?P<JacketComponent>Z_JACKET)?_(\d+)",
+        r"(?P<Fluid_component>CHAN)?(?P<Stack>STACK)?(?P<Mixed_sc_stab>STR_MIX)?(?P<StrandStabilizerComponent>STR_STAB)?(?P<JacketComponent>Z_JACKET)?_(\d+)",
         comp_b.identifier,
     )
 

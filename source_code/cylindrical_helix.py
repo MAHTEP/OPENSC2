@@ -14,8 +14,8 @@ class CylindricalHelix:
         * total helix length
 
         Args:
-            x0 (float): abscissa of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent object.
-            y0 (float): ordinate of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent object.
+            x0 (float): abscissa of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StackComponent object.
+            y0 (float): ordinate of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StackComponent object.
             heigth (float): heigth of the cylinder around which the helix wounds.
             costheta (float): cosine of the pitch angle of the helix.
         """
@@ -37,11 +37,11 @@ class CylindricalHelix:
         self.__eval_helix_length()
 
     def __eval_radius(self, x0: float, y0: float):
-        """Private method that evaluates the radius of the cylinder around which the helix wounds starting from x0 and y0 coordinates (the coorinates of the barycenter of the generic StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent object). Value is assigned to attribute self.radius.
+        """Private method that evaluates the radius of the cylinder around which the helix wounds starting from x0 and y0 coordinates (the coorinates of the barycenter of the generic StrandMixedComponent or StrandStabilizerComponent or StackComponent object). Value is assigned to attribute self.radius.
 
         Args:
-            x0 (float): abscissa of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent object.
-            y0 (float): ordinate of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent object.
+            x0 (float): abscissa of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StackComponent object.
+            y0 (float): ordinate of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StackComponent object.
         """
         self.radius = np.sqrt(x0 ** 2 + y0 ** 2)
 
@@ -49,8 +49,8 @@ class CylindricalHelix:
         """Private method that evaluates the angle in the xy plane; used in helix parametrization. Value is assigned to attribute self.alpha.
 
         Args:
-            x0 (float): abscissa of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent object.
-            y0 (float): ordinate of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent object.
+            x0 (float): abscissa of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StackComponent object.
+            y0 (float): ordinate of the barycenter of the generic  StrandMixedComponent or StrandStabilizerComponent or StackComponent object.
         """
         self.alpha = np.arctan2(y0, x0)
 

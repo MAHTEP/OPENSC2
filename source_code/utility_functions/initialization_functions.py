@@ -9,10 +9,10 @@ from fluid_component import FluidComponent
 from jacket_component import JacketComponent
 
 # from conductor import Conductor
+from stack_component import StackComponent
 from strand_component import StrandComponent
 from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
-from strand_superconductor_component import StrandSuperconductorComponent
 from cylindrical_helix import CylindricalHelix
 
 logger_discretization = logging.getLogger("opensc2Logger.discretization")
@@ -65,14 +65,14 @@ def uniform_spatial_discretization(conductor: object) -> np.ndarray:
 def uniform_angular_discretization(
     conductor: object,
     comp: Union[
-        StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent
+        StrandMixedComponent, StrandStabilizerComponent, StackComponent
     ],
 ) -> np.ndarray:
     """Function that evaluates uniform angular discretization, used for helicoidal geometry.
 
     Args:
         conductor (Conductor): conductor object, has all the information to evaluate the unifrom mesh.
-        comp (Union[StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent]): generic object of for wich the uniform angular discretization should be evaluated.
+        comp (Union[StrandMixedComponent, StrandStabilizerComponent, StackComponent]): generic object of for wich the uniform angular discretization should be evaluated.
 
     Returns:
         np.ndarray: array with uniform angular discretization of length conductor.grid_features["N_nod"] for helicoidal components.
@@ -194,7 +194,7 @@ def fixed_refined_spatial_discretization(
 def fixed_refined_angular_discretization(
     conductor: object,
     comp: Union[
-        StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent
+        StrandMixedComponent, StrandStabilizerComponent, StackComponent
     ],
     tau: np.ndarray,
 ) -> np.ndarray:
@@ -202,7 +202,7 @@ def fixed_refined_angular_discretization(
 
     Args:
         conductor (Conductor): conductor object, has all the information to evaluate the fixed refined grid.
-        comp (Union[ StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent ]): generic object for wich the fixed refined angular discretization should be evaluated.
+        comp (Union[ StrandMixedComponent, StrandStabilizerComponent, StackComponent ]): generic object for wich the fixed refined angular discretization should be evaluated.
         tau (np.ndarray): array of length conductor.grid_features["N_nod"] initialized to zeros.
 
     Raises:
@@ -455,14 +455,14 @@ def assign_user_defined_spatial_discretization(
         JacketComponent,
         StrandMixedComponent,
         StrandStabilizerComponent,
-        StrandSuperconductorComponent,
+        StackComponent,
     ],
     df: pd.DataFrame,
 ):
     """Function that assigns the user defined coordinates in sheet comp.identifier of auxiliary input file with the spatial discretization to the corresponding conductor component.
 
     Args:
-        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which user defines spatial discretization.
+        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StackComponent, ]): generic object for which user defines spatial discretization.
         dfs (pd.DataFrame): dataframe with the coordinate of the corresponding coductor component.
     """
     comp.coordinate["x"] = df["x [m]"].to_numpy()
@@ -477,7 +477,7 @@ def straight_coordinates(
         JacketComponent,
         StrandMixedComponent,
         StrandStabilizerComponent,
-        StrandSuperconductorComponent,
+        StackComponent,
     ],
     xb: float,
     yb: float,
@@ -486,7 +486,7 @@ def straight_coordinates(
 
     Args:
         cond (object): conductor object, has all the information to evaluate load and assign user defined grid.
-        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
+        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StackComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
         xb (float): x coordinate of the barycenter of the component (passed in this way due to the workaround in function build_coordinates_of_barycenter).
         yb (float): y coordinate of the barycenter of the component (passed in this way due to the workaround in function build_coordinates_of_barycenter).
     """
@@ -509,14 +509,14 @@ def helicoidal_coordinates(
     comp: Union[
         StrandMixedComponent,
         StrandStabilizerComponent,
-        StrandSuperconductorComponent,
+        StackComponent,
     ],
 ):
-    """Function that builds the helicoidal coordinates of the barycenter of conductor components of kind StrandMixedComponent, StrandStabilizerComponent and StrandSuperconductorComponent.
+    """Function that builds the helicoidal coordinates of the barycenter of conductor components of kind StrandMixedComponent, StrandStabilizerComponent and StackComponent.
 
     Args:
         cond (object): conductor object, has all the information to evaluate load and assign user defined grid.
-        comp (Union[ StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
+        comp (Union[ StrandMixedComponent, StrandStabilizerComponent, StackComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
     """
     comp.cyl_helix = CylindricalHelix(
         comp.inputs["X_barycenter"],
@@ -550,20 +550,20 @@ def build_coordinates_of_barycenter(
         JacketComponent,
         StrandMixedComponent,
         StrandStabilizerComponent,
-        StrandSuperconductorComponent,
+        StackComponent,
     ],
 ):
     """Function that builds the coordinates of the barycenter of conductor components.
 
     Args:
         cond (object): conductor object, has all the information to evaluate load and assign user defined grid.
-        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StrandSuperconductorComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
+        comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StackComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
 
     Raises:
         ValueError: if costetha is not equal to 1 for FluidComponent and JacketComponent.
 
     Note:
-        If user defines only one component of type StrandMixedComponent or StrandStabilizerComponent or StrandSuperconductorComponent, the straight spatial discretization is used, i.e function straight_coordinates is called instead of helicoidal_coordinates.
+        If user defines only one component of type StrandMixedComponent or StrandStabilizerComponent or StackComponent, the straight spatial discretization is used, i.e function straight_coordinates is called instead of helicoidal_coordinates.
     """
     # This is a workaround not a clean solution.
     if isinstance(comp, FluidComponent):

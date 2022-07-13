@@ -182,7 +182,7 @@ def make_plots(simulation, kind="Space_distr"):
         prop_chan = ["velocity", "pressure", "temperature", "total_density"]
         # Dictionary to easily distinguish the outcome to be saved according to the name of the strand.
         prop_st = dict(
-            STR_MIX=["temperature"], STR_SC=["temperature"], STR_STAB=["temperature"]
+            STR_MIX=["temperature"], STACK=["temperature"], STR_STAB=["temperature"]
         )
         prop_jk = ["temperature"]
     elif kind == "Time_evol":
@@ -198,7 +198,7 @@ def make_plots(simulation, kind="Space_distr"):
         # Dictionary to easily distinguish the outcome to be saved according to the name of the strand.
         prop_st = dict(
             STR_MIX=["B_field", "temperature", "T_cur_sharing"],
-            STR_SC=["B_field", "temperature", "T_cur_sharing"],
+            STACK=["B_field", "temperature", "T_cur_sharing"],
             STR_STAB=["B_field", "temperature"],
         )
         prop_jk = ["temperature"]
@@ -1171,7 +1171,7 @@ def create_real_time_plots_max_temperature(simulation, conductor, comp):
     Args:
         simulation (object): object simulation instance of class Simulation.
         conductor (object): object conductor instance of class Conductor.
-        comp (object): can be any object instance of classes FluidComponent, MixSCStabilizet, StrandSuperconductorComponent StrandStabilizerComponent or JacketComponent.
+        comp (object): can be any object instance of classes FluidComponent, MixSCStabilizet, StackComponent StrandStabilizerComponent or JacketComponent.
     """
     comp.figure_max_temp, comp.axes_max_temp = plt.subplots(
         num=f"{simulation.transient_input['SIMULATION']} ({conductor.number}): maximum {comp.identifier} temperature",
@@ -1222,7 +1222,7 @@ def do_nothing(simulation, cond=None, comp=None):
     Args:
         simulation (object): object simulation instance of class Simulation
         cond (objetc, optional): object conductor instance of class Conductor.. Defaults to None.
-        comp (object, optional): can be any object instance of classes FluidComponent, MixSCStabilizet, StrandSuperconductorComponent StrandStabilizerComponent or JacketComponent. Defaults to None.
+        comp (object, optional): can be any object instance of classes FluidComponent, MixSCStabilizet, StackComponent StrandStabilizerComponent or JacketComponent. Defaults to None.
     """
     pass
 
@@ -1263,7 +1263,7 @@ def update_real_time_plots_max_temperature(conductor, comp):
 
     Args:
         conductor (object): object conductor instance of class Conductor.
-        comp (object): can be any object instance of classes FluidComponent, MixSCStabilizet, StrandSuperconductorComponent StrandStabilizerComponent or JacketComponent.
+        comp (object): can be any object instance of classes FluidComponent, MixSCStabilizet, StackComponent StrandStabilizerComponent or JacketComponent.
     """
     if comp.KIND == "Fluid_component":
         comp.axes_max_temp.plot(

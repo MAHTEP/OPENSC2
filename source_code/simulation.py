@@ -348,7 +348,7 @@ class Simulation:
                 # 	["Objects"]:
                 # 	if s_comp.NAME != "STR_STAB" and s_comp.NAME != "Z_JACKET":
                 # 		# Call Get_superconductor_critical_prop to evaluate \
-                # 		# StrandMixedComponent and/or StrandSuperconductorComponent properties in nodal points.
+                # 		# StrandMixedComponent and/or StackComponent properties in nodal points.
                 # 		# In questo modo le calclo 2 volte, qui e alla successiva chiamata \
                 # 		# dell methodo Operating conditions, da sistemare per ottimizzare.
                 # 		s_comp.Get_superconductor_critical_prop(self, Where = "nodal")

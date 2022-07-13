@@ -25,7 +25,6 @@ from stack_component import StackComponent
 from strand_component import StrandComponent
 from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
-from strand_superconductor_component import StrandSuperconductorComponent
 
 # import functions
 from utility_functions.auxiliary_functions import (
@@ -310,7 +309,7 @@ class Conductor:
         self.inventory["FluidComponent"] = ComponentCollection("CHAN")
         self.inventory["StrandMixedComponent"] = ComponentCollection("STR_MIX")
         self.inventory["StrandStabilizerComponent"] = ComponentCollection("STR_STAB")
-        self.inventory["StrandSuperconductorComponent"] = ComponentCollection("STR_SC")
+        self.inventory["StackComponent"] = ComponentCollection("STACK")
         self.inventory["JacketComponent"] = ComponentCollection("Z_JACKET")
         self.inventory["StrandComponent"] = ComponentCollection()
         self.inventory["SolidComponent"] = ComponentCollection()
@@ -355,6 +354,37 @@ class Conductor:
                         self.inventory["FluidComponent"].collection[ii - 1]
                     )
                 # end for ii (cdp, 09/2020)
+            elif kindObj == "STACK":
+                # Assign the total number of defined StackComponent object to
+                # attribute number of object ComponentCollection.
+                self.inventory["StackComponent"].number = numObj
+                for ii in range(1, 1 + numObj):
+                    # ["StackComponent"].collection: list of StackComponent objects;
+                    # ["StrandComponent"].collection: list of StrandComponent objects;
+                    # ["SolidComponent"].collection: list of SolidComponent objects;
+                    # ["all_component"].collection: list of all objects
+                    # (cdp, 09/2020)
+                    self.inventory["StackComponent"].collection.append(
+                        StackComponent(
+                            simulation, sheet, ii, kindObj, dict_file_path
+                        )
+                    )
+                    self.inventory["StrandComponent"].collection.append(
+                        self.inventory["StackComponent"].collection[
+                            ii - 1
+                        ]
+                    )
+                    self.inventory["SolidComponent"].collection.append(
+                        self.inventory["StackComponent"].collection[
+                            ii - 1
+                        ]
+                    )
+                    self.inventory["all_component"].collection.append(
+                        self.inventory["StackComponent"].collection[
+                            ii - 1
+                        ]
+                    )
+                # end for ii (cdp, 09/2020)
             elif kindObj == "STR_MIX":
                 # Assign the total number of defined StrandMixedComponent object to
                 # attribute number of object ComponentCollection.
@@ -378,37 +408,6 @@ class Conductor:
                     )
                     self.inventory["all_component"].collection.append(
                         self.inventory["StrandMixedComponent"].collection[ii - 1]
-                    )
-                # end for ii (cdp, 09/2020)
-            elif kindObj == "STR_SC":
-                # Assign the total number of defined StrandSuperconductorComponent object to
-                # attribute number of object ComponentCollection.
-                self.inventory["StrandSuperconductorComponent"].number = numObj
-                for ii in range(1, 1 + numObj):
-                    # ["StrandSuperconductorComponent"].collection: list of StrandSuperconductorComponent objects;
-                    # ["StrandComponent"].collection: list of StrandComponent objects;
-                    # ["SolidComponent"].collection: list of SolidComponent objects;
-                    # ["all_component"].collection: list of all objects
-                    # (cdp, 09/2020)
-                    self.inventory["StrandSuperconductorComponent"].collection.append(
-                        StrandSuperconductorComponent(
-                            simulation, sheet, ii, kindObj, dict_file_path
-                        )
-                    )
-                    self.inventory["StrandComponent"].collection.append(
-                        self.inventory["StrandSuperconductorComponent"].collection[
-                            ii - 1
-                        ]
-                    )
-                    self.inventory["SolidComponent"].collection.append(
-                        self.inventory["StrandSuperconductorComponent"].collection[
-                            ii - 1
-                        ]
-                    )
-                    self.inventory["all_component"].collection.append(
-                        self.inventory["StrandSuperconductorComponent"].collection[
-                            ii - 1
-                        ]
                     )
                 # end for ii (cdp, 09/2020)
             elif kindObj == "STR_STAB":
@@ -467,7 +466,7 @@ class Conductor:
         self.inventory["StrandComponent"].number = (
             self.inventory["StrandMixedComponent"].number
             + self.inventory["StrandStabilizerComponent"].number
-            + self.inventory["StrandSuperconductorComponent"].number
+            + self.inventory["StackComponent"].number
         )
         # Total number of SolidComponent objects (cdp, 09/2020)
         self.inventory["SolidComponent"].number = (
@@ -573,7 +572,7 @@ class Conductor:
             categories=[
                 "StrandMixedComponent",
                 "StrandStabilizerComponent",
-                "StrandSuperconductorComponent",
+                "StackComponent",
             ],
         )
         cat_ids = pd.CategoricalIndex(
@@ -2257,7 +2256,7 @@ class Conductor:
         # End for
 
     def __build_connectivity_current_carriers(self):
-        """Private method that builds the dataframe with the connections (start and end node of each elements) of StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent components."""
+        """Private method that builds the dataframe with the connections (start and end node of each elements) of StrandMixedComponent, StrandStabilizerComonent and StackComponent components."""
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
             nodes = np.linspace(
                 ii,
@@ -2321,7 +2320,7 @@ class Conductor:
         )
 
     def __build_incidence_matrix(self):
-        """Private method that builds the incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Value stored in attribute incidence_matrix; the transposed incidence matrix is also evaluated and stored in attribute incidence_matrix_transposed. Thake adantage of sparse matrices.
+        """Private method that builds the incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Value stored in attribute incidence_matrix; the transposed incidence matrix is also evaluated and stored in attribute incidence_matrix_transposed. Thake adantage of sparse matrices.
 
         From MatLab code given by professor F. Freschi.
         """
@@ -2354,7 +2353,7 @@ class Conductor:
         self.incidence_matrix_transposed = self.incidence_matrix.T
 
     def __build_electric_resistance_matrix(self):
-        """Private method that builds the elecrtic resistance matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Value stored in attribute electric_resistance_matrix. Thake adantage of sparse matrices."""
+        """Private method that builds the elecrtic resistance matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Value stored in attribute electric_resistance_matrix. Thake adantage of sparse matrices."""
 
         resistance = np.zeros(self.total_elements_current_carriers)
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
@@ -2374,7 +2373,7 @@ class Conductor:
         )
 
     def __contact_current_carriers_first_cross_section(self):
-        """Private method that evaluates the he contact nodes between StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent components on the first conductor cross section exploiting the contact perimeter flag value in sheet contact_perimeter_flag of input file conductor_coupling.xlsx.
+        """Private method that evaluates the he contact nodes between StrandMixedComponent, StrandStabilizerComonent and StackComponent components on the first conductor cross section exploiting the contact perimeter flag value in sheet contact_perimeter_flag of input file conductor_coupling.xlsx.
         Values stored in private attribute _contact_nodes_first.
         """
 
@@ -2417,7 +2416,7 @@ class Conductor:
                 )
 
     def __contact_current_carriers(self):
-        """Private method that detects the contacts between components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent, starting from the information on the first cross section. For the time being the component twist is not taken into account. Values stored in attribute contact_nodes_current_carriers.
+        """Private method that detects the contacts between components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent, starting from the information on the first cross section. For the time being the component twist is not taken into account. Values stored in attribute contact_nodes_current_carriers.
         Exploits method __contact_current_carriers_first_cross_section.
         """
         self.__contact_current_carriers_first_cross_section()
@@ -2454,7 +2453,7 @@ class Conductor:
         )
 
     def __build_contact_incidence_matrix(self):
-        """Private method that builds the edge to node incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent. Values stored in attribute contact_incidence_matrix. Expoit sparse matrix."""
+        """Private method that builds the edge to node incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Values stored in attribute contact_incidence_matrix. Expoit sparse matrix."""
 
         # Edge-to-node incidence matrix (referred to En)
         row_ind = np.tile(
@@ -2471,7 +2470,7 @@ class Conductor:
         ).tocsr()
 
     def __evaluate_transversal_distance(self) -> np.ndarray:
-        """Private method that evaluates distance along the direction ortoghonal to the z direction, between nodes of components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent that are in contact.
+        """Private method that evaluates distance along the direction ortoghonal to the z direction, between nodes of components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent that are in contact.
 
         Returns:
             np.ndarray: array with the evaluated distance.
@@ -2496,12 +2495,12 @@ class Conductor:
         return distance
 
     def __evaluate_electric_conductance(self, distance: np.ndarray) -> np.ndarray:
-        """Private method that evaluates the electric conductance for components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent that are in contact in transverse direction. According to the value in sheet electric_conductance_mode of input file conductro_coupling.xlsx the electric conductance is evaluated in different modes:
+        """Private method that evaluates the electric conductance for components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent that are in contact in transverse direction. According to the value in sheet electric_conductance_mode of input file conductro_coupling.xlsx the electric conductance is evaluated in different modes:
         1) exploits function __evaluate_electric_conductance_unit_length (electric conductance is defined per unit length);
         2) exploits function __evaluate_electric_conductance_not_unit_length (electric conductance is not defined per unit length).
 
         Args:
-            distance (np.ndarray): distance along the direction ortoghonal to the z direction, between nodes of components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent that are in contact
+            distance (np.ndarray): distance along the direction ortoghonal to the z direction, between nodes of components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent that are in contact
 
         Returns:
             np.ndarray: matrix with the electric conductance values.
@@ -2572,7 +2571,7 @@ class Conductor:
         return electric_conductance
 
     def __build_electric_conductance_matrix(self):
-        """Private method that builds the electric conductance matrix for components of kind StrandMixedComponent, StrandStabilizerComonent and StrandSuperconductorComponent that are in contact along transverse direction. Values are stored in attribute electric_conductance_matrix.
+        """Private method that builds the electric conductance matrix for components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent that are in contact along transverse direction. Values are stored in attribute electric_conductance_matrix.
         Exploits sparse matrix.
         """
 
@@ -2875,7 +2874,7 @@ class Conductor:
                     strand.get_eps(self)
                 # end if strand.inputs["superconducting_material"] (cdp, 08/2020)
                 # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
-                # and/or StrandSuperconductorComponent properties in nodal points. Added to allow \
+                # and/or StackComponent properties in nodal points. Added to allow \
                 # storage of current sharing temperature time evolution values in \
                 # user defined nodal points (cdp, 08/2020)
                 strand.get_superconductor_critical_prop(self)
@@ -3043,7 +3042,7 @@ class Conductor:
             )
             # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self, nodal=False)
-            # only for StrandMixedComponent and StrandSuperconductorComponent objects (cdp, 07/2020)
+            # only for StrandMixedComponent and StackComponent objects (cdp, 07/2020)
             if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
                 if strand.inputs["superconducting_material"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
@@ -3051,7 +3050,7 @@ class Conductor:
                     strand.get_eps(self, nodal=False)
                 # end if strand.inputs["superconducting_material"] (cdp, 08/2020)
                 # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
-                # and/or StrandSuperconductorComponent properties in the Gauss point (cdp, 07/2020)
+                # and/or StackComponent properties in the Gauss point (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self, nodal=False)
                 if (
                     strand.operations["TCS_EVALUATION"] == False
@@ -3096,7 +3095,7 @@ class Conductor:
             # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self)
             # questa è la parte che credo sia rilevante
-            # only for StrandMixedComponent and StrandSuperconductorComponent objects (cdp, 07/2020)
+            # only for StrandMixedComponent and StackComponent objects (cdp, 07/2020)
             if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
                 if strand.inputs["superconducting_material"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
@@ -3104,7 +3103,7 @@ class Conductor:
                     strand.get_eps(self)
                 # end if strand.inputs["superconducting_material"] (cdp, 08/2020)
                 # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
-                # and/or StrandSuperconductorComponent properties in nodal points (cdp, 07/2020)
+                # and/or StackComponent properties in nodal points (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self)
                 # Evaluate current sharing temperature
                 strand.get_tcs()

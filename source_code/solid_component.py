@@ -430,9 +430,9 @@ class SolidComponent:
     #         # This expression is always the same, what change is the way in which \
     #         # cp_num and rho_num are evaluated (cdp, 07/2020)
     #         dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
-    #     # elif self.NAME == inventory["StrandSuperconductorComponent"].name:
-    #     elif isinstance(self, StrandSuperconductorComponent):
-    #         # STR_SC: superconductor strand (cdp, 07/2020)
+    #     # elif self.NAME == inventory["StackComponent"].name:
+    #     elif isinstance(self, StackComponent):
+    #         # STACK: superconductor strand (cdp, 07/2020)
     #         if self.inputs["superconducting_material"] == "NbTi":
     #             # LTS: NbTi (cdp, 07/2020)
     #             dict_dummy.update(total_density=density_nbti())
