@@ -196,13 +196,13 @@ class StackComponent(StrandComponent):
         self.sc = (
             self.inputs["HTS_thickness"]
             * self.inputs["Stack_width"]
-            * self.inputs["N_tapes"]
+            * self.inputs["Tape_number"]
         )
         # Stabilizer (not sc) total cross section in m^2
         self.stabilizer_cross_section = (
             self.tape_thickness_not_sc
             * self.inputs["Stack_width"]
-            * self.inputs["N_tapes"]
+            * self.inputs["Tape_number"]
         )
 
     def __repr__(self):
@@ -312,18 +312,18 @@ class StackComponent(StrandComponent):
         """
         # Check that number of tape materials given in input is consistent with
         # user declared materials.
-        if self.tape_material.size != self.inputs["N_materal_tape"]:
+        if self.tape_material.size != self.inputs["Material_number"]:
             # Message to be completed!
             raise ValueError(
-                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the tape ({self.inputs['N_materal_tape'] = }) is inconsistent with the number of defined materials ({self.tape_material.size = }).\nPlease check..."
+                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the tape ({self.inputs['Material_number'] = }) is inconsistent with the number of defined materials ({self.tape_material.size = }).\nPlease check..."
             )
 
         # Check that number of tape materials given in input is consistent with
         # not zero user defined material thicknes.
-        if self.material_thickness.size != self.inputs["N_materal_tape"]:
+        if self.material_thickness.size != self.inputs["Material_number"]:
             # Message to be completed!
             raise ValueError(
-                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the tape ({self.inputs['N_materal_tape'] = }) is inconsistent with the number of defined thicknesses ({self.material_thickness.size = }).\nPlease check..."
+                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the tape ({self.inputs['Material_number'] = }) is inconsistent with the number of defined thicknesses ({self.material_thickness.size = }).\nPlease check..."
             )
 
         # Check that the indexes of "none" material are equal to the indexes of
@@ -441,7 +441,7 @@ class StackComponent(StrandComponent):
             np.ndarray: array with homogenized thermal conductivity of the stack of tapes in W/m/K.
         """
         thermal_conductivity = np.zeros(
-            (self.inputs["N_materal_tape"], property["temperature"].size)
+            (self.inputs["Material_number"], property["temperature"].size)
         )
         for ii, func in enumerate(self.thermal_conductivity_function):
             if "cu" in func.__name__:
@@ -471,7 +471,7 @@ class StackComponent(StrandComponent):
             np.ndarray: array with homogenized electrical resistivity of not superconducting materials of the stack of tapes in Ohm*m.
         """
         elestrical_resistivity = np.zeros(
-            (self.inputs["N_materal_tape"] - 1, property["temperature"].size)
+            (self.inputs["Material_number"] - 1, property["temperature"].size)
         )
         for ii, func in enumerate(self.electrical_resistivity_function_not_sc):
             if "cu" in func.__name__:
