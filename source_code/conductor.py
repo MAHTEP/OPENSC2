@@ -2869,11 +2869,11 @@ class Conductor:
             # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self)
             if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
-                if strand.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
+                if strand.inputs["superconducting_material"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
                     strand.get_eps(self)
-                # end if strand.inputs["ISUPERCONDUCTOR"] (cdp, 08/2020)
+                # end if strand.inputs["superconducting_material"] (cdp, 08/2020)
                 # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
                 # and/or StrandSuperconductorComponent properties in nodal points. Added to allow \
                 # storage of current sharing temperature time evolution values in \
@@ -3045,11 +3045,11 @@ class Conductor:
             strand.get_magnetic_field_gradient(self, nodal=False)
             # only for StrandMixedComponent and StrandSuperconductorComponent objects (cdp, 07/2020)
             if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
-                if strand.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
+                if strand.inputs["superconducting_material"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
                     strand.get_eps(self, nodal=False)
-                # end if strand.inputs["ISUPERCONDUCTOR"] (cdp, 08/2020)
+                # end if strand.inputs["superconducting_material"] (cdp, 08/2020)
                 # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
                 # and/or StrandSuperconductorComponent properties in the Gauss point (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self, nodal=False)
@@ -3098,11 +3098,11 @@ class Conductor:
             # questa è la parte che credo sia rilevante
             # only for StrandMixedComponent and StrandSuperconductorComponent objects (cdp, 07/2020)
             if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
-                if strand.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
+                if strand.inputs["superconducting_material"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
                     strand.get_eps(self)
-                # end if strand.inputs["ISUPERCONDUCTOR"] (cdp, 08/2020)
+                # end if strand.inputs["superconducting_material"] (cdp, 08/2020)
                 # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
                 # and/or StrandSuperconductorComponent properties in nodal points (cdp, 07/2020)
                 strand.get_superconductor_critical_prop(self)

@@ -186,7 +186,7 @@ class StrandComponent(SolidComponent):
 
     def eval_critical_properties(self, dict_dummy):
 
-        if self.inputs["ISUPERCONDUCTOR"] == "NbTi":
+        if self.inputs["superconducting_material"] == "NbTi":
             dict_dummy["T_critical"] = critical_temperature_nbti(
                 dict_dummy["B_field"], self.inputs["Bc20m"], self.inputs["Tc0m"]
             )
@@ -197,7 +197,7 @@ class StrandComponent(SolidComponent):
                 self.inputs["c0"],
                 self.inputs["Tc0m"],
             )
-        elif self.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
+        elif self.inputs["superconducting_material"] == "Nb3Sn":
             dict_dummy["T_critical"] = critical_temperature_nb3sn(
                 dict_dummy["B_field"],
                 dict_dummy["Epsilon"],
@@ -212,7 +212,7 @@ class StrandComponent(SolidComponent):
                 self.inputs["Bc20m"],
                 self.inputs["c0"],
             )
-        elif self.inputs["ISUPERCONDUCTOR"] == "HTS":
+        elif self.inputs["superconducting_material"] == "YBCO":
             dict_dummy["T_critical"] = self.inputs["Tc0m"] * np.ones(
                 dict_dummy["temperature"].shape
             )
@@ -223,7 +223,7 @@ class StrandComponent(SolidComponent):
                 self.inputs["Bc20m"],
                 self.inputs["c0"],
             )
-        elif self.inputs["ISUPERCONDUCTOR"] == "scaling.dat":
+        elif self.inputs["superconducting_material"] == "scaling.dat":
             # Get user defined scaling invoking method User_scaling_margin \
             # (cdp, 10/2020)
             self.user_scaling_margin()
@@ -252,12 +252,12 @@ class StrandComponent(SolidComponent):
 
         jop = (
             np.abs(self.dict_node_pt["IOP"][0])
-            / (self.ASC / self.inputs["COSTETA"])
+            / (self.sc_cross_section / self.inputs["COSTETA"])
             * np.ones(dict_dummy["B_field"].shape)
         )
 
         bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
-        if self.inputs["ISUPERCONDUCTOR"] == "NbTi":
+        if self.inputs["superconducting_material"] == "NbTi":
             dict_dummy["T_cur_sharing"] = current_sharing_temperature_nbti(
                 dict_dummy["B_field"],
                 jop,
@@ -272,7 +272,7 @@ class StrandComponent(SolidComponent):
                 self.inputs["c0"],
                 self.inputs["Tc0m"],
             )
-        elif self.inputs["ISUPERCONDUCTOR"] == "Nb3Sn":
+        elif self.inputs["superconducting_material"] == "Nb3Sn":
             dict_dummy["T_cur_sharing"] = current_sharing_temperature_nb3sn(
                 dict_dummy["B_field"],
                 dict_dummy["Epsilon"],
@@ -289,7 +289,7 @@ class StrandComponent(SolidComponent):
                 self.inputs["Bc20m"],
                 self.inputs["c0"],
             )
-        elif self.inputs["ISUPERCONDUCTOR"] == "HTS":
+        elif self.inputs["superconducting_material"] == "YBCO":
             dict_dummy["T_cur_sharing"] = current_sharing_temperature_re123(
                 dict_dummy["B_field"],
                 jop,
@@ -304,7 +304,7 @@ class StrandComponent(SolidComponent):
                 self.inputs["Bc20m"],
                 self.inputs["c0"],
             )
-        elif self.inputs["ISUPERCONDUCTOR"] == "scaling.dat":
+        elif self.inputs["superconducting_material"] == "scaling.dat":
 
             warnings.warn("Still to be understood what to do here!!")
 
@@ -387,7 +387,7 @@ class StrandComponent(SolidComponent):
                     if fields[0] in list_integer:
                         # convert to integer (cdp, 10/2020)
                         self.dict_scaling_input[fields[0]] = int(fields[1][:-1])
-                    elif fields[0] == "ISUPERCONDUCTOR":
+                    elif fields[0] == "superconducting_material":
                         # flag to
                         self.dict_scaling_input[fields[0]] = str(fields[1][:-1])
                     else:

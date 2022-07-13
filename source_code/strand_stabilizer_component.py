@@ -99,8 +99,8 @@ class StrandStabilizerComponent(StrandComponent):
         # Call SolidComponent class constructor to deal with StrandStabilizerComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
         SolidComponent(simulation, self)
-        self.inputs["ISTABILIZER"] = self.inputs["ISTABILIZER"].lower()
-        if self.inputs["ISTABILIZER"] != "cu":
+        self.inputs["stabilizer_material"] = self.inputs["stabilizer_material"].lower()
+        if self.inputs["stabilizer_material"] != "cu":
             # remove key RRR from inputs if stabilizer is not Cu (cdp, 07/2020)
             self.inputs.pop("RRR")
         if self.operations["IBIFUN"] != -1:
@@ -122,7 +122,7 @@ class StrandStabilizerComponent(StrandComponent):
         Returns:
             np.ndarray: array with density of the stabilizer in kg/m^3.
         """
-        return DENSITY_FUNC[self.inputs["ISTABILIZER"]](property["temperature"].size)
+        return DENSITY_FUNC[self.inputs["stabilizer_material"]](property["temperature"].size)
 
     def strand_isobaric_specific_heat(self, property: dict) -> np.ndarray:
         """Method that evaluates isobaric specific heat of the stabilizer.
@@ -133,7 +133,7 @@ class StrandStabilizerComponent(StrandComponent):
         Returns:
             np.ndarray: array with isobaric specific heat of the stabilizer in kg/m^3.
         """
-        return ISOBARIC_SPECIFIC_HEAT_FUNC[self.inputs["ISTABILIZER"]](
+        return ISOBARIC_SPECIFIC_HEAT_FUNC[self.inputs["stabilizer_material"]](
             property["temperature"].size
         )
 
@@ -146,14 +146,14 @@ class StrandStabilizerComponent(StrandComponent):
         Returns:
             np.ndarray: array with thermal conductivity of the stabilizer in W/m/K.
         """
-        if self.inputs["ISTABILIZER"] == "cu":
-            return THERMAL_CONDUCTIVITY_FUNC[self.inputs["ISTABILIZER"]](
+        if self.inputs["stabilizer_material"] == "cu":
+            return THERMAL_CONDUCTIVITY_FUNC[self.inputs["stabilizer_material"]](
                 property["temperature"],
                 property["B_field"],
                 self.inputs["RRR"],
             )
         else:
-            return THERMAL_CONDUCTIVITY_FUNC[self.inputs["ISTABILIZER"]](
+            return THERMAL_CONDUCTIVITY_FUNC[self.inputs["stabilizer_material"]](
                 property["temperature"]
             )
 
@@ -166,14 +166,14 @@ class StrandStabilizerComponent(StrandComponent):
         Returns:
             np.ndarray: array with electrical resistivity of the stabilizer in Ohm*m.
         """
-        if self.inputs["ISTABILIZER"] == "cu":
-            return ELECTRICAL_RESISTIVITY_FUNC[self.inputs["ISTABILIZER"]](
+        if self.inputs["stabilizer_material"] == "cu":
+            return ELECTRICAL_RESISTIVITY_FUNC[self.inputs["stabilizer_material"]](
                 property["temperature"],
                 property["B_field"],
                 self.inputs["RRR"],
             )
         else:
-            return ELECTRICAL_RESISTIVITY_FUNC[self.inputs["ISTABILIZER"]](
+            return ELECTRICAL_RESISTIVITY_FUNC[self.inputs["stabilizer_material"]](
                 property["temperature"]
             )
 
