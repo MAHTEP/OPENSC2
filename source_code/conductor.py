@@ -3044,6 +3044,38 @@ class Conductor:
             .apply(np.sqrt)
         )
 
+    def __self_inductance_mode1(self, lmod:np.ndarray)->np.ndarray:
+        """Private method that analytically evaluates self inductances according to mode 1.
+
+        Args:
+            lmod (np.ndarray): array with the distance between strand component nodal nodes.
+
+        Returns:
+            np.ndarray: self inductances.
+        """
+        self_inductance = np.zeros(lmod.shape)
+
+        for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
+            self_inductance[ii :: self.inventory["StrandComponent"].number] = (
+                2
+                * lmod[ii :: self.inventory["StrandComponent"].number]
+                * (
+                    np.arcsinh(
+                        lmod[ii :: self.inventory["StrandComponent"].number] / obj.radius
+                    )
+                    - np.sqrt(
+                        1.0
+                        + (
+                            obj.radius
+                            / lmod[ii :: self.inventory["StrandComponent"].number]
+                        )
+                        ** 2
+                    )
+                    + obj.radius / lmod[ii :: self.inventory["StrandComponent"].number]
+                )
+            )
+        return self_inductance
+
     # END: INDUCTANCE ANALYTICAL EVALUATION
 
     def operating_conditions(self, simulation):
