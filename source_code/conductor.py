@@ -19,7 +19,7 @@ from conductor_flags import (
     IOP_FROM_EXT_FUNCTION,
     IOP_FROM_FILE,
     SELF_INDUCTANCE_MODE_1,
-    SELF_INDUCTANCE_MODE_2
+    SELF_INDUCTANCE_MODE_2,
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -367,24 +367,16 @@ class Conductor:
                     # ["all_component"].collection: list of all objects
                     # (cdp, 09/2020)
                     self.inventory["StackComponent"].collection.append(
-                        StackComponent(
-                            simulation, sheet, ii, kindObj, dict_file_path
-                        )
+                        StackComponent(simulation, sheet, ii, kindObj, dict_file_path)
                     )
                     self.inventory["StrandComponent"].collection.append(
-                        self.inventory["StackComponent"].collection[
-                            ii - 1
-                        ]
+                        self.inventory["StackComponent"].collection[ii - 1]
                     )
                     self.inventory["SolidComponent"].collection.append(
-                        self.inventory["StackComponent"].collection[
-                            ii - 1
-                        ]
+                        self.inventory["StackComponent"].collection[ii - 1]
                     )
                     self.inventory["all_component"].collection.append(
-                        self.inventory["StackComponent"].collection[
-                            ii - 1
-                        ]
+                        self.inventory["StackComponent"].collection[ii - 1]
                     )
                 # end for ii (cdp, 09/2020)
             elif kindObj == "STR_MIX":
@@ -2070,10 +2062,10 @@ class Conductor:
         # Loop on SolidComponent (cdp, 01/2021)
         # N.B. questo loop si potrebbe fare usando map.
         for s_comp in self.inventory["SolidComponent"].collection:
-            # Compute fractions of the total current that flows in 
-            # superconductor cross section of each strand or stack object if in 
-            # superconducting regime and fractions of the total current that 
-            # flows in the total cross section of each strand or stack object 
+            # Compute fractions of the total current that flows in
+            # superconductor cross section of each strand or stack object if in
+            # superconducting regime and fractions of the total current that
+            # flows in the total cross section of each strand or stack object
             # if in current sharing regime.
             s_comp.get_current_fractions(self.total_sc_area, self.total_so_area)
             # compute, average density, thermal conductivity, specifi heat at \
@@ -2854,7 +2846,7 @@ class Conductor:
 
     # START: INDUCTANCE ANALYTICAL EVALUATION
 
-    def __inductance_analytical_calculation(self, mode:int=2):
+    def __inductance_analytical_calculation(self, mode: int = 2):
         """Private method that evaluates the magnetic inductance analytically. Self inductances can be evaluated with to different formulations exploiting input argument mode (see section Args for details).
 
         Args:
@@ -2892,7 +2884,7 @@ class Conductor:
         for ii in range(self.total_elements_current_carriers - 1):
             self.__mutual_inductance(lmod, ii, ABSTOL)
         # end for
-        
+
         # Switch to evalutae self inductance.
         self_inductance_switch = {SELF_INDUCTANCE_MODE_1: self.__self_inductance_mode1, SELF_INDUCTANCE_MODE_2: self.__self_inductance_mode2}
         self_inductance = self_inductance_switch[mode](lmod)
@@ -2909,7 +2901,7 @@ class Conductor:
             )
         )
 
-    def __mutual_inductance(self, lmod:np.ndarray, ii:int, abstol:float=1e-6):
+    def __mutual_inductance(self, lmod: np.ndarray, ii: int, abstol: float = 1e-6):
         """Private method that evaluates the mutual inductance analytically.
 
         Args:
@@ -2989,12 +2981,12 @@ class Conductor:
         omega[d0 == 0.0] = 0.0
 
         # contribution
-        pp = np.zeros((len_jj,5),dtype=float)
-        pp[:,0] = (ll + mu) * np.arctanh(mm / (rr["end_end"] + rr["end_start"]))
-        pp[:,1] = -nu * np.arctanh(ll / (rr["end_start"] + rr["start_start"]))
-        pp[:,2] = (mm + nu) * np.arctanh(ll / (rr["end_end"] + rr["start_end"]))
-        pp[:,3] = -mu * np.arctanh(mm / (rr["start_start"] + rr["start_end"]))
-        pp[:,4] = d0 * omega / sin_eps
+        pp = np.zeros((len_jj, 5), dtype=float)
+        pp[:, 0] = (ll + mu) * np.arctanh(mm / (rr["end_end"] + rr["end_start"]))
+        pp[:, 1] = -nu * np.arctanh(ll / (rr["end_start"] + rr["start_start"]))
+        pp[:, 2] = (mm + nu) * np.arctanh(ll / (rr["end_end"] + rr["start_end"]))
+        pp[:, 3] = -mu * np.arctanh(mm / (rr["start_start"] + rr["start_end"]))
+        pp[:, 4] = d0 * omega / sin_eps
 
         # filter odd cases (e.g. consecutive segments)
         pp[np.isnan(pp)] = 0.0
@@ -3002,10 +2994,13 @@ class Conductor:
 
         # Mutual inductances
         self.inductance_matrix[ii, jj] = (
-            2 * cos_eps * (pp[:,0] + pp[:,1] + pp[:,2] + pp[:,3]) - cos_eps * pp[:,4]
+            2 * cos_eps * (pp[:, 0] + pp[:, 1] + pp[:, 2] + pp[:, 3])
+            - cos_eps * pp[:, 4]
         )
 
-    def __vertex_to_vertex_distance(self, key:str, ii:int, jj:np.ndarray)->np.ndarray:
+    def __vertex_to_vertex_distance(
+        self, key: str, ii: int, jj: np.ndarray
+    ) -> np.ndarray:
         """Private method that evaluates the vertex to vertex distances. Possible definitions are stored in input argument key.
 
         Args:
@@ -3046,7 +3041,7 @@ class Conductor:
             .apply(np.sqrt)
         )
 
-    def __self_inductance_mode1(self, lmod:np.ndarray)->np.ndarray:
+    def __self_inductance_mode1(self, lmod: np.ndarray) -> np.ndarray:
         """Private method that analytically evaluates self inductances according to mode 1.
 
         Args:
@@ -3063,7 +3058,8 @@ class Conductor:
                 * lmod[ii :: self.inventory["StrandComponent"].number]
                 * (
                     np.arcsinh(
-                        lmod[ii :: self.inventory["StrandComponent"].number] / obj.radius
+                        lmod[ii :: self.inventory["StrandComponent"].number]
+                        / obj.radius
                     )
                     - np.sqrt(
                         1.0
@@ -3078,7 +3074,7 @@ class Conductor:
             )
         return self_inductance
 
-    def __self_inductance_mode2(self, lmod:np.ndarray)->np.ndarray:
+    def __self_inductance_mode2(self, lmod: np.ndarray) -> np.ndarray:
         """Private method that analytically evaluates self inductances according to mode 2.
         Args:
             lmod (np.ndarray): array with the distance between strand component nodal nodes.
@@ -3116,8 +3112,7 @@ class Conductor:
     # START: INDUCTANCE NOT ANALYTICAL EVALUATION
 
     def __inductance_approximate_calculation(self):
-        """Private method that approximate the inductance of the system. For an analytical evaluation of the inductance use private method __inductance_analytical_calculation.
-        """
+        """Private method that approximate the inductance of the system. For an analytical evaluation of the inductance use private method __inductance_analytical_calculation."""
 
         ll = (
             self.nodal_coordinates.iloc[
@@ -3156,7 +3151,7 @@ class Conductor:
             )
         )
 
-    def __mutual_inductance_approximate(self, ll:pd.DataFrame)->np.ndarray:
+    def __mutual_inductance_approximate(self, ll: pd.DataFrame) -> np.ndarray:
         """Private method that evaluates an approximation of mutual inductance.
 
         Args:
@@ -3218,8 +3213,8 @@ class Conductor:
             # End for
         # End for
         return mutual_inductance
-    
-    def __self_inductance_approximate(self, lmod:np.ndarray)->np.ndarray:
+
+    def __self_inductance_approximate(self, lmod: np.ndarray) -> np.ndarray:
         """Private method that evaluates an approximation of self inductance.
 
         Args:
