@@ -3003,6 +3003,47 @@ class Conductor:
             2 * cos_eps * (pp[:,0] + pp[:,1] + pp[:,2] + pp[:,3]) - cos_eps * pp[:,4]
         )
 
+    def __vertex_to_vertex_distance(self, key:str, ii:int, jj:np.ndarray)->np.ndarray:
+        """Private method that evaluates the vertex to vertex distances. Possible definitions are stored in input argument key.
+
+        Args:
+            key (str): string with the definition for distance evaluation. Possible definitions are:
+                1) start_end: distance bewteen start and end nodes;
+                2) start_start: distance bewteen two start nodes;
+                3) end_end: distance bewteen two end nodes;
+                4) end_start: distance bewteen end and start nodes.
+
+            ii (int): index of the i-th edge on which the mutual inductance is evaluated.
+            jj (np.ndarray): array of index of the nodes for which distance must be evaluated.
+
+        Returns:
+            np.ndarray: vertex to vertex distances.
+        """
+        cols = key.split("_")
+        return (
+            (
+                (
+                    self.nodal_coordinates.iloc[
+                        self.connectivity_matrix.loc["StrandComponent"].iloc[
+                            jj,
+                            self.connectivity_matrix.columns.get_loc(cols[0]),
+                        ],
+                        :,
+                    ]
+                    - self.nodal_coordinates.iloc[
+                        self.connectivity_matrix.loc["StrandComponent"].iat[
+                            ii,
+                            self.connectivity_matrix.columns.get_loc(cols[1]),
+                        ],
+                        :,
+                    ]
+                )
+                ** 2
+            )
+            .sum(axis="columns")
+            .apply(np.sqrt)
+        )
+
     # END: INDUCTANCE ANALYTICAL EVALUATION
 
     def operating_conditions(self, simulation):
