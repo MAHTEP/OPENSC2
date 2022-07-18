@@ -13,3 +13,8 @@ IOP_FROM_EXT_FUNCTION = -2
 ELECTRIC_CONDUCTANCE_UNIT_LENGTH = 1
 # Electric conductance is not defined per unit length
 ELECTRIC_CONDUCTANCE_NOT_UNIT_LENGTH = 2
+
+# Analytical self inductance is evaluated according to mode 1.
+SELF_INDUCTANCE_MODE_1 = 1
+# Analytical self inductance is evaluated according to mode 2.
+SELF_INDUCTANCE_MODE_2 = 2
