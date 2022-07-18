@@ -2850,6 +2850,65 @@ class Conductor:
             self.total_elements_current_carriers :
         ] = self.operating_current
 
+    # START: INDUCTANCE ANALYTICAL EVALUATION
+
+    def __inductance_analytical_calculation(self, mode:int=2):
+        """Private method that evaluates the magnetic inductance analytically. Self inductances can be evaluated with to different formulations exploiting input argument mode (see section Args for details).
+
+        Args:
+            mode (int,optional): flag to select the equation for the analytical evaluation of self inductance. 1: mode 1; 2: mode 2. Defaults to 2.
+        """
+
+        if mode != 1 or mode != 2:
+            raise ValueError(f"{self.identifier}\nArgument 'mode' must be equal to {SELF_INDUCTANCE_MODE_1 = } or to {SELF_INDUCTANCE_MODE_2 = }. Current value {mode = } is not allowed. Please check sheet {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n")
+        ABSTOL = 1e-6
+        lmod = (
+            (
+                (
+                    self.nodal_coordinates.iloc[
+                        self.connectivity_matrix.loc[
+                            "StrandComponent",
+                            "end",
+                        ],
+                        :,
+                    ]
+                    - self.nodal_coordinates.iloc[
+                        self.connectivity_matrix.loc[
+                            "StrandComponent",
+                            "start",
+                        ],
+                        :,
+                    ]
+                )
+                ** 2
+            )
+            .sum(axis=1)
+            .apply(np.sqrt)
+        )
+
+        # Evaluate mutual inductances
+        for ii in range(self.total_elements_current_carriers - 1):
+            self.__mutual_inductance(lmod, ii, ABSTOL)
+        # end for
+        
+        # Switch to evalutae self inductance.
+        self_inductance_switch = {SELF_INDUCTANCE_MODE_1: self.__self_inductance_mode1, SELF_INDUCTANCE_MODE_2: self.__self_inductance_mode2}
+        self_inductance = self_inductance_switch[mode](lmod)
+
+        internal_inductance = lmod / 2.0
+
+        self.inductance_matrix = (
+            constants.mu_0
+            / (4.0 * constants.pi)
+            * (
+                np.diag(self_inductance + internal_inductance)
+                + self.inductance_matrix
+                + self.inductance_matrix.T
+            )
+        )
+
+    # END: INDUCTANCE ANALYTICAL EVALUATION
+
     def operating_conditions(self, simulation):
 
         """
