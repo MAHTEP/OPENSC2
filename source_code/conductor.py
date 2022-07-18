@@ -3217,6 +3217,40 @@ class Conductor:
         # End for
         return mutual_inductance
     
+    def __self_inductance_approximate(self, lmod:np.ndarray)->np.ndarray:
+        """Private method that evaluates an approximation of self inductance.
+
+        Args:
+            lmod (np.ndarray): array with the distance between strand component nodal nodes.
+
+        Returns:
+            np.ndarray: approximate value of self inductance.
+        """
+        self_inductance = np.zeros(lmod.shape)
+
+        for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
+            self_inductance[ii :: self.inventory["StrandComponent"].number] = 2 * (
+                lmod[ii :: self.inventory["StrandComponent"].number]
+                * np.log(
+                    (
+                        lmod[ii :: self.inventory["StrandComponent"].number]
+                        + np.sqrt(
+                            lmod[ii :: self.inventory["StrandComponent"].number] ** 2
+                            + obj.radius ** 2
+                        )
+                    )
+                    / obj.radius
+                )
+                - np.sqrt(
+                    lmod[ii :: self.inventory["StrandComponent"].number] ** 2
+                    + obj.radius ** 2
+                )
+                + lmod[ii :: self.inventory["StrandComponent"].number] / 4
+                + obj.radius
+            )
+        # End for
+
+        return self_inductance
 
     def operating_conditions(self, simulation):
 
