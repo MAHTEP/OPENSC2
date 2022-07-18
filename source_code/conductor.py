@@ -3154,6 +3154,70 @@ class Conductor:
             )
         )
 
+    def __mutual_inductance_approximate(self, ll:pd.DataFrame)->np.ndarray:
+        """Private method that evaluates an approximation of mutual inductance.
+
+        Args:
+            ll (pd.DataFrame): variable with useful values for the evaluation.
+
+        Returns:
+            np.ndarray: approximate value of mutual inductance.
+        """
+
+        ABSTOL = 1e-4
+        RELTOL = 1e-4
+
+        mutual_inductance = np.zeros(self.inductance_matrix.shape)
+
+        def __reverse_distance(xi, xj, qi, vi, qj, vj):
+            return 1.0 / np.sqrt(
+                (qi[0] + xi * vi[0] - qj[0] - xj * vj[0]) ** 2
+                + (qi[1] + xi * vi[1] - qj[1] - xj * vj[1]) ** 2
+                + (qi[2] + xi * vi[2] - qj[2] - xj * vj[2]) ** 2
+            )
+
+        for ii in range(self.total_elements_current_carriers):
+            qi = (
+                self.nodal_coordinates.iloc[
+                    self.connectivity_matrix.loc[
+                        "StrandComponent",
+                        "start",
+                    ],
+                    :,
+                ]
+                .iloc[ii, :]
+                .to_numpy()
+            )
+            vi = ll.iloc[ii, :].to_numpy()
+            for jj in range(ii + 1, self.total_elements_current_carriers):
+                qj = (
+                    self.nodal_coordinates.iloc[
+                        self.connectivity_matrix.loc[
+                            "StrandComponent",
+                            "start",
+                        ],
+                        :,
+                    ]
+                    .iloc[jj, :]
+                    .to_numpy()
+                )
+                vj = ll.iloc[jj, :].to_numpy()
+                mutual_inductance[ii, jj] = np.sum(vi * vj) * integrate.dblquad(
+                    __reverse_distance,
+                    0.0,
+                    1.0,
+                    0.0,
+                    1.0,
+                    (qi, vi, qj, vj),
+                    ABSTOL,
+                    RELTOL,
+                )[0]
+
+            # End for
+        # End for
+        return mutual_inductance
+    
+
     def operating_conditions(self, simulation):
 
         """
