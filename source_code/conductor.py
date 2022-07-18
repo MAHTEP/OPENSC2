@@ -3111,6 +3111,49 @@ class Conductor:
 
     # END: INDUCTANCE ANALYTICAL EVALUATION
 
+    # START: INDUCTANCE NOT ANALYTICAL EVALUATION
+
+    def __inductance_approximate_calculation(self):
+        """Private method that approximate the inductance of the system. For an analytical evaluation of the inductance use private method __inductance_analytical_calculation.
+        """
+
+        ll = (
+            self.nodal_coordinates.iloc[
+                self.connectivity_matrix.loc[
+                    "StrandComponent",
+                    "end",
+                ],
+                :,
+            ]
+            - self.nodal_coordinates.iloc[
+                self.connectivity_matrix.loc[
+                    "StrandComponent",
+                    "start",
+                ],
+                :,
+            ]
+        )
+        lmod = (ll ** 2).sum(axis=1).apply(np.sqrt)
+
+        internal_inductance = np.zeros(lmod.shape)
+
+        # Evaluate mutual inductance
+        mutual_inductance = self.__mutual_inductance_approximate(ll)
+        # Evaluate self inductance
+        self_inductance = self.__self_inductance_approximate(lmod)
+        # Evaluate internal inductance
+        internal_inductance = lmod.to_numpy() / 2.0
+
+        self.inductance_matrix = (
+            constants.mu_0
+            / (4.0 * constants.pi)
+            * (
+                np.diag(self_inductance + internal_inductance)
+                + mutual_inductance
+                + mutual_inductance.T
+            )
+        )
+
     def operating_conditions(self, simulation):
 
         """
