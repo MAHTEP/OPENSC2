@@ -18,6 +18,8 @@ from conductor_flags import (
     IOP_CONSTANT,
     IOP_FROM_EXT_FUNCTION,
     IOP_FROM_FILE,
+    SELF_INDUCTANCE_MODE_1,
+    SELF_INDUCTANCE_MODE_2
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
