@@ -3283,6 +3283,30 @@ class Conductor:
 
         self.electric_mass_matrix = self.electric_mass_matrix.tocsr(copy=True)
 
+    def __get_electric_time_step(self):
+        """Private method that evaluates the electric time step according to use definition.
+
+        Raises:
+            ValueError: if electric time step is negative.
+            ValueError: if electric time step is larger and or equal than thermal time step.
+        """
+
+        # Rimuovere gli if.
+        if self.inputs["ELECTRIC_TIME_STEP"] == None:
+            self.electric_time_step = self.time_step / 500
+        else:
+            if self.inputs["ELECTRIC_TIME_STEP"] < 0.0:
+                raise ValueError[
+                    f"Electric time step must be > 0.0 s; current value is: {self.inputs['ELECTRIC_TIME_STEP']=}s\n"
+                ]
+            if self.inputs["ELECTRIC_TIME_STEP"] >= self.time_step:
+                raise ValueError[
+                    f"Electric time step must be < than thermal time step; current values are: {self.time_step=}s\n; {self.inputs['ELECTRIC_TIME_STEP']=}s\n"
+                ]
+            self.electric_time_step = self.inputs["ELECTRIC_TIME_STEP"]
+
+        self.electric_time_end = self.time_step
+
     def operating_conditions(self, simulation):
 
         """
