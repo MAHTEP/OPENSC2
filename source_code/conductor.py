@@ -39,7 +39,11 @@ from utility_functions.auxiliary_functions import (
     check_object_number,
     set_diagnostic,
 )
-from utility_functions.electric_auxiliary_functions import custom_current_function, electric_steady_state_solution, electric_transient_solution
+from utility_functions.electric_auxiliary_functions import (
+    custom_current_function,
+    electric_steady_state_solution,
+    electric_transient_solution,
+)
 from utility_functions.initialization_functions import (
     build_coordinates_of_barycenter,
     check_max_node_number,
@@ -111,7 +115,9 @@ class Conductor:
         self.file_input = dict()
         # inputs dictionary initialization (cdp, 06/2020)
         self.inputs = dict()
-        self.workbook_name = os.path.join(self.BASE_PATH, simulation.transient_input["MAGNET"])
+        self.workbook_name = os.path.join(
+            self.BASE_PATH, simulation.transient_input["MAGNET"]
+        )
         self.workbook_sheet_name = [sheet.title for sheet in sheetConductorsList]
         # Load the sheet CONDUCTOR_files form file conducor_definition.xlsx as a disctionary.
         self.file_input = pd.read_excel(
@@ -2842,7 +2848,9 @@ class Conductor:
             self.operating_current[0] = custom_current_function(self.electric_time_step)
             # All the current exits from the lats node of the last current
             # carrier.
-            self.operating_current[-1] = -custom_current_function(self.electric_time_step)
+            self.operating_current[-1] = -custom_current_function(
+                self.electric_time_step
+            )
             # to be implemented.
         # End if self.dict_input["I0_OP_MODE"].
 
@@ -2860,7 +2868,9 @@ class Conductor:
         """
 
         if mode != 1 or mode != 2:
-            raise ValueError(f"{self.identifier}\nArgument 'mode' must be equal to {SELF_INDUCTANCE_MODE_1 = } or to {SELF_INDUCTANCE_MODE_2 = }. Current value {mode = } is not allowed. Please check sheet {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n")
+            raise ValueError(
+                f"{self.identifier}\nArgument 'mode' must be equal to {SELF_INDUCTANCE_MODE_1 = } or to {SELF_INDUCTANCE_MODE_2 = }. Current value {mode = } is not allowed. Please check sheet {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
+            )
         ABSTOL = 1e-6
         lmod = (
             (
@@ -2892,7 +2902,10 @@ class Conductor:
         # end for
 
         # Switch to evalutae self inductance.
-        self_inductance_switch = {SELF_INDUCTANCE_MODE_1: self.__self_inductance_mode1, SELF_INDUCTANCE_MODE_2: self.__self_inductance_mode2}
+        self_inductance_switch = {
+            SELF_INDUCTANCE_MODE_1: self.__self_inductance_mode1,
+            SELF_INDUCTANCE_MODE_2: self.__self_inductance_mode2,
+        }
         self_inductance = self_inductance_switch[mode](lmod)
 
         internal_inductance = lmod / 2.0
@@ -3257,13 +3270,13 @@ class Conductor:
 
     # END: INDUCTANCE APPROXIMATE EVALUATION
 
-    def __build_electric_mass_matrix(self, mode:int = 1):
+    def __build_electric_mass_matrix(self, mode: int = 1):
         """Private method that builds the electric mass matrix from the inductance matrix. Inductance matrix can be evaluated analytically or approximated accordind to arg mode.
 
         Note: the other three blocks of the electric mass matrix are already set to zeros in the initialization.
 
         Args:
-            mode (int, optional): flag to select how to evaluate the inductance matrix. 
+            mode (int, optional): flag to select how to evaluate the inductance matrix.
                 0: analytical inductance evaluation;
                 1: approximate inductance evaluation.
             Defaults to 1.
@@ -3273,13 +3286,15 @@ class Conductor:
         """
 
         if mode != 0 or mode != 1:
-            raise ValueError(f"{self.identifier = }\nArgument 'mode' should be equal to {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({mode = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n")
+            raise ValueError(
+                f"{self.identifier = }\nArgument 'mode' should be equal to {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({mode = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
+            )
 
         inductance_switch = {
             ANALYTICAL_INDUCTANCE: self.__inductance_analytical_calculation,
             APPROXIMATE_INDUCTANCE: self.__inductance_approximate_calculation,
         }
-        
+
         inductance_switch[mode]()
 
         self.electric_mass_matrix[
@@ -3313,7 +3328,7 @@ class Conductor:
 
         self.electric_time_end = self.time_step
 
-    def build_right_hand_side(self, foo:np.ndarray, bar:np.ndarray, idx:int):
+    def build_right_hand_side(self, foo: np.ndarray, bar: np.ndarray, idx: int):
         """Method that builds the right hand side of the transient electric equation.
 
         Args:
@@ -3345,14 +3360,16 @@ class Conductor:
             ValueError: if to flag self.operations["ELECTRIC_SOLVER"] user assigns not valid value.
         """
         self.electric_preprocessing()
-        
+
         if self.operations["ELECTRIC_SOLVER"] == STATIC_ELECTRIC_SOLVER:
             electric_steady_state_solution()
         elif self.operations["ELECTRIC_SOLVER"] == TRANSIENT_ELECTRIC_SOLVER:
             self.__get_electric_time_step()
             electric_transient_solution()
         else:
-            raise ValueError(f"{self.identifier = }\nInput variable ELECTRIC_SOLVER should be equal to {STATIC_ELECTRIC_SOLVER = } or {TRANSIENT_ELECTRIC_SOLVER = }. Current value {self.operations['ELECTRIC_SOLVER'] = } is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n")
+            raise ValueError(
+                f"{self.identifier = }\nInput variable ELECTRIC_SOLVER should be equal to {STATIC_ELECTRIC_SOLVER = } or {TRANSIENT_ELECTRIC_SOLVER = }. Current value {self.operations['ELECTRIC_SOLVER'] = } is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
+            )
 
     def operating_conditions(self, simulation):
 
