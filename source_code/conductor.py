@@ -13,6 +13,8 @@ import warnings
 # import classes
 from component_collection import ComponentCollection
 from conductor_flags import (
+    ANALYTICAL_INDUCTANCE,
+    APPROXIMATE_INDUCTANCE,
     ELECTRIC_CONDUCTANCE_UNIT_LENGTH,
     ELECTRIC_CONDUCTANCE_NOT_UNIT_LENGTH,
     IOP_CONSTANT,
