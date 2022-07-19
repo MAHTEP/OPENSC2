@@ -3251,6 +3251,38 @@ class Conductor:
 
     # END: INDUCTANCE APPROXIMATE EVALUATION
 
+    def __build_electric_mass_matrix(self, mode:int = 1):
+        """Private method that builds the electric mass matrix from the inductance matrix. Inductance matrix can be evaluated analytically or approximated accordind to arg mode.
+
+        Note: the other three blocks of the electric mass matrix are already set to zeros in the initialization.
+
+        Args:
+            mode (int, optional): flag to select how to evaluate the inductance matrix. 
+                0: analytical inductance evaluation;
+                1: approximate inductance evaluation.
+            Defaults to 1.
+
+        Raises:
+            ValueError: raise error if mode is a not valid value.
+        """
+
+        if mode != 0 or mode != 1:
+            raise ValueError(f"{self.identifier = }\nArgument 'mode' should be equal to {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({mode = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.input_workbook}.\n")
+
+        inductance_switch = {
+            ANALYTICAL_INDUCTANCE: self.__inductance_analytical_calculation,
+            APPROXIMATE_INDUCTANCE: self.__inductance_approximate_calculation,
+        }
+        
+        inductance_switch[mode]()
+
+        self.electric_mass_matrix[
+            : self.total_elements_current_carriers,
+            : self.total_elements_current_carriers,
+        ] = self.inductance_matrix
+
+        self.electric_mass_matrix = self.electric_mass_matrix.tocsr(copy=True)
+
     def operating_conditions(self, simulation):
 
         """
