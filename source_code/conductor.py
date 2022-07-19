@@ -109,10 +109,12 @@ class Conductor:
         self.file_input = dict()
         # inputs dictionary initialization (cdp, 06/2020)
         self.inputs = dict()
+        self.workbook_name = os.path.join(self.BASE_PATH, simulation.transient_input["MAGNET"])
+        self.workbook_sheet_name = [sheet.title for sheet in sheetConductorsList]
         # Load the sheet CONDUCTOR_files form file conducor_definition.xlsx as a disctionary.
         self.file_input = pd.read_excel(
-            os.path.join(self.BASE_PATH, simulation.transient_input["MAGNET"]),
-            sheet_name=sheetConductorsList[0].title,
+            self.workbook_name,
+            sheet_name=self.workbook_sheet_name[0],
             skiprows=2,
             header=0,
             index_col=0,
@@ -120,8 +122,8 @@ class Conductor:
         )[self.identifier].to_dict()
         # Load the sheet CONDUCTOR_input form file conducor_definition.xlsx as a disctionary.
         self.inputs = pd.read_excel(
-            os.path.join(self.BASE_PATH, simulation.transient_input["MAGNET"]),
-            sheet_name=sheetConductorsList[1].title,
+            self.workbook_name,
+            sheet_name=self.workbook_sheet_name[1],
             skiprows=2,
             header=0,
             index_col=0,
@@ -134,8 +136,8 @@ class Conductor:
 
         # Load the sheet CONDUCTOR_operation form file conducor_definition.xlsx as a disctionary.
         self.operations = pd.read_excel(
-            os.path.join(self.BASE_PATH, simulation.transient_input["MAGNET"]),
-            sheet_name=sheetConductorsList[2].title,
+            self.workbook_name,
+            sheet_name=self.workbook_sheet_name[2],
             skiprows=2,
             header=0,
             index_col=0,
@@ -3269,7 +3271,7 @@ class Conductor:
         """
 
         if mode != 0 or mode != 1:
-            raise ValueError(f"{self.identifier = }\nArgument 'mode' should be equal to {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({mode = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.input_workbook}.\n")
+            raise ValueError(f"{self.identifier = }\nArgument 'mode' should be equal to {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({mode = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n")
 
         inductance_switch = {
             ANALYTICAL_INDUCTANCE: self.__inductance_analytical_calculation,
