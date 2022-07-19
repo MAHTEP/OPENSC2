@@ -18,3 +18,8 @@ ELECTRIC_CONDUCTANCE_NOT_UNIT_LENGTH = 2
 SELF_INDUCTANCE_MODE_1 = 1
 # Analytical self inductance is evaluated according to mode 2.
 SELF_INDUCTANCE_MODE_2 = 2
+
+# Flag to evaluate inductance analytically
+ANALYTICAL_INDUCTANCE = 0
+# Flag to evaluate inductance using an approximation
+APPROXIMATE_INDUCTANCE = 1
