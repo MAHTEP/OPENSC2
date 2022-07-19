@@ -3109,7 +3109,7 @@ class Conductor:
 
     # END: INDUCTANCE ANALYTICAL EVALUATION
 
-    # START: INDUCTANCE NOT ANALYTICAL EVALUATION
+    # START: INDUCTANCE APPROXIMATE EVALUATION
 
     def __inductance_approximate_calculation(self):
         """Private method that approximate the inductance of the system. For an analytical evaluation of the inductance use private method __inductance_analytical_calculation."""
@@ -3248,6 +3248,8 @@ class Conductor:
         # End for
 
         return self_inductance
+
+    # END: INDUCTANCE APPROXIMATE EVALUATION
 
     def operating_conditions(self, simulation):
 
