@@ -847,7 +847,7 @@ class Conductor:
 
         # Electric time initialization, to be understood where to actually do
         # this
-        self.electric_time = 0.0  # s
+        self.electric_time_step = 0.0  # s
 
         conductorlogger.debug(
             f"Before call method {self.__initialize_mesh_dataframe.__name__}\n"
@@ -2837,10 +2837,10 @@ class Conductor:
 
             # All the current enters the first node of the first current
             # carrier.
-            self.operating_current[0] = custom_current_function(self.electric_time)
+            self.operating_current[0] = custom_current_function(self.electric_time_step)
             # All the current exits from the lats node of the last current
             # carrier.
-            self.operating_current[-1] = -custom_current_function(self.electric_time)
+            self.operating_current[-1] = -custom_current_function(self.electric_time_step)
             # to be implemented.
         # End if self.dict_input["I0_OP_MODE"].
 
