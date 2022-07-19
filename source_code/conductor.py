@@ -22,6 +22,8 @@ from conductor_flags import (
     IOP_FROM_FILE,
     SELF_INDUCTANCE_MODE_1,
     SELF_INDUCTANCE_MODE_2,
+    STATIC_ELECTRIC_SOLVER,
+    TRANSIENT_ELECTRIC_SOLVER,
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -37,7 +39,7 @@ from utility_functions.auxiliary_functions import (
     check_object_number,
     set_diagnostic,
 )
-from utility_functions.electric_auxiliary_functions import custom_current_function
+from utility_functions.electric_auxiliary_functions import custom_current_function, electric_steady_state_solution, electric_transient_solution
 from utility_functions.initialization_functions import (
     build_coordinates_of_barycenter,
     check_max_node_number,
