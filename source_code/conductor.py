@@ -3336,6 +3336,22 @@ class Conductor:
 
         self.electric_right_hand_side = self.electric_right_hand_side[idx] - bar
 
+    def electric_method(self):
+        """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"].
+
+        Raises:
+            ValueError: if to flag self.operations["ELECTRIC_SOLVER"] user assigns not valid value.
+        """
+        self.electric_preprocessing()
+        
+        if self.operations["ELECTRIC_SOLVER"] == STATIC_ELECTRIC_SOLVER:
+            electric_steady_state_solution()
+        elif self.operations["ELECTRIC_SOLVER"] == TRANSIENT_ELECTRIC_SOLVER:
+            self.__get_electric_time_step()
+            electric_transient_solution()
+        else:
+            raise ValueError(f"{self.identifier = }\nInput variable ELECTRIC_SOLVER should be equal to {STATIC_ELECTRIC_SOLVER = } or {TRANSIENT_ELECTRIC_SOLVER = }. Current value {self.operations['ELECTRIC_SOLVER'] = } is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n")
+
     def operating_conditions(self, simulation):
 
         """
