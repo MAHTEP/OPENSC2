@@ -23,3 +23,8 @@ SELF_INDUCTANCE_MODE_2 = 2
 ANALYTICAL_INDUCTANCE = 0
 # Flag to evaluate inductance using an approximation
 APPROXIMATE_INDUCTANCE = 1
+
+# Flag to solve the electric problem in steady state conditions.
+STATIC_ELECTRIC_SOLVER = 0
+# Flag to solve the electric problem in transient conditions.
+TRANSIENT_ELECTRIC_SOLVER = 1
