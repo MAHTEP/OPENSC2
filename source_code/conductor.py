@@ -3307,6 +3307,31 @@ class Conductor:
 
         self.electric_time_end = self.time_step
 
+    def build_right_hand_side(self, foo:np.ndarray, bar:np.ndarray, idx:int):
+        """Method that builds the right hand side of the transient electric equation.
+
+        Args:
+            foo (np.ndarray): matrix.
+            bar (np.ndarray): reduced electric known therm vector.
+            idx (int): index array of the fixed value spatial coordinates to assign boundary conditions.
+        """
+
+        # Build right hand side
+        self.electric_right_hand_side = (
+            self.electric_theta * self.electric_known_term_vector
+            + (1.0 - self.electric_theta) * self.electric_known_term_vector_old
+            + foo @ self.electric_solution
+        )
+
+        # Reduce rhs
+        if self.operations["EQUIPOTENTIAL_SURFACE_FLAG"]:
+            for _, row in enumerate(self.equipotential_node_index):
+                self.electric_right_hand_side[row[0]] = np.sum(
+                    self.electric_right_hand_side[row]
+                )
+
+        self.electric_right_hand_side = self.electric_right_hand_side[idx] - bar
+
     def operating_conditions(self, simulation):
 
         """
