@@ -3353,6 +3353,31 @@ class Conductor:
 
         self.electric_right_hand_side = self.electric_right_hand_side[idx] - bar
 
+    def __electric_solution_reorganization(self):
+        """Private method that reorganizes the electric solution. Specifically it:
+            * extracts edge current (current along StrandComponent) and nodal potentials from electric solution array;
+            * computes voltage drop along StrandComponent;
+            * assignes current along StrandComponent and voltage drop along StrandComponent.
+        """
+
+        # Extract edge current (current along StrandComponent) from 
+        # electric solution array.
+        current_along = self.electric_solution[:self.total_elements_current_carriers]
+        
+        # Extract nodal potentials from electric solution array
+        self.nodal_potential = self.electric_solution[self.total_elements_current_carriers+1:]
+        
+        # Compute voltage drop along StrandComponent.
+        voltage_drop_along = - self.incidence_matrix @ self.nodal_potential
+
+        # Loop to assign values to each StrandComponent.
+        for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
+            obj.dict_Gauss_pt["current_along"] = current_along[ii::self.grid_input["NELEMS"]]
+            
+            obj.dict_Gauss_pt["voltage_drop_along"] = voltage_drop_along[ii::self.grid_input["NELEMS"]]
+
+
+
     def electric_method(self):
         """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"].
 
