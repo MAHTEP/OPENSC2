@@ -2551,7 +2551,9 @@ class Conductor:
                 / distance[ii :: self._contact_nodes_first.shape[0]]
             )
 
-        self.electric_conductance_array = np.zeros((self.contact_nodes_current_carriers.shape[0],))
+        self.electric_conductance_array = np.zeros(
+            (self.contact_nodes_current_carriers.shape[0],)
+        )
 
         # Switch to use the correct function to evaluate the electric
         # conductance according to the flag set in sheet
@@ -2566,9 +2568,9 @@ class Conductor:
             mat_ind = indexes + self.inventory["FluidComponent"].number + 1
             arr_ind = indexes + self.inventory["FluidComponent"].number
 
-            self.electric_conductance_array[ii :: self._contact_nodes_first.shape[0]] = _[
-                self.electric_conductance_mode[indexes[0], indexes[1]]
-            ]()
+            self.electric_conductance_array[
+                ii :: self._contact_nodes_first.shape[0]
+            ] = _[self.electric_conductance_mode[indexes[0], indexes[1]]]()
 
     def __build_electric_conductance_matrix(self):
         """Private method that builds the electric conductance matrix for components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent that are in contact along transverse direction. Values are stored in attribute electric_conductance_matrix.
@@ -2580,7 +2582,9 @@ class Conductor:
 
         self.__evaluate_electric_conductance(distance)
         np.savetxt(
-            "electric_conductance_unit_length.tsv", self.electric_conductance_array, delimiter="\t"
+            "electric_conductance_unit_length.tsv",
+            self.electric_conductance_array,
+            delimiter="\t",
         )
 
         # Conductance matrix
@@ -3363,10 +3367,10 @@ class Conductor:
             * assignes current along StrandComponent and voltage drop along StrandComponent.
         """
 
-        # Extract edge current (current along StrandComponent) from 
+        # Extract edge current (current along StrandComponent) from
         # electric solution array.
-        current_along = self.electric_solution[:self.total_elements_current_carriers]
-        
+        current_along = self.electric_solution[: self.total_elements_current_carriers]
+
         # Extract nodal potentials from electric solution array
         self.nodal_potential = self.electric_solution[self.total_elements_current_carriers+1:]
         
@@ -3380,6 +3384,17 @@ class Conductor:
             obj.dict_Gauss_pt["voltage_drop_along"] = voltage_drop_along[ii::self.grid_input["NELEMS"]]
 
 
+            obj.dict_Gauss_pt["current_across"] = current_across[
+                ii :: self.grid_input["NELEMS"]
+            ]
+
+            obj.dict_Gauss_pt["voltage_drop_along"] = voltage_drop_along[
+                ii :: self.grid_input["NELEMS"]
+            ]
+
+            obj.dict_Gauss_pt["voltage_drop_across"] = voltage_drop_across[
+                ii :: self.grid_input["NELEMS"]
+            ]
 
     def electric_method(self):
         """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls private method self.__electric_solution_reorganization to reorganize the electric solution.
@@ -3398,8 +3413,8 @@ class Conductor:
             raise ValueError(
                 f"{self.identifier = }\nInput variable ELECTRIC_SOLVER should be equal to {STATIC_ELECTRIC_SOLVER = } or {TRANSIENT_ELECTRIC_SOLVER = }. Current value {self.operations['ELECTRIC_SOLVER'] = } is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
             )
-        # Call method __electric_solution_reorganization: reorganize electric 
-        # solution and computes useful quantities used in the Joule power 
+        # Call method __electric_solution_reorganization: reorganize electric
+        # solution and computes useful quantities used in the Joule power
         # evaluation.
         self.__electric_solution_reorganization()
 
