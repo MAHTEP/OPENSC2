@@ -1119,6 +1119,47 @@ class SolidComponent:
 
     # end JHTFLX_new_0
 
+    def get_joule_power_along(self, conductor: object):
+        """Method that evaluate the contribution to the total power in the element of Joule power (in W/m) due to the electic resistances along the SolidComponent objects.
+
+        Args:
+            conductor (object): ConductorComponent object with all informations to make the calculation.
+        """
+
+        if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
+            # Backward Euler or Crank-Nicolson.
+            if conductor.cond_time[-1] == 0:
+                # Initialization.
+                self.dict_Gauss_pt["linear_power_el_resistance"] = np.zeros(
+                    (conductor.grid_input["NELEMS"], 2)
+                )
+            elif conductor.cond_time[-1] > 0:
+                if conductor.cond_num_step == 1:
+                    # Store the old values only immediately after the 
+                    # initializzation, since after that the whole SYSLOD array is saved and there is no need to compute twice the same 
+                    # values.
+                    self.dict_Gauss_pt["linear_power_el_resistance"][:, 1] = self.dict_Gauss_pt["linear_power_el_resistance"][
+                        :, 0
+                    ].copy()
+                # Evaluate Joule linear power along the strand in W/m, due to 
+                # electric resistances:
+                # P_along = I_along * Delta V_along / (Delta_z)
+                self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = self.dict_Gauss_pt["current_along"]*self.dict_Gauss_pt["voltage_drop_along"]/conductor.grid_features["delta_z"]
+        elif conductor.inputs["METHOD"] == "AM4":
+            # Adams-Moulton 4.
+            if conductor.cond_time[-1] == 0:
+                # Initialization.
+                self.dict_Gauss_pt["linear_power_el_resistance"] = np.zeros(
+                    (conductor.grid_features["N_nod"], 4)
+                )
+            elif conductor.cond_time[-1] > 0:
+                self.dict_Gauss_pt["linear_power_el_resistance"][:, 1:4] = self.dict_Gauss_pt["linear_power_el_resistance"][
+                    :, 0:3
+                ].copy()
+                # Evaluate Joule linear power along the strand in W/m, due to 
+                # electric resistances:
+                # P_along = I_along * Delta V_along / (Delta_z) in W:
+                self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = self.dict_Gauss_pt["current_along"]*self.dict_Gauss_pt["voltage_drop_along"]/conductor.grid_features["delta_z"]
     def set_energy_counters(self, conductor):
         # tesded: ok (cdp, 06/2020)
 
