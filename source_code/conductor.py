@@ -2717,7 +2717,7 @@ class Conductor:
         )
         self.__build_electric_conductance_matrix()
         conductorlogger.debug(
-            f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
+            f"After call method {self.__build_electric_conductance_matrix.__name__}.\n"
         )
 
         # Build electric stiffness matrix (for the first time)
@@ -2726,7 +2726,7 @@ class Conductor:
         )
         self.__build_electric_stiffness_matrix()
         conductorlogger.debug(
-            f"Before call method {self.__build_electric_stiffness_matrix.__name__}.\n"
+            f"After call method {self.__build_electric_stiffness_matrix.__name__}.\n"
         )
 
         # Build electric mass matrix (for the first time)
@@ -2744,7 +2744,7 @@ class Conductor:
         )
         self.__assign_equivalue_surfaces()
         conductorlogger.debug(
-            f"Before call method {self.__assign_equivalue_surfaces.__name__}.\n"
+            f"After call method {self.__assign_equivalue_surfaces.__name__}.\n"
         )
 
         # Assign fixed potential
@@ -2753,7 +2753,7 @@ class Conductor:
         )
         self.__assign_fix_potential()
         conductorlogger.debug(
-            f"Before call method {self.__assign_fix_potential.__name__}.\n"
+            f"After call method {self.__assign_fix_potential.__name__}.\n"
         )
 
         # Build electric known therm vector
@@ -2762,7 +2762,7 @@ class Conductor:
         )
         self.__build_electric_known_term_vector()
         conductorlogger.debug(
-            f"Before call method {self.__build_electric_known_term_vector.__name__}.\n"
+            f"After call method {self.__build_electric_known_term_vector.__name__}.\n"
         )
 
     def __build_electric_stiffness_matrix(self):
