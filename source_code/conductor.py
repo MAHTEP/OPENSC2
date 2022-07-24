@@ -2729,6 +2729,15 @@ class Conductor:
             f"Before call method {self.__build_electric_stiffness_matrix.__name__}.\n"
         )
 
+        # Build electric mass matrix (for the first time)
+        conductorlogger.debug(
+            f"Before call method {self.__build_electric_mass_matrix.__name__}.\n"
+        )
+        self.__build_electric_mass_matrix(mode=self.operations["INDUCTANCE_MODE"])
+        conductorlogger.debug(
+            f"After call method {self.__build_electric_mass_matrix.__name__}.\n"
+        )
+
         # Assign equivalue surfaces
         conductorlogger.debug(
             f"Before call method {self.__assign_equivalue_surfaces.__name__}.\n"
