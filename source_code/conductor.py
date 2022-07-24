@@ -3373,7 +3373,7 @@ class Conductor:
 
 
     def electric_method(self):
-        """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"].
+        """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls private method self.__electric_solution_reorganization to reorganize the electric solution.
 
         Raises:
             ValueError: if to flag self.operations["ELECTRIC_SOLVER"] user assigns not valid value.
@@ -3389,6 +3389,10 @@ class Conductor:
             raise ValueError(
                 f"{self.identifier = }\nInput variable ELECTRIC_SOLVER should be equal to {STATIC_ELECTRIC_SOLVER = } or {TRANSIENT_ELECTRIC_SOLVER = }. Current value {self.operations['ELECTRIC_SOLVER'] = } is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
             )
+        # Call method __electric_solution_reorganization: reorganize electric 
+        # solution and computes useful quantities used in the Joule power 
+        # evaluation.
+        self.__electric_solution_reorganization()
 
     def operating_conditions(self, simulation):
 
