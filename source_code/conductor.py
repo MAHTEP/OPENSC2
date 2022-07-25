@@ -3385,18 +3385,10 @@ class Conductor:
             
             obj.dict_Gauss_pt["voltage_drop_along"] = voltage_drop_along[ii::self.grid_input["NELEMS"]]
 
-
-            obj.dict_Gauss_pt["current_across"] = current_across[
-                ii :: self.grid_input["NELEMS"]
-            ]
-
             obj.dict_Gauss_pt["voltage_drop_along"] = voltage_drop_along[
                 ii :: self.grid_input["NELEMS"]
             ]
 
-            obj.dict_Gauss_pt["voltage_drop_across"] = voltage_drop_across[
-                ii :: self.grid_input["NELEMS"]
-            ]
 
     def electric_method(self):
         """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls private method self.__electric_solution_reorganization to reorganize the electric solution.
