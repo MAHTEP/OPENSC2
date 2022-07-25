@@ -2500,7 +2500,7 @@ class Conductor:
         )  # distance
         return distance
 
-    def __evaluate_electric_conductance(self, distance: np.ndarray):
+    def __evaluate_electric_conductance(self, distance: np.ndarray) -> np.ndarray:
         """Private method that evaluates the electric conductance for components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent that are in contact in transverse direction. According to the value in sheet electric_conductance_mode of input file conductro_coupling.xlsx the electric conductance is evaluated in different modes:
         1) exploits function __evaluate_electric_conductance_unit_length (electric conductance is defined per unit length);
         2) exploits function __evaluate_electric_conductance_not_unit_length (electric conductance is not defined per unit length).
@@ -2508,25 +2508,29 @@ class Conductor:
         Args:
             distance (np.ndarray): distance along the direction ortoghonal to the z direction, between nodes of components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent that are in contact
 
+        Returns:
+            np.ndarray: matrix with the electric conductance values.
         """
 
-        def __evaluate_electric_conductance_unit_length():
+        def __evaluate_electric_conductance_unit_length() -> np.ndarray:
             """Fuction that evaluates the electric conductance per unit length.
 
             el_cond = sigma*gauss_node_distance
 
             with sigma the electric conductance per unit length.
+
+            Returns:
+                np.ndarray: matrix with the electric conductance values.
             """
             # el_cond = sigma*gauss_node_distance
-
-            self.electric_conductance_array = (
+            return (
                 self.electric_conductance[indexes[0], indexes[1]]
                 * self.gauss_node_distance[
                     arr_ind[0] :: self.inventory["all_component"].number
                 ]
             )
 
-        def __evaluate_electric_conductance_not_unit_length():
+        def __evaluate_electric_conductance_not_unit_length() -> np.ndarray:
             """Fuction that evaluates the electric conductance when the electric conductivity sigma is not given per unit length.
 
             el_cond = sigma*contact_perimeter*gauss_node_distance/contact_distance
@@ -2536,7 +2540,7 @@ class Conductor:
             """
             # el_cond = sigma*contact_perimeter*gauss_node_distance
             # /contact_distance
-            self.electric_conductance_array = (
+            return (
                 self.electric_conductance[indexes[0], indexes[1]]
                 * self.dict_df_coupling["contact_perimeter"].iat[mat_ind[0], mat_ind[1]]
                 * (
@@ -2551,9 +2555,7 @@ class Conductor:
                 / distance[ii :: self._contact_nodes_first.shape[0]]
             )
 
-        self.electric_conductance_array = np.zeros(
-            (self.contact_nodes_current_carriers.shape[0],)
-        )
+        electric_conductance = np.zeros((self.contact_nodes_current_carriers.shape[0],))
 
         # Switch to use the correct function to evaluate the electric
         # conductance according to the flag set in sheet
@@ -2568,9 +2570,11 @@ class Conductor:
             mat_ind = indexes + self.inventory["FluidComponent"].number + 1
             arr_ind = indexes + self.inventory["FluidComponent"].number
 
-            self.electric_conductance_array[
-                ii :: self._contact_nodes_first.shape[0]
-            ] = _[self.electric_conductance_mode[indexes[0], indexes[1]]]()
+            electric_conductance[ii :: self._contact_nodes_first.shape[0]] = _[
+                self.electric_conductance_mode[indexes[0], indexes[1]]
+            ]()
+
+        return electric_conductance
 
     def __build_electric_conductance_matrix(self):
         """Private method that builds the electric conductance matrix for components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent that are in contact along transverse direction. Values are stored in attribute electric_conductance_matrix.
@@ -2580,18 +2584,16 @@ class Conductor:
         # reset_index is used to reset the index to numerical values instead of object identifier in order to make the correct operations and have the correct shape: distance.shape = (self.total_nodes_current_carriers,)
         distance = self.__evaluate_transversal_distance()
 
-        self.__evaluate_electric_conductance(distance)
+        electric_conductance = self.__evaluate_electric_conductance(distance)
         np.savetxt(
-            "electric_conductance_unit_length.tsv",
-            self.electric_conductance_array,
-            delimiter="\t",
+            "electric_conductance_unit_length.tsv", electric_conductance, delimiter="\t"
         )
 
         # Conductance matrix
         self.electric_conductance_matrix = (
             self.contact_incidence_matrix.T
             @ diags(
-                self.electric_conductance_array,
+                electric_conductance,
                 offsets=0,
                 shape=(
                     self.contact_nodes_current_carriers.shape[0],
