@@ -1135,8 +1135,9 @@ class SolidComponent:
                 )
             elif conductor.cond_time[-1] > 0:
                 if conductor.cond_num_step == 1:
-                    # Store the old values only immediately after the 
-                    # initializzation, since after that the whole SYSLOD array is saved and there is no need to compute twice the same 
+                    # Store the old values only immediately after the
+                    # initializzation, since after that the whole SYSLOD array
+                    # is saved and there is no need to compute twice the same
                     # values.
                     self.dict_Gauss_pt["linear_power_el_resistance"][:, 1] = self.dict_Gauss_pt["linear_power_el_resistance"][
                         :, 0
