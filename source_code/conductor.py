@@ -3389,6 +3389,53 @@ class Conductor:
                 ii :: self.grid_input["NELEMS"]
             ]
 
+    def __get_total_joule_power_electric_conductance(self):
+        """Private method that evaluates total Joule power in each node of the spatial discretization associated to the electric conductance between StrandComponent objects. The method re-distribues computed values to each defined StrandComponent object.
+        """
+
+        # Compute voltage drop due to electric condutances across
+        # StrandComponent objects.
+        self.voltage_drop_across = np.real(self.contact_incidence_matrix @ self.nodal_potential)
+        
+        # Compute electric currrent that flows in electric conductances across
+        # StrandComponent objects.
+        self.current_across = np.real(np.conj(self.electric_conductance_diag_matrix @ self.contact_incidence_matrix @ self.nodal_potential))
+
+        # Converison from instantaneous to effective values (used in sinusoidal 
+        # regime).
+        if self.operations["ELECTRIC_SOLVER"] == STATIC_ELECTRIC_SOLVER:
+            # Conversion of voltage drop across electric conductances:
+            # Delta_V_across_eff = Delta_V_across / sqrt(2)
+            self.voltage_drop_across = self.voltage_drop_across / np.sqrt(2.0)
+            # Conversion of voltage drop across electric conductances:
+            # I_across_eff = I_across / sqrt(2)
+            self.current_across = self.current_across / np.sqrt(2.0)
+        
+        # Compute array with the Joule power in W due to each electric
+        # conductance:
+        # P_across = I_across * Delta_V_across
+        # or (in sinusoidal regime):
+        # P_across = I_across_eff * Delta_V_across_eff
+        # Shape: (N_ct,1) with N_ct = N_c*N_n.
+        # N_c = number of electric contact on a single cross section;
+        # N_n = number of nodes (or number of cross sections);
+        # N_ct = total number of electric contacts.
+        joule_power_across = self.voltage_drop_across * self.current_across
+
+        # Evaluate the contribution of the joule power due to conductances 
+        # between SolidComponent in each node of the spatial discretization. 
+        # The coefficient 1/2 halves the sum of the powers due to the 
+        # conductances referring to each node.
+        # Shape : (N_nt,1) with N_nt = N_s*N_n.
+        # N_s = number of strand objects (in future maybe also jacket);
+        # N_n = number of nodes (or number of cross sections);
+        # N_nt = total number of nodes.
+        joule_power_across_node = (np.abs(self.contact_incidence_matrix.T) @ joule_power_across)/2
+
+        # Loop to assign values to each StrandComponent.
+        for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
+            obj.dict_node_pt["total_power_el_cond"] = joule_power_across_node[ii::self.grid_features["N_nod"]]
+        
 
     def electric_method(self):
         """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls private method self.__electric_solution_reorganization to reorganize the electric solution.
