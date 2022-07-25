@@ -3546,6 +3546,10 @@ class Conductor:
             # call method jhtflx_new_0 to initialize JHTFLX to zeros for each \
             # conductor solid components (cdp, 06/2020)
             strand.jhtflx_new_0(self)
+            # Evaluate joule power due to electric resistance along strand object.
+            strand.get_joule_power_along(self)
+            # Evaluate joule power due to electric conductance across strand object.
+            strand.get_joule_power_across(self)
             # call set_energy_counters to initialize EEXT and EJHT to zeros for each \
             # conductor solid components (cdp, 06/2020)
             strand.set_energy_counters(self)
