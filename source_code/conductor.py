@@ -3466,6 +3466,31 @@ class Conductor:
         # objects.
         self.__get_total_joule_power_electric_conductance()
 
+    def __build_delta_z_and_delta_z_tilde(self):
+        """Private method that builds arrays delta_z and delta_z_tilde as keys of dictioray self.grid_features. These arrys are used:
+            * in function step (delta_z);
+            * in the joule power evaluation associated to electric resistance between StrandComponent objects (delta_z);
+            * in the joule power evaluation associated to electric conductance between StrandComponent objects (delta_z_tilde).
+        """
+
+        # Define new key delta_z in dictionay self.grid_features (m).
+        self.grid_features["delta_z"] = (
+        self.grid_features["zcoord"][1:]
+        - self.grid_features["zcoord"][:-1]
+        )
+
+        # Define new key delta_z_tilde in dictionay self.grid_features (m).
+        self.grid_features["delta_z_tilde"] = np.zeros(self.grid_features["N_nod"])
+        self.grid_features["delta_z_tilde"][0] = (self.grid_features["zcoord"][1]
+        - self.grid_features["zcoord"][0])/2
+        
+        self.grid_features["delta_z_tilde"][1:-1] = (self.grid_features["zcoord"][2:-1]
+        - self.grid_features["zcoord"][1:-2])/2
+
+        self.grid_features["delta_z_tilde"][-1] = (self.grid_features["zcoord"][-1]
+        - self.grid_features["zcoord"][-2])/2
+        
+
     def operating_conditions(self, simulation):
 
         """
