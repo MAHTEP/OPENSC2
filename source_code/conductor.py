@@ -3459,6 +3459,12 @@ class Conductor:
         # evaluation.
         self.__electric_solution_reorganization()
 
+        # Call method __get_total_joule_power_electric_conductance to evaluate 
+        # the total Joule power in each node of the spatial discretization 
+        # associated to the electric conductance between StrandComponent 
+        # objects.
+        self.__get_total_joule_power_electric_conductance()
+
     def operating_conditions(self, simulation):
 
         """
