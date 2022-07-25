@@ -3497,6 +3497,10 @@ class Conductor:
         Method tha calls functions get_current, get_magnetic_field, get_magnetic_field_gradient, get_superconductor_critical_prop, get_heat, jhtflx_new_0, set_energy_counters, Get_transp_coeff at each time step to evaluate properies and quantities in each node of spatial discretization.
         """
 
+        # Build delta_z and delta_z_tilde in as keys in attribute dictionary 
+        # self.grid_features.
+        self.__build_delta_z_and_delta_z_tilde()
+
         # Evaluate transport coefficients in nodal points.
         self.get_transp_coeff(simulation)
 
