@@ -2589,10 +2589,7 @@ class Conductor:
             "electric_conductance_unit_length.tsv", electric_conductance, delimiter="\t"
         )
 
-        # Conductance matrix
-        self.electric_conductance_matrix = (
-            self.contact_incidence_matrix.T
-            @ diags(
+        self.electric_conductance_diag_matrix = diags(
                 electric_conductance,
                 offsets=0,
                 shape=(
@@ -2602,6 +2599,10 @@ class Conductor:
                 format="csr",
                 dtype=float,
             )
+        # Conductance matrix
+        self.electric_conductance_matrix = (
+            self.contact_incidence_matrix.T
+            @ self.electric_conductance_diag_matrix
             @ self.contact_incidence_matrix
         )
 
