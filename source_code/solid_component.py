@@ -1161,6 +1161,50 @@ class SolidComponent:
                 # electric resistances:
                 # P_along = I_along * Delta V_along / (Delta_z) in W:
                 self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = self.dict_Gauss_pt["current_along"]*self.dict_Gauss_pt["voltage_drop_along"]/conductor.grid_features["delta_z"]
+
+    def get_joule_power_across(self, conductor: object):
+        """Method that evaluates the contribution to the total power in the nodes of Joule power (in W/m) due to the electic conductance across the SolidComponent objects.
+
+        Args:
+            conductor (object): ConductorComponent object with all informations to make the calculation.
+        """
+
+        if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
+            # Backward Euler or Crank-Nicolson.
+            if conductor.cond_time[-1] == 0:
+                # Initialization.
+                self.dict_node_pt["total_linear_power_el_cond"] = np.zeros(
+                    (conductor.grid_input["NELEMS"], 2)
+                )
+            elif conductor.cond_time[-1] > 0:
+                if conductor.cond_num_step == 1:
+                    # Store the old values only immediately after the
+                    # initializzation, since after that the whole SYSLOD array
+                    # is saved and there is no need to compute twice the same
+                    # values.
+                    self.dict_node_pt["total_linear_power_el_cond"][:, 1] = self.dict_node_pt["total_linear_power_el_cond"][
+                        :, 0
+                    ].copy()
+                # Evaluate total Joule linear power across the strand in W/m, 
+                # due to electric conductance:
+                # P_l_t = P_t / Delta_z_tilde
+                self.dict_node_pt["total_linear_power_el_cond"][:, 0] = self.dict_node_pt["total_power_el_cond"]/conductor.grid_features["delta_z_tilde"]
+        elif conductor.inputs["METHOD"] == "AM4":
+            # Adams-Moulton 4.
+            if conductor.cond_time[-1] == 0:
+                # Initialization.
+                self.dict_node_pt["total_linear_power_el_cond"] = np.zeros(
+                    (conductor.grid_features["N_nod"], 4)
+                )
+            elif conductor.cond_time[-1] > 0:
+                self.dict_node_pt["total_linear_power_el_cond"][:, 1:4] = self.dict_node_pt["total_linear_power_el_cond"][
+                    :, 0:3
+                ].copy()
+               # Evaluate total Joule linear power across the strand in W/m, 
+                # due to electric conductance:
+                # P_l_t = P_t / Delta_z_tilde
+                self.dict_node_pt["total_linear_power_el_cond"][:, 0] = self.dict_node_pt["total_power_el_cond"]/conductor.grid_features["delta_z_tilde"]
+
     def set_energy_counters(self, conductor):
         # tesded: ok (cdp, 06/2020)
 
