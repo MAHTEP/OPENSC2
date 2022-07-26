@@ -212,10 +212,6 @@ def step(conductor, environment, qsource, num_step):
         )
         / 2.0
     )
-    conductor.grid_features["delta_z"] = (
-        conductor.grid_features["zcoord"][1:]
-        - conductor.grid_features["zcoord"][:-1]
-    )
 
     # dictionaties declaration (cdp, 07/2020)
     conductor.dict_Gauss_pt["K1"] = {}
