@@ -272,8 +272,7 @@ class Simulation:
         ):
             self.num_step = self.num_step + 1
             time_step = np.zeros(self.numObj)
-            for ii in range(self.numObj):
-                conductor = self.list_of_Conductors[ii]
+            for ii, conductor in enumerate(self.list_of_Conductors):
                 # Call function Get_time_step to select new time step (cdp, 08/2020)
                 get_time_step(conductor, self.transient_input, self.num_step)
                 time_step[ii] = conductor.time_step
@@ -303,6 +302,9 @@ class Simulation:
                 # if self.num_step > 1:
                 conductor.operating_conditions(self)
                 # end if self.num_step
+                # Call to electric_electric method allows to define,
+                # initialize, solve and reorganize the electric problem.
+                conductor.electric_method()
                 # call step to solve the problem @ new timestep (cdp, 07/2020)
                 step(
                     conductor,
