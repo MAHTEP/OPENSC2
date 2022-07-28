@@ -997,6 +997,17 @@ class SolidComponents:
 
     # end Q0_where
 
+    def user_heat_function(self):
+        """User defined function to evaluate heat load."""
+
+        # Bad code to evaluate Joule power in joints of feeder CS3U2.
+        # Electrical resistivity.
+        el_res = 5e-9 # Ohm
+        # Length of the joint.
+        joint_length = 0.5 # m
+        # Compute linear joule power
+        return el_res * self.dict_node_pt["IOP"]**2/joint_length
+
     def jhtflx_new_0(self, conductor):  # tesded: ok (cdp, 06/2020)
 
         """
