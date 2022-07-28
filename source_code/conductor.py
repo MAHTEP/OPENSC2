@@ -2590,15 +2590,15 @@ class Conductor:
         )
 
         self.electric_conductance_diag_matrix = diags(
-                electric_conductance,
-                offsets=0,
-                shape=(
-                    self.contact_nodes_current_carriers.shape[0],
-                    self.contact_nodes_current_carriers.shape[0],
-                ),
-                format="csr",
-                dtype=float,
-            )
+            electric_conductance,
+            offsets=0,
+            shape=(
+                self.contact_nodes_current_carriers.shape[0],
+                self.contact_nodes_current_carriers.shape[0],
+            ),
+            format="csr",
+            dtype=float,
+        )
         # Conductance matrix
         self.electric_conductance_matrix = (
             self.contact_incidence_matrix.T
@@ -2740,7 +2740,7 @@ class Conductor:
         conductorlogger.debug(
             f"Before call method {self.__build_electric_mass_matrix.__name__}.\n"
         )
-        self.__build_electric_mass_matrix(mode=self.operations["INDUCTANCE_MODE"])
+        self.__build_electric_mass_matrix()
         conductorlogger.debug(
             f"After call method {self.__build_electric_mass_matrix.__name__}.\n"
         )
@@ -3365,9 +3365,9 @@ class Conductor:
 
     def __electric_solution_reorganization(self):
         """Private method that reorganizes the electric solution. Specifically it:
-            * extracts edge current (current along StrandComponent) and nodal potentials from electric solution array;
-            * computes voltage drop along StrandComponent;
-            * assignes current along StrandComponent and voltage drop along StrandComponent.
+        * extracts edge current (current along StrandComponent) and nodal potentials from electric solution array;
+        * computes voltage drop along StrandComponent;
+        * assignes current along StrandComponent and voltage drop along StrandComponent.
         """
 
         # Extract edge current (current along StrandComponent) from
@@ -3375,32 +3375,43 @@ class Conductor:
         current_along = self.electric_solution[: self.total_elements_current_carriers]
 
         # Extract nodal potentials from electric solution array
-        self.nodal_potential = self.electric_solution[self.total_elements_current_carriers+1:]
-        
+        self.nodal_potential = self.electric_solution[
+            self.total_elements_current_carriers + 1 :
+        ]
+
         # Compute voltage drop along StrandComponent.
-        voltage_drop_along = - self.incidence_matrix @ self.nodal_potential
+        voltage_drop_along = -self.incidence_matrix @ self.nodal_potential
 
         # Loop to assign values to each StrandComponent.
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
-            obj.dict_Gauss_pt["current_along"] = current_along[ii::self.grid_input["NELEMS"]]
+            obj.dict_Gauss_pt["current_along"] = current_along[
+                ii :: self.grid_input["NELEMS"]
+            ]
 
             obj.dict_Gauss_pt["voltage_drop_along"] = voltage_drop_along[
                 ii :: self.grid_input["NELEMS"]
             ]
 
     def __get_total_joule_power_electric_conductance(self):
-        """Private method that evaluates total Joule power in each node of the spatial discretization associated to the electric conductance between StrandComponent objects. The method re-distribues computed values to each defined StrandComponent object.
-        """
+        """Private method that evaluates total Joule power in each node of the spatial discretization associated to the electric conductance between StrandComponent objects. The method re-distribues computed values to each defined StrandComponent object."""
 
         # Compute voltage drop due to electric condutances across
         # StrandComponent objects.
-        self.voltage_drop_across = np.real(self.contact_incidence_matrix @ self.nodal_potential)
-        
+        self.voltage_drop_across = np.real(
+            self.contact_incidence_matrix @ self.nodal_potential
+        )
+
         # Compute electric currrent that flows in electric conductances across
         # StrandComponent objects.
-        self.current_across = np.real(np.conj(self.electric_conductance_diag_matrix @ self.contact_incidence_matrix @ self.nodal_potential))
+        self.current_across = np.real(
+            np.conj(
+                self.electric_conductance_diag_matrix
+                @ self.contact_incidence_matrix
+                @ self.nodal_potential
+            )
+        )
 
-        # Converison from instantaneous to effective values (used in sinusoidal 
+        # Converison from instantaneous to effective values (used in sinusoidal
         # regime).
         if self.operations["ELECTRIC_SOLVER"] == STATIC_ELECTRIC_SOLVER:
             # Conversion of voltage drop across electric conductances:
@@ -3409,7 +3420,7 @@ class Conductor:
             # Conversion of voltage drop across electric conductances:
             # I_across_eff = I_across / sqrt(2)
             self.current_across = self.current_across / np.sqrt(2.0)
-        
+
         # Compute array with the Joule power in W due to each electric
         # conductance:
         # P_across = I_across * Delta_V_across
@@ -3421,20 +3432,23 @@ class Conductor:
         # N_ct = total number of electric contacts.
         joule_power_across = self.voltage_drop_across * self.current_across
 
-        # Evaluate the contribution of the joule power due to conductances 
-        # between SolidComponent in each node of the spatial discretization. 
-        # The coefficient 1/2 halves the sum of the powers due to the 
+        # Evaluate the contribution of the joule power due to conductances
+        # between SolidComponent in each node of the spatial discretization.
+        # The coefficient 1/2 halves the sum of the powers due to the
         # conductances referring to each node.
         # Shape : (N_nt,1) with N_nt = N_s*N_n.
         # N_s = number of strand objects (in future maybe also jacket);
         # N_n = number of nodes (or number of cross sections);
         # N_nt = total number of nodes.
-        joule_power_across_node = (np.abs(self.contact_incidence_matrix.T) @ joule_power_across)/2
+        joule_power_across_node = (
+            np.abs(self.contact_incidence_matrix.T) @ joule_power_across
+        ) / 2
 
         # Loop to assign values to each StrandComponent.
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
-            obj.dict_node_pt["total_power_el_cond"] = joule_power_across_node[ii::self.grid_features["N_nod"]]
-        
+            obj.dict_node_pt["total_power_el_cond"] = joule_power_across_node[
+                ii :: self.grid_features["N_nod"]
+            ]
 
     def electric_method(self):
         """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls private method self.__electric_solution_reorganization to reorganize the electric solution.
@@ -3458,36 +3472,37 @@ class Conductor:
         # evaluation.
         self.__electric_solution_reorganization()
 
-        # Call method __get_total_joule_power_electric_conductance to evaluate 
-        # the total Joule power in each node of the spatial discretization 
-        # associated to the electric conductance between StrandComponent 
+        # Call method __get_total_joule_power_electric_conductance to evaluate
+        # the total Joule power in each node of the spatial discretization
+        # associated to the electric conductance between StrandComponent
         # objects.
         self.__get_total_joule_power_electric_conductance()
 
     def __build_delta_z_and_delta_z_tilde(self):
         """Private method that builds arrays delta_z and delta_z_tilde as keys of dictioray self.grid_features. These arrys are used:
-            * in function step (delta_z);
-            * in the joule power evaluation associated to electric resistance between StrandComponent objects (delta_z);
-            * in the joule power evaluation associated to electric conductance between StrandComponent objects (delta_z_tilde).
+        * in function step (delta_z);
+        * in the joule power evaluation associated to electric resistance between StrandComponent objects (delta_z);
+        * in the joule power evaluation associated to electric conductance between StrandComponent objects (delta_z_tilde).
         """
 
         # Define new key delta_z in dictionay self.grid_features (m).
         self.grid_features["delta_z"] = (
-        self.grid_features["zcoord"][1:]
-        - self.grid_features["zcoord"][:-1]
+            self.grid_features["zcoord"][1:] - self.grid_features["zcoord"][:-1]
         )
 
         # Define new key delta_z_tilde in dictionay self.grid_features (m).
         self.grid_features["delta_z_tilde"] = np.zeros(self.grid_features["N_nod"])
-        self.grid_features["delta_z_tilde"][0] = (self.grid_features["zcoord"][1]
-        - self.grid_features["zcoord"][0])/2
-        
-        self.grid_features["delta_z_tilde"][1:-1] = (self.grid_features["zcoord"][2:-1]
-        - self.grid_features["zcoord"][1:-2])/2
+        self.grid_features["delta_z_tilde"][0] = (
+            self.grid_features["zcoord"][1] - self.grid_features["zcoord"][0]
+        ) / 2
 
-        self.grid_features["delta_z_tilde"][-1] = (self.grid_features["zcoord"][-1]
-        - self.grid_features["zcoord"][-2])/2
-        
+        self.grid_features["delta_z_tilde"][1:-1] = (
+            self.grid_features["zcoord"][2:-1] - self.grid_features["zcoord"][1:-2]
+        ) / 2
+
+        self.grid_features["delta_z_tilde"][-1] = (
+            self.grid_features["zcoord"][-1] - self.grid_features["zcoord"][-2]
+        ) / 2
 
     def operating_conditions(self, simulation):
 
@@ -3495,7 +3510,7 @@ class Conductor:
         Method tha calls functions get_current, get_magnetic_field, get_magnetic_field_gradient, get_superconductor_critical_prop, get_heat, jhtflx_new_0, set_energy_counters, Get_transp_coeff at each time step to evaluate properies and quantities in each node of spatial discretization.
         """
 
-        # Build delta_z and delta_z_tilde in as keys in attribute dictionary 
+        # Build delta_z and delta_z_tilde in as keys in attribute dictionary
         # self.grid_features.
         self.__build_delta_z_and_delta_z_tilde()
 
@@ -3681,15 +3696,21 @@ class Conductor:
                 / 2.0
             )
             strand.get_magnetic_field(self, nodal=False)
-            # Joule along is divided by 2 because its contribution is shared 
+            # Joule along is divided by 2 because its contribution is shared
             # between Q1 and Q2.
             strand.dict_Gauss_pt["Q1"] = (
-                strand.dict_node_pt["JHTFLX"][:-1] + strand.dict_node_pt["EXTFLX"][:-1] + strand.dict_node_pt["total_linear_power_el_cond"][:-1] + strand.dict_Gauss_pt["linear_power_el_resistance"]/2
+                strand.dict_node_pt["JHTFLX"][:-1]
+                + strand.dict_node_pt["EXTFLX"][:-1]
+                + strand.dict_node_pt["total_linear_power_el_cond"][:-1]
+                + strand.dict_Gauss_pt["linear_power_el_resistance"] / 2
             )
-            # Joule along is divided by 2 because its contribution is shared 
+            # Joule along is divided by 2 because its contribution is shared
             # between Q1 and Q2.
             strand.dict_Gauss_pt["Q2"] = (
-                strand.dict_node_pt["JHTFLX"][1:] + strand.dict_node_pt["EXTFLX"][1:] + strand.dict_node_pt["total_linear_power_el_cond"][1:] + strand.dict_Gauss_pt["linear_power_el_resistance"]/2
+                strand.dict_node_pt["JHTFLX"][1:]
+                + strand.dict_node_pt["EXTFLX"][1:]
+                + strand.dict_node_pt["total_linear_power_el_cond"][1:]
+                + strand.dict_Gauss_pt["linear_power_el_resistance"] / 2
             )
             # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self, nodal=False)
