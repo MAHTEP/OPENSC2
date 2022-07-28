@@ -3280,24 +3280,18 @@ class Conductor:
 
     # END: INDUCTANCE APPROXIMATE EVALUATION
 
-    def __build_electric_mass_matrix(self, mode: int = 1):
-        """Private method that builds the electric mass matrix from the inductance matrix. Inductance matrix can be evaluated analytically or approximated accordind to arg mode.
+    def __build_electric_mass_matrix(self):
+        """Private method that builds the electric mass matrix from the inductance matrix. Inductance matrix can be evaluated analytically or approximatey.
 
         Note: the other three blocks of the electric mass matrix are already set to zeros in the initialization.
-
-        Args:
-            mode (int, optional): flag to select how to evaluate the inductance matrix.
-                0: analytical inductance evaluation;
-                1: approximate inductance evaluation.
-            Defaults to 1.
 
         Raises:
             ValueError: raise error if mode is a not valid value.
         """
 
-        if mode != 0 or mode != 1:
+        if self.operations["INDUCTANCE_MODE"] != 0 or self.operations["INDUCTANCE_MODE"] != 1:
             raise ValueError(
-                f"{self.identifier = }\nArgument 'mode' should be equal to {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({mode = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
+                f"{self.identifier = }\nArgument self.operations['INDUCTANCE_MODE'] should be equal to {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({self.operations['INDUCTANCE_MODE'] = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
             )
 
         inductance_switch = {
@@ -3305,7 +3299,7 @@ class Conductor:
             APPROXIMATE_INDUCTANCE: self.__inductance_approximate_calculation,
         }
 
-        inductance_switch[mode]()
+        inductance_switch[self.operations["INDUCTANCE_MODE"]]()
 
         self.electric_mass_matrix[
             : self.total_elements_current_carriers,
