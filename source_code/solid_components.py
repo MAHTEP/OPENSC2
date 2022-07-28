@@ -726,7 +726,7 @@ class SolidComponents:
                     conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
                 )
                 # Load auxiliary input file.
-                current_df, flagSpecfield = load_auxiliary_files(file_path, sheetname=self.ID)
+                current_df, self.flagSpecfield = load_auxiliary_files(file_path, sheetname=self.ID)
                 # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                 self.current_interpolator, self.current_interp_flag = build_interpolator(
                     current_df, self.dict_operation["IOP_INTERPOLATION"]
@@ -740,17 +740,22 @@ class SolidComponents:
                 self.current_interp_flag,
             )
 
+            if self.current_interp_flag == 'time_only':
+                # Conert to array
+                self.dict_node_pt["IOP"] = self.dict_node_pt["IOP"]*np.ones(conductor.dict_discretization["N_nod"])
+
             # evaluate IOP_TOT as the sum of first value of current vector \
             # self.dict_node_pt["IOP"] of each SolidComponent. This is because there \
             # is no current redistribution along the conductor \
             # (self.dict_node_pt["IOP"] have se same value in each index).\
             # (cdp, 06/2020)
-            conductor.IOP_TOT = conductor.IOP_TOT + self.dict_node_pt["IOP"][0]
-            if flagSpecfield == 2:
-                print("still to be decided what to do here\n")
+            conductor.IOP_TOT = conductor.IOP_TOT + self.dict_node_pt["IOP"]
+            if self.flagSpecfield == 2:
+                # Add also a logger
+                warnings.warn("Still to be decided what to do here\n")
         elif conductor.dict_input["IOPFUN"] == 0:
             self.dict_node_pt["IOP"] = (
-                conductor.IOP_TOT * self.dict_operation["IOP0_FRACTION"]
+                conductor.IOP_TOT * self.dict_operation["IOP0_FRACTION"] *np.ones(conductor.grid_features["N_nod"])
             )
         elif conductor.dict_input["IOPFUN"] == 1:
             if conductor.cond_time[-1] <= conductor.dict_input["TAUDET"]:
@@ -765,9 +770,9 @@ class SolidComponents:
                 self.dict_node_pt["IOP"] = (
                     conductor.IOP_TOT * self.dict_operation["IOP0_FRACTION"]
                 )
-        # Conversion of float to float array if necessary, this avoid following \
-        # error: TypeError: 'float' object is not subscriptable (cdp, 08/2020)
-        self.dict_node_pt["IOP"] = np.array([self.dict_node_pt["IOP"]])
+
+        # Compute current in Gauss points
+        self.dict_Gauss_pt["IOP"] = (self.dict_node_pt["IOP"][:-1] + self.dict_node_pt["IOP"][1:])/2
 
     # end Get_I
 
