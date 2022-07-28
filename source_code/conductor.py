@@ -3289,7 +3289,10 @@ class Conductor:
             ValueError: raise error if mode is a not valid value.
         """
 
-        if self.operations["INDUCTANCE_MODE"] != 0 or self.operations["INDUCTANCE_MODE"] != 1:
+        if (
+            self.operations["INDUCTANCE_MODE"] != 0
+            or self.operations["INDUCTANCE_MODE"] != 1
+        ):
             raise ValueError(
                 f"{self.identifier = }\nArgument self.operations['INDUCTANCE_MODE'] should be equal to {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({self.operations['INDUCTANCE_MODE'] = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
             )
