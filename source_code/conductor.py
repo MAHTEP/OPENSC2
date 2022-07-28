@@ -3383,8 +3383,6 @@ class Conductor:
         # Loop to assign values to each StrandComponent.
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
             obj.dict_Gauss_pt["current_along"] = current_along[ii::self.grid_input["NELEMS"]]
-            
-            obj.dict_Gauss_pt["voltage_drop_along"] = voltage_drop_along[ii::self.grid_input["NELEMS"]]
 
             obj.dict_Gauss_pt["voltage_drop_along"] = voltage_drop_along[
                 ii :: self.grid_input["NELEMS"]
