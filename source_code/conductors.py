@@ -31,7 +31,7 @@ from UtilityFunctions.solid_components_initialization import (
 )
 
 # Stainless Steel properties
-from Properties_of_materials.stainless_steel import thermal_conductivity_ss
+from properties_of_materials.stainless_steel import thermal_conductivity_ss
 
 
 class Conductors:
