@@ -808,7 +808,7 @@ class SolidComponents:
                     self.dict_node_pt["B_field"] = (
                         self.dict_node_pt["B_field"] * conductor.IOP_TOT
                     )
-                if conductor.dict_input["IOPFUN"] != 0:
+                if conductor.dict_input["IOPFUN"] != 0 and conductor.dict_input["IOP0_TOT"] > 0:
                     #### bfield e' un self e' un vettore
                     self.dict_node_pt["B_field"] = (
                         self.dict_node_pt["B_field"]
