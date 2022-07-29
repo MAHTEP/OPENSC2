@@ -251,9 +251,8 @@ class Strands(SolidComponents):
     def eval_tcs(self, dict_dummy):
 
         jop = (
-            np.abs(self.dict_node_pt["IOP"][0])
+            np.abs(dict_dummy["IOP"])
             / (self.ASC / self.dict_input["COSTETA"])
-            * np.ones(dict_dummy["B_field"].shape)
         )
 
         bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
