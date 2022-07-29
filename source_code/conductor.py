@@ -2699,11 +2699,11 @@ class Conductor:
         )
 
         if self.inventory["StrandComponent"].number > 1:
-            # There are more than 1 StrandComponent objects, therefore there 
-            # are contacts between StrandComponent objects and matrices 
-            # contact_incidence_matrix and electric_conductance_matix can be 
-            # built. If there is only one StrandComponent object 
-            # contact_incidence_matrix can not be defined while 
+            # There are more than 1 StrandComponent objects, therefore there
+            # are contacts between StrandComponent objects and matrices
+            # contact_incidence_matrix and electric_conductance_matix can be
+            # built. If there is only one StrandComponent object
+            # contact_incidence_matrix can not be defined while
             # electric_conductance_matix is full of 0 from initialization.
 
             # Find contacts between StrandComponent objects.
@@ -2916,15 +2916,17 @@ class Conductor:
 
         mutual_inductance = np.zeros(self.inductance_matrix.shape)
         if self.inventory["StrandComponent"].number > 1:
-            # There are more than 1 StrandComponent objects, therefore the 
-            # mutual inductances between StrandComponent objects can be 
+            # There are more than 1 StrandComponent objects, therefore the
+            # mutual inductances between StrandComponent objects can be
             # evaluated.
-            # If there is only 1 StrandComponent object, the mutual inductance 
+            # If there is only 1 StrandComponent object, the mutual inductance
             # matrixis set to 0 as from initialization.
-            
+
             # Evaluate mutual inductances
             for ii in range(self.total_elements_current_carriers - 1):
-                mutual_inductance = self.__mutual_inductance(lmod, ii, mutual_inductance, ABSTOL)
+                mutual_inductance = self.__mutual_inductance(
+                    lmod, ii, mutual_inductance, ABSTOL
+                )
             # end for
 
         # Switch to evalutae self inductance.
@@ -2946,7 +2948,9 @@ class Conductor:
             )
         )
 
-    def __mutual_inductance(self, lmod: np.ndarray, ii: int, matrix: np.ndarray, abstol: float = 1e-6)->np.ndarray:
+    def __mutual_inductance(
+        self, lmod: np.ndarray, ii: int, matrix: np.ndarray, abstol: float = 1e-6
+    ) -> np.ndarray:
         """Private method that evaluates the mutual inductance analytically.
 
         Args:
@@ -3185,15 +3189,17 @@ class Conductor:
         internal_inductance = np.zeros(lmod.shape)
         mutual_inductance = np.zeros(self.inductance_matrix.shape)
         if self.inventory["StrandComponent"].number > 1:
-            # There are more than 1 StrandComponent objects, therefore the 
-            # mutual inductances between StrandComponent objects can be 
+            # There are more than 1 StrandComponent objects, therefore the
+            # mutual inductances between StrandComponent objects can be
             # evaluated.
-            # If there is only 1 StrandComponent object, the mutual inductance 
+            # If there is only 1 StrandComponent object, the mutual inductance
             # matrixis set to 0 as from initialization.
 
             # Evaluate mutual inductance
-            mutual_inductance = self.__mutual_inductance_approximate(ll, mutual_inductance)
-        
+            mutual_inductance = self.__mutual_inductance_approximate(
+                ll, mutual_inductance
+            )
+
         # Evaluate self inductance
         self_inductance = self.__self_inductance_approximate(lmod)
         # Evaluate internal inductance
@@ -3209,7 +3215,9 @@ class Conductor:
             )
         )
 
-    def __mutual_inductance_approximate(self, ll: pd.DataFrame, matrix: np.ndarray) -> np.ndarray:
+    def __mutual_inductance_approximate(
+        self, ll: pd.DataFrame, matrix: np.ndarray
+    ) -> np.ndarray:
         """Private method that evaluates an approximation of mutual inductance.
 
         Args:
@@ -3426,10 +3434,10 @@ class Conductor:
 
         if self.inventory["StrandComponent"].number > 1:
 
-            # There are more than 1 StrandComponent objects, therefore there 
-            # are contacts between StrandComponent objects power due to this 
+            # There are more than 1 StrandComponent objects, therefore there
+            # are contacts between StrandComponent objects power due to this
             # electric contacts can be evaluated as follows.
-            # If there is only one StrandComponent object, total_power_el_cond 
+            # If there is only one StrandComponent object, total_power_el_cond
             # is equal to 0 as from initialization.
 
             # Compute voltage drop due to electric condutances across
