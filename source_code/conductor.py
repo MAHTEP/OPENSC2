@@ -2698,34 +2698,42 @@ class Conductor:
             f"After call method {self.__build_electric_resistance_matrix.__name__}.\n"
         )
 
-        # Find contacts between StrandComponent objects.
-        conductorlogger.debug(
-            f"Before call method {self.__contact_current_carriers.__name__}.\n"
-        )
-        self.__contact_current_carriers()
-        conductorlogger.debug(
-            f"After call method {self.__contact_current_carriers.__name__}.\n"
-        )
+        if self.inventory["StrandComponent"].number > 1:
+            # There are more than 1 StrandComponent objects, therefore there 
+            # are contacts between StrandComponent objects and matrices 
+            # contact_incidence_matrix and electric_conductance_matix can be 
+            # built. If there is only one StrandComponent object 
+            # contact_incidence_matrix can not be defined while 
+            # electric_conductance_matix is full of 0 from initialization.
 
-        # Build contact incidence matrix
-        conductorlogger.debug(
-            f"Before call method {self.__build_contact_incidence_matrix.__name__}.\n"
-        )
-        # this method builds the contact incidence matrix for current carriers
-        # only
-        self.__build_contact_incidence_matrix()
-        conductorlogger.debug(
-            f"After call method {self.__build_contact_incidence_matrix.__name__}.\n"
-        )
+            # Find contacts between StrandComponent objects.
+            conductorlogger.debug(
+                f"Before call method {self.__contact_current_carriers.__name__}.\n"
+            )
+            self.__contact_current_carriers()
+            conductorlogger.debug(
+                f"After call method {self.__contact_current_carriers.__name__}.\n"
+            )
 
-        # Build electric conductance matrix
-        conductorlogger.debug(
-            f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
-        )
-        self.__build_electric_conductance_matrix()
-        conductorlogger.debug(
-            f"After call method {self.__build_electric_conductance_matrix.__name__}.\n"
-        )
+            # Build contact incidence matrix
+            conductorlogger.debug(
+                f"Before call method {self.__build_contact_incidence_matrix.__name__}.\n"
+            )
+            # this method builds the contact incidence matrix for current carriers
+            # only
+            self.__build_contact_incidence_matrix()
+            conductorlogger.debug(
+                f"After call method {self.__build_contact_incidence_matrix.__name__}.\n"
+            )
+
+            # Build electric conductance matrix
+            conductorlogger.debug(
+                f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
+            )
+            self.__build_electric_conductance_matrix()
+            conductorlogger.debug(
+                f"After call method {self.__build_electric_conductance_matrix.__name__}.\n"
+            )
 
         # Build electric stiffness matrix (for the first time)
         conductorlogger.debug(
@@ -2906,10 +2914,18 @@ class Conductor:
             .apply(np.sqrt)
         )
 
-        # Evaluate mutual inductances
-        for ii in range(self.total_elements_current_carriers - 1):
-            self.__mutual_inductance(lmod, ii, ABSTOL)
-        # end for
+        mutual_inductance = np.zeros(self.inductance_matrix.shape)
+        if self.inventory["StrandComponent"].number > 1:
+            # There are more than 1 StrandComponent objects, therefore the 
+            # mutual inductances between StrandComponent objects can be 
+            # evaluated.
+            # If there is only 1 StrandComponent object, the mutual inductance 
+            # matrixis set to 0 as from initialization.
+            
+            # Evaluate mutual inductances
+            for ii in range(self.total_elements_current_carriers - 1):
+                mutual_inductance = self.__mutual_inductance(lmod, ii, mutual_inductance, ABSTOL)
+            # end for
 
         # Switch to evalutae self inductance.
         self_inductance_switch = {
@@ -2930,13 +2946,17 @@ class Conductor:
             )
         )
 
-    def __mutual_inductance(self, lmod: np.ndarray, ii: int, abstol: float = 1e-6):
+    def __mutual_inductance(self, lmod: np.ndarray, ii: int, matrix: np.ndarray, abstol: float = 1e-6)->np.ndarray:
         """Private method that evaluates the mutual inductance analytically.
 
         Args:
             lmod (np.ndarray): array with the distance between strand component nodal nodes.
             ii (int): index of the i-th edge on which the mutual inductance is evaluated.
+            matrix (np.ndarray): initialized matrix to store analytically evaluated mutual inductance values.
             abstol (float, optional): absolute tollerance to avoid rounding for segments in a plane. Defaults to 1e-6.
+
+            Returns:
+                np.ndarray: analytically evaluated mutual inductance.
         """
 
         jj = np.r_[ii + 1 : self.total_elements_current_carriers]
@@ -3022,10 +3042,11 @@ class Conductor:
         pp[np.isinf(pp)] = 0.0
 
         # Mutual inductances
-        self.inductance_matrix[ii, jj] = (
+        matrix[ii, jj] = (
             2 * cos_eps * (pp[:, 0] + pp[:, 1] + pp[:, 2] + pp[:, 3])
             - cos_eps * pp[:, 4]
         )
+        return matrix
 
     def __vertex_to_vertex_distance(
         self, key: str, ii: int, jj: np.ndarray
@@ -3162,9 +3183,17 @@ class Conductor:
         lmod = (ll ** 2).sum(axis=1).apply(np.sqrt)
 
         internal_inductance = np.zeros(lmod.shape)
+        mutual_inductance = np.zeros(self.inductance_matrix.shape)
+        if self.inventory["StrandComponent"].number > 1:
+            # There are more than 1 StrandComponent objects, therefore the 
+            # mutual inductances between StrandComponent objects can be 
+            # evaluated.
+            # If there is only 1 StrandComponent object, the mutual inductance 
+            # matrixis set to 0 as from initialization.
 
-        # Evaluate mutual inductance
-        mutual_inductance = self.__mutual_inductance_approximate(ll)
+            # Evaluate mutual inductance
+            mutual_inductance = self.__mutual_inductance_approximate(ll, mutual_inductance)
+        
         # Evaluate self inductance
         self_inductance = self.__self_inductance_approximate(lmod)
         # Evaluate internal inductance
@@ -3180,11 +3209,12 @@ class Conductor:
             )
         )
 
-    def __mutual_inductance_approximate(self, ll: pd.DataFrame) -> np.ndarray:
+    def __mutual_inductance_approximate(self, ll: pd.DataFrame, matrix: np.ndarray) -> np.ndarray:
         """Private method that evaluates an approximation of mutual inductance.
 
         Args:
             ll (pd.DataFrame): variable with useful values for the evaluation.
+            matrix (np.ndarray): initialized matrix to store approximated mutual inductance values.
 
         Returns:
             np.ndarray: approximate value of mutual inductance.
@@ -3192,8 +3222,6 @@ class Conductor:
 
         ABSTOL = 1e-4
         RELTOL = 1e-4
-
-        mutual_inductance = np.zeros(self.inductance_matrix.shape)
 
         def __reverse_distance(xi, xj, qi, vi, qj, vj):
             return 1.0 / np.sqrt(
@@ -3228,7 +3256,7 @@ class Conductor:
                     .to_numpy()
                 )
                 vj = ll.iloc[jj, :].to_numpy()
-                mutual_inductance[ii, jj] = np.sum(vi * vj) * integrate.dblquad(
+                matrix[ii, jj] = np.sum(vi * vj) * integrate.dblquad(
                     __reverse_distance,
                     0.0,
                     1.0,
@@ -3241,7 +3269,7 @@ class Conductor:
 
             # End for
         # End for
-        return mutual_inductance
+        return matrix
 
     def __self_inductance_approximate(self, lmod: np.ndarray) -> np.ndarray:
         """Private method that evaluates an approximation of self inductance.
@@ -3392,60 +3420,72 @@ class Conductor:
     def __get_total_joule_power_electric_conductance(self):
         """Private method that evaluates total Joule power in each node of the spatial discretization associated to the electric conductance between StrandComponent objects. The method re-distribues computed values to each defined StrandComponent object."""
 
-        # Compute voltage drop due to electric condutances across
-        # StrandComponent objects.
-        self.voltage_drop_across = np.real(
-            self.contact_incidence_matrix @ self.nodal_potential
-        )
-
-        # Compute electric currrent that flows in electric conductances across
-        # StrandComponent objects.
-        self.current_across = np.real(
-            np.conj(
-                self.electric_conductance_diag_matrix
-                @ self.contact_incidence_matrix
-                @ self.nodal_potential
-            )
-        )
-
-        # Converison from instantaneous to effective values (used in sinusoidal
-        # regime).
-        if self.operations["ELECTRIC_SOLVER"] == STATIC_ELECTRIC_SOLVER:
-            # Conversion of voltage drop across electric conductances:
-            # Delta_V_across_eff = Delta_V_across / sqrt(2)
-            self.voltage_drop_across = self.voltage_drop_across / np.sqrt(2.0)
-            # Conversion of voltage drop across electric conductances:
-            # I_across_eff = I_across / sqrt(2)
-            self.current_across = self.current_across / np.sqrt(2.0)
-
-        # Compute array with the Joule power in W due to each electric
-        # conductance:
-        # P_across = I_across * Delta_V_across
-        # or (in sinusoidal regime):
-        # P_across = I_across_eff * Delta_V_across_eff
-        # Shape: (N_ct,1) with N_ct = N_c*N_n.
-        # N_c = number of electric contact on a single cross section;
-        # N_n = number of nodes (or number of cross sections);
-        # N_ct = total number of electric contacts.
-        joule_power_across = self.voltage_drop_across * self.current_across
-
-        # Evaluate the contribution of the joule power due to conductances
-        # between SolidComponent in each node of the spatial discretization.
-        # The coefficient 1/2 halves the sum of the powers due to the
-        # conductances referring to each node.
-        # Shape : (N_nt,1) with N_nt = N_s*N_n.
-        # N_s = number of strand objects (in future maybe also jacket);
-        # N_n = number of nodes (or number of cross sections);
-        # N_nt = total number of nodes.
-        joule_power_across_node = (
-            np.abs(self.contact_incidence_matrix.T) @ joule_power_across
-        ) / 2
-
-        # Loop to assign values to each StrandComponent.
+        # Loop to initialize total_powe_el_cond to 0 for each StrandComponent.
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
-            obj.dict_node_pt["total_power_el_cond"] = joule_power_across_node[
-                ii :: self.grid_features["N_nod"]
-            ]
+            obj.dict_node_pt["total_power_el_cond"] = 0.0
+
+        if self.inventory["StrandComponent"].number > 1:
+
+            # There are more than 1 StrandComponent objects, therefore there 
+            # are contacts between StrandComponent objects power due to this 
+            # electric contacts can be evaluated as follows.
+            # If there is only one StrandComponent object, total_power_el_cond 
+            # is equal to 0 as from initialization.
+
+            # Compute voltage drop due to electric condutances across
+            # StrandComponent objects.
+            self.voltage_drop_across = np.real(
+                self.contact_incidence_matrix @ self.nodal_potential
+            )
+
+            # Compute electric currrent that flows in electric conductances across
+            # StrandComponent objects.
+            self.current_across = np.real(
+                np.conj(
+                    self.electric_conductance_diag_matrix
+                    @ self.contact_incidence_matrix
+                    @ self.nodal_potential
+                )
+            )
+
+            # Converison from instantaneous to effective values (used in sinusoidal
+            # regime).
+            if self.operations["ELECTRIC_SOLVER"] == STATIC_ELECTRIC_SOLVER:
+                # Conversion of voltage drop across electric conductances:
+                # Delta_V_across_eff = Delta_V_across / sqrt(2)
+                self.voltage_drop_across = self.voltage_drop_across / np.sqrt(2.0)
+                # Conversion of voltage drop across electric conductances:
+                # I_across_eff = I_across / sqrt(2)
+                self.current_across = self.current_across / np.sqrt(2.0)
+
+            # Compute array with the Joule power in W due to each electric
+            # conductance:
+            # P_across = I_across * Delta_V_across
+            # or (in sinusoidal regime):
+            # P_across = I_across_eff * Delta_V_across_eff
+            # Shape: (N_ct,1) with N_ct = N_c*N_n.
+            # N_c = number of electric contact on a single cross section;
+            # N_n = number of nodes (or number of cross sections);
+            # N_ct = total number of electric contacts.
+            joule_power_across = self.voltage_drop_across * self.current_across
+
+            # Evaluate the contribution of the joule power due to conductances
+            # between SolidComponent in each node of the spatial discretization.
+            # The coefficient 1/2 halves the sum of the powers due to the
+            # conductances referring to each node.
+            # Shape : (N_nt,1) with N_nt = N_s*N_n.
+            # N_s = number of strand objects (in future maybe also jacket);
+            # N_n = number of nodes (or number of cross sections);
+            # N_nt = total number of nodes.
+            joule_power_across_node = (
+                np.abs(self.contact_incidence_matrix.T) @ joule_power_across
+            ) / 2
+
+            # Loop to assign values to each StrandComponent.
+            for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
+                obj.dict_node_pt["total_power_el_cond"] = joule_power_across_node[
+                    ii :: self.grid_features["N_nod"]
+                ]
 
     def electric_method(self):
         """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls private method self.__electric_solution_reorganization to reorganize the electric solution.
