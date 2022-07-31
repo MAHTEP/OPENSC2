@@ -219,3 +219,15 @@ def electrical_resistivity_jk2lb(TTT):
     RHOE = np.piecewise(TTT, intervals, behavior)
 
     return RHOE  # end of the function
+
+def density_jk2lb(nn:int)->np.ndarray:
+    """
+    Function that evaluates high Mn austenitic steinless steel (JK2LB) density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: high Mn austenitic steinless steel (JK2LB) density array in kg/m^3.
+    """
+    return 7.86e3 * np.ones(nn)
