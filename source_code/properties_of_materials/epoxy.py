@@ -82,3 +82,17 @@ def isobaric_specific_heat_ep(t):
     )
 
     return cp  # end of the function
+
+def density_ep(nn:int)->np.ndarray:
+    """
+    Function that evaluates epoxy density, assumed constant.
+
+    Reference: VDI-Richtlinien, VDI2010 Blatt 3, Cryosoft
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: epoxy density array in kg/m^3.
+    """
+    return 1.220e3 * np.ones(nn)
