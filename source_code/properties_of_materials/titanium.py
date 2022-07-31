@@ -195,3 +195,15 @@ def electrical_resistivity_ti(TT):
     RHOETI = np.piecewise(TT, intervals, behavior)
 
     return RHOETI
+
+def density_ti(nn:int)->np.ndarray:
+    """
+    Function that evaluates titanium density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: titanium density array in kg/m^3.
+    """
+    return 4500.0 * np.ones(nn)
