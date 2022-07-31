@@ -77,3 +77,16 @@ def isobaric_specific_heat_kapton(t):
     )
 
     return cp  # end of the function
+
+def density_kapton(nn:int)->np.ndarray:
+    """
+    Function that evaluates kapton density, assumed constant.
+
+    Reference: CRYOSOFT
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: kapton density array in kg/m^3.
+    """
+    return 1.380e3 * np.ones(nn)
