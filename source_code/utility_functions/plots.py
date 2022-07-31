@@ -366,10 +366,10 @@ def make_plots(simulation, kind="Space_distr"):
         # Loop on SolidComponent (cdp, 11/2020)
         for s_comp in cond.inventory["SolidComponent"].collection:
             dict_values[cond.identifier][s_comp.identifier] = {}
-            if s_comp.NAME != cond.inventory["JacketComponent"].name:
+            if s_comp.name != cond.inventory["JacketComponent"].name:
                 # StrandComponent objects (cdp, 09/2020)
                 # Load properties value for strands (cdp, 09/2020)
-                prop_s_comp = prop_st[s_comp.NAME]
+                prop_s_comp = prop_st[s_comp.name]
             else:
                 # JacketComponents objects (cdp, 09/2020)
                 # Load properties value for jackets (cdp, 09/2020)

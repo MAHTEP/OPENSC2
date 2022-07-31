@@ -211,7 +211,7 @@ class SolidComponent:
     #     Method that actually evaluate total_density, specific_heat and thermal conductivity of SolidComponent class objects regardless of the location (nodal or Gauss points) (cdp, 07/2020)
     #     """
     #     # keys = list(self.inputs.keys())
-    #     # if self.NAME == inventory["StrandMixedComponent"].name:
+    #     # if self.name == inventory["StrandMixedComponent"].name:
     #     if isinstance(self, StrandMixedComponent):
     #         # STR_MIX: stabilizer and superconductor strand (cdp, 07/2020)
     #         # initialization (cdp, 07/2020)
@@ -430,7 +430,7 @@ class SolidComponent:
     #         # This expression is always the same, what change is the way in which \
     #         # cp_num and rho_num are evaluated (cdp, 07/2020)
     #         dict_dummy.update(total_isobaric_specific_heat=cp_num / rho_num)
-    #     # elif self.NAME == inventory["StackComponent"].name:
+    #     # elif self.name == inventory["StackComponent"].name:
     #     elif isinstance(self, StackComponent):
     #         # STACK: superconductor strand (cdp, 07/2020)
     #         if self.inputs["superconducting_material"] == "NbTi":
@@ -526,7 +526,7 @@ class SolidComponent:
     #     {list(self.inputs.keys())[3]} =
     #     {self.inputs["superconducting_material"]} is not defined yet.\n"""
     #             )
-    #     # elif self.NAME == inventory["StrandStabilizerComponent"].name:
+    #     # elif self.name == inventory["StrandStabilizerComponent"].name:
     #     elif isinstance(self, StrandStabilizerComponent):
     #         # STR_STAB: stabilizer strand (cdp, 07/2020)
     #         if self.inputs["stabilizer_material"] == "Cu":
@@ -575,7 +575,7 @@ class SolidComponent:
     #       {list(self.inputs.keys())[2]} =
     #       {self.inputs["stabilizer_material"]} is not defined yet.\n"""
     #             )
-    #     # elif self.NAME == inventory["JacketComponent"].name:
+    #     # elif self.name == inventory["JacketComponent"].name:
     #     elif isinstance(self, JacketComponent):
     #         # Z_JKT: jacket (cdp, 07/2020)
     #         # initialization (cdp, 07/2020)
@@ -715,7 +715,7 @@ class SolidComponent:
     #     else:
     #         raise NameError(
     #             f"""ERROR: there are no objects with this name:
-    #         {self.NAME}.\n"""
+    #         {self.name}.\n"""
     #         )
 
     #     return dict_dummy

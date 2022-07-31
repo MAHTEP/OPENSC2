@@ -348,7 +348,7 @@ class Simulation:
                 # Loop on SolidComponent (cdp, 01/2021)
                 # for s_comp in conductor.inventory["SolidComponent"]\
                 # 	["Objects"]:
-                # 	if s_comp.NAME != "STR_STAB" and s_comp.NAME != "Z_JACKET":
+                # 	if s_comp.name != "STR_STAB" and s_comp.name != "Z_JACKET":
                 # 		# Call Get_superconductor_critical_prop to evaluate \
                 # 		# StrandMixedComponent and/or StackComponent properties in nodal points.
                 # 		# In questo modo le calclo 2 volte, qui e alla successiva chiamata \

@@ -104,7 +104,7 @@ class Conductor:
 
         self.BASE_PATH = simulation.basePath
         self.ICOND = ICOND
-        self.NAME = sheetConductorsList[0].cell(row=1, column=1).value
+        self.name = sheetConductorsList[0].cell(row=1, column=1).value
         # get channels ID consistently with user definition (cdp, 09/2020)
         self.identifier = (
             sheetConductorsList[0].cell(row=3, column=4 + self.ICOND).value
@@ -2108,7 +2108,7 @@ class Conductor:
                 * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
                 * s_comp.dict_Gauss_pt["temperature"]
             )
-            if s_comp.NAME != "Z_JACKET":
+            if s_comp.name != "Z_JACKET":
                 self.E_str_ini = self.E_str_ini + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
                         self.grid_features["zcoord"][1 : self.grid_features["N_nod"]]
@@ -3570,7 +3570,7 @@ class Conductor:
             strand.get_magnetic_field(self)
             # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self)
-            if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
+            if strand.name != self.inventory["StrandStabilizerComponent"].name:
                 if strand.inputs["superconducting_material"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
@@ -3590,7 +3590,7 @@ class Conductor:
                 elif strand.operations["TCS_EVALUATION"] == True:
                     # Evaluate current sharing temperature at each time step.
                     strand.get_tcs()
-            # end if strand.NAME != self.inventory["StrandStabilizerComponent"].name \
+            # end if strand.name != self.inventory["StrandStabilizerComponent"].name \
             # (cdp, 08/2020)
             if self.cond_num_step == 0 and strand.operations["IQFUN"] == 0:
                 # call method get_heat only once to initialize key EXTFLX of dictionary \
@@ -3760,7 +3760,7 @@ class Conductor:
             # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self, nodal=False)
             # only for StrandMixedComponent and StackComponent objects (cdp, 07/2020)
-            if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
+            if strand.name != self.inventory["StrandStabilizerComponent"].name:
                 if strand.inputs["superconducting_material"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
@@ -3778,7 +3778,7 @@ class Conductor:
                 elif strand.operations["TCS_EVALUATION"] == True:
                     # Evaluate current sharing temperature at each time step.
                     strand.get_tcs(nodal=False)
-            # end if strand.NAME != self.inventory["StrandStabilizerComponent"].name \
+            # end if strand.name != self.inventory["StrandStabilizerComponent"].name \
             # (cdp, 08/2020)
             # Evaluate SolidComponent properties
             strand.eval_sol_comp_properties(self.inventory, nodal=False)
@@ -3813,7 +3813,7 @@ class Conductor:
             strand.get_magnetic_field_gradient(self)
             # questa è la parte che credo sia rilevante
             # only for StrandMixedComponent and StackComponent objects (cdp, 07/2020)
-            if strand.NAME != self.inventory["StrandStabilizerComponent"].name:
+            if strand.name != self.inventory["StrandStabilizerComponent"].name:
                 if strand.inputs["superconducting_material"] == "Nb3Sn":
                     # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
                     # call method get_eps to evaluate strain
@@ -3825,7 +3825,7 @@ class Conductor:
                 # Evaluate current sharing temperature
                 strand.get_tcs()
 
-            # end if strand.NAME != self.inventory["StrandStabilizerComponent"].name \
+            # end if strand.name != self.inventory["StrandStabilizerComponent"].name \
             # (cdp, 08/2020)
 
         # Loop on SolidComponent to evaluate the total final energy of \
@@ -3841,7 +3841,7 @@ class Conductor:
                 * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"]
                 * s_comp.dict_Gauss_pt["temperature"]
             )
-            if s_comp.NAME != "Z_JACKET":
+            if s_comp.name != "Z_JACKET":
                 self.E_str_fin = self.E_str_fin + s_comp.inputs["CROSSECTION"] * np.sum(
                     (
                         self.grid_features["zcoord"][1 : self.grid_features["N_nod"]]

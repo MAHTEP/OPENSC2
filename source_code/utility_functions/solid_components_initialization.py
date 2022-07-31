@@ -75,7 +75,7 @@ def solid_components_temperature_initialization(cond):
         else:
             # raise error due to not available INTIAL value (cdp, 12/2020)
             raise ValueError(
-                f"""INTIAL value not available. Please check check INTIAL value in sheet {s_comp.NAME} of file {cond.file_input["OPERATION"]}.\n"""
+                f"""INTIAL value not available. Please check check INTIAL value in sheet {s_comp.name} of file {cond.file_input["OPERATION"]}.\n"""
             )
         # end if s_comp.operations["INTIAL"] (cdp, 12/2020)
     # end for cc (cdp, 12/2020)

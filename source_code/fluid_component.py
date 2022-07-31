@@ -96,7 +96,7 @@ class FluidComponent:
         Returns:
             [type]: [description]
         """
-        return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
+        return f"{self.__class__.__name__}(Type: {self.name}, identifier: {self.identifier})"
 
     # End method __repr__.
 

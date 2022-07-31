@@ -1036,7 +1036,7 @@ def step(conductor, environment, qsource, num_step):
                 # end if flag_chan_sol_contact (cdp, 09/2020)
             # end for jj (cdp, 07/2020)
             # Convective heating with the external environment (implicit treatment).
-            if s_comp_l.NAME == conductor.inventory["JacketComponent"].name:
+            if s_comp_l.name == conductor.inventory["JacketComponent"].name:
                 if (
                     conductor.dict_df_coupling["contact_perimeter_flag"].at[
                         environment.KIND, s_comp_l.identifier
@@ -1079,13 +1079,13 @@ def step(conductor, environment, qsource, num_step):
                             ]["conv"][ii]
                         )
                 # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.identifier]
-            # End s_comp_l.NAME
+            # End s_comp_l.name
 
             # END S MATRIX: solid components equation (cdp, 07/2020)
 
             # FORM THE S VECTOR AT THE NODAL POINTS (SOURCE)
             # cl modify august 24 2019
-            if s_comp_l.NAME != conductor.inventory["JacketComponent"].name:
+            if s_comp_l.name != conductor.inventory["JacketComponent"].name:
                 # StrandComponent objects (cdp, 08/2020)
                 # This is independent from the solution method thanks to the \
                 # escamotage of the dummy steady state corresponding to the \

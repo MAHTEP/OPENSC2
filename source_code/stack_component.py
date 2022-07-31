@@ -144,7 +144,7 @@ class StackComponent(StrandComponent):
             conductor(object): inscance of class Conductor
         """
 
-        self.NAME = name
+        self.name = name
         # get channels ID consistently with user definition (cdp, 09/2020)
         self.identifier = sheet.cell(row=3, column=4 + icomp).value
 
@@ -206,7 +206,7 @@ class StackComponent(StrandComponent):
         )
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
+        return f"{self.__class__.__name__}(Type: {self.name}, identifier: {self.identifier})"
 
     def __str__(self):
         pass

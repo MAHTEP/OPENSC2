@@ -63,7 +63,7 @@ class StrandStabilizerComponent(StrandComponent):
 
     def __init__(self, simulation, sheet, icomp, name, dict_file_path):
 
-        self.NAME = name
+        self.name = name
         # get channels ID consistently with user definition (cdp, 09/2020)
         self.identifier = sheet.cell(row=3, column=4 + icomp).value
 
@@ -108,7 +108,7 @@ class StrandStabilizerComponent(StrandComponent):
             del self.operations["B_field_units"]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(Type: {self.NAME}, identifier: {self.identifier})"
+        return f"{self.__class__.__name__}(Type: {self.name}, identifier: {self.identifier})"
 
     def __str__(self):
         pass

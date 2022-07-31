@@ -56,7 +56,7 @@ def save_properties(conductor, f_path):
             np.savetxt(writer, A_chan, delimiter="\t", header=header_chan, comments="")
     for strand in conductor.inventory["StrandComponent"].collection:
         file_path = os.path.join(f_path, f"{strand.identifier}.tsv")
-        if strand.NAME != conductor.inventory["StrandStabilizerComponent"].name:
+        if strand.name != conductor.inventory["StrandStabilizerComponent"].name:
             A_strand = np.zeros((conductor.grid_features["N_nod"], 4))
             A_strand[:, 3] = strand.dict_node_pt["T_cur_sharing"]
         else:
@@ -65,7 +65,7 @@ def save_properties(conductor, f_path):
         A_strand[:, 1] = strand.dict_node_pt["temperature"]
         A_strand[:, 2] = strand.dict_node_pt["B_field"]
         with open(file_path, "w") as writer:
-            if strand.NAME != conductor.inventory["StrandStabilizerComponent"].name:
+            if strand.name != conductor.inventory["StrandStabilizerComponent"].name:
                 np.savetxt(
                     writer, A_strand, delimiter="\t", header=header_st, comments=""
                 )
