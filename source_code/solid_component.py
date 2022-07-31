@@ -1,12 +1,6 @@
 import numpy as np
 import os
 
-from jacket_component import JacketComponent
-from strand_component import StrandComponent
-from stack_component import StackComponent
-from strand_mixed_component import StrandMixedComponent
-from strand_stabilizer_component import StrandStabilizerComponent
-
 from utility_functions.auxiliary_functions import (
     get_from_xlsx,
     load_auxiliary_files,
@@ -140,7 +134,7 @@ class SolidComponent:
             dict_dummy = self.dict_Gauss_pt
             self.dict_Gauss_pt = self.eval_properties(dict_dummy, inventory)
 
-    def eval_properties(self, dict_dummy: dict) -> dict:
+    def eval_properties(self, dict_dummy: dict, inventory: dict) -> dict:
         """Method that actually evaluate total_density, specific_heat and thermal conductivity of SolidComponent class objects regardless of the location (nodal or Gauss points).
 
         Args:
@@ -150,7 +144,8 @@ class SolidComponent:
             dict: dictionary with updated material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
         """
 
-        if isinstance(self, StrandMixedComponent, StrandStabilizerComponent):
+        if (self.name == inventory["StrandMixedComponent"].name or 
+        self.name == inventory["StrandStabilizerComponent"].name):
             dict_dummy.update(total_density=self.strand_density(dict_dummy))
             dict_dummy.update(
                 total_isobaric_specific_heat=self.strand_isobaric_specific_heat(
@@ -160,19 +155,19 @@ class SolidComponent:
             dict_dummy.update(
                 total_thermal_conductivity=self.strand_thermal_conductivity(dict_dummy)
             )
-            if isinstance(self, StrandMixedComponent):
+            if self.name == inventory["StrandMixedComponent"].name:
                 dict_dummy.update(
                     electrical_resistivity_stabilizer=self.electrical_resistivity_function_not_sc(
                         dict_dummy
                     )
                 )
-            elif isinstance(self, StrandStabilizerComponent):
+            elif self.name == inventory["StrandStabilizerComponent"].name:
                 dict_dummy.update(
                     electrical_resistivity_stabilizer=self.strand_electrical_resistivity(
                         dict_dummy
                     )
                 )
-        elif isinstance(self, StackComponent):
+        elif self.name == inventory["StackComponent"].name:
             dict_dummy.update(total_density=self.stack_density(dict_dummy))
             dict_dummy.update(
                 total_isobaric_specific_heat=self.stack_isobaric_specific_heat(
@@ -187,7 +182,7 @@ class SolidComponent:
                     dict_dummy
                 )
             )
-        elif isinstance(self, JacketComponent):
+        elif inventory["JacketComponent"].name:
             dict_dummy.update(total_density=self.jacket_density(dict_dummy))
             dict_dummy.update(
                 total_isobaric_specific_heat=self.jacket_isobaric_specific_heat(
@@ -722,7 +717,7 @@ class SolidComponent:
 
     # # end Eval_properties
 
-    def get_current_fractions(self, total_sc_area: float, total_so_area: float):
+    def get_current_fractions(self, total_sc_area: float, total_so_area: float, inventory: dict):
         """Method that evaluates: 1) fraction of the total current that flows in superconductor cross section of each strand or stack object if in superconducting regime (op_current_fraction_sc); 2) fraction of the total current that flows in the total cross section (superconductor and not superconductor or stabilizer materials) of each strand or stack object if in current sharing regime (op_current_fraction_sh). Both are methods of the generic object.
 
         Note: for the time being both fractions are set to 0.0 for objects of kind JacketComponent.
@@ -730,18 +725,21 @@ class SolidComponent:
         Args:
             total_sc_area (float): total superconductor cross section of the conductor.
             total_so_area (float): total cross section of strands and or stacks of the conductor.
+            inventory (dict): dictionary with all the conductor components.
         """
 
         # Fraction of the total current that goes in the superconductor cross
         # section in superconducting regime.
-        if isinstance(self, (StrandMixedComponent, StackComponent)):
+        if (self.name == inventory["StrandMixedComponent"].name or 
+        self.name == inventory["StackComponent"].name):
             self.op_current_fraction_sc = self.sc_cross_section / total_sc_area
-        elif isinstance(self, (JacketComponent, StrandStabilizerComponent)):
+        elif (self.name == inventory["JacketComponent"].name or 
+        self.name == inventory["StrandStabilizerComponent"].name):
             self.op_current_fraction_sc = 0.0
 
         # Fraction of the total current that goes in the strand or thape cross
         # section in current sharing regime.
-        if isinstance(self, StrandComponent):
+        if (self.name == inventory["StackComponent"].name or self.name == inventory["StrandMixedComponent"].name or self.name == inventory["StrandStabilizerComponent"].name):
             self.op_current_fraction_sh = self.inputs["CROSSECTION"] / total_so_area
         else:  # jacket object.
             self.op_current_fraction_sh = 0.0
@@ -788,7 +786,8 @@ class SolidComponent:
                 self.op_current_so[:-1] + self.op_current_so[1:]
             ) / 2.0
             # This is exploited in the electric resistance evaluation.
-            if isinstance(self, (StackComponent, StrandMixedComponent)):
+            if (self.name == conductor.inventory["StackComponent"].name
+            or self.name == conductor.inventory["StrandMixedComponent"].name):
                 # Build an alias for convenience when dealing with electric
                 # resistance evaluation.
                 self.op_current_sc = self.op_current_so
@@ -809,7 +808,8 @@ class SolidComponent:
             self.op_current_so_gauss = (
                 self.op_current_so[:-1] + self.op_current_so[1:]
             ) / 2.0
-            if isinstance(self, (StackComponent, StrandMixedComponent)):
+            if (self.name == conductor.inventory["StackComponent"].name
+            or self.name == conductor.inventory["StrandMixedComponent"].name):
                 self.op_current_sc = (
                     conductor.IOP_TOT
                     * self.op_current_fraction_sc
