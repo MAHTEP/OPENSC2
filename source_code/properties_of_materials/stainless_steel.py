@@ -106,7 +106,7 @@ def electrical_resistivity_ss(t):
 
 
 # Function rho_ss starts here
-def density_ss(nn: int) -> np.nodarrayF:
+def density_ss(nn: int) -> np.ndarray:
 
     """
     Function that evaluates stainless steel density, assumed constant.
