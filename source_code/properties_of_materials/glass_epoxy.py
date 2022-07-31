@@ -88,6 +88,7 @@ def density_ge(nn:int)->np.ndarray:
     """
     Function that evaluates glass-epoxy density, assumed constant.
 
+    Reference: CRYOSOFT
     Args:
         nn (int): number of elements of the array.
 
