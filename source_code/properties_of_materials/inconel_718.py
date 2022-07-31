@@ -176,3 +176,15 @@ def electrical_resistivity_inconel718(TT):
     RHOENE = (A + B * TT ** nb) * 1.0e-7
 
     return RHOENE
+
+def density_inconel718(nn:int)->np.ndarray:
+    """
+    Function that evaluates inconel 718 density, assumed constant.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: inconel 718 density array in kg/m^3.
+    """
+    return 8.17e3 * np.ones(nn)
