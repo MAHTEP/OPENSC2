@@ -379,7 +379,7 @@ class Conductor:
                     # ["all_component"].collection: list of all objects
                     # (cdp, 09/2020)
                     self.inventory["StackComponent"].collection.append(
-                        StackComponent(simulation, sheet, ii, kindObj, dict_file_path)
+                        StackComponent(simulation, sheet, ii, kindObj, dict_file_path, self)
                     )
                     self.inventory["StrandComponent"].collection.append(
                         self.inventory["StackComponent"].collection[ii - 1]
@@ -403,7 +403,7 @@ class Conductor:
                     # (cdp, 09/2020)
                     self.inventory["StrandMixedComponent"].collection.append(
                         StrandMixedComponent(
-                            simulation, sheet, ii, kindObj, dict_file_path
+                            simulation, sheet, ii, kindObj, dict_file_path, self
                         )
                     )
                     self.inventory["StrandComponent"].collection.append(
@@ -452,7 +452,7 @@ class Conductor:
                     # ["all_component"].collection: list of all objects
                     # (cdp, 09/2020)
                     self.inventory["JacketComponent"].collection.append(
-                        JacketComponent(simulation, sheet, ii, kindObj, dict_file_path)
+                        JacketComponent(simulation, sheet, ii, kindObj, dict_file_path, self)
                     )
                     self.inventory["SolidComponent"].collection.append(
                         self.inventory["JacketComponent"].collection[ii - 1]
