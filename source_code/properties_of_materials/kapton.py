@@ -90,3 +90,17 @@ def density_kapton(nn:int)->np.ndarray:
         np.ndarray: kapton density array in kg/m^3.
     """
     return 1.380e3 * np.ones(nn)
+
+def electrical_resistivity_kapton(nn:int)->np.ndarray:
+    """
+    Function that evaluates kapton electrical resistivity, assumed constant.
+
+    N.B: no reference for this value.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: kapton electrical resistivity array in Ohm*m.
+    """
+    return 1.5e15 * np.ones(nn)
