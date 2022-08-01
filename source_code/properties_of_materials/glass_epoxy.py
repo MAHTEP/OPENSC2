@@ -99,3 +99,17 @@ def density_ge(nn:int)->np.ndarray:
 
 
 # end function rho_ge (cdp, 01/2021)
+
+def electrical_resistivity_ge(nn:int)->np.ndarray:
+    """
+    Function that evaluates glass-epoxy electrical resistivity, assumed constant.
+
+    N.B: no reference for this value.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: glass-epoxy electrical resistivity array in Ohm*m.
+    """
+    return 1.5e15 * np.ones(nn)
