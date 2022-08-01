@@ -96,3 +96,18 @@ def density_ep(nn:int)->np.ndarray:
         np.ndarray: epoxy density array in kg/m^3.
     """
     return 1.220e3 * np.ones(nn)
+
+
+def electrical_resistivity_ep(nn:int)->np.ndarray:
+    """
+    Function that evaluates epoxy electrical resistivity, assumed constant.
+
+    N.B: no reference for this value.
+
+    Args:
+        nn (int): number of elements of the array.
+
+    Returns:
+        np.ndarray: epoxy electrical resistivity array in Ohm*m.
+    """
+    return 3.4e12 * np.ones(nn)
