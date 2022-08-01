@@ -231,8 +231,8 @@ class JacketComponent(SolidComponent):
         # [jacket_material, insulation_material]
         self.materials = np.array(
             [
-                self.inputs["Jacket_material"].lower(),
-                self.inputs["Insulation_material"].lower(),
+                self.inputs["jacket_material"].lower(),
+                self.inputs["insulation_material"].lower(),
             ],
             dtype=str,
         )
@@ -248,8 +248,8 @@ class JacketComponent(SolidComponent):
         # [jacket_cross_section, insulation_cross_section]
         self.cross_sections = np.array(
             [
-                self.inputs["Jacket_cross_section"],
-                self.inputs["Insulation_cross_section"],
+                self.inputs["jacket_cross_section"],
+                self.inputs["insulation_cross_section"],
             ],
             dtype=float,
         )
