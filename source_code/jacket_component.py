@@ -325,6 +325,7 @@ class JacketComponent(SolidComponent):
         # Check that jacket cross section given in input is consistent with the
         # evaluated one.
         tol = 1e-3
+        self.inputs["CROSSECTION"] = self.inputs["jacket_cross_section"] + self.inputs["insulation_cross_section"]
         if (
             abs(self.__cross_section - self.inputs["CROSSECTION"])
             / self.inputs["CROSSECTION"]
