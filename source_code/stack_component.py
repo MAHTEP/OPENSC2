@@ -185,7 +185,7 @@ class StackComponent(StrandComponent):
         # end if
 
         self.__reorganize_input()
-        self.__check_consistecy(conductor)
+        self.__check_consistency(conductor)
 
         # Flag to check if evaluation of homogenized isobaric specific heat can
         # be done or not (depends on homogenized density evaluation).
@@ -296,7 +296,7 @@ class StackComponent(StrandComponent):
             [THERMAL_CONDUCTIVITY_FUNC[key] for key in self.tape_material]
         )
 
-    def __check_consistecy(self, conductor):
+    def __check_consistency(self, conductor):
         """Private method that checks consistency of stack and or tape user definition.
 
         Args:

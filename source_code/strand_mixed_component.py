@@ -140,7 +140,7 @@ class StrandMixedComponent(StrandComponent):
 
         self.__strand_density_flag = False
         self.__reorganize_input()
-        self.__check_consistecy(conductor)
+        self.__check_consistency(conductor)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.name}, identifier: {self.identifier})"
@@ -212,7 +212,7 @@ class StrandMixedComponent(StrandComponent):
             [THERMAL_CONDUCTIVITY_FUNC[key] for key in self.strand_material]
         )
 
-    def __check_consistecy(self, conductor):
+    def __check_consistency(self, conductor):
         """Private method that checks consistency of strand mixed user definition.
 
         Args:

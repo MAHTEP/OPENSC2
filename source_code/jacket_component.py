@@ -92,7 +92,7 @@ class JacketComponent(SolidComponent):
             del self.operations["B_field_units"]
 
         self.__reorganize_input()
-        self.__check_consistecy(conductor)
+        self.__check_consistency(conductor)
 
         # Flag to check if evaluation of homogenized isobaric specific heat can
         # be done or not (depends on homogenized density evaluation).
@@ -286,7 +286,7 @@ class JacketComponent(SolidComponent):
             [THERMAL_CONDUCTIVITY_FUNC[key] for key in self.materials]
         )
 
-    def __check_consistecy(self, conductor):
+    def __check_consistency(self, conductor):
         """Private method that checks consistency of jacket user definition.
 
         Args:
