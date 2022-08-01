@@ -1,8 +1,7 @@
-from ctypes import Union
 import numpy as np
 import pandas as pd
 from scipy import optimize
-from typing import Tuple
+from typing import Tuple, Union
 
 from solid_component import SolidComponent
 from strand_component import StrandComponent

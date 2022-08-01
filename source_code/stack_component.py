@@ -1,9 +1,8 @@
 # Import libraries
-from ctypes import Union
 import numpy as np
 import pandas as pd
 from scipy import optimize
-from typing import Tuple
+from typing import Tuple, Union
 
 # Import classes
 from solid_component import SolidComponent
@@ -604,13 +603,13 @@ class StackComponent(StrandComponent):
         return sc_current, self.op_current_so[ind] - sc_current
 
     def __sc_current_residual(
-        self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray]
-    ) -> Union[float, np.ndarray]:
+        self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray]
+    ) ->Union[float, np.ndarray]:
         """Private method that defines the residual function for the evaluation of the superconducting current with bysection and/or Newton-Rampson methods.
 
         Args:
-            sc_current (Union[float, np.ndarray]): superconducting current (guess).
-            psi (Union[float, np.ndarray]): costant value in the equation
+            sc_current (Union(float, np.ndarray)): superconducting current (guess).
+            psi (Union(float, np.ndarray)): costant value in the equation
 
         Raises:
             ValueError: if arguments sc_current and psi are not both of the same type (float).
@@ -618,7 +617,7 @@ class StackComponent(StrandComponent):
             ValueError: if arrays sc_current and psi does not have the same shape.
 
         Returns:
-            Union[float, np.ndarray]: residual value
+           Union[float, np.ndarray]: residual value
         """
         # Checks on input arguments.
         if isinstance(sc_current, float) != isinstance(psi, float):
@@ -640,13 +639,13 @@ class StackComponent(StrandComponent):
         )
 
     def __d_sc_current_residual(
-        self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray]
-    ) -> Union[float, np.ndarray]:
+        self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray]
+    ) ->Union[float, np.ndarray]:
         """Private method that defines the first derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
 
         Args:
-            sc_current (Union[float, np.ndarray]): superconducting current (guess).
-            psi (Union[float, np.ndarray]): costant value in the equation
+            sc_current (Union(float, np.ndarray)): superconducting current (guess).
+            psi (Union(float, np.ndarray)): costant value in the equation
 
         Raises:
             ValueError: if arguments sc_current and psi are not both of the same type (float).
@@ -654,7 +653,7 @@ class StackComponent(StrandComponent):
             ValueError: if arrays sc_current and psi does not have the same shape.
 
         Returns:
-            Union[float, np.ndarray]: residual derivative value
+           Union[float, np.ndarray]: residual derivative value
         """
         # Checks on input arguments.
         if isinstance(sc_current, float) != isinstance(psi, float):
@@ -673,16 +672,16 @@ class StackComponent(StrandComponent):
         return self.inputs["nn"] * sc_current ** (self.inputs["nn"] - 1) + psi
 
     def __d2_sc_current_residual(
-        self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray]
-    ) -> Union[float, np.ndarray]:
+        self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray]
+    ) ->Union[float, np.ndarray]:
         """Private method that defines the second derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
 
         Args:
-            sc_current (Union[float, np.ndarray]): superconducting current (guess).
-            psi (Union[float, np.ndarray]): costant value in the equation, not needed for this fuction
+            sc_current (Union(float, np.ndarray)): superconducting current (guess).
+            psi (Union(float, np.ndarray)): costant value in the equation, not needed for this fuction
 
         Returns:
-            Union[float, np.ndarray]: second derivative of the residual.
+           Union[float, np.ndarray]: second derivative of the residual.
         """
 
         return (
