@@ -168,7 +168,7 @@ class StrandMixedComponent(StrandComponent):
             [
                 value.lower()
                 for key, value in self.inputs.items()
-                if key.endswith("material") and key != "Superconducting_material"
+                if key.endswith("material") and key != "superconducting_material"
             ],
             dtype=str,
         )
