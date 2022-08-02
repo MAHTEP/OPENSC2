@@ -124,9 +124,12 @@ class StrandMixedComponent(StrandComponent):
             1.0 + self.inputs["STAB_NON_STAB"]
         )
         # Stabilizer cross section in m^2
-        self.stabilizer_cross_section = (
-            self.inputs["CROSSECTION"] - self.sc_cross_section
+        self.stabilizer_cross_section = np.array([
+            self.inputs["CROSSECTION"] - self.sc_cross_section]
         )
+        # For the time being since user can define strand mix with a single 
+        # stabilizer material.
+        self.stabilizer_total_cross_section = self.stabilizer_cross_section.sum()
         # Call SolidComponent class constructor to deal with StrandMixedComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
         SolidComponent(simulation, self)
@@ -336,16 +339,34 @@ class StrandMixedComponent(StrandComponent):
         Returns:
             np.ndarray: array with electrical resisitivity of the stabilizer of the strand mixed in Ohm*m.
         """
-        if self.strand_material_not_sc == "cu":
-            return ELECTRICAL_RESISTIVITY_FUNC[self.strand_material_not_sc](
-                property["temperature"],
-                property["B_field"],
-                self.inputs["RRR"],
+        elestrical_resistivity = np.zeros(
+            (property["temperature"].size, self.inputs["NUM_MATERIAL_TYPES"] - 1)
+        )
+        for ii, func in enumerate(self.electrical_resistivity_function_not_sc):
+            if "cu" in func.__name__:
+                elestrical_resistivity[:,ii] = func(
+                    property["temperature"],
+                    property["B_field"],
+                    self.inputs["RRR"],
+                )
+            else:
+                elestrical_resistivity[:,ii] = func(property["temperature"])
+        # Evaluate homogenized electrical resistivity of the stack:
+        # rho_el_eq = s_not_sc * (sum(s_i/rho_el_i))^-1 for any i not sc
+        return (
+            np.reciprocal(
+                np.array(
+                    list(
+                        map(
+                            np.divide,
+                            self.stabilizer_cross_section,
+                            elestrical_resistivity,
+                        )
+                    )
+                ).sum(axis=1)
             )
-        else:
-            return ELECTRICAL_RESISTIVITY_FUNC[self.strand_material_not_sc](
-                property["temperature"]
-            )
+            * self.stabilizer_total_cross_section
+        )
 
     def superconductor_power_law(
         self,
@@ -425,7 +446,7 @@ class StrandMixedComponent(StrandComponent):
             rho_el_stabilizer[ind]
             * critical_current[ind] ** self.inputs["nn"]
             / self.inuts["E0"]
-            / self.stabilizer_cross_section
+            / self.stabilizer_total_cross_section
         )
 
         for _, val in enumerate(ind):
