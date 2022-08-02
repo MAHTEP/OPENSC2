@@ -273,12 +273,16 @@ class StrandMixedComponent(StrandComponent):
         # Set flag to false to trigger error in the next homogenized isobaric
         # specific heat evaluation if not done properly.
         self.__strand_density_flag = False
-        isobaric_specific_heat = np.array(
-            [
-                func(property["temperature"])
-                for func in self.isobaric_specific_heat_function
-            ]
-        )
+        isobaric_specific_heat = np.zeros((property["temperature"].size,self.inputs["NUM_MATERIAL_TYPES"]))
+        for ii, func in enumerate(self.isobaric_specific_heat_function):
+            if func.__name__ == "isobaric_specific_heat_nb3sn":
+                isobaric_specific_heat[:,ii] = func(property["temperature"],   property["T_cur_sharing_min"],property["T_critical"],
+                self.inputs["Tc0m"])
+            elif func.__name__ == "isobaric_specific_heat_nbti":
+                isobaric_specific_heat[:,ii] = func(property["temperature"],property["B_field"],property["T_cur_sharing_min"],property["T_critical"])
+            else:
+                isobaric_specific_heat[:,ii] = func(property["temperature"])
+
         # Evaluate homogenized isobaric specific heat of the strand mixed:
         # cp_eq = (cp_sc*rho_sc + stab_non_stab*cp_stab*rho_stab)/(rho_sc + stab_non_stab * rho_stab)
         return (
