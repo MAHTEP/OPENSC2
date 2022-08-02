@@ -432,7 +432,7 @@ class StrandMixedComponent(StrandComponent):
             sc_current_guess = optimize.bisect(
                 self.__sc_current_residual,
                 0.0,
-                self.op_current_so[val],
+                self.dict_node_pt["op_current"][val],
                 (psi[val]),
                 maxiter=10,
                 disp=False,
@@ -446,7 +446,7 @@ class StrandMixedComponent(StrandComponent):
             fprime2=self.__d2_sc_current_residual,
         )
 
-        return sc_current, self.op_current_so[ind] - sc_current
+        return sc_current, self.dict_node_pt["op_current"][ind] - sc_current
 
     def __sc_current_residual(
         self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray]
@@ -481,7 +481,7 @@ class StrandMixedComponent(StrandComponent):
 
         return (
             sc_current ** self.inputs["nn"]
-            + (sc_current - self.self.op_current_so) * psi
+            + (sc_current - self.dict_node_pt["op_current"]) * psi
         )
 
     def __d_sc_current_residual(
@@ -552,14 +552,14 @@ class StrandMixedComponent(StrandComponent):
         )
 
         # Get index that correspond to superconducting regime.
-        ind_sc_node = np.nonzero(self.op_current_sc / critical_current_node < 0.95)
+        ind_sc_node = np.nonzero(self.dict_node_pt["op_current_sc"] / critical_current_node < 0.95)
         ind_sc_gauss = np.nonzero(
-            self.op_current_sc_gauss / critical_current_gauss < 0.95
+            self.dict_Gauss_pt["op_current_sc"] / critical_current_gauss < 0.95
         )
         # Get index that correspond to current sharing regime.
-        ind_sh_node = np.nonzero(self.op_current_sc / critical_current_node >= 0.95)
+        ind_sh_node = np.nonzero(self.dict_node_pt["op_current_sc"] / critical_current_node >= 0.95)
         ind_sh_gauss = np.nonzero(
-            self.op_current_sc_gauss / critical_current_gauss >= 0.95
+            self.dict_Gauss_pt["op_current_sc"] / critical_current_gauss >= 0.95
         )
 
         # Initialize electric resistance arrays in both nodal and Gauss points;
@@ -578,8 +578,8 @@ class StrandMixedComponent(StrandComponent):
 
         # Strand current in superconducting regime is the one carriend by the
         # superconducting material only.
-        self.dict_node_pt["IOP"][ind_sc_node] = self.op_current_sc[ind_sc_node]
-        self.dict_Gauss_pt["IOP"][ind_sc_gauss] = self.op_current_sc_gauss[ind_sc_gauss]
+        self.dict_node_pt["op_current"][ind_sc_node] = self.dict_node_pt["op_current_sc"][ind_sc_node]
+        self.dict_Gauss_pt["op_current"][ind_sc_gauss] = self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss]
 
         # Initialize array of superconducting electrical resistivit in nodal and Gauss points to None.
         self.dict_node_pt["electrical_resistivity_superconductor"] = np.full_like(
@@ -595,7 +595,7 @@ class StrandMixedComponent(StrandComponent):
             ind_sc_node
         ] = self.superconductor_power_law(
             self,
-            self.op_current_sc[ind_sc_node],
+            self.dict_node_pt["op_current_sc"][ind_sc_node],
             critical_current_node,
             self.dict_node_pt["J_critical"],
             ind_sc_node,
@@ -604,7 +604,7 @@ class StrandMixedComponent(StrandComponent):
             ind_sc_gauss
         ] = self.superconductor_power_law(
             self,
-            self.op_current_sc_gauss[ind_sc_gauss],
+            self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss],
             critical_current_gauss,
             self.dict_Gauss_pt["J_critical"],
             ind_sc_gauss,
@@ -621,31 +621,31 @@ class StrandMixedComponent(StrandComponent):
 
         # Strand current in sharing regime is the one carried by the both the
         # superconducting and the stabilizer materials.
-        self.dict_node_pt["IOP"][ind_sh_node] = self.op_current_so[ind_sh_node]
-        self.dict_Gauss_pt["IOP"][ind_sh_node] = self.op_current_so_gauss[ind_sh_gauss]
+        # self.dict_node_pt["op_current"][ind_sh_node] = self.dict_node_pt["op_current"][ind_sh_node]
+        # self.dict_Gauss_pt["op_current"][ind_sh_node] = self.op_current_so_gauss[ind_sh_gauss]
 
         # Evaluate how the current is distributed solving the current divider
         # problem in both nodal and Gauss points.
         sc_current_node, stab_current_node = self.solve_current_divider(
             self.dict_node_pt["electrical_resistivity_stabilizer"],
-            self.op_current_so,
+            self.dict_node_pt["op_current"],
             ind_sh_node,
         )
         sc_current_gauss, stab_current_gauss = self.solve_current_divider(
             self.dict_Gauss_pt["electrical_resistivity_stabilizer"],
-            self.op_current_so_gauss,
+            self.dict_node_pt["op_current"],
             ind_sh_gauss,
         )
 
         # Get index of the normal region, to avoid division by 0 in evaluation
         # of sc electrical resistivity with the power law.
         ind_normal_node = np.nonzero(
-            stab_current_node / self.dict_node_pt["IOP"][ind_sh_node]
+            stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
             > 0.999999 | sc_current_node
             < 1.0
         )
         ind_normal_gauss = np.nonzero(
-            stab_current_gauss / self.dict_Gauss_pt["IOP"][ind_sh_gauss]
+            stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
             > 0.999999 | sc_current_gauss
             < 1.0
         )
@@ -655,7 +655,7 @@ class StrandMixedComponent(StrandComponent):
             # Get the index of location of true current sharing region;
             # overwrite ind_sh_node.
             ind_sh_node = np.nonzero(
-                stab_current_node / self.dict_node_pt["IOP"][ind_sh_node]
+                stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
                 <= 0.999999 | sc_current_node
                 >= 1.0
             )
@@ -663,7 +663,7 @@ class StrandMixedComponent(StrandComponent):
             # Get the index of location of true current sharing region;
             # overwrite ind_sh_gauss.
             ind_sh_gauss = np.nonzero(
-                stab_current_gauss / self.dict_Gauss_pt["IOP"][ind_sh_gauss]
+                stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
                 <= 0.999999 | sc_current_gauss
                 >= 1.0
             )

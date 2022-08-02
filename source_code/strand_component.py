@@ -124,7 +124,7 @@ class StrandComponent(SolidComponent):
                     )
 
                 # call load_user_defined_quantity on the component.
-                self.dict_node_pt["IOP"] = do_interpolation(
+                self.dict_node_pt["op_current"] = do_interpolation(
                     self.alphab_interpolator,
                     conductor.grid_features["zcoord"],
                     conductor.cond_time[-1],
@@ -251,7 +251,7 @@ class StrandComponent(SolidComponent):
     def eval_tcs(self, dict_dummy):
 
         jop = (
-            np.abs(self.dict_node_pt["IOP"][0])
+            np.abs(self.dict_node_pt["op_current"][0])
             / (self.sc_cross_section / self.inputs["COSTETA"])
             * np.ones(dict_dummy["B_field"].shape)
         )
