@@ -112,7 +112,7 @@ class StrandComponent(SolidComponent):
                         conductor.BASE_PATH, conductor.file_input["EXTERNAL_ALPHAB"]
                     )
                     # Load auxiliary input file.
-                    alphab_df, flagSpecfield = load_auxiliary_files(
+                    alphab_df, self.flagSpecfield_alpha_b = load_auxiliary_files(
                         file_path, sheetname=self.identifier
                     )
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
@@ -134,7 +134,7 @@ class StrandComponent(SolidComponent):
                 # leggi un file come del campo magnetico
                 # controlla se e' per unita' di corrente
                 # in caso affermatico moltiplica per IOP_TOT
-                if flagSpecfield == 2:  # alphaB is per unit of current
+                if self.flagSpecfield_alpha_b == 2:  # alphaB is per unit of current
                     self.dict_node_pt["alpha_B"] = (
                         self.dict_node_pt["alpha_B"] * conductor.IOP_TOT
                     )
@@ -324,7 +324,7 @@ class StrandComponent(SolidComponent):
                         conductor.BASE_PATH, conductor.file_input["EXTERNAL_STRAIN"]
                     )
                     # Load auxiliary input file.
-                    eps_df, flagSpecfield = load_auxiliary_files(
+                    eps_df, self.flagSpecfield_eps = load_auxiliary_files(
                         file_path, sheetname=self.identifier
                     )
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
@@ -340,8 +340,9 @@ class StrandComponent(SolidComponent):
                     self.eps_interp_flag,
                 )
 
-                if flagSpecfield == 1:
-                    print("still to be decided what to do here\n")
+                if self.flagSpecfield_eps == 1:
+                   # Add also a logger
+                    warnings.warn("Still to be decided what to do here\n")
             elif self.operations["IEPS"] == 0:  # no strain (cdp, 06/2020)
                 self.dict_node_pt["Epsilon"] = np.zeros(
                     conductor.grid_features["N_nod"]

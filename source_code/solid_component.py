@@ -763,7 +763,7 @@ class SolidComponent:
                     conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
                 )
                 # Load auxiliary input file.
-                current_df, self.flagSpecfield = load_auxiliary_files(
+                current_df, self.flagSpecfield_current = load_auxiliary_files(
                     file_path, sheetname=self.identifier
                 )
                 # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
@@ -797,7 +797,7 @@ class SolidComponent:
                 self.dict_Gauss_pt["op_current_sc"] = self.dict_Gauss_pt["op_current"]
 
             conductor.IOP_TOT = conductor.IOP_TOT + self.dict_node_pt["op_current"]
-            if self.flagSpecfield == 2:
+            if self.flagSpecfield_current == 2:
                 # Add also a logger
                 warnings.warn("Still to be decided what to do here\n")
         elif conductor.inputs["I0_OP_MODE"] == 0:
