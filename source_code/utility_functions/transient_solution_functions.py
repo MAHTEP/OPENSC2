@@ -946,7 +946,7 @@ def step(conductor, environment, qsource, num_step):
             # homo = homogenized (cdp, 07/2020)
             MMAT[neq, neq] = (
                 s_comp_l.inputs["CROSSECTION"]
-                * s_comp_l.dict_Gauss_pt["total_density"]
+                * s_comp_l.dict_Gauss_pt["total_density"][ii]
                 * s_comp_l.dict_Gauss_pt["total_isobaric_specific_heat"][ii]
                 / s_comp_l.inputs["COSTETA"]
             )
