@@ -750,7 +750,6 @@ class StackComponent(StrandComponent):
         self.dict_node_pt["electrical_resistivity_superconductor"][
             ind_sc_node
         ] = self.superconductor_power_law(
-            self,
             self.dict_node_pt["op_current_sc"][ind_sc_node],
             critical_current_node,
             self.dict_node_pt["J_critical"],
@@ -759,7 +758,6 @@ class StackComponent(StrandComponent):
         self.dict_Gauss_pt["electrical_resistivity_superconductor"][
             ind_sc_gauss
         ] = self.superconductor_power_law(
-            self,
             self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss],
             critical_current_gauss,
             self.dict_Gauss_pt["J_critical"],
@@ -836,7 +834,6 @@ class StackComponent(StrandComponent):
         self.dict_node_pt["electrical_resistivity_superconductor"][
             ind_sh_node
         ] = self.superconductor_power_law(
-            self,
             sc_current_node,
             critical_current_node,
             self.dict_node_pt["J_critical"],
@@ -845,7 +842,6 @@ class StackComponent(StrandComponent):
         self.dict_Gauss_pt["electrical_resistivity_superconductor"][
             ind_sh_gauss
         ] = self.superconductor_power_law(
-            self,
             sc_current_gauss,
             critical_current_gauss,
             self.dict_Gauss_pt["J_critical"],
