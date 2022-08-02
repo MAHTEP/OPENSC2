@@ -490,13 +490,13 @@ class Conductor:
     def __get_total_cross_section(self):
         """Private method that evaluates: 1) the total cross section of strands and stacks object of the conductor; 2) the total cross section of superconducting materials of the conductor."""
 
-        self.total_so_area = np.array(
+        self.total_so_cross_section = np.array(
             [
                 obj.inputs["CROSSECTION"]
                 for obj in self.inventory["StrandComponent"].collection
             ]
         ).sum()
-        self.total_so_area = np.array(
+        self.total_sc_cross_section = np.array(
             [
                 obj.sc_cross_section
                 for obj in self.inventory["StrandComponent"].collection
@@ -2079,7 +2079,7 @@ class Conductor:
             # superconducting regime and fractions of the total current that
             # flows in the total cross section of each strand or stack object
             # if in current sharing regime.
-            s_comp.get_current_fractions(self.total_sc_area, self.total_so_area, self.inventory)
+            s_comp.get_current_fractions(self.total_sc_cross_section, self.total_so_cross_section, self.inventory)
             # compute, average density, thermal conductivity, specifi heat at \
             # constant pressure and electrical resistivity at initial \
             # SolidComponent temperature in nodal points (cdp, 01/2021)
