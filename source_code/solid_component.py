@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import warnings
 
 from utility_functions.auxiliary_functions import (
     get_from_xlsx,
@@ -754,8 +755,6 @@ class SolidComponent:
             ValueError: if a not valid value is given to flag I0_OP_MODE.
         """
 
-        # Initialize to zero independently of the value of flag I0_OP_MODE
-        self.dict_node_pt["op_current"] = np.zeros(conductor.grid_features["N_nod"])
         if conductor.inputs["I0_OP_MODE"] == -1:
 
             if conductor.cond_time[-1] == 0:
@@ -764,7 +763,7 @@ class SolidComponent:
                     conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
                 )
                 # Load auxiliary input file.
-                current_df, flagSpecfield = load_auxiliary_files(
+                current_df, self.flagSpecfield = load_auxiliary_files(
                     file_path, sheetname=self.identifier
                 )
                 # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
@@ -775,48 +774,53 @@ class SolidComponent:
 
             # Evaluate current of generic solid component object by
             # interpolation.
-            self.op_current_so = do_interpolation(
+            self.dict_node_pt["op_current"] = do_interpolation(
                 self.current_interpolator,
                 conductor.grid_features["zcoord"],
                 conductor.cond_time[-1],
                 self.current_interp_flag,
             )
+
+            if self.current_interp_flag == 'time_only':
+                # Convert to array
+                self.dict_node_pt["op_current"] = self.dict_node_pt["op_current"]*np.ones(conductor.grid_features["N_nod"])
             # Evaluate current in the Gauss nodal points.
-            self.op_current_so_gauss = (
-                self.op_current_so[:-1] + self.op_current_so[1:]
+            self.dict_Gauss_pt["op_current"] = (
+                self.dict_node_pt["op_current"][:-1] + self.dict_node_pt["op_current"][1:]
             ) / 2.0
             # This is exploited in the electric resistance evaluation.
             if (self.name == conductor.inventory["StackComponent"].name
             or self.name == conductor.inventory["StrandMixedComponent"].name):
                 # Build an alias for convenience when dealing with electric
                 # resistance evaluation.
-                self.op_current_sc = self.op_current_so
-                self.op_current_sc_gauss = self.op_current_so_gauss
+                self.dict_node_pt["op_current_sc"] = self.dict_node_pt["op_current"]
+                self.dict_Gauss_pt["op_current_sc"] = self.dict_Gauss_pt["op_current"]
 
-            conductor.IOP_TOT = conductor.IOP_TOT + self.op_current_so
-            if flagSpecfield == 2:
-                print("still to be decided what to do here\n")
+            conductor.IOP_TOT = conductor.IOP_TOT + self.dict_node_pt["op_current"]
+            if self.flagSpecfield == 2:
+                # Add also a logger
+                warnings.warn("Still to be decided what to do here\n")
         elif conductor.inputs["I0_OP_MODE"] == 0:
-            # Evaluate both attributes self.op_current_so and
-            # self.op_current_sc for convenience in the evaluation of
+            # Evaluate both attributes self.dict_node_pt["op_current"] and
+            # self.dict_node_pt["op_current_sc"] for convenience in the evaluation of
             # electrical resistivity.
-            self.op_current_so = (
+            self.dict_node_pt["op_current"] = (
                 conductor.IOP_TOT
                 * self.op_current_fraction_sh
                 * np.ones(conductor.grid_features["N_nod"])
             )
-            self.op_current_so_gauss = (
-                self.op_current_so[:-1] + self.op_current_so[1:]
+            self.dict_Gauss_pt["op_current"] = (
+                self.dict_node_pt["op_current"][:-1] + self.dict_node_pt["op_current"][1:]
             ) / 2.0
             if (self.name == conductor.inventory["StackComponent"].name
             or self.name == conductor.inventory["StrandMixedComponent"].name):
-                self.op_current_sc = (
+                self.dict_node_pt["op_current_sc"] = (
                     conductor.IOP_TOT
                     * self.op_current_fraction_sc
                     * np.ones(conductor.grid_features["N_nod"])
                 )
-                self.op_current_sc_gauss = (
-                    self.op_current_sc[:-1] + self.op_current_sc[1:]
+                self.dict_Gauss_pt["op_current_sc"] = (
+                    self.dict_node_pt["op_current_sc"][:-1] + self.dict_node_pt["op_current_sc"][1:]
                 ) / 2.0
         else:
             raise ValueError(
