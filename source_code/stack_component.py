@@ -392,7 +392,8 @@ class StackComponent(StrandComponent):
         self.__density_numerator = np.array(
             list(map(np.multiply, density, self.material_thickness))
         )
-        self.__density_numerator_sum = self.__density_numerator.sum(axis=0)
+        self.__density_numerator = self.__density_numerator.T
+        self.__density_numerator_sum = self.__density_numerator.sum(axis=1)
         return self.__density_numerator_sum / self.tape_thickness
 
     def stack_isobaric_specific_heat(self, property: dict) -> np.ndarray:
@@ -421,12 +422,13 @@ class StackComponent(StrandComponent):
                 for func in self.isobaric_specific_heat_function
             ]
         )
+        isobaric_specific_heat = isobaric_specific_heat.T
         # Evaluate homogenized isobaric specific heat of the stack:
         # cp_eq = sum(s_i*rho_i*cp_i)/sum(s_i*rho_i)
         return (
             np.array(
                 list(map(np.multiply, isobaric_specific_heat, self.__density_numerator))
-            ).sum(axis=0)
+            ).sum(axis=1)
             / self.__density_numerator_sum
         )
 
@@ -440,23 +442,23 @@ class StackComponent(StrandComponent):
             np.ndarray: array with homogenized thermal conductivity of the stack of tapes in W/m/K.
         """
         thermal_conductivity = np.zeros(
-            (self.inputs["Material_number"], property["temperature"].size)
+            (property["temperature"].size,self.inputs["Material_number"])
         )
         for ii, func in enumerate(self.thermal_conductivity_function):
             if "cu" in func.__name__:
-                thermal_conductivity[ii, :] = func(
+                thermal_conductivity[:,ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
                 )
             else:
-                thermal_conductivity[ii, :] = func(property["temperature"])
+                thermal_conductivity[:,ii] = func(property["temperature"])
         # Evaluate homogenized thermal conductivity of the stack:
         # k_eq = sum(s_i*k_i)/s
         return (
             np.array(
                 list(map(np.multiply, thermal_conductivity, self.material_thickness))
-            ).sum(axis=0)
+            ).sum(axis=1)
             / self.tape_thickness
         )
 
@@ -470,17 +472,17 @@ class StackComponent(StrandComponent):
             np.ndarray: array with homogenized electrical resistivity of not superconducting materials of the stack of tapes in Ohm*m.
         """
         elestrical_resistivity = np.zeros(
-            (self.inputs["Material_number"] - 1, property["temperature"].size)
+            (property["temperature"].size, self.inputs["Material_number"] - 1)
         )
         for ii, func in enumerate(self.electrical_resistivity_function_not_sc):
             if "cu" in func.__name__:
-                elestrical_resistivity[ii, :] = func(
+                elestrical_resistivity[:,ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
                 )
             else:
-                elestrical_resistivity[ii, :] = func(property["temperature"])
+                elestrical_resistivity[:,ii] = func(property["temperature"])
         # Evaluate homogenized electrical resistivity of the stack:
         # rho_el_eq = s_not_sc * (sum(s_i/rho_el_i))^-1 for any i not sc
         return (
@@ -493,7 +495,7 @@ class StackComponent(StrandComponent):
                             elestrical_resistivity,
                         )
                     )
-                ).sum(axis=0)
+                ).sum(axis=1)
             )
             * self.tape_thickness_not_sc
         )

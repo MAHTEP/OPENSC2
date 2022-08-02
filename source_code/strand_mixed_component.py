@@ -250,7 +250,8 @@ class StrandMixedComponent(StrandComponent):
         self.__density_numerator = np.array(
             list(map(np.multiply, density, self.homogenization_cefficients))
         )
-        self.__density_numerator_sum = self.__density_numerator.sum(axis=0)
+        self.__density_numerator = self.__density_numerator.T
+        self.__density_numerator_sum = self.__density_numerator.sum(axis=1)
         return self.__density_numerator_sum / self.homogenization_cefficients_sum
 
     def strand_isobaric_specific_heat(self, property: dict) -> np.ndarray:
@@ -288,7 +289,7 @@ class StrandMixedComponent(StrandComponent):
         return (
             np.array(
                 list(map(np.multiply, isobaric_specific_heat, self.__density_numerator))
-            ).sum(axis=0)
+            ).sum(axis=1)
             / self.__density_numerator_sum
         )
 
@@ -301,18 +302,16 @@ class StrandMixedComponent(StrandComponent):
         Returns:
             np.ndarray: array with homogenized thermal conductivity of the strand mixed in W/m/K.
         """
-        thermal_conductivity = np.zeros(
-            (self.inputs["NUM_MATERIAL_TYPES"], property["temperature"].size)
-        )
+        thermal_conductivity = np.zeros((property["temperature"].size,self.inputs["NUM_MATERIAL_TYPES"]))
         for ii, func in enumerate(self.thermal_conductivity_function):
             if "cu" in func.__name__:
-                thermal_conductivity[ii, :] = func(
+                thermal_conductivity[:,ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
                 )
             else:
-                thermal_conductivity[ii, :] = func(property["temperature"])
+                thermal_conductivity[:, ii] = func(property["temperature"])
         # Evaluate homogenized thermal conductivity of the strand mixed:
         # k_eq = (K_sc + stab_non_stab * K_stab)/(1 + stab_non_stab)
         return (
@@ -324,7 +323,7 @@ class StrandMixedComponent(StrandComponent):
                         self.homogenization_cefficients,
                     )
                 )
-            ).sum(axis=0)
+            ).sum(axis=1)
             / self.homogenization_cefficients_sum
         )
 
