@@ -246,8 +246,6 @@ class Simulation:
         # (cdp, 10/2020)
         # loop on conductors (cdp, 10/2020)
         for conductor in self.list_of_Conductors:
-            # Perform electric preprocessing.
-            conductor.electric_preprocessing()
             # Compute radiative heat exchanged between jackets.
             conductor.compute_radiative_heat_exhange_jk()
             # Compute radiative heat exchanged outer jacket and environment.
