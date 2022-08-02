@@ -3542,7 +3542,7 @@ class Conductor:
         ) / 2
 
         self.grid_features["delta_z_tilde"][1:-1] = (
-            self.grid_features["zcoord"][2:-1] - self.grid_features["zcoord"][1:-2]
+            self.grid_features["zcoord"][2:] - self.grid_features["zcoord"][:-2]
         ) / 2
 
         self.grid_features["delta_z_tilde"][-1] = (
