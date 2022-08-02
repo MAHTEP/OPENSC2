@@ -708,15 +708,15 @@ class StackComponent(StrandComponent):
         )
 
         # Get index that correspond to superconducting regime.
-        ind_sc_node = np.nonzero(self.dict_node_pt["op_current_sc"] / critical_current_node < 0.95)
+        ind_sc_node = np.nonzero(self.dict_node_pt["op_current_sc"] / critical_current_node < 0.95)[0]
         ind_sc_gauss = np.nonzero(
             self.dict_Gauss_pt["op_current_sc"] / critical_current_gauss < 0.95
-        )
+        )[0]
         # Get index that correspond to current sharing regime.
-        ind_sh_node = np.nonzero(self.dict_node_pt["op_current_sc"] / critical_current_node >= 0.95)
+        ind_sh_node = np.nonzero(self.dict_node_pt["op_current_sc"] / critical_current_node >= 0.95)[0]
         ind_sh_gauss = np.nonzero(
             self.dict_Gauss_pt["op_current_sc"] / critical_current_gauss >= 0.95
-        )
+        )[0]
 
         # Initialize electric resistance arrays in both nodal and Gauss points;
         # this is the equivalent electrical resistance, thus it is defined in
@@ -797,12 +797,12 @@ class StackComponent(StrandComponent):
             stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
             > 0.999999 | sc_current_node
             < 1.0
-        )
+        )[0]
         ind_normal_gauss = np.nonzero(
             stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
             > 0.999999 | sc_current_gauss
             < 1.0
-        )
+        )[0]
 
         ## NORMAL REGIME ONLY ##
         if ind_normal_node.any():
@@ -812,7 +812,7 @@ class StackComponent(StrandComponent):
                 stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
                 <= 0.999999 | sc_current_node
                 >= 1.0
-            )
+            )[0]
         if ind_normal_gauss.any():
             # Get the index of location of true current sharing region;
             # overwrite ind_sh_gauss.
@@ -820,7 +820,7 @@ class StackComponent(StrandComponent):
                 stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
                 <= 0.999999 | sc_current_gauss
                 >= 1.0
-            )
+            )[0]
             # Evaluate electic resistance in normal region (stabilizer only).
             self.dict_Gauss_pt["electric_resistance"][
                 ind_normal_gauss
