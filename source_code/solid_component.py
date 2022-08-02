@@ -1186,7 +1186,7 @@ class SolidComponent:
             if conductor.cond_time[-1] == 0:
                 # Initialization.
                 self.dict_node_pt["total_linear_power_el_cond"] = np.zeros(
-                    (conductor.grid_input["NELEMS"], 2)
+                    (conductor.grid_features["N_nod"], 2)
                 )
             elif conductor.cond_time[-1] > 0:
                 if conductor.cond_num_step == 1:
