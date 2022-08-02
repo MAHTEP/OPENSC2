@@ -2365,7 +2365,7 @@ class Conductor:
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
             resistance[
                 ii :: self.inventory["StrandComponent"].number
-            ] = obj.electrical_resistance(self)
+            ] = obj.get_electric_resistance(self)
 
         self.electric_resistance_matrix = diags(
             resistance,
