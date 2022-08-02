@@ -1123,6 +1123,18 @@ class SolidComponent:
 
     # end JHTFLX_new_0
 
+    def initialize_electric_quantities(self,conductor):
+        """Method that initializes to zero some arrays that are an outcome of the electric method for each SolidComponent object:
+
+            * self.dict_Gauss_pt["current_along"];
+            * self.dict_Gauss_pt["voltage_drop_along"];
+            * self.dict_node_pt["total_power_el_cond"].
+        """
+        
+        self.dict_Gauss_pt["current_along"] = np.zeros(conductor.grid_input["NELEMS"])
+        self.dict_Gauss_pt["voltage_drop_along"] = np.zeros(conductor.grid_input["NELEMS"])
+        self.dict_node_pt["total_power_el_cond"] = np.zeros(conductor.grid_features["N_nod"])
+
     def get_joule_power_along(self, conductor: object):
         """Method that evaluate the contribution to the total power in the element of Joule power (in W/m) due to the electic resistances along the SolidComponent objects.
 

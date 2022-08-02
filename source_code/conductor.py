@@ -2086,6 +2086,11 @@ class Conductor:
             s_comp.eval_sol_comp_properties(self.inventory)
         # end for s_comp.
 
+        # Loop to initialize electric related quantities for each 
+        # StrandComponent object.
+        for strand in self.inventory["StrandComponent"].collection:
+            strand.initialize_electric_quantities(self)
+
         # Initialize the Energy of the SolidComponent (cdp, 12/2020)
         self.E_sol_ini = 0.0
         self.E_sol_fin = 0.0
