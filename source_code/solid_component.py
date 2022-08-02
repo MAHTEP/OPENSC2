@@ -158,7 +158,7 @@ class SolidComponent:
             )
             if self.name == inventory["StrandMixedComponent"].name:
                 dict_dummy.update(
-                    electrical_resistivity_stabilizer=self.electrical_resistivity_function_not_sc(
+                    electrical_resistivity_stabilizer=self.strand_electrical_resistivity_not_sc(
                         dict_dummy
                     )
                 )
