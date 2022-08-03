@@ -333,9 +333,13 @@ class StrandMixedComponent(StrandComponent):
                 )
             else:
                 electrical_resistivity[:,ii] = func(property["temperature"])
-        # Evaluate homogenized electrical resistivity of the stack:
-        # rho_el_eq = s_not_sc * (sum(s_i/rho_el_i))^-1 for any i not sc
-        return self.stabilizer_total_cross_section * np.reciprocal((self.stabilizer_cross_section / electrical_resistivity).sum(axis=1))
+        if self.inputs["NUM_MATERIAL_TYPES"] - 1 > 1:
+            # Evaluate homogenized electrical resistivity of the strand mixed:
+            # rho_el_eq = A_not_sc * (sum(A_i/rho_el_i))^-1 for any i not sc
+            return self.stabilizer_total_cross_section * np.reciprocal((self.stabilizer_cross_section / electrical_resistivity).sum(axis=1))
+        if self.inputs["NUM_MATERIAL_TYPES"] - 1 == 1:
+            return electrical_resistivity.reshape(property["temperature"].size)
+
 
     def superconductor_power_law(
         self,

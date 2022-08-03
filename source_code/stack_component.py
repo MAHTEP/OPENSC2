@@ -471,9 +471,12 @@ class StackComponent(StrandComponent):
                 )
             else:
                 electrical_resistivity[:,ii] = func(property["temperature"])
-        # Evaluate homogenized electrical resistivity of the stack:
-        # rho_el_eq = s_not_sc * (sum(s_i/rho_el_i))^-1 for any i not sc
-        return self.tape_thickness_not_sc * np.reciprocal((self.material_thickness_not_sc/electrical_resistivity).sum(axis=1))
+        if self.inputs["Material_number"] - 1 > 1:
+            # Evaluate homogenized electrical resistivity of the stack:
+            # rho_el_eq = s_not_sc * (sum(s_i/rho_el_i))^-1 for any i not sc
+            return self.tape_thickness_not_sc * np.reciprocal((self.material_thickness_not_sc/electrical_resistivity).sum(axis=1))
+        elif self.inputs["Material_number"] - 1 == 1:
+            return electrical_resistivity.reshape(property["temperature"].size)
 
     def superconductor_power_law(
         self,
