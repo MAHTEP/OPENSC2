@@ -356,7 +356,7 @@ class JacketComponent(SolidComponent):
         # specific heat.
         self.__jacket_density_flag = True
         density = np.array(
-            [func(property["temperature"].size) for func in self.density_function]
+            [func(property["temperature"]) for func in self.density_function]
         )
         if self.inputs["NUM_MATERIAL_TYPES"] > 1:
             # Evaluate homogenized density of the strand mixed:
@@ -436,7 +436,7 @@ class JacketComponent(SolidComponent):
 
         electrical_resistivity = np.array(
             [
-                func(property["temperature"].size)
+                func(property["temperature"])
                 for func in self.electrical_resistivity_function
             ]
         )

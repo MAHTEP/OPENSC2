@@ -122,7 +122,7 @@ class StrandStabilizerComponent(StrandComponent):
         Returns:
             np.ndarray: array with density of the stabilizer in kg/m^3.
         """
-        return DENSITY_FUNC[self.inputs["stabilizer_material"]](property["temperature"].size)
+        return DENSITY_FUNC[self.inputs["stabilizer_material"]](property["temperature"])
 
     def strand_isobaric_specific_heat(self, property: dict) -> np.ndarray:
         """Method that evaluates isobaric specific heat of the stabilizer.
@@ -134,7 +134,7 @@ class StrandStabilizerComponent(StrandComponent):
             np.ndarray: array with isobaric specific heat of the stabilizer in kg/m^3.
         """
         return ISOBARIC_SPECIFIC_HEAT_FUNC[self.inputs["stabilizer_material"]](
-            property["temperature"].size
+            property["temperature"]
         )
 
     def strand_thermal_conductivity(self, property: dict) -> np.ndarray:

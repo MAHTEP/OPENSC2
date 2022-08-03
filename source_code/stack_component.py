@@ -385,7 +385,7 @@ class StackComponent(StrandComponent):
         # specific heat.
         self.__stack_density_flag = True
         density = np.array(
-            [func(property["temperature"].size) for func in self.density_function]
+            [func(property["temperature"]) for func in self.density_function]
         )
         # Evaluate homogenized density of the stack:
         # rho_eq = sum(s_i*rho_i)/s

@@ -246,7 +246,7 @@ class StrandMixedComponent(StrandComponent):
         # specific heat.
         self.__strand_density_flag = True
         density = np.array(
-            [func(property["temperature"].size) for func in self.density_function]
+            [func(property["temperature"]) for func in self.density_function]
         )
         # Evaluate homogenized density of the strand mixed:
         # rho_eq = (rho_sc + stab_non_stab * rho_stab)/(1 + stab_non_stab)
