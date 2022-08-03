@@ -424,7 +424,7 @@ class StrandMixedComponent(StrandComponent):
         psi = (
             rho_el_stabilizer
             * critical_current ** self.inputs["nn"]
-            / self.inuts["E0"]
+            / self.inputs["E0"]
             / self.stabilizer_total_cross_section
         )
 
