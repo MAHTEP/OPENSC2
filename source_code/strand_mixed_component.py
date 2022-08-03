@@ -428,11 +428,13 @@ class StrandMixedComponent(StrandComponent):
             / self.stabilizer_total_cross_section
         )
 
+        # Initialize guess.
+        sc_current_guess = np.zeros(current.shape)
         for ii, val in enumerate(current):
             # Evaluate superconducting current guess with bisection method.
             # Set the maximum itaration to 10 and disp to False in order to not
             # rise an error due to not reached convergence.
-            sc_current_guess = optimize.bisect(
+            sc_current_guess[ii] = optimize.bisect(
                 self.__sc_current_residual,
                 0.0,
                 val,

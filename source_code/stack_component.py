@@ -556,11 +556,13 @@ class StackComponent(StrandComponent):
             / self.stabilizer_cross_section
         )
 
+        # Initialize guess.
+        sc_current_guess = np.zeros(current.shape)
         for ii, val in enumerate(current):
             # Evaluate superconducting current guess with bisection method.
             # Set the maximum itaration to 10 and disp to False in order to not
             # rise an error due to not reached convergence.
-            sc_current_guess = optimize.bisect(
+            sc_current_guess[ii] = optimize.bisect(
                 self.__sc_current_residual,
                 0.0,
                 val,
@@ -568,6 +570,7 @@ class StackComponent(StrandComponent):
                 maxiter=10,
                 disp=False,
             )
+        
         # Evaluate superconducting with Halley's method
         sc_current = optimize.newton(
             self.__sc_current_residual,
