@@ -359,7 +359,7 @@ class JacketComponent(SolidComponent):
             [func(property["temperature"]) for func in self.density_function]
         )
         if self.inputs["NUM_MATERIAL_TYPES"] > 1:
-            # Evaluate homogenized density of the strand mixed:
+            # Evaluate homogenized density of the jacket:
             # rho_eq = (A_jk*rho_jk + A_in*rho_in)/(A_jk + A_in)
             self.__density_numerator = density.T * self.cross_sections
             self.__density_numerator_sum = self.__density_numerator.sum(axis=1)
@@ -395,7 +395,7 @@ class JacketComponent(SolidComponent):
             ]
         )
         if self.inputs["NUM_MATERIAL_TYPES"] > 1:
-            # Evaluate homogenized isobaric specific heat of the strand mixed:
+            # Evaluate homogenized isobaric specific heat of the jacket:
             # cp_eq = (cp_jk*A_jk*rho_jk + cp_in*A_in*rho_in)/(A_jk*rho_jk +
             # A_in*rho_in)
             return (isobaric_specific_heat.T * self.__density_numerator).sum(axis=1)/self.__density_numerator_sum
@@ -418,7 +418,7 @@ class JacketComponent(SolidComponent):
             ]
         )
         if self.inputs["NUM_MATERIAL_TYPES"] > 1:
-            # Evaluate homogenized thermal conductivity of the strand mixed:
+            # Evaluate homogenized thermal conductivity of the jacket:
             # k_eq = (A_jk*k_jk + A_in*k_in)/(A_jk + A_in)
             return (thermal_conductivity.T * self.cross_sections).sum(axis=1)/ self.inputs["CROSSECTION"]
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
