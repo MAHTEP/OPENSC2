@@ -462,26 +462,34 @@ class StrandMixedComponent(StrandComponent):
             so_current (Union[float, np.ndarray]): total current in A.
 
         Raises:
-            ValueError: if arguments sc_current and psi are not both of the same type (float).
-            ValueError: if arguments sc_current and psi are not both of the same type (np.ndarray).
+           Raises:
+            ValueError: if arguments sc_current, psi and so_current are not of the same type (float).
+            ValueError: if arguments sc_current, psi and so_current are not of the same type (np.ndarray).
             ValueError: if arrays sc_current and psi does not have the same shape.
+            ValueError: if arrays sc_current and so_current does not have the same shape.
 
         Returns:
             Union[float, np.ndarray]: residual value
         """
         # Checks on input arguments.
-        if isinstance(sc_current, float) != isinstance(psi, float):
-            raise ValueError(
-                f"Arguments sc_current and psi must be of the same type (float).\n{type(sc_current) = };\n{type(psi) = }.\n"
+        if isinstance(sc_current, float):
+            if isinstance(psi, float) == False or isinstance(so_current, float) == False:
+                raise ValueError(
+                f"Arguments sc_current, psi and so_current must be of the same type (float).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
             )
-        if isinstance(sc_current, np.ndarray) != isinstance(psi, np.ndarray):
-            raise ValueError(
-                f"Arguments sc_current and psi must be of the same type (n.ndarray).\n{type(sc_current) = };\n{type(psi) = }.\n"
+        if isinstance(sc_current, np.ndarray):
+            if isinstance(psi, np.ndarray) == False or isinstance(so_current, np.ndarray) == False:
+                raise ValueError(
+                f"Arguments sc_current, psi and so_current must be of the same type (np.ndarray).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
             )
-        elif isinstance(sc_current,np.ndarray) and isinstance(psi,np.ndarray) and sc_current.shape != psi.shape:
-            raise ValueError(
-                f"Arrays sc_current and psi must have the same shape.\n {sc_current.shape = };\n{psi.shape}.\n"
-            )
+            if sc_current.shape != psi.shape:
+                raise ValueError(
+                    f"Arrays sc_current and psi must have the same shape.\n {sc_current.shape = };\n{psi.shape}.\n"
+                )
+            if sc_current.shape != so_current.shape:
+                raise ValueError(
+                    f"Arrays sc_current and so_current must have the same shape.\n {sc_current.shape = };\n{so_current.shape}.\n"
+                )
 
         return (
             sc_current ** self.inputs["nn"]
