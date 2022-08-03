@@ -161,3 +161,17 @@ def electrical_resistivity_incoloy908(t):
     rho = (a + b * t ** nb) * 1e-7
 
     return rho  # end of the function
+
+def density_incoloy908(temperature: np.ndarray) -> np.ndarray:
+    """
+    Function that evaluates incoloy 908 density, assumed constant.
+
+    Referemce: Cryosoft
+
+    Args:
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
+
+    Returns:
+        np.ndarray: incoloy 908 density array in kg/m^3.
+    """
+    return 8.107e3 * np.ones(temperature.shape)
