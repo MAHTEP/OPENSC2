@@ -636,27 +636,9 @@ class StackComponent(StrandComponent):
             psi (Union(float, np.ndarray)): costant value in the equation.
             so_current (Union[float, np.ndarray]): total current in A, not used but passed by function optimize.newton.
 
-        Raises:
-            ValueError: if arguments sc_current and psi are not both of the same type (float).
-            ValueError: if arguments sc_current and psi are not both of the same type (np.ndarray).
-            ValueError: if arrays sc_current and psi does not have the same shape.
-
         Returns:
            Union[float, np.ndarray]: residual derivative value
         """
-        # Checks on input arguments.
-        if isinstance(sc_current, float) != isinstance(psi, float):
-            raise ValueError(
-                f"Arguments sc_current and psi must be of the same type (float).\n{type(sc_current) = };\n{type(psi) = }.\n"
-            )
-        if isinstance(sc_current, np.ndarray) != isinstance(psi, np.ndarray):
-            raise ValueError(
-                f"Arguments sc_current and psi must be of the same type (n.ndarray).\n{type(sc_current) = };\n{type(psi) = }.\n"
-            )
-        elif sc_current.shape != psi.shape:
-            raise ValueError(
-                f"Arrays sc_current and psi must have the same shape.\n {sc_current.shape = };\n{psi.shape}.\n"
-            )
 
         return self.inputs["nn"] * sc_current ** (self.inputs["nn"] - 1) + psi
 
