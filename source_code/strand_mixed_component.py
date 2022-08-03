@@ -286,7 +286,8 @@ class StrandMixedComponent(StrandComponent):
 
         # Evaluate homogenized isobaric specific heat of the strand mixed:
         # cp_eq = (cp_sc*rho_sc + stab_non_stab*cp_stab*rho_stab)/(rho_sc + stab_non_stab * rho_stab)
-        return (isobaric_specific_heat * self.__density_numerator)/self.__density_numerator_sum
+        return (isobaric_specific_heat * self.__density_numerator).sum(axis=1)/self.__density_numerator_sum
+        # return (isobaric_specific_heat * self.__density_numerator)/self.__density_numerator_sum.reshape(property["temperature"].size,1)
 
     def strand_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the strand mixed, in the case it is made by two materials (stabilizer and superconductor). Homogenization is based on material cross sections.
