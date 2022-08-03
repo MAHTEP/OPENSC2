@@ -436,7 +436,7 @@ class StrandMixedComponent(StrandComponent):
                 self.__sc_current_residual,
                 0.0,
                 val,
-                (psi[ii]),
+                args=(psi[ii],val),
                 maxiter=10,
                 disp=False,
             )
@@ -444,7 +444,7 @@ class StrandMixedComponent(StrandComponent):
         sc_current = optimize.newton(
             self.__sc_current_residual,
             sc_current_guess,
-            psi,
+            args=(psi,current),
             fprime=self.__d_sc_current_residual,
             fprime2=self.__d2_sc_current_residual,
         )
@@ -452,13 +452,14 @@ class StrandMixedComponent(StrandComponent):
         return sc_current, current - sc_current
 
     def __sc_current_residual(
-        self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray]
+        self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray], so_current: Union[float, np.ndarray]
     ) -> Union[float, np.ndarray]:
         """Private method that defines the residual function for the evaluation of the superconducting current with bysection and/or Newton-Rampson methods.
 
         Args:
-            sc_current (Union[float, np.ndarray]): superconducting current (guess).
+            sc_current (Union[float, np.ndarray]): superconducting current (guess) in A.
             psi (Union[float, np.ndarray]): costant value in the equation
+            so_current (Union[float, np.ndarray]): total current in A.
 
         Raises:
             ValueError: if arguments sc_current and psi are not both of the same type (float).
@@ -484,7 +485,7 @@ class StrandMixedComponent(StrandComponent):
 
         return (
             sc_current ** self.inputs["nn"]
-            + (sc_current - self.dict_node_pt["op_current"]) * psi
+            + (sc_current - so_current) * psi
         )
 
     def __d_sc_current_residual(
