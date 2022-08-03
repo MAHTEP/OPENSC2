@@ -481,7 +481,6 @@ class StackComponent(StrandComponent):
         current: np.ndarray,
         critical_current: np.ndarray,
         critical_current_density: np.ndarray,
-        ind: np.ndarray,
     ) -> np.ndarray:
         """Method that evaluate the electrical resistivity of superconducting material according to the power law.
 
@@ -518,22 +517,22 @@ class StackComponent(StrandComponent):
         # rho_el_sc = E_0 / j_c * (I_sc/I_c)**(n-1) Ohm*m
         return (
             self.inputs["E0"]
-            / critical_current_density[ind]
-            * (current[ind] / critical_current[ind]) ** (self.inputs["nn"] - 1)
+            / critical_current_density
+            * (current / critical_current) ** (self.inputs["nn"] - 1)
         )
 
     def solve_current_divider(
         self,
         rho_el_stabilizer: np.ndarray,
         critical_current: np.ndarray,
-        ind: np.ndarray,
+        current: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Method that solves the not linear system of the current divider between superconduting and stabilizer material in the case of current sharing regime.
 
         Args:
             rho_el_stabilizer (np.ndarray): array with stabilizer electrical resistivity in Ohm*m.
             critical_current (np.ndarray): array with superconductor critical current in A.
-            ind (np.ndarray): array with the index of the location in which supercondutor current and stabilizer current should be evaluated with this method.
+            current (np.ndarray): electric total current array in A.
 
         Raises:
             ValueError: if arrays rho_el_stabilizer and critical_current does not have the same shape.
@@ -551,21 +550,21 @@ class StackComponent(StrandComponent):
         # Evaluate constant value:
         # psi = rho_el_stab*I_c^n/(E_0*A_stab)
         psi = (
-            rho_el_stabilizer[ind]
-            * critical_current[ind] ** self.inputs["nn"]
+            rho_el_stabilizer
+            * critical_current ** self.inputs["nn"]
             / self.inuts["E0"]
             / self.stabilizer_cross_section
         )
 
-        for _, val in enumerate(ind):
+        for ii, val in enumerate(current):
             # Evaluate superconducting current guess with bisection method.
             # Set the maximum itaration to 10 and disp to False in order to not
             # rise an error due to not reached convergence.
             sc_current_guess = optimize.bisect(
                 self.__sc_current_residual,
                 0.0,
-                self.dict_node_pt["op_current"][val],
-                (psi[val]),
+                val,
+                (psi[ii]),
                 maxiter=10,
                 disp=False,
             )
@@ -578,7 +577,7 @@ class StackComponent(StrandComponent):
             fprime2=self.__d2_sc_current_residual,
         )
 
-        return sc_current, self.dict_node_pt["op_current"][ind] - sc_current
+        return sc_current, current - sc_current
 
     def __sc_current_residual(
         self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray]
@@ -727,17 +726,15 @@ class StackComponent(StrandComponent):
             ind_sc_node
         ] = self.superconductor_power_law(
             self.dict_node_pt["op_current_sc"][ind_sc_node],
-            critical_current_node,
-            self.dict_node_pt["J_critical"],
-            ind_sc_node,
+            critical_current_node[ind_sc_node],
+            self.dict_node_pt["J_critical"][ind_sc_node],
         )
         self.dict_Gauss_pt["electrical_resistivity_superconductor"][
             ind_sc_gauss
         ] = self.superconductor_power_law(
             self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss],
-            critical_current_gauss,
-            self.dict_Gauss_pt["J_critical"],
-            ind_sc_gauss,
+            critical_current_gauss[ind_sc_gauss],
+            self.dict_Gauss_pt["J_critical"][ind_sc_gauss],
         )
         # Evaluate electic resistance in superconducting region (superconductor
         # only).
@@ -757,14 +754,14 @@ class StackComponent(StrandComponent):
         # Evaluate how the current is distributed solving the current divider
         # problem in both nodal and Gauss points.
         sc_current_node, stab_current_node = self.solve_current_divider(
-            self.dict_node_pt["electrical_resistivity_stabilizer"],
-            self.dict_node_pt["op_current"],
-            ind_sh_node,
+            self.dict_node_pt["electrical_resistivity_stabilizer"][ind_sh_node],
+            critical_current_node[ind_sh_node],
+            self.dict_node_pt["op_current"][ind_sh_node],
         )
         sc_current_gauss, stab_current_gauss = self.solve_current_divider(
-            self.dict_Gauss_pt["electrical_resistivity_stabilizer"],
-            self.dict_node_pt["op_current"],
-            ind_sh_gauss,
+            self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_sh_gauss],
+            critical_current_gauss[ind_sh_gauss],
+            self.dict_Gauss_pt["op_current"][ind_sh_gauss],
         )
 
         # Get index of the normal region, to avoid division by 0 in evaluation
@@ -810,18 +807,16 @@ class StackComponent(StrandComponent):
         self.dict_node_pt["electrical_resistivity_superconductor"][
             ind_sh_node
         ] = self.superconductor_power_law(
-            sc_current_node,
-            critical_current_node,
-            self.dict_node_pt["J_critical"],
-            ind_sh_node,
+            sc_current_node[ind_sh_node],
+            critical_current_node[ind_sh_node],
+            self.dict_node_pt["J_critical"][ind_sh_node],
         )
         self.dict_Gauss_pt["electrical_resistivity_superconductor"][
             ind_sh_gauss
         ] = self.superconductor_power_law(
-            sc_current_gauss,
-            critical_current_gauss,
-            self.dict_Gauss_pt["J_critical"],
-            ind_sh_gauss,
+            sc_current_gauss[ind_sh_gauss],
+            critical_current_gauss[ind_sh_gauss],
+            self.dict_Gauss_pt["J_critical"][ind_sh_gauss],
         )
 
         # Evaluate the equivalent electric resistance in Ohm.
