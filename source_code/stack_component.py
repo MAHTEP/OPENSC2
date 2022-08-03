@@ -387,10 +387,9 @@ class StackComponent(StrandComponent):
         density = np.array(
             [func(property["temperature"].size) for func in self.density_function]
         )
-        density = density.T
         # Evaluate homogenized density of the stack:
         # rho_eq = sum(s_i*rho_i)/s
-        self.__density_numerator = density * self.material_thickness
+        self.__density_numerator = density.T * self.material_thickness
         self.__density_numerator_sum = self.__density_numerator.sum(axis=1)
         return self.__density_numerator_sum / self.tape_thickness
 
@@ -420,10 +419,9 @@ class StackComponent(StrandComponent):
                 for func in self.isobaric_specific_heat_function
             ]
         )
-        isobaric_specific_heat = isobaric_specific_heat.T
         # Evaluate homogenized isobaric specific heat of the stack:
         # cp_eq = sum(s_i*rho_i*cp_i)/sum(s_i*rho_i)
-        return (isobaric_specific_heat * self.__density_numerator).sum(axis=1)/ self.__density_numerator_sum
+        return (isobaric_specific_heat.T * self.__density_numerator).sum(axis=1)/ self.__density_numerator_sum
 
     def stack_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
