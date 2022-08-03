@@ -248,12 +248,10 @@ class StrandMixedComponent(StrandComponent):
         density = np.array(
             [func(property["temperature"].size) for func in self.density_function]
         )
+        density = density.T
         # Evaluate homogenized density of the strand mixed:
         # rho_eq = (rho_sc + stab_non_stab * rho_stab)/(1 + stab_non_stab)
-        self.__density_numerator = np.array(
-            list(map(np.multiply, density, self.homogenization_cefficients))
-        )
-        self.__density_numerator = self.__density_numerator.T
+        self.__density_numerator = density * self.homogenization_cefficients
         self.__density_numerator_sum = self.__density_numerator.sum(axis=1)
         return self.__density_numerator_sum / self.homogenization_cefficients_sum
 
@@ -289,12 +287,7 @@ class StrandMixedComponent(StrandComponent):
 
         # Evaluate homogenized isobaric specific heat of the strand mixed:
         # cp_eq = (cp_sc*rho_sc + stab_non_stab*cp_stab*rho_stab)/(rho_sc + stab_non_stab * rho_stab)
-        return (
-            np.array(
-                list(map(np.multiply, isobaric_specific_heat, self.__density_numerator))
-            ).sum(axis=1)
-            / self.__density_numerator_sum
-        )
+        return (isobaric_specific_heat * self.__density_numerator)/self.__density_numerator_sum
 
     def strand_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the strand mixed, in the case it is made by two materials (stabilizer and superconductor). Homogenization is based on material cross sections.
@@ -317,18 +310,7 @@ class StrandMixedComponent(StrandComponent):
                 thermal_conductivity[:, ii] = func(property["temperature"])
         # Evaluate homogenized thermal conductivity of the strand mixed:
         # k_eq = (K_sc + stab_non_stab * K_stab)/(1 + stab_non_stab)
-        return (
-            np.array(
-                list(
-                    map(
-                        np.multiply,
-                        thermal_conductivity,
-                        self.homogenization_cefficients,
-                    )
-                )
-            ).sum(axis=1)
-            / self.homogenization_cefficients_sum
-        )
+        return (thermal_conductivity * self.homogenization_cefficients).sum(axis=1) / self.homogenization_cefficients_sum
 
     def strand_electrical_resistivity_not_sc(self, property: dict) -> np.ndarray:
         """Method that evaluates electrical resisitivity of the stabilizer material of the strand mixed.
@@ -339,34 +321,21 @@ class StrandMixedComponent(StrandComponent):
         Returns:
             np.ndarray: array with electrical resisitivity of the stabilizer of the strand mixed in Ohm*m.
         """
-        elestrical_resistivity = np.zeros(
+        electrical_resistivity = np.zeros(
             (property["temperature"].size, self.inputs["NUM_MATERIAL_TYPES"] - 1)
         )
         for ii, func in enumerate(self.electrical_resistivity_function_not_sc):
             if "cu" in func.__name__:
-                elestrical_resistivity[:,ii] = func(
+                electrical_resistivity[:,ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
                 )
             else:
-                elestrical_resistivity[:,ii] = func(property["temperature"])
+                electrical_resistivity[:,ii] = func(property["temperature"])
         # Evaluate homogenized electrical resistivity of the stack:
         # rho_el_eq = s_not_sc * (sum(s_i/rho_el_i))^-1 for any i not sc
-        return (
-            np.reciprocal(
-                np.array(
-                    list(
-                        map(
-                            np.divide,
-                            self.stabilizer_cross_section,
-                            elestrical_resistivity,
-                        )
-                    )
-                ).sum(axis=1)
-            )
-            * self.stabilizer_total_cross_section
-        )
+        return self.stabilizer_total_cross_section * np.reciprocal((self.stabilizer_cross_section / electrical_resistivity).sum(axis=1))
 
     def superconductor_power_law(
         self,

@@ -387,12 +387,10 @@ class StackComponent(StrandComponent):
         density = np.array(
             [func(property["temperature"].size) for func in self.density_function]
         )
+        density = density.T
         # Evaluate homogenized density of the stack:
         # rho_eq = sum(s_i*rho_i)/s
-        self.__density_numerator = np.array(
-            list(map(np.multiply, density, self.material_thickness))
-        )
-        self.__density_numerator = self.__density_numerator.T
+        self.__density_numerator = density * self.material_thickness
         self.__density_numerator_sum = self.__density_numerator.sum(axis=1)
         return self.__density_numerator_sum / self.tape_thickness
 
@@ -425,12 +423,7 @@ class StackComponent(StrandComponent):
         isobaric_specific_heat = isobaric_specific_heat.T
         # Evaluate homogenized isobaric specific heat of the stack:
         # cp_eq = sum(s_i*rho_i*cp_i)/sum(s_i*rho_i)
-        return (
-            np.array(
-                list(map(np.multiply, isobaric_specific_heat, self.__density_numerator))
-            ).sum(axis=1)
-            / self.__density_numerator_sum
-        )
+        return (isobaric_specific_heat * self.__density_numerator).sum(axis=1)/ self.__density_numerator_sum
 
     def stack_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
@@ -455,12 +448,7 @@ class StackComponent(StrandComponent):
                 thermal_conductivity[:,ii] = func(property["temperature"])
         # Evaluate homogenized thermal conductivity of the stack:
         # k_eq = sum(s_i*k_i)/s
-        return (
-            np.array(
-                list(map(np.multiply, thermal_conductivity, self.material_thickness))
-            ).sum(axis=1)
-            / self.tape_thickness
-        )
+        return (thermal_conductivity * self.material_thickness).sum(axis=1)/ self.tape_thickness
 
     def stack_electrical_resistivity_not_sc(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized electrical resistivity for not superconducting materials of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
@@ -471,34 +459,21 @@ class StackComponent(StrandComponent):
         Returns:
             np.ndarray: array with homogenized electrical resistivity of not superconducting materials of the stack of tapes in Ohm*m.
         """
-        elestrical_resistivity = np.zeros(
+        electrical_resistivity = np.zeros(
             (property["temperature"].size, self.inputs["Material_number"] - 1)
         )
         for ii, func in enumerate(self.electrical_resistivity_function_not_sc):
             if "cu" in func.__name__:
-                elestrical_resistivity[:,ii] = func(
+                electrical_resistivity[:,ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
                 )
             else:
-                elestrical_resistivity[:,ii] = func(property["temperature"])
+                electrical_resistivity[:,ii] = func(property["temperature"])
         # Evaluate homogenized electrical resistivity of the stack:
         # rho_el_eq = s_not_sc * (sum(s_i/rho_el_i))^-1 for any i not sc
-        return (
-            np.reciprocal(
-                np.array(
-                    list(
-                        map(
-                            np.divide,
-                            self.material_thickness_not_sc,
-                            elestrical_resistivity,
-                        )
-                    )
-                ).sum(axis=1)
-            )
-            * self.tape_thickness_not_sc
-        )
+        return self.tape_thickness_not_sc * np.reciprocal((self.material_thickness_not_sc/electrical_resistivity).sum(axis=1))
 
     def superconductor_power_law(
         self,

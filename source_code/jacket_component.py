@@ -358,12 +358,11 @@ class JacketComponent(SolidComponent):
         density = np.array(
             [func(property["temperature"].size) for func in self.density_function]
         )
+        density = density.T
         # Evaluate homogenized density of the strand mixed:
         # rho_eq = (A_jk*rho_jk + A_in*rho_in)/(A_jk + A_in)
-        self.__density_numerator = np.array(
-            list(map(np.multiply, density, self.cross_sections))
-        )
-        self.__density_numerator_sum = self.__density_numerator.sum(axis=0)
+        self.__density_numerator = density * self.cross_sections
+        self.__density_numerator_sum = self.__density_numerator.sum(axis=1)
         return self.__density_numerator_sum / self.inputs["CROSSECTION"]
 
     def jacket_isobaric_specific_heat(self, property: dict) -> np.ndarray:
@@ -392,15 +391,11 @@ class JacketComponent(SolidComponent):
                 for func in self.isobaric_specific_heat_function
             ]
         )
+        isobaric_specific_heat = isobaric_specific_heat.T
         # Evaluate homogenized isobaric specific heat of the strand mixed:
         # cp_eq = (cp_jk*A_jk*rho_jk + cp_in*A_in*rho_in)/(A_jk*rho_jk +
         # A_in*rho_in)
-        return (
-            np.array(
-                list(map(np.multiply, isobaric_specific_heat, self.__density_numerator))
-            ).sum(axis=0)
-            / self.__density_numerator_sum
-        )
+        return (isobaric_specific_heat * self.__density_numerator).sum(axis=1)/self.__density_numerator_sum
 
     def jacket_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
@@ -417,20 +412,10 @@ class JacketComponent(SolidComponent):
                 for func in self.thermal_conductivity_function
             ]
         )
+        thermal_conductivity = thermal_conductivity.T
         # Evaluate homogenized thermal conductivity of the strand mixed:
         # k_eq = (A_jk*k_jk + A_in*k_in)/(A_jk + A_in)
-        return (
-            np.array(
-                list(
-                    map(
-                        np.multiply,
-                        thermal_conductivity,
-                        self.cross_sections,
-                    )
-                )
-            ).sum(axis=0)
-            / self.inputs["CROSSECTION"]
-        )
+        return (thermal_conductivity * self.cross_sections).sum(axis=1)/ self.inputs["CROSSECTION"]
 
     def jaket_electrical_resistivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized electrical resistivity otf the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
@@ -442,25 +427,13 @@ class JacketComponent(SolidComponent):
             np.ndarray: array with homogenized electrical resistivity of the jacket in Ohm*m.
         """
 
-        elestrical_resistivity = np.array(
+        electrical_resistivity = np.array(
             [
                 func(property["temperature"].size)
                 for func in self.electrical_resistivity_function
             ]
         )
+        electrical_resistivity = electrical_resistivity.T
         # Evaluate homogenized electrical resistivity of the jacket:
         # rho_el_eq = (A_jk + A_in) * ((A_jk/rho_el_jk + A_in/rho_el_in))^-1
-        return (
-            np.reciprocal(
-                np.array(
-                    list(
-                        map(
-                            np.divide,
-                            self.cross_sections,
-                            elestrical_resistivity,
-                        )
-                    )
-                ).sum(axis=0)
-            )
-            * self.inputs["CROSSECTION"]
-        )
+        return self.inputs["CROSSECTION"]*np.reciprocal((self.cross_sections / electrical_resistivity).sum(axis=1))
