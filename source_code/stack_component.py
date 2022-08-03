@@ -627,13 +627,14 @@ class StackComponent(StrandComponent):
         )
 
     def __d_sc_current_residual(
-        self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray]
+        self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray],so_current: Union[float, np.ndarray]
     ) ->Union[float, np.ndarray]:
         """Private method that defines the first derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
 
         Args:
             sc_current (Union(float, np.ndarray)): superconducting current (guess).
-            psi (Union(float, np.ndarray)): costant value in the equation
+            psi (Union(float, np.ndarray)): costant value in the equation.
+            so_current (Union[float, np.ndarray]): total current in A, not used but passed by function optimize.newton.
 
         Raises:
             ValueError: if arguments sc_current and psi are not both of the same type (float).
@@ -660,13 +661,14 @@ class StackComponent(StrandComponent):
         return self.inputs["nn"] * sc_current ** (self.inputs["nn"] - 1) + psi
 
     def __d2_sc_current_residual(
-        self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray]
+        self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray], so_current: Union[float, np.ndarray]
     ) ->Union[float, np.ndarray]:
         """Private method that defines the second derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
 
         Args:
             sc_current (Union(float, np.ndarray)): superconducting current (guess).
-            psi (Union(float, np.ndarray)): costant value in the equation, not needed for this fuction
+            psi (Union(float, np.ndarray)): costant value in the equation, not needed for this fuction.
+            so_current (Union[float, np.ndarray]): total current in A, not used but passed by function optimize.newton
 
         Returns:
            Union[float, np.ndarray]: second derivative of the residual.
