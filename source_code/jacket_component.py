@@ -424,7 +424,7 @@ class JacketComponent(SolidComponent):
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
             return thermal_conductivity
 
-    def jaket_electrical_resistivity(self, property: dict) -> np.ndarray:
+    def jacket_electrical_resistivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized electrical resistivity otf the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
 
         Args:

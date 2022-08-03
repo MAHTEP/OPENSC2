@@ -194,7 +194,7 @@ class SolidComponent:
                 total_thermal_conductivity=self.jacket_thermal_conductivity(dict_dummy)
             )
             dict_dummy.update(
-                total_electrical_resistivity=self.jaket_electrical_resistivity(
+                total_electrical_resistivity=self.jacket_electrical_resistivity(
                     dict_dummy
                 )
             )
