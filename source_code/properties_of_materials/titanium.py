@@ -196,14 +196,14 @@ def electrical_resistivity_ti(TT):
 
     return RHOETI
 
-def density_ti(nn:int)->np.ndarray:
+def density_ti(temperature: np.ndarray)->np.ndarray:
     """
     Function that evaluates titanium density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: titanium density array in kg/m^3.
     """
-    return 4500.0 * np.ones(nn)
+    return 4500.0 * np.ones(temperature.shape)

@@ -196,17 +196,17 @@ def electrical_resistivity_ag(TT):
 
 
 # Function rho_ag starts here
-def density_ag(nn: int) -> np.ndarray:
+def density_ag(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates silver density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: silver density array in kg/m^3.
     """
-    return 10630.0 * np.ones(nn)
+    return 10630.0 * np.ones(temperature.shape)
 
 
 # end function rho_Ag (cdp, 01/2021)

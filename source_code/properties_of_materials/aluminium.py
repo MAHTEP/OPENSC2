@@ -327,17 +327,17 @@ def electrical_resistivity_al(TT):
 
 
 # Function rho_Al starts here
-def density_al(nn: int) -> np.ndarray:
+def density_al(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates aluminium density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: alluminium density array in kg/m^3.
     """
-    return 2700.0 * np.ones(nn)
+    return 2700.0 * np.ones(temperature.shape)
 
 
 # end function rho_Al (cdp, 01/2021)

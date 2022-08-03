@@ -83,31 +83,31 @@ def isobaric_specific_heat_ep(t):
 
     return cp  # end of the function
 
-def density_ep(nn:int)->np.ndarray:
+def density_ep(temperature: np.ndarray)->np.ndarray:
     """
     Function that evaluates epoxy density, assumed constant.
 
     Reference: VDI-Richtlinien, VDI2010 Blatt 3, Cryosoft
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: epoxy density array in kg/m^3.
     """
-    return 1.220e3 * np.ones(nn)
+    return 1.220e3 * np.ones(temperature.shape)
 
 
-def electrical_resistivity_ep(nn:int)->np.ndarray:
+def electrical_resistivity_ep(temperature: np.ndarray)->np.ndarray:
     """
     Function that evaluates epoxy electrical resistivity, assumed constant.
 
     N.B: no reference for this value.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: epoxy electrical resistivity array in Ohm*m.
     """
-    return 3.4e12 * np.ones(nn)
+    return 3.4e12 * np.ones(temperature.shape)

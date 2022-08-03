@@ -276,17 +276,16 @@ def rhoecu0_nist(t, rrr):
 
 
 # Function rho_cu starts here
-def density_cu(nn: int) -> np.ndarray:
+def density_cu(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates copper density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
-
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
     Returns:
-        np.ndarray: alluminium density array in kg/m^3.
+        np.ndarray: copper density array in kg/m^3.
     """
-    return 8900.0 * np.zeros(nn)
+    return 8900.0 * np.ones(temperature.shape)
 
 
 # end function rho_Cu (cdp, 01/2021)

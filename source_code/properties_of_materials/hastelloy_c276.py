@@ -146,17 +146,17 @@ def electrical_resistivity_hc276(TT):
 
 
 # Function rho_HC276 starts here
-def density_hc276(nn: int) -> np.ndarray:
+def density_hc276(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates hastelloy HC276 density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: hastelloy HC276 density array in kg/m^3.
     """
-    return 8890.0 * np.ones(nn)
+    return 8890.0 * np.ones(temperature.shape)
 
 
 # end function rho_HC276 (cdp, 01/2021)

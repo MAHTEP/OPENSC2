@@ -177,14 +177,14 @@ def electrical_resistivity_inconel718(TT):
 
     return RHOENE
 
-def density_inconel718(nn:int)->np.ndarray:
+def density_inconel718(temperature: np.ndarray)->np.ndarray:
     """
     Function that evaluates inconel 718 density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: inconel 718 density array in kg/m^3.
     """
-    return 8.17e3 * np.ones(nn)
+    return 8.17e3 * np.ones(temperature.shape)

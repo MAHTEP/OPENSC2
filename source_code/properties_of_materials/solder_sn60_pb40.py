@@ -147,17 +147,17 @@ def electrical_resistivity_sn60pb40(TT):
 
 
 # Function rho_Sn60Pb40 starts here
-def density_sn60pb40(nn:int) -> np.ndarray:
+def density_sn60pb40(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates Sn60Pb40 density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: Sn60Pb40 density array in kg/m^3.
     """
-    return (7310.0 * 0.6 + 11340.0 * 0.4) * np.ones(nn)
+    return (7310.0 * 0.6 + 11340.0 * 0.4) * np.ones(temperature.shape)
 
 
 # end function rho_Sn60Pb40 (cdp, 01/2021)

@@ -412,17 +412,17 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
 
 
 # Function rho_RE123 starts here
-def density_re123(nn: int) -> np.ndarray:
+def density_re123(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates YBCO density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: YBCO density array in kg/m^3.
     """
-    return 6380.0 * np.ones(nn)
+    return 6380.0 * np.ones(temperature.shape)
 
 
 # end function rho_RE123 (cdp, 01/2021)

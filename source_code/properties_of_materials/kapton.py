@@ -78,29 +78,29 @@ def isobaric_specific_heat_kapton(t):
 
     return cp  # end of the function
 
-def density_kapton(nn:int)->np.ndarray:
+def density_kapton(temperature: np.ndarray)->np.ndarray:
     """
     Function that evaluates kapton density, assumed constant.
 
     Reference: CRYOSOFT
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: kapton density array in kg/m^3.
     """
-    return 1.380e3 * np.ones(nn)
+    return 1.380e3 * np.ones(temperature.shape)
 
-def electrical_resistivity_kapton(nn:int)->np.ndarray:
+def electrical_resistivity_kapton(temperature: np.ndarray)->np.ndarray:
     """
     Function that evaluates kapton electrical resistivity, assumed constant.
 
     N.B: no reference for this value.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: kapton electrical resistivity array in Ohm*m.
     """
-    return 1.5e15 * np.ones(nn)
+    return 1.5e15 * np.ones(temperature.shape)

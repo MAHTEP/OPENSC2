@@ -106,18 +106,18 @@ def electrical_resistivity_ss(t):
 
 
 # Function rho_ss starts here
-def density_ss(nn: int) -> np.ndarray:
+def density_ss(temperature: np.ndarray) -> np.ndarray:
 
     """
     Function that evaluates stainless steel density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: stainless steel density array in kg/m^3.
     """
-    return 7800.0 * np.ones(nn)
+    return 7800.0 * np.ones(temperature.shape)
 
 
 # end function rho_ss (cdp, 01/2021)

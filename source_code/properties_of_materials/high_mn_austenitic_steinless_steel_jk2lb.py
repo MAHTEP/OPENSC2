@@ -220,14 +220,14 @@ def electrical_resistivity_jk2lb(TTT):
 
     return RHOE  # end of the function
 
-def density_jk2lb(nn:int)->np.ndarray:
+def density_jk2lb(temperature: np.ndarray)->np.ndarray:
     """
     Function that evaluates high Mn austenitic steinless steel (JK2LB) density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: high Mn austenitic steinless steel (JK2LB) density array in kg/m^3.
     """
-    return 7.86e3 * np.ones(nn)
+    return 7.86e3 * np.ones(temperature.shape)

@@ -209,17 +209,17 @@ def isobaric_specific_heat_nbti(T, B, TCS, TC):
 
 
 # Function rho_NbTi starts here
-def density_nbti(nn: int) -> np.ndarray:
+def density_nbti(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates NbTi density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: NbTi density array in kg/m^3.
     """
-    return 6160.0 * np.ones(nn)
+    return 6160.0 * np.ones(temperature.shape)
 
 
 # end function rho_NbTi (cdp, 01/2021)

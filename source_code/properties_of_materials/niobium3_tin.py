@@ -601,17 +601,17 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
 
 
 # Function rho_Nb3Sn starts here
-def density_nb3sn(nn: int) -> np.ndarray:
+def density_nb3sn(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates Nb3Sn density, assumed constant.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: Nb3Sn density array in kg/m^3.
     """
-    return 8950.0 * np.ones(nn)
+    return 8950.0 * np.ones(temperature.shape)
 
 
 # end function rho_Nb3Sn (cdp, 01/2021)

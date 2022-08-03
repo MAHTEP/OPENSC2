@@ -84,32 +84,32 @@ def isobaric_specific_heat_ge(t):
 
 
 # Function rho_ge starts here
-def density_ge(nn:int)->np.ndarray:
+def density_ge(temperature: np.ndarray)->np.ndarray:
     """
     Function that evaluates glass-epoxy density, assumed constant.
 
     Reference: CRYOSOFT
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: glass-epoxy density array in kg/m^3.
     """
-    return 2000.0 * np.ones(nn)
+    return 2000.0 * np.ones(temperature.shape)
 
 
 # end function rho_ge (cdp, 01/2021)
 
-def electrical_resistivity_ge(nn:int)->np.ndarray:
+def electrical_resistivity_ge(temperature: np.ndarray)->np.ndarray:
     """
     Function that evaluates glass-epoxy electrical resistivity, assumed constant.
 
     N.B: no reference for this value.
 
     Args:
-        nn (int): number of elements of the array.
+        temperature (np.ndarray): temperature array, used to get the shape of density array.
 
     Returns:
         np.ndarray: glass-epoxy electrical resistivity array in Ohm*m.
     """
-    return 1.5e15 * np.ones(nn)
+    return 1.5e15 * np.ones(temperature.shape)
