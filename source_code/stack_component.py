@@ -605,7 +605,7 @@ class StackComponent(StrandComponent):
             raise ValueError(
                 f"Arguments sc_current and psi must be of the same type (n.ndarray).\n{type(sc_current) = };\n{type(psi) = }.\n"
             )
-        elif sc_current.shape != psi.shape:
+        elif isinstance(sc_current,np.ndarray) and isinstance(psi,np.ndarray) and sc_current.shape != psi.shape:
             raise ValueError(
                 f"Arrays sc_current and psi must have the same shape.\n {sc_current.shape = };\n{psi.shape}.\n"
             )
