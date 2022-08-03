@@ -408,7 +408,7 @@ class JacketComponent(SolidComponent):
         """
         thermal_conductivity = np.array(
             [
-                func(property["temperature"].size)
+                func(property["temperature"])
                 for func in self.thermal_conductivity_function
             ]
         )
