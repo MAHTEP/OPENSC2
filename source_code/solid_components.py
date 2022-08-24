@@ -938,7 +938,7 @@ class SolidComponents:
         elif self.dict_operation["IQFUN"] == -2:
             # AM2 part to be implemented
             if conductor.cond_time[-1] == 0:
-                self.dict_node_pt["EXTFLX"][:, 0] = self.user_heat_function()
+                self.user_heat_function(conductor)
             elif conductor.cond_num_step > 0:
                 if conductor.cond_num_step == 1:
                     # Store the old values only immediately after the initializzation, since after that the whole SYSLOD array is saved and there is no need to compute twice the same values.
@@ -947,7 +947,7 @@ class SolidComponents:
                     ].copy()
                 # end if conductor.cond_num_step (cdp, 10/2020)
                 # call method load_user_defined_quantity to compute heat and overwrite the previous values.
-                self.dict_node_pt["EXTFLX"][:, 0] = self.user_heat_function()
+                self.user_heat_function(conductor)
             # end if conductor.cond_num_step (cdp, 10/2020)
 
         # end self.dict_operation["IQFUN"] (cdp, 10/2020)
@@ -1018,16 +1018,19 @@ class SolidComponents:
 
     # end Q0_where
 
-    def user_heat_function(self):
+    def user_heat_function(self,conductor):
         """User defined function to evaluate heat load."""
 
         # Bad code to evaluate Joule power in joints of feeder CS3U2.
+
         # Electrical resistivity.
         el_res = 5e-9 # Ohm
         # Length of the joint.
         joint_length = 0.5 # m
+        # Get joints index
+        ind = (conductor.dict_discretization["xcoord"] <= joint_length) | (conductor.dict_discretization["xcoord"] >= conductor.dict_input["XLENGTH"] - joint_length)
         # Compute linear joule power
-        return el_res * self.dict_node_pt["IOP"]**2/joint_length
+        self.dict_node_pt["EXTFLX"][ind, 0] = el_res * self.dict_node_pt["IOP"][ind]**2/joint_length
 
     def jhtflx_new_0(self, conductor):  # tesded: ok (cdp, 06/2020)
 
