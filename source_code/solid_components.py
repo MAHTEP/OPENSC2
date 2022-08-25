@@ -756,7 +756,7 @@ class SolidComponents:
                 warnings.warn("Still to be decided what to do here\n")
         elif conductor.dict_input["IOPFUN"] == 0:
             self.dict_node_pt["IOP"] = (
-                conductor.IOP_TOT * self.dict_operation["IOP0_FRACTION"] *np.ones(conductor.grid_features["N_nod"])
+                conductor.IOP_TOT * self.dict_operation["IOP0_FRACTION"] *np.ones(conductor.dict_discretization["N_nod"])
             )
         elif conductor.dict_input["IOPFUN"] == 1:
             if conductor.cond_time[-1] <= conductor.dict_input["TAUDET"]:
