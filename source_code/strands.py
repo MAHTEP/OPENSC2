@@ -249,10 +249,17 @@ class Strands(SolidComponents):
     # End method get_tcs
 
     def eval_tcs(self, dict_dummy):
+        
+        # If physical c0 is used.
+        # jop = (
+        #     np.abs(dict_dummy["IOP"])
+        #     / (self.ASC / self.dict_input["COSTETA"])
+        # )
 
+        # If ingegneristic c0 is used.
         jop = (
             np.abs(dict_dummy["IOP"])
-            / (self.ASC / self.dict_input["COSTETA"])
+            / self.dict_input["CROSSECTION"]
         )
 
         bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
