@@ -140,6 +140,8 @@ class StrandMixedComponent(StrandComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
         # end if (cdp, 07/2020)
+        # Equivalent radius
+        self.radius = np.sqrt(self.inputs["CROSSECTION"] / np.pi)
 
         self.__strand_density_flag = False
         self.__reorganize_input()
