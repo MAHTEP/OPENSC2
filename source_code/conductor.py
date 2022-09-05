@@ -2827,7 +2827,7 @@ class Conductor:
         self.electric_stiffness_matrix = self.electric_stiffness_matrix.tocsr(copy=True)
 
     def __assign_equivalue_surfaces(self):
-        """Private method that assign the prescibed equipotential surface of the conductor."""
+        """Private method that assigns the prescribed equipotential surface of the conductor."""
         tol = 1e-10
         for ii, coord in enumerate(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]):
             # Find the index of the spatial discretization along z such that
