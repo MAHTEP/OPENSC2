@@ -2909,7 +2909,7 @@ class Conductor:
             mode (int,optional): flag to select the equation for the analytical evaluation of self inductance. 1: mode 1; 2: mode 2. Defaults to 2.
         """
 
-        if mode != 1 or mode != 2:
+        if mode != 1 and mode != 2:
             raise ValueError(
                 f"{self.identifier}\nArgument 'mode' must be equal to {SELF_INDUCTANCE_MODE_1 = } or to {SELF_INDUCTANCE_MODE_2 = }. Current value {mode = } is not allowed. Please check sheet {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
             )
@@ -3351,7 +3351,7 @@ class Conductor:
 
         if (
             self.operations["INDUCTANCE_MODE"] != 0
-            or self.operations["INDUCTANCE_MODE"] != 1
+            and self.operations["INDUCTANCE_MODE"] != 1
         ):
             raise ValueError(
                 f"{self.identifier = }\nArgument self.operations['INDUCTANCE_MODE'] should be equal to {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({self.operations['INDUCTANCE_MODE'] = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
