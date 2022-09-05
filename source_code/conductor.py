@@ -2834,21 +2834,18 @@ class Conductor:
 
     def __assign_equivalue_surfaces(self):
         """Private method that assigns the prescribed equipotential surface of the conductor."""
-        tol = 1e-10
         for ii, coord in enumerate(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]):
             # Find the index of the spatial discretization along z such that
-            # abs(z - coord) <= tol; assing the last StrandComponent.number
-            # values to the i-th row of equipotential_node_index and add
+            # z <= round(coord,n_digit_z); assing the last StrandComponent
+            # number values to the i-th row of equipotential_node_index and add
             # self.total_elements_current_carriers to shift the indexes to the
             # correct position (in the portion of the array dedicated to the
             # current).
-            self.equipotential_node_index[ii, :] = (
-                (self.nodal_coordinates.loc["StrandComponent", "z"] - coord).abs()
-                <= tol
-            ).to_numpy().nonzero()[0][
+
+            self.equipotential_node_index[ii, :] = np.nonzero(self.nodal_coordinates.loc["StrandComponent", "z"].to_numpy() <= round(coord,self.n_digit_z))[0][
                 -self.inventory["StrandComponent"].number :
             ] + self.total_elements_current_carriers
-
+            
     def __assign_fix_potential(self):
         """Private method that assigns the value of the fixed potential on prescribed fixed potential surfaces."""
         jj = 0
