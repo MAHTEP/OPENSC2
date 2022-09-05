@@ -142,6 +142,15 @@ class Conductor:
         # Delete key NAME from dictionary self.inputs
         del self.inputs["NAME"]
 
+        # Temporary solution to mangage input file loading, strange behavior: 1
+        # are converted to True but 0 not converted to False. Works with no
+        # conversion only if the first value (XLENGHT) is set to 1.
+        if self.inputs["UPWIND"] == True:
+            self.inputs["UPWIND"] = 1
+
+        if self.inputs["ELECTRIC_TIME_STEP"] == "None":
+            self.inputs["ELECTRIC_TIME_STEP"] = None
+
         # Load the sheet CONDUCTOR_operation form file conducor_definition.xlsx as a disctionary.
         self.operations = pd.read_excel(
             self.workbook_name,
@@ -154,6 +163,16 @@ class Conductor:
         conductorlogger.debug(
             f"Loaded sheet CONDUCTOR_operation from file conductor_definition\n"
         )
+
+        # Temporary solution to mangage input file loading, strange behavior: 1
+        # are converted to True but 0 not converted to False.
+        keys = [
+            "EQUIPOTENTIAL_SURFACE_NUMBER",
+            "EQUIPOTENTIAL_SURFACE_COORDINATE",
+            "INDUCTANCE_MODE", "ELECTRIC_SOLVER"
+        ]
+        self.operations.update({key:1 for key in keys if self.operations[key]})
+        self.operations.update({key:0 for key in keys if self.operations[key]==False})
 
         _ = {
             True: self.__manage_equipotential_surfaces_coordinate,
