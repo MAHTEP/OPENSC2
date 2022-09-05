@@ -541,7 +541,13 @@ class Conductor:
         self.grid_features["delta_z"] = (
             self.grid_features["zcoord"][1:] - self.grid_features["zcoord"][:-1]
         )
-        self.grid_features["dz"] = self.grid_features["delta_z"].max()
+        self.grid_features["dz_max"] = self.grid_features["delta_z"].max()
+        self.grid_features["dz_min"] = self.grid_features["delta_z"].min()
+        # Get the number of digits for rounding coordinates in order to find 
+        # indexes.
+        # N.B: Must be evaluated at each time thermal step when the mesh is
+        # adaptive.
+        self.n_digit_z = abs(int(np.floor(np.log10(self.grid_features["dz_min"])))) - 1
 
     def __build_multi_index(self) -> pd.MultiIndex:
         """Private method that builds multindex used in pandas dataframes used to store the nodal coordinates and the connectivity (matrix) of each conductor component.
