@@ -574,128 +574,139 @@ class StrandMixedComponent(StrandComponent):
 
         ## SUPERCONDUCTING REGIME ##
 
-        # Strand current in superconducting regime is the one carriend by the
-        # superconducting material only.
-        self.dict_node_pt["op_current"][ind_sc_node] = self.dict_node_pt["op_current_sc"][ind_sc_node]
-        self.dict_Gauss_pt["op_current"][ind_sc_gauss] = self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss]
+        # Check that np array ind_sc_node is not empty.
+        if ind_sc_node.any():
+            # Strand current in superconducting regime is the one carriend by the
+            # superconducting material only.
+            self.dict_node_pt["op_current"][ind_sc_node] = self.dict_node_pt["op_current_sc"][ind_sc_node]
+            self.dict_Gauss_pt["op_current"][ind_sc_gauss] = self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss]
 
-        # Initialize array of superconducting electrical resistivit in nodal and Gauss points to None.
-        self.dict_node_pt["electrical_resistivity_superconductor"] = np.full_like(
-            self.dict_node_pt["temperature"], None
-        )
-        self.dict_Gauss_pt["electrical_resistivity_superconductor"] = np.full_like(
-            self.dict_Gauss_pt["temperature"], None
-        )
-
-        # Compute superconducting electrical resistivity only in index for
-        # which the superconducting regime is guaranteed, using the power low.
-        self.dict_node_pt["electrical_resistivity_superconductor"][
-            ind_sc_node
-        ] = self.superconductor_power_law(
-            self.dict_node_pt["op_current_sc"][ind_sc_node],
-            critical_current_node[ind_sc_node],
-            self.dict_node_pt["J_critical"][ind_sc_node],
-        )
-        self.dict_Gauss_pt["electrical_resistivity_superconductor"][
-            ind_sc_gauss
-        ] = self.superconductor_power_law(
-            self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss],
-            critical_current_gauss[ind_sc_gauss],
-            self.dict_Gauss_pt["J_critical"][ind_sc_gauss],
-        )
-        # Evaluate electic resistance in superconducting region (superconductor
-        # only).
-        self.dict_Gauss_pt["electric_resistance"][
-            ind_sc_gauss
-        ] = self.electric_resistance(
-            conductor, "electrical_resistivity_superconductor", ind_sc_gauss
-        )
-
-        ## SHARING OR NORMAL REGIME ##
-
-        # Strand current in sharing regime is the one carried by the both the
-        # superconducting and the stabilizer materials.
-        # self.dict_node_pt["op_current"][ind_sh_node] = self.dict_node_pt["op_current"][ind_sh_node]
-        # self.dict_Gauss_pt["op_current"][ind_sh_node] = self.op_current_so_gauss[ind_sh_gauss]
-
-        # Evaluate how the current is distributed solving the current divider
-        # problem in both nodal and Gauss points.
-        sc_current_node, stab_current_node = self.solve_current_divider(
-            self.dict_node_pt["electrical_resistivity_stabilizer"][ind_sh_node],
-            critical_current_node[ind_sh_node],
-            self.dict_node_pt["op_current"][ind_sh_node],
-        )
-        sc_current_gauss, stab_current_gauss = self.solve_current_divider(
-            self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_sh_gauss],
-            critical_current_gauss[ind_sh_gauss],
-            self.dict_Gauss_pt["op_current"][ind_sh_gauss],
-        )
-
-        # Get index of the normal region, to avoid division by 0 in evaluation
-        # of sc electrical resistivity with the power law.
-        ind_normal_node = np.nonzero(
-            stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
-            > 0.999999 | sc_current_node
-            < 1.0
-        )[0]
-        ind_normal_gauss = np.nonzero(
-            stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
-            > 0.999999 | sc_current_gauss
-            < 1.0
-        )[0]
-
-        ## NORMAL REGIME ONLY ##
-        if ind_normal_node.any():
-            # Get the index of location of true current sharing region;
-            # overwrite ind_sh_node.
-            ind_sh_node = np.nonzero(
-                stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
-                <= 0.999999 | sc_current_node
-                >= 1.0
-            )[0]
-        if ind_normal_gauss.any():
-            # Get the index of location of true current sharing region;
-            # overwrite ind_sh_gauss.
-            ind_sh_gauss = np.nonzero(
-                stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
-                <= 0.999999 | sc_current_gauss
-                >= 1.0
-            )[0]
-            # Evaluate electic resistance in normal region (stabilizer only).
-            self.dict_Gauss_pt["electric_resistance"][
-                ind_normal_gauss
-            ] = self.electric_resistance(
-                conductor, "electrical_resistivity_stabilizer", ind_normal_gauss
+            # Initialize array of superconducting electrical resistivit in nodal and Gauss points to None.
+            self.dict_node_pt["electrical_resistivity_superconductor"] = np.full_like(
+                self.dict_node_pt["temperature"], None
+            )
+            self.dict_Gauss_pt["electrical_resistivity_superconductor"] = np.full_like(
+                self.dict_Gauss_pt["temperature"], None
             )
 
-        ## SHARING REGIME ONLY ##
-        # Evaluate the electrical resistivity of the superconductor according
-        # to the power low in both nodal and Gauss points in Ohm*m.
-        self.dict_node_pt["electrical_resistivity_superconductor"][
-            ind_sh_node
-        ] = self.superconductor_power_law(
-            sc_current_node[ind_sh_node],
-            critical_current_node[ind_sh_node],
-            self.dict_node_pt["J_critical"][ind_sh_node],
-        )
-        self.dict_Gauss_pt["electrical_resistivity_superconductor"][
-            ind_sh_gauss
-        ] = self.superconductor_power_law(
-            sc_current_gauss[ind_sh_gauss],
-            critical_current_gauss[ind_sh_gauss],
-            self.dict_Gauss_pt["J_critical"][ind_sh_gauss],
-        )
+            # Compute superconducting electrical resistivity only in index for
+            # which the superconducting regime is guaranteed, using the power low.
+            self.dict_node_pt["electrical_resistivity_superconductor"][
+                ind_sc_node
+            ] = self.superconductor_power_law(
+                self.dict_node_pt["op_current_sc"][ind_sc_node],
+                critical_current_node[ind_sc_node],
+                self.dict_node_pt["J_critical"][ind_sc_node],
+            )
+            self.dict_Gauss_pt["electrical_resistivity_superconductor"][
+                ind_sc_gauss
+            ] = self.superconductor_power_law(
+                self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss],
+                critical_current_gauss[ind_sc_gauss],
+                self.dict_Gauss_pt["J_critical"][ind_sc_gauss],
+            )
+            # Evaluate electic resistance in superconducting region (superconductor
+            # only).
+            self.dict_Gauss_pt["electric_resistance"][
+                ind_sc_gauss
+            ] = self.electric_resistance(
+                conductor, "electrical_resistivity_superconductor", ind_sc_gauss
+            )
+        
+        ## SHARING OR NORMAL REGIME ##
 
-        # Evaluate the equivalent electric resistance in Ohm.
-        self.dict_Gauss_pt["electric_resistance"][
-            ind_sh_gauss
-        ] = self.parallel_electric_resistance(
-            conductor,
-            [
-                "electrical_resistivity_superconductor",
-                "electrical_resistivity_stabilizer",
-            ],
-            ind_sh_gauss,
-        )
+        # Check that np array ind_sh_node is not empty.
+        if ind_sh_node.any():
+
+            # Strand current in sharing regime is the one carried by the both the
+            # superconducting and the stabilizer materials.
+            # self.dict_node_pt["op_current"][ind_sh_node] = self.dict_node_pt["op_current"][ind_sh_node]
+            # self.dict_Gauss_pt["op_current"][ind_sh_node] = self.op_current_so_gauss[ind_sh_gauss]
+
+            # Evaluate how the current is distributed solving the current 
+            # divider problem in both nodal and Gauss points.
+            sc_current_node, stab_current_node = self.solve_current_divider(
+                self.dict_node_pt["electrical_resistivity_stabilizer"][ind_sh_node],
+                critical_current_node[ind_sh_node],
+                self.dict_node_pt["op_current"][ind_sh_node],
+            )
+            sc_current_gauss, stab_current_gauss = self.solve_current_divider(
+                self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_sh_gauss],
+                critical_current_gauss[ind_sh_gauss],
+                self.dict_Gauss_pt["op_current"][ind_sh_gauss],
+            )
+
+            # Get index of the normal region, to avoid division by 0 in evaluation
+            # of sc electrical resistivity with the power law.
+            ind_normal_node = np.nonzero(
+                stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
+                > 0.999999 | sc_current_node
+                < 1.0
+            )[0]
+            ind_normal_gauss = np.nonzero(
+                stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
+                > 0.999999 | sc_current_gauss
+                < 1.0
+            )[0]
+
+            ## NORMAL REGIME ONLY ##
+
+            # Check that np array ind_normal_node is not empty.
+            if ind_normal_node.any():
+                # Get the index of location of true current sharing region;
+                # overwrite ind_sh_node.
+                ind_sh_node = np.nonzero(
+                    stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
+                    <= 0.999999 | sc_current_node
+                    >= 1.0
+                )[0]
+
+            # Check that np array ind_sc_Gauss is not empty.
+            if ind_normal_gauss.any():
+                # Get the index of location of true current sharing region;
+                # overwrite ind_sh_gauss.
+                ind_sh_gauss = np.nonzero(
+                    stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
+                    <= 0.999999 | sc_current_gauss
+                    >= 1.0
+                )[0]
+                # Evaluate electic resistance in normal region (stabilizer only).
+                self.dict_Gauss_pt["electric_resistance"][
+                    ind_normal_gauss
+                ] = self.electric_resistance(
+                    conductor, "electrical_resistivity_stabilizer", ind_normal_gauss
+                )
+
+            ## SHARING REGIME ONLY ##
+
+            # Evaluate the electrical resistivity of the superconductor 
+            # according to the power low in both nodal and Gauss points in 
+            # Ohm*m.
+            self.dict_node_pt["electrical_resistivity_superconductor"][
+                ind_sh_node
+            ] = self.superconductor_power_law(
+                sc_current_node[ind_sh_node],
+                critical_current_node[ind_sh_node],
+                self.dict_node_pt["J_critical"][ind_sh_node],
+            )
+            self.dict_Gauss_pt["electrical_resistivity_superconductor"][
+                ind_sh_gauss
+            ] = self.superconductor_power_law(
+                sc_current_gauss[ind_sh_gauss],
+                critical_current_gauss[ind_sh_gauss],
+                self.dict_Gauss_pt["J_critical"][ind_sh_gauss],
+            )
+
+            # Evaluate the equivalent electric resistance in Ohm.
+            self.dict_Gauss_pt["electric_resistance"][
+                ind_sh_gauss
+            ] = self.parallel_electric_resistance(
+                conductor,
+                [
+                    "electrical_resistivity_superconductor",
+                    "electrical_resistivity_stabilizer",
+                ],
+                ind_sh_gauss,
+            )
 
         return self.dict_Gauss_pt["electric_resistance"]
