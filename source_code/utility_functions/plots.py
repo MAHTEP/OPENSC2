@@ -209,7 +209,7 @@ def make_plots(simulation, kind="Space_distr"):
         dict_values[cond.identifier] = {}  # dictionary declaration (cdp, 09/2020)
         if kind == "Space_distr":
             # unify the array (cdp, 11/2020)
-            kind_save = np.around(cond.Space_save, simulation.n_digit)
+            kind_save = np.around(cond.Space_save, simulation.n_digit_time)
             root_load_path = simulation.dict_path[
                 f"Output_Spatial_distribution_{cond.identifier}_dir"
             ]

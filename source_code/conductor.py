@@ -3904,7 +3904,7 @@ class Conductor:
         save_convergence_data(
             self,
             simulation.dict_path["Time_conv_output_dir"],
-            abs(simulation.n_digit),
+            abs(simulation.n_digit_time),
             space_conv=False,
         )
 

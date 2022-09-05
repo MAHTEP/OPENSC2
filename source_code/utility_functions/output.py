@@ -85,7 +85,7 @@ def save_properties(conductor, f_path):
 # end function Save_properties
 
 
-def save_simulation_space(conductor, f_path, n_digit):
+def save_simulation_space(conductor, f_path, n_digit_time):
 
     """
     Function that save on files with suitable file names transient solution,
@@ -103,7 +103,7 @@ def save_simulation_space(conductor, f_path, n_digit):
     # simulation names (cdp, 08/2020)
 
     # get the time at which the saving is made
-    time = round(conductor.Space_save[conductor.i_save], n_digit)
+    time = round(conductor.Space_save[conductor.i_save], n_digit_time)
     conductor.num_step_save[conductor.i_save] = conductor.cond_num_step
     # end if len(tt[0]) (cdp, 12/2020)
     prop_chan = [
@@ -260,7 +260,7 @@ def save_simulation_space(conductor, f_path, n_digit):
 # end function Save_simulation_space (cdp, 10/2020)
 
 
-def reorganize_spatial_distribution(cond, f_path, n_digit):
+def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     """
     Function that reorganizes the files of the spatial distribution collecting in a single file for each property the spatial distribution at user defined times. In this way the file format is like the ones of the time evolution and this should simplify plots and furter data analysis. (cdp, 11/2020)
     """
@@ -275,8 +275,8 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
     # 							 "EXTFLX", "JHTFLX"]
     list_sol_key = ["temperature"]
     # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
-    # Round the time to save to n_digit digits only once
-    time = np.around(cond.Space_save, n_digit)
+    # Round the time to save to n_digit_time digits only once
+    time = np.around(cond.Space_save, n_digit_time)
     # loop on FluidComponent (cdp, 11/2020)
     for fluid_comp in cond.inventory["FluidComponent"].collection:
         # create a list of files that have the fluid_comp.identifier and User in the name \
@@ -420,26 +420,26 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
     # end for s_comp (cdp, 11/2020)
 
     # Manage files with heat exhanged between inner jackets by radiation.
-    reorganize_heat_sd(cond, f_path, "Heat_rad_inner", "Heat_rad", n_digit)
+    reorganize_heat_sd(cond, f_path, "Heat_rad_inner", "Heat_rad", n_digit_time)
     # Manage files with heat exhanged between outer conductor surface and environment by convection and/or radiation.
-    reorganize_heat_sd(cond, f_path, "Heat_exch_env", "Heat_exch", n_digit)
+    reorganize_heat_sd(cond, f_path, "Heat_exch_env", "Heat_exch", n_digit_time)
 
     # Manage files with open heat transfer coefficients between fluid components.
-    reorganize_heat_sd(cond, f_path, "HTC_ch_ch_o", "HTC_open", n_digit)
+    reorganize_heat_sd(cond, f_path, "HTC_ch_ch_o", "HTC_open", n_digit_time)
     # Manage files with close heat transfer coefficients between fluid components.
-    reorganize_heat_sd(cond, f_path, "HTC_ch_ch_c", "HTC_close", n_digit)
+    reorganize_heat_sd(cond, f_path, "HTC_ch_ch_c", "HTC_close", n_digit_time)
     # Manage files with heat transfer coefficient between fluid and solid components.
-    reorganize_heat_sd(cond, f_path, "HTC_ch_sol", "HTC", n_digit)
+    reorganize_heat_sd(cond, f_path, "HTC_ch_sol", "HTC", n_digit_time)
     # Manage files with conductive heat transfer coefficients between solid components.
-    reorganize_heat_sd(cond, f_path, "HTC_sol_sol_cond", "HTC_cond", n_digit)
+    reorganize_heat_sd(cond, f_path, "HTC_sol_sol_cond", "HTC_cond", n_digit_time)
     # Manage files with radiative heat transfer coefficients between solid components.
-    reorganize_heat_sd(cond, f_path, "HTC_sol_sol_rad", "HTC_rad", n_digit)
+    reorganize_heat_sd(cond, f_path, "HTC_sol_sol_rad", "HTC_rad", n_digit_time)
 
 
 # end function Reorganize_spatial_distribution (cdp, 11/2020)
 
 
-def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit):
+def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit_time):
     """Function that reorganizes the files with the spatial distribution of the heat exchanged between inner jackets by radiation and between the outer surface of the conductor and the environment by convection and/or radiation.
 
     N.B. Questa funzione potrebbe essere adattata anche per riorganizzare i file delle distribuzioni spaziali dei componenti (deriva da questa con qualche semplificazione). Mi sembra troppo complicata: vedere se possibile semplificare.
@@ -453,7 +453,7 @@ def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit):
     old = dict()
     new = dict()
     cols = list()
-    time = np.around(cond.Space_save, n_digit)
+    time = np.around(cond.Space_save, n_digit_time)
     for ii in range(len(cond.Space_save)):
         file_name = f"{radix_old}_({cond.num_step_save[ii]})_sd.tsv"
         file_load = os.path.join(f_path, file_name)
@@ -833,7 +833,7 @@ def save_te_on_file(conductor, val, file_name, tend, ind_zcoord):
 # End function save_te_on_file.
 
 
-def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
+def save_convergence_data(cond, f_path, *n_digit_time, space_conv=True):
 
     """
     Function that saves data for the space convergence: saved information is the solution spatial distribution at TEND for the given number of elements, together with the global mass and energy balance on channels.
@@ -865,8 +865,8 @@ def save_convergence_data(cond, f_path, *n_digit, space_conv=True):
         val[0, 1] = discr
     elif space_conv == False:
         # Save data for the Time convergence analysis (cdp, 12/2020)
-        # compute time step, remember that n_digit is a tuple (cdp, 12/2020)
-        discr = round(cond.time_step, n_digit[0])
+        # compute time step, remember that n_digit_time is a tuple (cdp, 12/2020)
+        discr = round(cond.time_step, n_digit_time[0])
         folder_path = os.path.join(f_path, cond.identifier)
         # Create the path of the file {cond.identifier}_delta_t.tsv (cdp, 11/2020)
         file_path_name = os.path.join(folder_path, f"{cond.identifier}_delta_t.tsv")

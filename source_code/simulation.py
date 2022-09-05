@@ -61,7 +61,7 @@ class Simulation:
         )["Value"].to_dict()
         self.flag_start = False
         # get the order of maginitude of the minimum time step to make proper rounds to when saving data and figures of solution spatial distribution at default or User defined times.
-        self.n_digit = abs(int(np.floor(np.log10(self.transient_input["STPMIN"]))))
+        self.n_digit_time = abs(int(np.floor(np.log10(self.transient_input["STPMIN"]))))
         self.list_of_Conductors = list()
         # Define the environment object as an attribute of the simulation
         self.environment = Environment(
@@ -259,7 +259,7 @@ class Simulation:
                 self.dict_path[
                     f"Output_Spatial_distribution_{conductor.identifier}_dir"
                 ],
-                abs(self.n_digit),
+                abs(self.n_digit_time),
             )
         # end for ii (cdp, 10/2020)
         # while loop to solve transient at each timestep (cdp, 07/2020)
@@ -291,7 +291,7 @@ class Simulation:
                 self.simulation_time[-1] + self.simulation_time_step
             )
             print(
-                f"Simulation time: {self.simulation_time[-1]:.{self.n_digit}f} s; {self.simulation_time[-1]/self.transient_input['TEND']*100:5.2f} %"
+                f"Simulation time: {self.simulation_time[-1]:.{self.n_digit_time}f} s; {self.simulation_time[-1]/self.transient_input['TEND']*100:5.2f} %"
             )
             for conductor in self.list_of_Conductors:
                 # evaluate properties and quantities in Gauss points, method \
@@ -384,7 +384,7 @@ class Simulation:
                         self.dict_path[
                             f"Output_Spatial_distribution_{conductor.identifier}_dir"
                         ],
-                        abs(self.n_digit),
+                        abs(self.n_digit_time),
                     )
                 # end if isave
                 ##
@@ -424,7 +424,7 @@ class Simulation:
             save_simulation_space(
                 cond,
                 self.dict_path[f"Output_Spatial_distribution_{cond.identifier}_dir"],
-                abs(self.n_digit),
+                abs(self.n_digit_time),
             )
             # Call function Save_properties to save the conductor final solution \
             # (cdp, 12/2020)
@@ -446,7 +446,7 @@ class Simulation:
             reorganize_spatial_distribution(
                 cond,
                 self.dict_path[f"Output_Spatial_distribution_{cond.identifier}_dir"],
-                self.n_digit,
+                self.n_digit_time,
             )
             # Plot conductor solution spatial distribution (cdp, 12/2020)
             plot_properties(self, cond, what="solution")
