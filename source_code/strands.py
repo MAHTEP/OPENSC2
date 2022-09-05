@@ -271,13 +271,16 @@ class Strands(SolidComponents):
                 self.dict_input["c0"],
                 self.dict_input["Tc0m"],
             )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nbti(
-                bmax,
-                jop,
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-                self.dict_input["Tc0m"],
-            )
+            # dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nbti(
+            #     bmax,
+            #     jop,
+            #     self.dict_input["Bc20m"],
+            #     self.dict_input["c0"],
+            #     self.dict_input["Tc0m"],
+            # )
+            # To speed up calculation since for the time being 
+            # T_cur_sharing_min is not used ind the code.
+            dict_dummy["T_cur_sharing_min"] = dict_dummy["T_cur_sharing"]
         elif self.dict_input["ISUPERCONDUCTOR"] == "Nb3Sn":
             dict_dummy["T_cur_sharing"] = current_sharing_temperature_nb3sn(
                 dict_dummy["B_field"],
@@ -287,14 +290,14 @@ class Strands(SolidComponents):
                 self.dict_input["Bc20m"],
                 self.dict_input["c0"],
             )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nb3sn(
-                bmax,
-                dict_dummy["Epsilon"],
-                jop,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
+            # dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nb3sn(
+            #     bmax,
+            #     dict_dummy["Epsilon"],
+            #     jop,
+            #     self.dict_input["Tc0m"],
+            #     self.dict_input["Bc20m"],
+            #     self.dict_input["c0"],
+            # )
         elif self.dict_input["ISUPERCONDUCTOR"] == "HTS":
             dict_dummy["T_cur_sharing"] = current_sharing_temperature_re123(
                 dict_dummy["B_field"],
@@ -303,13 +306,13 @@ class Strands(SolidComponents):
                 self.dict_input["Bc20m"],
                 self.dict_input["c0"],
             )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_re123(
-                bmax,
-                jop,
-                self.dict_input["Tc0m"],
-                self.dict_input["Bc20m"],
-                self.dict_input["c0"],
-            )
+            # dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_re123(
+            #     bmax,
+            #     jop,
+            #     self.dict_input["Tc0m"],
+            #     self.dict_input["Bc20m"],
+            #     self.dict_input["c0"],
+            # )
         elif self.dict_input["ISUPERCONDUCTOR"] == "scaling.dat":
 
             warnings.warn("Still to be understood what to do here!!")
