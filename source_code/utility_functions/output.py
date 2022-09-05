@@ -512,7 +512,7 @@ def save_simulation_time(simulation, conductor):
 
     ind_zcoord = {
         f"zcoord = {conductor.Time_save[ii]} (m)": np.max(
-            np.nonzero(conductor.grid_features["zcoord"] <= conductor.Time_save[ii])
+            np.nonzero(conductor.grid_features["zcoord"] <= round(conductor.Time_save[ii],conductor.n_digit_z))
         )
         for ii in range(conductor.Time_save.size)
     }
