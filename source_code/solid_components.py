@@ -1026,7 +1026,7 @@ class SolidComponents:
         # Electrical resistivity.
         el_res = 5e-9 # Ohm
         # Length of the joint.
-        joint_length = 0.5 # m
+        joint_length = 0.47 # m
         # Get joints index
         ind = (conductor.dict_discretization["xcoord"] <= joint_length) | (conductor.dict_discretization["xcoord"] >= conductor.dict_input["XLENGTH"] - joint_length)
         # Compute linear joule power
