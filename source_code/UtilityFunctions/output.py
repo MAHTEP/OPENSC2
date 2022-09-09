@@ -139,26 +139,59 @@ def save_simulation_space(conductor, f_path, n_digit):
     # headers_s_comp = "xcoord (m)	temperature (K)	density (kg/m^3)	spec_heat_p (J/kg/K)	ther_cond (W/m/K)	EXFTLX (W/m)	JHTFLX (W/m^2)"
     # prop_s_comp = ["xcoord", "temperature", "total_density", "total_isobaric_specific_heat", \
     # 							"total_thermal_conductivity", "EXTFLX", "JHTFLX"]
-    headers_s_comp = "xcoord (m)	temperature (K)"
-    prop_s_comp = ["xcoord", "temperature"]
-    for s_comp in conductor.dict_obj_inventory["SolidComponents"]["Objects"]:
+    headers_full = "xcoord (m)	temperature (K)\tcurrent_sharing_temperature (K)"
+    headers_reduced = "xcoord (m)	temperature (K)"
+    prop_full = ["xcoord", "temperature", "T_cur_sharing"]
+    prop_reduced = ["xcoord", "temperature"]
+    # Loop to save strand properties spatial distribution.
+    for strand in conductor.dict_obj_inventory["Strands"]["Objects"]:
         file_path = os.path.join(
-            f_path, f"{s_comp.ID}_({conductor.cond_num_step})_sd.tsv"
+            f_path, f"{strand.ID}_({conductor.cond_num_step})_sd.tsv"
         )
-        A_s_comp = np.zeros((conductor.dict_discretization["N_nod"], len(prop_s_comp)))
-        for ii in range(len(prop_s_comp)):
-            if prop_s_comp[ii] == "xcoord":
-                A_s_comp[:, ii] = conductor.dict_discretization[prop_s_comp[ii]]
+        if strand.KIND != "Stabilizer":
+            # Check if current sharing temperature is evaluated at each
+            # thermal time step.
+            if strand.dict_operation["TCS_EVALUATION"]:
+                headers_strand = headers_full
+                prop_strand = prop_full
             else:
-                A_s_comp[:, ii] = s_comp.dict_node_pt[prop_s_comp[ii]]
-                # if prop_s_comp[ii] == "EXTFLX" or prop_s_comp[ii] == "JHTFLX":
-                #     A_s_comp[:, ii] = s_comp.dict_node_pt[prop_s_comp[ii]][:, 0]
-                # # end if prop_s_comp[ii] (cdp, 01/2021)
+                headers_strand = headers_reduced
+                prop_strand = prop_reduced
+        else: # Stabilizer
+            headers_strand = headers_reduced
+            prop_strand = prop_reduced
+        
+        A_strand = np.zeros((conductor.dict_discretization["N_nod"], len(prop_strand)))
+        for ii in range(len(prop_strand)):
+            if prop_strand[ii] == "xcoord":
+                A_strand[:, ii] = conductor.dict_discretization[prop_strand[ii]]
+            else:
+                A_strand[:, ii] = strand.dict_node_pt[prop_strand[ii]]
+            # end if prop_strand[ii] (cdp, 01/2021)
+        # end for ii (cdp, 01/2021)
+        with open(file_path, "w") as writer:
+            np.savetxt(
+                writer, A_strand, delimiter="\t", header=headers_strand, comments=""
+            )
+        
+    headers_jk = "xcoord (m)	temperature (K)"
+    prop_jk = ["xcoord", "temperature"]
+    # Loop to save jacket properties spatial distribution.
+    for jk in conductor.dict_obj_inventory["Jacket"]["Objects"]:
+        file_path = os.path.join(
+            f_path, f"{jk.ID}_({conductor.cond_num_step})_sd.tsv"
+        )
+        A_jk = np.zeros((conductor.dict_discretization["N_nod"], len(prop_jk)))
+        for ii in range(len(prop_jk)):
+            if prop_jk[ii] == "xcoord":
+                A_jk[:, ii] = conductor.dict_discretization[prop_jk[ii]]
+            else:
+                A_jk[:, ii] = jk.dict_node_pt[prop_jk[ii]]
             # end if prop_s_comp[ii] (cdp, 01/2021)
         # end for ii (cdp, 01/2021)
         with open(file_path, "w") as writer:
             np.savetxt(
-                writer, A_s_comp, delimiter="\t", header=headers_s_comp, comments=""
+                writer, A_jk, delimiter="\t", header=headers_jk, comments=""
             )
     # end for s_comp (cdp, 10/2020)
     # Check if dictionary conductor.heat_rad_jk is not empty in order to save the content in a file.
