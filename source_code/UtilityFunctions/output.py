@@ -308,7 +308,11 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
     ]
     # list_sol_key = ["temperature", "total_density", "total_isobaric_specific_heat", "total_thermal_conductivity", \
     # 							 "EXTFLX", "JHTFLX"]
-    list_sol_key = ["temperature"]
+    # list_sol_key = ["temperature"]
+    
+    list_full = ["temperature", "T_cur_sharing"]
+    list_reduced = ["temperature"]
+    list_jk = ["temperature"]
     # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
     # Round the time to save to n_digit digits only once
     time = np.around(cond.Space_save, n_digit)
@@ -326,7 +330,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
             # (cdp, 01/2021)
             dict_xcoord = dict()
         # end if fluid_comp (cdp, 01/2021)
-        for ii in range(len(cond.Space_save)):
+        for ii,_ in enumerate(cond.Space_save):
             file_name = f"{fluid_comp.ID}_({cond.num_step_save[ii]})_sd.tsv"
             file_load = os.path.join(f_path, file_name)
             # Load file file_name as data frame as a value of dictionary \
@@ -347,8 +351,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
             if ii == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
-                for jj in range(len(list_ch_key)):
-                    prop = list_ch_key[jj]
+                for jj, prop in enumerate(list_ch_key):
                     # decompose the data frame in four dataframes (cdp, 11/2020)
                     dict_df_new[prop] = dict_df[file_name].filter(
                         items=[header[jj + 1]]
@@ -359,8 +362,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
                     )
                 # end for jj (cdp, 11/2020)
             else:
-                for jj in range(len(list_ch_key)):
-                    prop = list_ch_key[jj]
+                for jj, prop in enumerate(list_ch_key):
                     # construct the new data frames with concat method (cdp, 11/2020)
                     dict_df_new[prop] = pd.concat(
                         [
@@ -399,7 +401,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
-        for ii in range(len(cond.Space_save)):
+        for ii,_ in enumerate(cond.Space_save):
             file_name = f"{s_comp.ID}_({cond.num_step_save[ii]})_sd.tsv"
             file_load = os.path.join(f_path, file_name)
             # Load file file_name as data frame as a value of dictionary \
@@ -412,9 +414,20 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
             if ii == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
-                for jj in range(len(list_sol_key)):
-                    prop = list_sol_key[jj]
-                    # decompose the data frame in four dataframes (cdp, 11/2020)
+                if s_comp.KIND == "Mixed_sc_stab" or s_comp.KIND == "Super_conductor":
+                    # Check if current sharing temperature is evaluated at each
+                    # thermal time step.
+                    if s_comp.dict_operation["TCS_EVALUATION"]:
+                        list_sol_key = list_full
+                    else:
+                        list_sol_key = list_reduced
+                elif s_comp.KIND == "Stabilizer":
+                    list_sol_key = list_reduced
+                else: # Jacket
+                    list_sol_key = list_jk
+
+                for jj,prop in enumerate(list_sol_key):
+                    # decompose the data frame in several dataframes (cdp, 11/2020)
                     dict_df_new[prop] = dict_df[file_name].filter(
                         items=[header[jj + 1]]
                     )
@@ -423,8 +436,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit):
                         columns={header[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
                     )
             else:
-                for jj in range(len(list_sol_key)):
-                    prop = list_sol_key[jj]
+                for jj,prop in enumerate(list_sol_key):
                     # construct the new data frames with concat method (cdp, 11/2020)
                     dict_df_new[prop] = pd.concat(
                         [
