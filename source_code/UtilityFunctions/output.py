@@ -151,9 +151,9 @@ def save_simulation_space(conductor, f_path, n_digit):
                 A_s_comp[:, ii] = conductor.dict_discretization[prop_s_comp[ii]]
             else:
                 A_s_comp[:, ii] = s_comp.dict_node_pt[prop_s_comp[ii]]
-                if prop_s_comp[ii] == "EXTFLX" or prop_s_comp[ii] == "JHTFLX":
-                    A_s_comp[:, ii] = s_comp.dict_node_pt[prop_s_comp[ii]][:, 0]
-                # end if prop_s_comp[ii] (cdp, 01/2021)
+                # if prop_s_comp[ii] == "EXTFLX" or prop_s_comp[ii] == "JHTFLX":
+                #     A_s_comp[:, ii] = s_comp.dict_node_pt[prop_s_comp[ii]][:, 0]
+                # # end if prop_s_comp[ii] (cdp, 01/2021)
             # end if prop_s_comp[ii] (cdp, 01/2021)
         # end for ii (cdp, 01/2021)
         with open(file_path, "w") as writer:
