@@ -484,3 +484,12 @@ class StrandComponent(SolidComponent):
         # is str (string).
         for key in ["FIX_POTENTIAL_COORDINATE", "FIX_POTENTIAL_VALUE"]:
             private_metods[type(self.operations[key])](key)
+
+    def __int_to_array(self, key:str):
+        """Private method that converts value corresponding to keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE of dictionary self.operations from integer to ndarray of float.
+
+        Args:
+            key (str): self.operations key, can be FIX_POTENTIAL_COORDINATE or FIX_POTENTIAL_VALUE.
+        """
+        # Convert value corresponding to key from int to ndarray of float.
+        self.operations[key] = np.array([self.operations[key]], dtype=float)
