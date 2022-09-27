@@ -462,3 +462,13 @@ class StrandComponent(SolidComponent):
             * electric_resistances[:, 1]
             / (electric_resistances.sum(axis=1))
         )
+
+
+    def manage_fixed_potental(self, length:float):
+        """Method that deals with fixed potentials: converts fixed potential values to array if they are integers or strings and checks the coordinate where fixed potentials are assigned.
+
+        Args:
+            length (float): conductor length.
+        """
+        self.__convert_fixed_potential_to_array()
+        self.__checks_fix_potential_coordinate(length)
