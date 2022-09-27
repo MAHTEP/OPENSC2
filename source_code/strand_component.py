@@ -530,3 +530,16 @@ class StrandComponent(SolidComponent):
             raise ValueError(
                 f"Fixed potential coordinate cannot exceed conductor length:\n{np.max(self.operations['FIX_POTENTIAL_COORDINATE'])=}m;\n{length=}m"
             )
+
+    def delete_fixed_potential_inputs(self, _:float):
+        """Method that forces self.operations["FIX_POTENTIAL_NUMBER"] to be zero and deletes no longer useful keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE from dictionary self.operations.
+
+        Args:
+            _ (float): any float varyables, not used.
+        """
+
+        # Force self.operations["FIX_POTENTIAL_NUMBER"] to 0.
+        self.operations["FIX_POTENTIAL_NUMBER"] = 0
+        # Delete no longer useful keys from dictionary self.operations.
+        for key in ["FIX_POTENTIAL_COORDINATE", "FIX_POTENTIAL_VALUE"]:
+            del self.operations[key]
