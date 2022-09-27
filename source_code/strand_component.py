@@ -472,3 +472,15 @@ class StrandComponent(SolidComponent):
         """
         self.__convert_fixed_potential_to_array()
         self.__checks_fix_potential_coordinate(length)
+
+    def __convert_fixed_potential_to_array(self):
+        """Private method that allows to convert keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE to numpy array.
+        """
+        # Define dictionary with private methods.
+        private_metods = {int: self.__int_to_array, str: self.__str_to_array}
+
+        # Call private method self.__int_to_array if type(self.operations[key]) 
+        # is int (integer); self.__str_to_array is type(self.operations[key]) 
+        # is str (string).
+        for key in ["FIX_POTENTIAL_COORDINATE", "FIX_POTENTIAL_VALUE"]:
+            private_metods[type(self.operations[key])](key)
