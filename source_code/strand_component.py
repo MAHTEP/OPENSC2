@@ -503,3 +503,30 @@ class StrandComponent(SolidComponent):
         # Convert value corresponding to key from str to ndarray of float.
         self.operations[key] = np.array(self.operations[key].split(","), dtype=float)
     
+    def __checks_fix_potential_coordinate(self, length:float):
+        """Private method that checks consistency between input values FIX_POTENTIAL_NUMBER, FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE after conversion of FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE to ndarray.
+
+        Args:
+            length (float): length of the conductor.
+
+        Raises:
+            ValueError: if length of ndarray FIX_POTENTIAL_COORDINATE or FIX_POTENTIAL_VALUE is not equal to FIX_POTENTIAL_NUMBER.
+            ValueError: if maximum value in FIX_POTENTIAL_COORDINATE is larger than the length of the conductor.
+        """
+
+        # Build dictionary with error messages.
+        message = dict(
+            FIX_POTENTIAL_COORDINATE=f"The number of the coordinates of fixed potential must be equal to the number of declared fixed potential:\n{self.operations['FIX_POTENTIAL_COORDINATE']=};\n{self.operations['FIX_POTENTIAL_NUMBER']=}\n",
+            FIX_POTENTIAL_VALUE=f"The number of the values of fixed potential must be equal to the number of declared fixed potential:\n{self.operations['FIX_POTENTIAL_VALUE']=};\n{self.operations['FIX_POTENTIAL_NUMBER']=}\n",
+        )
+
+        # Check ndarray length consistency.
+        for key in message.keys():
+            if len(self.operations[key]) != self.operations["FIX_POTENTIAL_NUMBER"]:
+                raise ValueError(message[key])
+
+        # Check FIX_POTENTIAL_COORDINATE consistency with conductor length.
+        if np.max(self.operations["FIX_POTENTIAL_COORDINATE"]) > length:
+            raise ValueError(
+                f"Fixed potential coordinate cannot exceed conductor length:\n{np.max(self.operations['FIX_POTENTIAL_COORDINATE'])=}m;\n{length=}m"
+            )
