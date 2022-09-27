@@ -493,3 +493,13 @@ class StrandComponent(SolidComponent):
         """
         # Convert value corresponding to key from int to ndarray of float.
         self.operations[key] = np.array([self.operations[key]], dtype=float)
+
+    def __str_to_array(self, key:str):
+        """Private method that converts value corresponding to keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE of dictionary self.operations from str to ndarray of float.
+
+        Args:
+            key (str): self.operations key, can be FIX_POTENTIAL_COORDINATE or FIX_POTENTIAL_VALUE.
+        """
+        # Convert value corresponding to key from str to ndarray of float.
+        self.operations[key] = np.array(self.operations[key].split(","), dtype=float)
+    
