@@ -437,10 +437,10 @@ class StrandComponent(SolidComponent):
         Returns:
             np.ndarray: array of the electric resistance in Ohm of shape {ind.shape = }. The maximum lenght of the outcome is {conductor.grid_input["NELEMS"] = }.
         """
-        if len(list) != 2:
+        if len(electrical_resistivity_keys) != 2:
             # Check list lenght.
             raise ValueError(
-                f"List electrical_resistivity_keys must have 2 items; {len(list) = }.\n"
+                f"List electrical_resistivity_keys must have 2 items; {len(electrical_resistivity_keys) = }.\n"
             )
 
         if not all(isinstance(item, str) for item in electrical_resistivity_keys):
