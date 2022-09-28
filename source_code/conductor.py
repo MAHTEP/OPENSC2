@@ -3436,7 +3436,7 @@ class Conductor:
 
         # Extract nodal potentials from electric solution array
         self.nodal_potential = self.electric_solution[
-            self.total_elements_current_carriers + 1 :
+            self.total_elements_current_carriers :
         ]
 
         # Compute voltage drop along StrandComponent.
