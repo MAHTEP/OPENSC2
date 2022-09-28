@@ -2803,11 +2803,11 @@ class Conductor:
 
         # Build electric known therm vector
         conductorlogger.debug(
-            f"Before call method {self.__build_electric_known_term_vector.__name__}.\n"
+            f"Before call method {self.build_electric_known_term_vector.__name__}.\n"
         )
-        self.__build_electric_known_term_vector()
+        self.build_electric_known_term_vector()
         conductorlogger.debug(
-            f"After call method {self.__build_electric_known_term_vector.__name__}.\n"
+            f"After call method {self.build_electric_known_term_vector.__name__}.\n"
         )
 
     def __build_electric_stiffness_matrix(self):
@@ -2865,8 +2865,8 @@ class Conductor:
 
             jj += obj.operations["FIX_POTENTIAL_NUMBER"]
 
-    def __build_electric_known_term_vector(self):
-        """Private method that builds the electric known term vector according to the value of flag I0_OP_MODE:
+    def build_electric_known_term_vector(self):
+        """Method that builds the electric known term vector according to the value of flag I0_OP_MODE:
         * 0: constant value
         * -1: from auxiliary file (to be implemented)
         * -2: from user defined external function.
