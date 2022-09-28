@@ -107,6 +107,10 @@ class StrandStabilizerComponent(StrandComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
 
+        # Call method deal_with_fixed_potential to manipulate input about fixed 
+        # potential values.
+        self.deal_with_fixed_potential(conductor.inputs["ZLENGTH"])
+
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.name}, identifier: {self.identifier})"
 
