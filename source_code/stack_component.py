@@ -125,7 +125,7 @@ class StackComponent(StrandComponent):
 
     def __init__(
         self,
-        simulation,
+        simulation: object,
         sheet,
         icomp: int,
         name: str,
@@ -135,12 +135,12 @@ class StackComponent(StrandComponent):
         """Method that makes instance of class StackComponent.
 
         Args:
-            simulation (Simulation): simulation object.
+            simulation (object): simulation object.
             sheet (Worksheet): worksheet with input data.
             icomp (int): component index.
             name (str): component name.
             dict_file_path (dict): dictionary with paths to load the input files.
-            conductor(object): inscance of class Conductor
+            conductor (object): inscance of class Conductor
         """
 
         self.name = name

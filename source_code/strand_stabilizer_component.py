@@ -61,7 +61,25 @@ class StrandStabilizerComponent(StrandComponent):
 
     KIND = "StrandStabilizerComponent"
 
-    def __init__(self, simulation, sheet, icomp, name, dict_file_path):
+    def __init__(
+        self,
+        simulation: object,
+        sheet,
+        icomp: int,
+        name: str,
+        dict_file_path: dict,
+        conductor: object,
+    ):
+        """Method that makes instance of class StrandMixedComponent.
+
+        Args:
+            simulation (object): simulation object.
+            sheet (Worksheet): worksheet with input data.
+            icomp (int): component index.
+            name (str): component name.
+            dict_file_path (dict): dictionary with paths to load the input files.
+            conductor (object): inscance of class Conductor
+        """
 
         self.name = name
         # get channels ID consistently with user definition (cdp, 09/2020)
