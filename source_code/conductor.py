@@ -2888,8 +2888,14 @@ class Conductor:
             # carrier.
             self.dict_node_pt["op_current"][-1] = -self.inputs["I0_OP_TOT"]
         elif self.inputs["I0_OP_MODE"] == IOP_FROM_FILE:
-            pass
-            # to be implemented.
+            # Loop on SolidComponent objects to sum inlet and outlet current in 
+            # order to get the total conductor inlet and outlet current.
+            for obj in self.inventory["SolidComponent"].collection:
+                self.dict_node_pt["op_current"][0] = self.dict_node_pt["op_current"][0] + obj.dict_node_pt["op_current"][0]
+                self.dict_node_pt["op_current"][-1] = self.dict_node_pt["op_current"][-1] + obj.dict_node_pt["op_current"][-1]
+            # Change sign to the outlet curren since it is exiting the 
+            # conductor.
+            self.dict_node_pt["op_current"][-1] = - self.dict_node_pt["op_current"][-1]
         elif self.inputs["I0_OP_MODE"] == IOP_FROM_EXT_FUNCTION:
 
             # All the current enters the first node of the first current
