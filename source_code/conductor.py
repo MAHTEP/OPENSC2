@@ -858,7 +858,7 @@ class Conductor:
         self.fixed_potential_index = np.zeros(nn, dtype=int)
         self.fixed_potential_value = np.zeros(nn)
 
-        self.operating_current = np.zeros(self.total_nodes_current_carriers)
+        self.dict_node_pt["op_current"] = np.zeros(self.total_nodes_current_carriers)
 
         self.electric_known_term_vector = np.zeros(
             self.total_elements_current_carriers + self.total_nodes_current_carriers
@@ -2885,10 +2885,10 @@ class Conductor:
             # This is already a boundary condition.
             # All the current enters the first node of the first current
             # carrier.
-            self.operating_current[0] = self.inputs["I0_OP_TOT"]
+            self.dict_node_pt["op_current"][0] = self.inputs["I0_OP_TOT"]
             # All the current exits from the lats node of the last current
             # carrier.
-            self.operating_current[-1] = -self.inputs["I0_OP_TOT"]
+            self.dict_node_pt["op_current"][-1] = -self.inputs["I0_OP_TOT"]
         elif self.inputs["I0_OP_MODE"] == IOP_FROM_FILE:
             pass
             # to be implemented.
@@ -2896,10 +2896,10 @@ class Conductor:
 
             # All the current enters the first node of the first current
             # carrier.
-            self.operating_current[0] = custom_current_function(self.electric_time_step)
+            self.dict_node_pt["op_current"][0] = custom_current_function(self.electric_time_step)
             # All the current exits from the lats node of the last current
             # carrier.
-            self.operating_current[-1] = -custom_current_function(
+            self.dict_node_pt["op_current"][-1] = -custom_current_function(
                 self.electric_time_step
             )
             # to be implemented.
@@ -2907,7 +2907,7 @@ class Conductor:
 
         self.electric_known_term_vector[
             self.total_elements_current_carriers :
-        ] = self.operating_current
+        ] = self.dict_node_pt["op_current"]
 
     # START: INDUCTANCE ANALYTICAL EVALUATION
 
