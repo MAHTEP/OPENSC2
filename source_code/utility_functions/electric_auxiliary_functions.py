@@ -179,7 +179,7 @@ def electric_transient_solution(conductor: object):
     )
 
     # Electric known term initializazion
-    conductor._build_electric_known_term_vector()
+    conductor.build_electric_known_term_vector()
     conductor.electric_known_term_vector_old = (
         conductor.electric_known_term_vector.copy()
     )
@@ -215,9 +215,9 @@ def electric_transient_solution(conductor: object):
         conductor.electric_time += conductor.electric_time_step
 
         # Update known term vector
-        conductor._build_electric_known_term_vector()
+        conductor.build_electric_known_term_vector()
         # Build and manipulate the right hand side
-        conductor._build_right_hand_side(foo, electric_known_term_vector_reduced, idx)
+        conductor.build_right_hand_side(foo, electric_known_term_vector_reduced, idx)
 
         conductor.electric_known_term_vector_old = (
             conductor.electric_known_term_vector.copy()
