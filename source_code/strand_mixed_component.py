@@ -597,6 +597,14 @@ class StrandMixedComponent(StrandComponent):
             self.dict_Gauss_pt["temperature"].shape
         )
 
+        # Initialize array of superconducting electrical resistivit in nodal and Gauss points to None.
+        self.dict_node_pt["electrical_resistivity_superconductor"] = np.full_like(
+            self.dict_node_pt["temperature"], None
+        )
+        self.dict_Gauss_pt["electrical_resistivity_superconductor"] = np.full_like(
+            self.dict_Gauss_pt["temperature"], None
+        )
+
         ## SUPERCONDUCTING REGIME ##
 
         # Check that np array ind_sc_node is not empty.
@@ -605,14 +613,6 @@ class StrandMixedComponent(StrandComponent):
             # superconducting material only.
             self.dict_node_pt["op_current"][ind_sc_node] = self.dict_node_pt["op_current_sc"][ind_sc_node]
             self.dict_Gauss_pt["op_current"][ind_sc_gauss] = self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss]
-
-            # Initialize array of superconducting electrical resistivit in nodal and Gauss points to None.
-            self.dict_node_pt["electrical_resistivity_superconductor"] = np.full_like(
-                self.dict_node_pt["temperature"], None
-            )
-            self.dict_Gauss_pt["electrical_resistivity_superconductor"] = np.full_like(
-                self.dict_Gauss_pt["temperature"], None
-            )
 
             # Compute superconducting electrical resistivity only in index for
             # which the superconducting regime is guaranteed, using the power low.
