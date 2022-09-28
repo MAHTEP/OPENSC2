@@ -582,6 +582,7 @@ class StackComponent(StrandComponent):
             args=(psi,current),
             fprime=self.__d_sc_current_residual,
             fprime2=self.__d2_sc_current_residual,
+            maxiter=1000
         )
 
         return sc_current, current - sc_current
