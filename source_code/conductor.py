@@ -880,7 +880,7 @@ class Conductor:
 
         # Electric time initialization, to be understood where to actually do
         # this
-        self.electric_time_step = 0.0  # s
+        self.electric_time = 0.0  # s
 
         conductorlogger.debug(
             f"Before call method {self.__initialize_mesh_dataframe.__name__}\n"
