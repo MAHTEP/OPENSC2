@@ -543,3 +543,32 @@ class StrandComponent(SolidComponent):
         # Delete no longer useful keys from dictionary self.operations.
         for key in ["FIX_POTENTIAL_COORDINATE", "FIX_POTENTIAL_VALUE"]:
             del self.operations[key]
+
+    def deal_with_fixed_potential(self, length:float):
+        """Method that deals with fixed potential input. It converts True value to 1 (odd beaviour) if necessary; defines dictionary with private methods self.__manage_fixed_potental and self.__delete_fixed_potential_inputs, and calls them according to input value FIX_POTENTIAL_FLAG.
+
+        Args:
+            length (float): conductor length.
+        """
+        
+        # Temporary solution to mangage input file loading, strange behavior: 1
+        # are converted to True but 0 not converted to False.
+        for key in [
+            "FIX_POTENTIAL_NUMBER",
+            "FIX_POTENTIAL_COORDINATE",
+            "FIX_POTENTIAL_VALUE",
+        ]:
+            if self.operations[key] == True:
+                self.operations[key] = 1
+        
+        # Define dictionary with methods inherited from class Strand used to 
+        # deal with fixed potential.
+        methods = {
+            True: self.__manage_fixed_potental,
+            False: self.__delete_fixed_potential_inputs,
+        }
+
+        # Calls method self.manage_equipotential_surfaces_index if
+        # FIX_POTENTIAL_FLAG is True; self.delete_fixed_potential_inputs if 
+        # FIX_POTENTIAL_FLAG is False.
+        methods[self.operations["FIX_POTENTIAL_FLAG"]](length)
