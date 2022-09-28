@@ -766,14 +766,14 @@ class StackComponent(StrandComponent):
         # Get index of the normal region, to avoid division by 0 in evaluation
         # of sc electrical resistivity with the power law.
         ind_normal_node = np.nonzero(
-            stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
-            > 0.999999 | sc_current_node
-            < 1.0
+            (stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
+            > 0.999999) | (sc_current_node
+            < 1.0)
         )[0]
         ind_normal_gauss = np.nonzero(
-            stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
-            > 0.999999 | sc_current_gauss
-            < 1.0
+            (stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
+            > 0.999999) | (sc_current_gauss
+            < 1.0)
         )[0]
 
         ## NORMAL REGIME ONLY ##
@@ -781,17 +781,17 @@ class StackComponent(StrandComponent):
             # Get the index of location of true current sharing region;
             # overwrite ind_sh_node.
             ind_sh_node = np.nonzero(
-                stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
-                <= 0.999999 | sc_current_node
-                >= 1.0
+                (stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
+                <= 0.999999) | (sc_current_node
+                >= 1.0)
             )[0]
         if ind_normal_gauss.any():
             # Get the index of location of true current sharing region;
             # overwrite ind_sh_gauss.
             ind_sh_gauss = np.nonzero(
-                stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
-                <= 0.999999 | sc_current_gauss
-                >= 1.0
+                (stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
+                <= 0.999999) | (sc_current_gauss
+                >= 1.0)
             )[0]
             # Evaluate electic resistance in normal region (stabilizer only).
             self.dict_Gauss_pt["electric_resistance"][
