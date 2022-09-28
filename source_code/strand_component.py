@@ -464,7 +464,7 @@ class StrandComponent(SolidComponent):
         )
 
 
-    def manage_fixed_potental(self, length:float):
+    def __manage_fixed_potental(self, length:float):
         """Method that deals with fixed potentials: converts fixed potential values to array if they are integers or strings and checks the coordinate where fixed potentials are assigned.
 
         Args:
@@ -531,7 +531,7 @@ class StrandComponent(SolidComponent):
                 f"Fixed potential coordinate cannot exceed conductor length:\n{np.max(self.operations['FIX_POTENTIAL_COORDINATE'])=}m;\n{length=}m"
             )
 
-    def delete_fixed_potential_inputs(self, _:float):
+    def __delete_fixed_potential_inputs(self, _:float):
         """Method that forces self.operations["FIX_POTENTIAL_NUMBER"] to be zero and deletes no longer useful keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE from dictionary self.operations.
 
         Args:
@@ -550,7 +550,7 @@ class StrandComponent(SolidComponent):
         Args:
             length (float): conductor length.
         """
-        
+
         # Temporary solution to mangage input file loading, strange behavior: 1
         # are converted to True but 0 not converted to False.
         for key in [
