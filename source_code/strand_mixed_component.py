@@ -147,6 +147,28 @@ class StrandMixedComponent(StrandComponent):
         self.__reorganize_input()
         self.__check_consistency(conductor)
 
+        # Temporary solution to mangage input file loading, strange behavior: 1
+        # are converted to True but 0 not converted to False.
+        for key in [
+            "FIX_POTENTIAL_NUMBER",
+            "FIX_POTENTIAL_COORDINATE",
+            "FIX_POTENTIAL_VALUE",
+        ]:
+            if self.operations[key] == True:
+                self.operations[key] = 1
+        
+        # Define dictionary with methods inherited from class Strand used to 
+        # deal with fixed potential.
+        methods = {
+            True: self.manage_fixed_potental,
+            False: self.delete_fixed_potential_inputs,
+        }
+
+        # Calls method self.manage_equipotential_surfaces_index if
+        # FIX_POTENTIAL_FLAG is True; self.delete_fixed_potential_inputs if 
+        # FIX_POTENTIAL_FLAG is False.
+        methods[self.operations["FIX_POTENTIAL_FLAG"]](conductor.inputs["ZLENGTH"])
+
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.name}, identifier: {self.identifier})"
 
