@@ -833,6 +833,7 @@ class Conductor:
             dtype=float,
         )
 
+        self.build_electric_mass_matrix_flag = True
         self.electric_mass_matrix = lil_matrix(
             (
                 self.total_elements_current_carriers
@@ -2762,14 +2763,23 @@ class Conductor:
             f"After call method {self.__build_electric_stiffness_matrix.__name__}.\n"
         )
 
-        # Build electric mass matrix (for the first time)
-        conductorlogger.debug(
-            f"Before call method {self.__build_electric_mass_matrix.__name__}.\n"
-        )
-        self.__build_electric_mass_matrix()
-        conductorlogger.debug(
-            f"After call method {self.__build_electric_mass_matrix.__name__}.\n"
-        )
+        if self.build_electric_mass_matrix_flag == True:
+            # Build electric mass matrix (for the first time)
+            conductorlogger.debug(
+                f"Before call method {self.__build_electric_mass_matrix.__name__}.\n"
+            )
+            self.__build_electric_mass_matrix()
+            conductorlogger.debug(
+                f"After call method {self.__build_electric_mass_matrix.__name__}.\n"
+            )
+
+        if self.grid_input["ITYMSH"] != 3 | self.grid_input["ITYMSH"] != -1 & self.build_electric_mass_matrix_flag == True:
+            # Discretization grid does not change at each time step so there is 
+            # no need to build electric mass matrix at each thermal time step 
+            # because inductances will not change since they are evaluating 
+            # starting from the coordinates which are constant in this case: flag build_electric_mass_matrix_flag is therefore set to False.
+            self.build_electric_mass_matrix_flag = False
+
 
         # Assign equivalue surfaces
         conductorlogger.debug(
