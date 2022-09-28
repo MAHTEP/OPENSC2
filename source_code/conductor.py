@@ -2077,8 +2077,6 @@ class Conductor:
             # End for cc.
         # End for rr.
 
-        #### INITIAL OPERATING CURRENT
-        self.IOP_TOT = self.inputs["I0_OP_TOT"]
         # IOP=IOP0(icond)
 
         # call functions get_current, get_magnetic_field, get_magnetic_field_gradient, \

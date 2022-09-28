@@ -796,7 +796,8 @@ class SolidComponent:
                 self.dict_node_pt["op_current_sc"] = self.dict_node_pt["op_current"]
                 self.dict_Gauss_pt["op_current_sc"] = self.dict_Gauss_pt["op_current"]
 
-            conductor.IOP_TOT = conductor.IOP_TOT + self.dict_node_pt["op_current"]
+            conductor.dict_node_pt["op_current"][0] = conductor.dict_node_pt["op_current"][0] + self.dict_node_pt["op_current"][0]
+            conductor.dict_node_pt["op_current"][0] = conductor.dict_node_pt["op_current"][0] + self.dict_node_pt["op_current"][0]
             if self.flagSpecfield_current == 2:
                 # Add also a logger
                 warnings.warn("Still to be decided what to do here\n")
@@ -805,7 +806,7 @@ class SolidComponent:
             # self.dict_node_pt["op_current_sc"] for convenience in the evaluation of
             # electrical resistivity.
             self.dict_node_pt["op_current"] = (
-                conductor.IOP_TOT
+                conductor.inputs["I0_OP_TOT"]
                 * self.op_current_fraction_sh
                 * np.ones(conductor.grid_features["N_nod"])
             )
@@ -815,7 +816,7 @@ class SolidComponent:
             if (self.name == conductor.inventory["StackComponent"].name
             or self.name == conductor.inventory["StrandMixedComponent"].name):
                 self.dict_node_pt["op_current_sc"] = (
-                    conductor.IOP_TOT
+                    conductor.inputs["I0_OP_TOT"]
                     * self.op_current_fraction_sc
                     * np.ones(conductor.grid_features["N_nod"])
                 )
@@ -863,13 +864,13 @@ class SolidComponent:
                 if self.operations["B_field_units"] == "T/A":
                     # BFIELD is per unit of current
                     self.dict_node_pt["B_field"] = (
-                        self.dict_node_pt["B_field"] * conductor.IOP_TOT
+                        self.dict_node_pt["B_field"] * conductor.inputs["I0_OP_TOT"]
                     )
                 if conductor.inputs["I0_OP_MODE"] != 0 and conductor.inputs["I0_OP_TOT"] > 0:
                     #### bfield e' un self e' un vettore
                     self.dict_node_pt["B_field"] = (
                         self.dict_node_pt["B_field"]
-                        * conductor.IOP_TOT
+                        * conductor.inputs["I0_OP_TOT"]
                         / conductor.inputs["I0_OP_TOT"]
                     )
             elif self.operations["IBIFUN"] == 0:
@@ -883,7 +884,7 @@ class SolidComponent:
                     self.operations["BISS"],
                     self.operations["BOSS"],
                     conductor.grid_features["N_nod"],
-                ) + conductor.IOP_TOT / conductor.inputs["I0_OP_TOT"] * np.linspace(
+                ) + conductor.inputs["I0_OP_TOT"] / conductor.inputs["I0_OP_TOT"] * np.linspace(
                     self.operations["BITR"],
                     self.operations["BOTR"],
                     conductor.grid_features["N_nod"],

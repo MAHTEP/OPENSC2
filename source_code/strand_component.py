@@ -136,12 +136,12 @@ class StrandComponent(SolidComponent):
                 # in caso affermatico moltiplica per IOP_TOT
                 if self.flagSpecfield_alpha_b == 2:  # alphaB is per unit of current
                     self.dict_node_pt["alpha_B"] = (
-                        self.dict_node_pt["alpha_B"] * conductor.IOP_TOT
+                        self.dict_node_pt["alpha_B"] * conductor.inputs["I0_OP_TOT"]
                     )
                 if conductor.inputs["I0_OP_MODE"] < 0:
                     self.dict_node_pt["alpha_B"] = (
                         self.dict_node_pt["alpha_B"]
-                        * conductor.IOP_TOT
+                        * conductor.inputs["I0_OP_TOT"]
                         / conductor.inputs["I0_OP_TOT"]
                     )
             elif self.operations["IALPHAB"] == 0:
