@@ -477,16 +477,16 @@ class StrandComponent(SolidComponent):
         """Private method that allows to convert keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE to numpy array.
         """
         # Define dictionary with private methods.
-        private_metods = {int: self.__int_to_array, str: self.__str_to_array}
+        private_metods = {int: self.__int_or_float_to_array, float: self.__int_or_float_to_array, str: self.__str_to_array}
 
-        # Call private method self.__int_to_array if type(self.operations[key]) 
-        # is int (integer); self.__str_to_array is type(self.operations[key]) 
-        # is str (string).
+        # Call private method self.__int_or_float_to_array if 
+        # type(self.operations[key]) is int (integer) or float; 
+        # self.__str_to_array it type(self.operations[key]) is str (string).
         for key in ["FIX_POTENTIAL_COORDINATE", "FIX_POTENTIAL_VALUE"]:
             private_metods[type(self.operations[key])](key)
 
-    def __int_to_array(self, key:str):
-        """Private method that converts value corresponding to keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE of dictionary self.operations from integer to ndarray of float.
+    def __int_or_float_to_array(self, key:str):
+        """Private method that converts value corresponding to keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE of dictionary self.operations from integer or float to ndarray of float.
 
         Args:
             key (str): self.operations key, can be FIX_POTENTIAL_COORDINATE or FIX_POTENTIAL_VALUE.
