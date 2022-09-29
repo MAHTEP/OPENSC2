@@ -91,6 +91,10 @@ class JacketComponent(SolidComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
 
+        # Call to method deal_with_flag_IOP_MODE to check and manipulate value 
+        # of flag self.operations["IOP_MODE"].
+        self.deal_with_flag_IOP_MODE()
+
         self.__reorganize_input()
         self.__check_consistency(conductor)
 

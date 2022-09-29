@@ -184,6 +184,10 @@ class StackComponent(StrandComponent):
             del self.operations["B_field_units"]
         # end if
 
+        # Call to method deal_with_flag_IOP_MODE to check and manipulate value 
+        # of flag self.operations["IOP_MODE"].
+        self.deal_with_flag_IOP_MODE()
+
         self.__reorganize_input()
         self.__check_consistency(conductor)
 

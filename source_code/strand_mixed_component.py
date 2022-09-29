@@ -158,6 +158,11 @@ class StrandMixedComponent(StrandComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
         # end if (cdp, 07/2020)
+
+        # Call to method deal_with_flag_IOP_MODE to check and manipulate value 
+        # of flag self.operations["IOP_MODE"].
+        self.deal_with_flag_IOP_MODE()
+
         # Equivalent radius
         self.radius = np.sqrt(self.inputs["CROSSECTION"] / np.pi)
 

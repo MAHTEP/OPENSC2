@@ -125,6 +125,11 @@ class StrandStabilizerComponent(StrandComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
 
+        # Call to method deal_with_flag_IOP_MODE to check and manipulate value 
+        # of flag self.operations["IOP_MODE"].
+        self.deal_with_flag_IOP_MODE()
+
+
         # Call method deal_with_fixed_potential to manipulate input about fixed 
         # potential values.
         self.deal_with_fixed_potential(conductor.inputs["ZLENGTH"])
