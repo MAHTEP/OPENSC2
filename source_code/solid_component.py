@@ -745,6 +745,29 @@ class SolidComponent:
         else:  # jacket object.
             self.op_current_fraction_sh = 0.0
 
+    def __check_current_mode(self, conductor:object):
+        """Private method that checks consistency between flags conductor.inputs['I0_OP_MODE'] and self.operations['IOP_MODE'] to deal with current definition.
+
+        Args:
+            conductor (object): ConductorComponent object with all informations to make the check.
+
+        Raises:
+            ValueError: self.operations["IOP_MODE"] != None and conductor.inputs["I0_OP_MODE"] == -1 and self.operations["IOP_MODE"] != -1.
+            ValueError: self.operations["IOP_MODE"] != None and conductor.inputs["I0_OP_MODE"] == 0 and self.operations["IOP_MODE"] != 0.
+        """
+        
+        # Initialize dictionary with error message to be printed.
+        message_switch = {-1: f"{conductor.inputs['I0_OP_MODE']=} implies that current carried by object {self.identifier = } should be read from file. Flag self.operations['IOP_MODE'] should be set to -1; current value is {self.operations['IOP_MODE']=}. Please check sheet {self.identifier} of input file conductor_operation.xlsx.\n",
+        0: f"{conductor.inputs['I0_OP_MODE']=} implies that current carried by object {self.identifier = } is evaluated from the code since the total current carried by the conductor is assigned. Flag self.operations['IOP_MODE'] should be set to 0; current value is {self.operations['IOP_MODE']=}. Please check sheet {self.identifier} of input file conductor_operation.xlsx.\n"}
+        
+        # Check consistency between flags conductor.inputs['I0_OP_MODE'] and 
+        # self.operations['IOP_MODE'].
+        if self.operations["IOP_MODE"] != None:
+            if conductor.inputs["I0_OP_MODE"] == -1 and self.operations["IOP_MODE"] != -1:
+                raise ValueError(message_switch[conductor.inputs["I0_OP_MODE"]])
+            elif conductor.inputs["I0_OP_MODE"] == 0 and self.operations["IOP_MODE"] != 0:
+                raise ValueError(message_switch[conductor.inputs["I0_OP_MODE"]])
+
     def get_current(self, conductor: object):
         """Method that evaluates the current source therm at each thermal time step according to flag I0_OP_MODE set as input by the user.
 
