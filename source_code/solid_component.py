@@ -783,39 +783,89 @@ class SolidComponent:
         if conductor.cond_time[-1] == 0:
             self.__check_current_mode(conductor)
 
-        if conductor.inputs["I0_OP_MODE"] == -1:
+        # Get current.
+        if self.operations["IOP_MODE"] != None:
+            # The object carryes a current and its value is defied as below.
+            if conductor.inputs["I0_OP_MODE"] == -1:
 
-            if conductor.cond_time[-1] == 0:
-                # Build file path.
-                file_path = os.path.join(
-                    conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
-                )
-                # Load auxiliary input file.
-                current_df, self.flagSpecfield_current = load_auxiliary_files(
-                    file_path, sheetname=self.identifier
-                )
-                # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
-                (
+                if conductor.cond_time[-1] == 0:
+                    # Build file path.
+                    file_path = os.path.join(
+                        conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
+                    )
+                    # Load auxiliary input file.
+                    current_df, self.flagSpecfield_current = load_auxiliary_files(
+                        file_path, sheetname=self.identifier
+                    )
+                    # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
+                    (
+                        self.current_interpolator,
+                        self.current_interp_flag,
+                    ) = build_interpolator(current_df, self.operations["IOP_INTERPOLATION"])
+
+                # Evaluate current of generic solid component object by
+                # interpolation.
+                self.dict_node_pt["op_current"] = do_interpolation(
                     self.current_interpolator,
+                    conductor.grid_features["zcoord"],
+                    conductor.cond_time[-1],
                     self.current_interp_flag,
-                ) = build_interpolator(current_df, self.operations["IOP_INTERPOLATION"])
+                )
 
-            # Evaluate current of generic solid component object by
-            # interpolation.
-            self.dict_node_pt["op_current"] = do_interpolation(
-                self.current_interpolator,
-                conductor.grid_features["zcoord"],
-                conductor.cond_time[-1],
-                self.current_interp_flag,
-            )
+                if self.current_interp_flag == 'time_only':
+                    # Convert to array
+                    self.dict_node_pt["op_current"] = self.dict_node_pt["op_current"]*np.ones(conductor.grid_features["N_nod"])
+                # Evaluate current in the Gauss nodal points.
+                self.dict_Gauss_pt["op_current"] = (
+                    self.dict_node_pt["op_current"][:-1] + self.dict_node_pt["op_current"][1:]
+                ) / 2.0
+                # This is exploited in the electric resistance evaluation.
+                if (self.name == conductor.inventory["StackComponent"].name
+                or self.name == conductor.inventory["StrandMixedComponent"].name):
+                    # Build an alias for convenience when dealing with electric
+                    # resistance evaluation.
+                    self.dict_node_pt["op_current_sc"] = self.dict_node_pt["op_current"]
+                    self.dict_Gauss_pt["op_current_sc"] = self.dict_Gauss_pt["op_current"]
 
-            if self.current_interp_flag == 'time_only':
-                # Convert to array
-                self.dict_node_pt["op_current"] = self.dict_node_pt["op_current"]*np.ones(conductor.grid_features["N_nod"])
-            # Evaluate current in the Gauss nodal points.
-            self.dict_Gauss_pt["op_current"] = (
-                self.dict_node_pt["op_current"][:-1] + self.dict_node_pt["op_current"][1:]
-            ) / 2.0
+                conductor.dict_node_pt["op_current"][0] = conductor.dict_node_pt["op_current"][0] + self.dict_node_pt["op_current"][0]
+                conductor.dict_node_pt["op_current"][0] = conductor.dict_node_pt["op_current"][0] + self.dict_node_pt["op_current"][0]
+                if self.flagSpecfield_current == 2:
+                    # Add also a logger
+                    warnings.warn("Still to be decided what to do here\n")
+            elif conductor.inputs["I0_OP_MODE"] == 0:
+                # Evaluate both attributes self.dict_node_pt["op_current"] and
+                # self.dict_node_pt["op_current_sc"] for convenience in the evaluation of
+                # electrical resistivity.
+                self.dict_node_pt["op_current"] = (
+                    conductor.inputs["I0_OP_TOT"]
+                    * self.op_current_fraction_sh
+                    * np.ones(conductor.grid_features["N_nod"])
+                )
+                self.dict_Gauss_pt["op_current"] = (
+                    self.dict_node_pt["op_current"][:-1] + self.dict_node_pt["op_current"][1:]
+                ) / 2.0
+                if (self.name == conductor.inventory["StackComponent"].name
+                or self.name == conductor.inventory["StrandMixedComponent"].name):
+                    self.dict_node_pt["op_current_sc"] = (
+                        conductor.inputs["I0_OP_TOT"]
+                        * self.op_current_fraction_sc
+                        * np.ones(conductor.grid_features["N_nod"])
+                    )
+                    self.dict_Gauss_pt["op_current_sc"] = (
+                        self.dict_node_pt["op_current_sc"][:-1] + self.dict_node_pt["op_current_sc"][1:]
+                    ) / 2.0
+            else:
+                raise ValueError(
+                    f"Not defined value for flag I0_OP_MODE: {conductor.inputs['I0_OP_MODE']=}.\n"
+                )
+        else:
+            # The object does not carry a current; arrays are initialized to 0.
+            # Initialize array op_current to 0 in dictionary dict_node_pt to 
+            # avoid error.
+            self.dict_node_pt["op_current"] = np.zeros(conductor.grid_features["N_nod"])
+            # Initialize array op_current to 0 in dictionary dict_Gauss_pt to 
+            # avoid error.
+            self.dict_Gauss_pt["op_current"] = np.zeros(conductor.grid_input["NELEMS"])
             # This is exploited in the electric resistance evaluation.
             if (self.name == conductor.inventory["StackComponent"].name
             or self.name == conductor.inventory["StrandMixedComponent"].name):
@@ -824,37 +874,6 @@ class SolidComponent:
                 self.dict_node_pt["op_current_sc"] = self.dict_node_pt["op_current"]
                 self.dict_Gauss_pt["op_current_sc"] = self.dict_Gauss_pt["op_current"]
 
-            conductor.dict_node_pt["op_current"][0] = conductor.dict_node_pt["op_current"][0] + self.dict_node_pt["op_current"][0]
-            conductor.dict_node_pt["op_current"][0] = conductor.dict_node_pt["op_current"][0] + self.dict_node_pt["op_current"][0]
-            if self.flagSpecfield_current == 2:
-                # Add also a logger
-                warnings.warn("Still to be decided what to do here\n")
-        elif conductor.inputs["I0_OP_MODE"] == 0:
-            # Evaluate both attributes self.dict_node_pt["op_current"] and
-            # self.dict_node_pt["op_current_sc"] for convenience in the evaluation of
-            # electrical resistivity.
-            self.dict_node_pt["op_current"] = (
-                conductor.inputs["I0_OP_TOT"]
-                * self.op_current_fraction_sh
-                * np.ones(conductor.grid_features["N_nod"])
-            )
-            self.dict_Gauss_pt["op_current"] = (
-                self.dict_node_pt["op_current"][:-1] + self.dict_node_pt["op_current"][1:]
-            ) / 2.0
-            if (self.name == conductor.inventory["StackComponent"].name
-            or self.name == conductor.inventory["StrandMixedComponent"].name):
-                self.dict_node_pt["op_current_sc"] = (
-                    conductor.inputs["I0_OP_TOT"]
-                    * self.op_current_fraction_sc
-                    * np.ones(conductor.grid_features["N_nod"])
-                )
-                self.dict_Gauss_pt["op_current_sc"] = (
-                    self.dict_node_pt["op_current_sc"][:-1] + self.dict_node_pt["op_current_sc"][1:]
-                ) / 2.0
-        else:
-            raise ValueError(
-                f"Not defined value for flag I0_OP_MODE: {conductor.inputs['I0_OP_MODE']=}.\n"
-            )
 
     # end Get_I
 
