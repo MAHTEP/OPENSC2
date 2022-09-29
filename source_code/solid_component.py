@@ -1349,3 +1349,27 @@ class SolidComponent:
         # end if conductor.inputs["METHOD"] (cdp, 10/2020)
 
     # end Set_energy_counters
+
+    def deal_with_flag_IOP_MODE(self):
+        """Method that checks and converts values assigned to flag IOP_MODE.
+
+        Raises:
+            ValueError: if self.operations['IOP_MODE'] is a string different from 'none'.
+        """
+        # Check if self.operations["IOP_MODE"] is a string
+        if type(self.operations["IOP_MODE"]) == str:
+            # Convert string to lower case.
+            self.operations["IOP_MODE"] = self.operations["IOP_MODE"].lower()
+            # Check if string value is "none".
+            if  self.operations["IOP_MODE"] == "none":
+                # Convert string "none" to None.
+                self.operations["IOP_MODE"] = None
+            else:
+                raise ValueError(f"Not valid value to flag self.operations['IOP_MODE']. Possible values are -1, 0 or 'none', current value is {self.operations['IOP_MODE']=}. Check sheet {self.identifier} of input file conuctor_operation.xlsx.\n")
+        else:
+            # Temporary solution to mangage input file loading, strange 
+            # behavior: 1 are converted to True but 0 not converted to False.
+            if self.operations["IOP_MODE"] == True:
+                self.operations["IOP_MODE"] = 1
+            elif self.operations["IOP_MODE"] == False:
+                self.operations["IOP_MODE"] = 0
