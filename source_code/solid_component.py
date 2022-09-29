@@ -778,6 +778,11 @@ class SolidComponent:
             ValueError: if a not valid value is given to flag I0_OP_MODE.
         """
 
+        # Check consistency between flags conductor.inputs['I0_OP_MODE'] 
+        # and self.operations['IOP_MODE'] only the first time.
+        if conductor.cond_time[-1] == 0:
+            self.__check_current_mode(conductor)
+
         if conductor.inputs["I0_OP_MODE"] == -1:
 
             if conductor.cond_time[-1] == 0:
