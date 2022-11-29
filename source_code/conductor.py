@@ -859,7 +859,8 @@ class Conductor:
         self.fixed_potential_index = np.zeros(nn, dtype=int)
         self.fixed_potential_value = np.zeros(nn)
 
-        self.dict_node_pt["op_current"] = np.zeros(self.total_nodes_current_carriers)
+        # Initialization moved in method build_electric_known_term_vector.
+        # self.dict_node_pt["op_current"] = np.zeros(self.total_nodes_current_carriers)
 
         self.electric_known_term_vector = np.zeros(
             self.total_elements_current_carriers + self.total_nodes_current_carriers
@@ -2886,6 +2887,8 @@ class Conductor:
         * -2: from user defined external function.
         """
 
+        # Initialize condutctor operating current vector.
+        self.dict_node_pt["op_current"] = np.zeros(self.total_nodes_current_carriers)
         # Rimuovere gli if
 
         if self.inputs["I0_OP_MODE"] == IOP_CONSTANT:

@@ -827,8 +827,6 @@ class SolidComponent:
                     self.dict_node_pt["op_current_sc"] = self.dict_node_pt["op_current"]
                     self.dict_Gauss_pt["op_current_sc"] = self.dict_Gauss_pt["op_current"]
 
-                conductor.dict_node_pt["op_current"][0] = conductor.dict_node_pt["op_current"][0] + self.dict_node_pt["op_current"][0]
-                conductor.dict_node_pt["op_current"][0] = conductor.dict_node_pt["op_current"][0] + self.dict_node_pt["op_current"][0]
                 if self.flagSpecfield_current == 2:
                     # Add also a logger
                     warnings.warn("Still to be decided what to do here\n")
