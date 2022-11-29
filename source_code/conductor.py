@@ -2800,15 +2800,6 @@ class Conductor:
             f"After call method {self.__assign_fix_potential.__name__}.\n"
         )
 
-        # Build electric known therm vector
-        conductorlogger.debug(
-            f"Before call method {self.build_electric_known_term_vector.__name__}.\n"
-        )
-        self.build_electric_known_term_vector()
-        conductorlogger.debug(
-            f"After call method {self.build_electric_known_term_vector.__name__}.\n"
-        )
-
     def __build_electric_stiffness_matrix(self):
         """Private method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix."""
 
