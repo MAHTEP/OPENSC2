@@ -452,7 +452,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                         dict_df_new[prop] = pd.concat(
                             [
                                 dict_df_new[prop],
-                                dict_df[file_name].filter(items=[header_gauss[jj + 1]]),
+                                dict_df[file_name_gauss].filter(items=[header_gauss[jj + 1]]),
                             ],
                             axis=1,
                         )
