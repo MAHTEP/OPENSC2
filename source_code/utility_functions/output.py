@@ -295,6 +295,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     # list_sol_key = ["temperature", "total_density", "total_isobaric_specific_heat", "total_thermal_conductivity", \
     # 							 "EXTFLX", "JHTFLX"]
     list_sol_key = ["temperature"]
+    list_sol_key_gauss = ["P_along"]
     # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
     # Round the time to save to n_digit_time digits only once
     time = np.around(cond.Space_save, n_digit_time)
@@ -393,14 +394,20 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         dict_df_new = dict()
         for ii in range(len(cond.Space_save)):
             file_name = f"{s_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
+            file_name_gauss = f"{s_comp.identifier}_({cond.num_step_save[ii]})_gauss_sd.tsv"
             file_load = os.path.join(f_path, file_name)
+            file_load_gauss = os.path.join(f_path, file_name_gauss)
             # Load file file_name as data frame as a value of dictionary \
             # corresponding to key file_name (cdp, 11/2020)
             dict_df[file_name] = pd.read_csv(
                 filepath_or_buffer=file_load, delimiter="\t"
             )
+            dict_df[file_name_gauss] = pd.read_csv(
+                filepath_or_buffer=file_load_gauss, delimiter="\t"
+            )
             # Delete the old file format.
             os.remove(file_load)
+            os.remove(file_load_gauss)
             if ii == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
@@ -413,6 +420,17 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                     # rename data frames columns (cdp, 11/2020)
                     dict_df_new[prop].rename(
                         columns={header[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
+                    )
+                header_gauss = list(dict_df[file_name_gauss].columns.values.tolist())
+                for jj in range(len(list_sol_key_gauss)):
+                    prop = list_sol_key_gauss[jj]
+                    # decompose the data frame in four dataframes (cdp, 11/2020)
+                    dict_df_new[prop] = dict_df[file_name].filter(
+                        items=[header_gauss[jj + 1]]
+                    )
+                    # rename data frames columns (cdp, 11/2020)
+                    dict_df_new[prop].rename(
+                        columns={header_gauss[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
                     )
             else:
                 for jj in range(len(list_sol_key)):
@@ -428,10 +446,30 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                     dict_df_new[prop].rename(
                         columns={header[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
                     )
+                    for jj in range(len(list_sol_key_gauss)):
+                        prop = list_sol_key_gauss[jj]
+                        # construct the new data frames with concat method (cdp, 11/2020)
+                        dict_df_new[prop] = pd.concat(
+                            [
+                                dict_df_new[prop],
+                                dict_df[file_name].filter(items=[header_gauss[jj + 1]]),
+                            ],
+                            axis=1,
+                        )
+                        dict_df_new[prop].rename(
+                            columns={header_gauss[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
+                        )
             # end if ii (cdp, 11/2020)
         # end for ii (cdp, 11/2020)
         # for loop to save the new data frame (cdp, 11/2020)
         for prop in list_sol_key:
+            # build file name (cdp, 11/2020)
+            file_name = f"{s_comp.identifier}_{prop}_sd.tsv"
+            # build path to save the file (cdp, 11/2020)
+            path_save = os.path.join(f_path, file_name)
+            # save the data frame, without the row index name (cdp, 11/2020)
+            dict_df_new[prop].to_csv(path_save, sep="\t", index=False)
+        for prop in list_sol_key_gauss:
             # build file name (cdp, 11/2020)
             file_name = f"{s_comp.identifier}_{prop}_sd.tsv"
             # build path to save the file (cdp, 11/2020)
