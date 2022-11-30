@@ -159,6 +159,27 @@ def save_simulation_space(conductor, f_path, n_digit_time):
                 writer, A_s_comp, delimiter="\t", header=headers_s_comp, comments=""
             )
     # end for s_comp (cdp, 10/2020)
+    # Save linear power due to electric resistance along the SOs (available in 
+    # gauss nodal points).
+    headers_s_comp = "zcoord_gauss (m)	P_along (W/m)"
+    prop_s_comp = ["zcoord_gauss", "linear_power_el_resistance"]
+    for s_comp in conductor.inventory["SolidComponent"].collection:
+        file_path = os.path.join(
+            f_path, f"{s_comp.identifier}_({conductor.cond_num_step})_gauss_sd.tsv"
+        )
+        A_s_comp = np.zeros((conductor.grid_input["NELEMS"], len(prop_s_comp)))
+        for ii in range(len(prop_s_comp)):
+            if prop_s_comp[ii] == "zcoord_gauss":
+                A_s_comp[:, ii] = conductor.grid_features[prop_s_comp[ii]]
+            else:
+                A_s_comp[:, ii] = s_comp.dict_Gauss_pt[prop_s_comp[ii]]
+            # end if prop_s_comp[ii] (cdp, 01/2021)
+        # end for ii (cdp, 01/2021)
+        with open(file_path, "w") as writer:
+            np.savetxt(
+                writer, A_s_comp, delimiter="\t", header=headers_s_comp, comments=""
+            )
+
     # Check if dictionary conductor.heat_rad_jk is not empty in order to save the content in a file.
     if bool(conductor.heat_rad_jk):
         # Build path to save temporary file with the spatial distribution of the heat exchanged by radiation between jackets at each required time step.
