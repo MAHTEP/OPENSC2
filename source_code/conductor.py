@@ -2860,6 +2860,48 @@ class Conductor:
 
             jj += obj.operations["FIX_POTENTIAL_NUMBER"]
 
+    def eval_total_operating_current(self):
+        """Method that evaluates the total electric current flowing in the conductor according to the value of flag I0_OP_MODE:
+        * 0: constant value
+        * -1: from auxiliary file (to be implemented)
+        * -2: from user defined external function.
+        """
+
+        # Initialize condutctor operating current vector.
+        self.dict_node_pt["op_current"] = np.zeros(self.total_nodes_current_carriers)
+        # Rimuovere gli if
+
+        if self.inputs["I0_OP_MODE"] == IOP_CONSTANT:
+            # positive means entering the node.
+            # This is already a boundary condition.
+            # All the current enters the first node of the first current
+            # carrier.
+            self.dict_node_pt["op_current"][0] = self.inputs["I0_OP_TOT"]
+            # All the current exits from the lats node of the last current
+            # carrier.
+            self.dict_node_pt["op_current"][-1] = -self.inputs["I0_OP_TOT"]
+        elif self.inputs["I0_OP_MODE"] == IOP_FROM_FILE:
+            # Loop on SolidComponent objects to sum inlet and outlet current in 
+            # order to get the total conductor inlet and outlet current.
+            for obj in self.inventory["SolidComponent"].collection:
+                self.dict_node_pt["op_current"][0] = self.dict_node_pt["op_current"][0] + obj.dict_node_pt["op_current"][0]
+                self.dict_node_pt["op_current"][-1] = self.dict_node_pt["op_current"][-1] + obj.dict_node_pt["op_current"][-1]
+            # Change sign to the outlet curren since it is exiting the 
+            # conductor.
+            self.dict_node_pt["op_current"][-1] = - self.dict_node_pt["op_current"][-1]
+        elif self.inputs["I0_OP_MODE"] == IOP_FROM_EXT_FUNCTION:
+
+            # All the current enters the first node of the first current
+            # carrier.
+            self.dict_node_pt["op_current"][0] = custom_current_function(self.electric_time_step)
+            # All the current exits from the lats node of the last current
+            # carrier.
+            self.dict_node_pt["op_current"][-1] = -custom_current_function(
+                self.electric_time_step
+            )
+            # to be implemented.
+        # End if self.dict_input["I0_OP_MODE"].
+
     def build_electric_known_term_vector(self):
         """Method that builds the electric known term vector according to the value of flag I0_OP_MODE:
         * 0: constant value
