@@ -538,17 +538,6 @@ class Conductor:
             # grid and then assinge the coordinates to the conductor components.
             user_defined_grid(self)
 
-        self.grid_features["delta_z"] = (
-            self.grid_features["zcoord"][1:] - self.grid_features["zcoord"][:-1]
-        )
-        self.grid_features["dz_max"] = self.grid_features["delta_z"].max()
-        self.grid_features["dz_min"] = self.grid_features["delta_z"].min()
-        # Get the number of digits for rounding coordinates in order to find 
-        # indexes.
-        # N.B: Must be evaluated at each time thermal step when the mesh is
-        # adaptive.
-        self.n_digit_z = abs(int(np.floor(np.log10(self.grid_features["dz_min"])))) - 1
-
     def __build_multi_index(self) -> pd.MultiIndex:
         """Private method that builds multindex used in pandas dataframes used to store the nodal coordinates and the connectivity (matrix) of each conductor component.
 
@@ -3564,17 +3553,29 @@ class Conductor:
         # objects.
         self.__get_total_joule_power_electric_conductance()
 
-    def __build_delta_z_and_delta_z_tilde(self):
-        """Private method that builds arrays delta_z and delta_z_tilde as keys of dictioray self.grid_features. These arrys are used:
+    def __update_grid_features(self):
+        """Private method that updates dictionary grid_features evaluating arrays delta_z, delta_z_tilde and zcoord_gauss as keys of dictioray self.grid_features. These arrys are used:
         * in function step (delta_z);
         * in the joule power evaluation associated to electric resistance between StrandComponent objects (delta_z);
-        * in the joule power evaluation associated to electric conductance between StrandComponent objects (delta_z_tilde).
+        * in the joule power evaluation associated to electric conductance between StrandComponent objects (delta_z_tilde);
+        * in function step of module transient_solution_functions (zcoord_gauss);
         """
 
         # Define new key delta_z in dictionay self.grid_features (m).
         self.grid_features["delta_z"] = (
             self.grid_features["zcoord"][1:] - self.grid_features["zcoord"][:-1]
         )
+
+        self.grid_features["dz_max"] = self.grid_features["delta_z"].max()
+        self.grid_features["dz_min"] = self.grid_features["delta_z"].min()
+        # Get the number of digits for rounding coordinates in order to find 
+        # indexes.
+        self.n_digit_z = abs(int(np.floor(np.log10(self.grid_features["dz_min"])))) - 1
+
+        # Compute the coordintate of the Gauss point.
+        self.grid_features["zcoord_gauss"] = (
+            self.grid_features["zcoord"][:-1] + self.grid_features["zcoord"][1:]
+        ) / 2
 
         # Define new key delta_z_tilde in dictionay self.grid_features (m).
         self.grid_features["delta_z_tilde"] = np.zeros(self.grid_features["N_nod"])
@@ -3598,7 +3599,7 @@ class Conductor:
 
         # Build delta_z and delta_z_tilde in as keys in attribute dictionary
         # self.grid_features.
-        self.__build_delta_z_and_delta_z_tilde()
+        self.__update_grid_features()
 
         # Evaluate transport coefficients in nodal points.
         self.get_transp_coeff(simulation)
