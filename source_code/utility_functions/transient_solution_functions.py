@@ -203,16 +203,6 @@ def step(conductor, environment, qsource, num_step):
 
     # COMPUTE AND ASSEMBLE THE ELEMENT NON-LINEAR MATRICES AND LOADS
 
-    # Compute the array of the center coordinate of the mesh for each interval \
-    # (cdp, 07/2020)
-    XMED = (
-        np.array(
-            conductor.grid_features["zcoord"][:-1]
-            + conductor.grid_features["zcoord"][1:]
-        )
-        / 2.0
-    )
-
     # dictionaties declaration (cdp, 07/2020)
     conductor.dict_Gauss_pt["K1"] = {}
     conductor.dict_Gauss_pt["K2"] = {}
@@ -236,9 +226,9 @@ def step(conductor, environment, qsource, num_step):
                 # K', K'' and K''' initialization to zeros only if there is an \
                 # interface between fluid_comp_r and fluid_comp_c; parameters usefull to \
                 # constuct recurrent coefficients of matrix S elements (cdp, 09/2020)
-                conductor.dict_Gauss_pt["K1"][interface_name] = np.zeros(XMED.shape)
-                conductor.dict_Gauss_pt["K2"][interface_name] = np.zeros(XMED.shape)
-                conductor.dict_Gauss_pt["K3"][interface_name] = np.zeros(XMED.shape)
+                conductor.dict_Gauss_pt["K1"][interface_name] = np.zeros(conductor.grid_features["zcoord_gauss"].shape)
+                conductor.dict_Gauss_pt["K2"][interface_name] = np.zeros(conductor.grid_features["zcoord_gauss"].shape)
+                conductor.dict_Gauss_pt["K3"][interface_name] = np.zeros(conductor.grid_features["zcoord_gauss"].shape)
                 # COMPUTE K', K'' AND K'''
                 Delta_p = np.abs(
                     fluid_comp_r.coolant.dict_Gauss_pt["pressure"]
