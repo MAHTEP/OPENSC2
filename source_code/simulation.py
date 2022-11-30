@@ -302,7 +302,10 @@ class Simulation:
                 # end if self.num_step
                 # Call to electric_electric method allows to define,
                 # initialize, solve and reorganize the electric problem.
-                conductor.electric_method()
+                conductor.eval_total_operating_current()
+                if abs(conductor.dict_node_pt["op_current"][0]) > 0:
+                    conductor.electric_method()
+
                 # call step to solve the problem @ new timestep (cdp, 07/2020)
                 step(
                     conductor,
