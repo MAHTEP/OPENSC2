@@ -1204,14 +1204,15 @@ class SolidComponent:
                     self.dict_Gauss_pt["linear_power_el_resistance"][
                         :, 1
                     ] = self.dict_Gauss_pt["linear_power_el_resistance"][:, 0].copy()
-                # Evaluate Joule linear power along the strand in W/m, due to
-                # electric resistances:
-                # P_along = I_along * Delta V_along / (Delta_z)
-                self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
-                    self.dict_Gauss_pt["current_along"]
-                    * self.dict_Gauss_pt["voltage_drop_along"]
-                    / conductor.grid_features["delta_z"]
-                )
+                if self.name != "Z_JACKET":
+                    # Evaluate Joule linear power along the strand in W/m, due 
+                    # to electric resistances only for current carriers:
+                    # P_along = I_along * Delta V_along / (Delta_z)
+                    self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
+                        self.dict_Gauss_pt["current_along"]
+                        * self.dict_Gauss_pt["voltage_drop_along"]
+                        / conductor.grid_features["delta_z"]
+                    )
         elif conductor.inputs["METHOD"] == "AM4":
             # Adams-Moulton 4.
             if conductor.cond_time[-1] == 0:
@@ -1223,14 +1224,15 @@ class SolidComponent:
                 self.dict_Gauss_pt["linear_power_el_resistance"][
                     :, 1:4
                 ] = self.dict_Gauss_pt["linear_power_el_resistance"][:, 0:3].copy()
-                # Evaluate Joule linear power along the strand in W/m, due to
-                # electric resistances:
-                # P_along = I_along * Delta V_along / (Delta_z) in W:
-                self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
-                    self.dict_Gauss_pt["current_along"]
-                    * self.dict_Gauss_pt["voltage_drop_along"]
-                    / conductor.grid_features["delta_z"]
-                )
+                if self.name != "Z_JACKET":
+                    # Evaluate Joule linear power along the strand in W/m, due 
+                    # to electric resistances only for current carriers:
+                    # P_along = I_along * Delta V_along / (Delta_z)
+                    self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
+                        self.dict_Gauss_pt["current_along"]
+                        * self.dict_Gauss_pt["voltage_drop_along"]
+                        / conductor.grid_features["delta_z"]
+                    )
 
     def get_joule_power_across(self, conductor: object):
         """Method that evaluates the contribution to the total power in the nodes of Joule power (in W/m) due to the electic conductance across the SolidComponent objects.
@@ -1255,13 +1257,15 @@ class SolidComponent:
                     self.dict_node_pt["total_linear_power_el_cond"][
                         :, 1
                     ] = self.dict_node_pt["total_linear_power_el_cond"][:, 0].copy()
-                # Evaluate total Joule linear power across the strand in W/m,
-                # due to electric conductance:
-                # P_l_t = P_t / Delta_z_tilde
-                self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
-                    self.dict_node_pt["total_power_el_cond"]
-                    / conductor.grid_features["delta_z_tilde"]
-                )
+                if self.name != "Z_JACKET":
+                    # Evaluate total Joule linear power across the strand in 
+                    # W/m, due to electric conductance only for current 
+                    # carriers:
+                    # P_l_t = P_t / Delta_z_tilde
+                    self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
+                        self.dict_node_pt["total_power_el_cond"]
+                        / conductor.grid_features["delta_z_tilde"]
+                    )
         elif conductor.inputs["METHOD"] == "AM4":
             # Adams-Moulton 4.
             if conductor.cond_time[-1] == 0:
@@ -1273,13 +1277,15 @@ class SolidComponent:
                 self.dict_node_pt["total_linear_power_el_cond"][
                     :, 1:4
                 ] = self.dict_node_pt["total_linear_power_el_cond"][:, 0:3].copy()
-                # Evaluate total Joule linear power across the strand in W/m,
-                # due to electric conductance:
-                # P_l_t = P_t / Delta_z_tilde
-                self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
-                    self.dict_node_pt["total_power_el_cond"]
-                    / conductor.grid_features["delta_z_tilde"]
-                )
+                if self.name != "Z_JACKET":
+                    # Evaluate total Joule linear power across the strand in 
+                    # W/m, due to electric conductance only for current 
+                    # carriers:
+                    # P_l_t = P_t / Delta_z_tilde
+                    self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
+                        self.dict_node_pt["total_power_el_cond"]
+                        / conductor.grid_features["delta_z_tilde"]
+                    )
 
     def set_energy_counters(self, conductor):
         # tesded: ok (cdp, 06/2020)
