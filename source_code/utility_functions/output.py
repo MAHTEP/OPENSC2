@@ -172,7 +172,7 @@ def save_simulation_space(conductor, f_path, n_digit_time):
             if prop_s_comp[ii] == "zcoord_gauss":
                 A_s_comp[:, ii] = conductor.grid_features[prop_s_comp[ii]]
             else:
-                A_s_comp[:, ii] = s_comp.dict_Gauss_pt[prop_s_comp[ii]]
+                A_s_comp[:, ii] = s_comp.dict_Gauss_pt[prop_s_comp[ii]][:, 0]
             # end if prop_s_comp[ii] (cdp, 01/2021)
         # end for ii (cdp, 01/2021)
         with open(file_path, "w") as writer:
