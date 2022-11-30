@@ -2069,7 +2069,14 @@ class Conductor:
         # End for rr.
 
         # IOP=IOP0(icond)
-
+        for obj in self.inventory["SolidComponent"].collection:
+            # Compute fractions of the total current that flows in
+            # superconductor cross section of each strand or stack object if in
+            # superconducting regime and fractions of the total current that
+            # flows in the total cross section of each strand or stack object
+            # if in current sharing regime.
+            obj.get_current_fractions(self.total_sc_cross_section, self.total_so_cross_section, self.inventory)
+        
         # call functions get_current, get_magnetic_field, get_magnetic_field_gradient, \
         # get_superconductor_critical_prop, get_heat, jhtflx_new_0, \
         # set_energy_counters, Get_transp_coeff @ time = 0 to perform \
@@ -2078,12 +2085,6 @@ class Conductor:
         # Loop on SolidComponent (cdp, 01/2021)
         # N.B. questo loop si potrebbe fare usando map.
         for s_comp in self.inventory["SolidComponent"].collection:
-            # Compute fractions of the total current that flows in
-            # superconductor cross section of each strand or stack object if in
-            # superconducting regime and fractions of the total current that
-            # flows in the total cross section of each strand or stack object
-            # if in current sharing regime.
-            s_comp.get_current_fractions(self.total_sc_cross_section, self.total_so_cross_section, self.inventory)
             # compute, average density, thermal conductivity, specifi heat at \
             # constant pressure and electrical resistivity at initial \
             # SolidComponent temperature in nodal points (cdp, 01/2021)
