@@ -2092,9 +2092,11 @@ class Conductor:
         # end for s_comp.
 
         # Loop to initialize electric related quantities for each 
-        # StrandComponent object.
-        for strand in self.inventory["StrandComponent"].collection:
-            strand.initialize_electric_quantities(self)
+        # SolidComponent object.
+        # N.B. remember that JacketComponent objects do not carry current for 
+        # the time being so these quantities will remain 0.
+        for obj in self.inventory["SolidComponent"].collection:
+            obj.initialize_electric_quantities(self)
 
         # Initialize the Energy of the SolidComponent (cdp, 12/2020)
         self.E_sol_ini = 0.0
