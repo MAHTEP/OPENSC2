@@ -3454,11 +3454,11 @@ class Conductor:
         # Loop to assign values to each StrandComponent.
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
             obj.dict_Gauss_pt["current_along"] = current_along[
-                ii :: self.grid_input["NELEMS"]
+                ii :: self.inventory["StrandComponent"].number
             ]
 
             obj.dict_Gauss_pt["voltage_drop_along"] = voltage_drop_along[
-                ii :: self.grid_input["NELEMS"]
+                ii :: self.inventory["StrandComponent"].number
             ]
 
     def __get_total_joule_power_electric_conductance(self):
