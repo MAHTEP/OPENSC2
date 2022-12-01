@@ -161,8 +161,8 @@ def save_simulation_space(conductor, f_path, n_digit_time):
     # end for s_comp (cdp, 10/2020)
     # Save linear power due to electric resistance along the SOs (available in 
     # gauss nodal points).
-    headers_s_comp = "zcoord_gauss (m)	P_along (W/m)"
-    prop_s_comp = ["zcoord_gauss", "linear_power_el_resistance"]
+    headers_s_comp = "zcoord_gauss (m)	\tcurrent_along (A)\tvoltage_drop_along (V)\tP_along (W/m)"
+    prop_s_comp = ["zcoord_gauss", "current_along", "voltage_drop_along","linear_power_el_resistance"]
     for s_comp in conductor.inventory["SolidComponent"].collection:
         file_path = os.path.join(
             f_path, f"{s_comp.identifier}_({conductor.cond_num_step})_gauss_sd.tsv"
@@ -172,7 +172,10 @@ def save_simulation_space(conductor, f_path, n_digit_time):
             if prop_s_comp[ii] == "zcoord_gauss":
                 A_s_comp[:, ii] = conductor.grid_features[prop_s_comp[ii]]
             else:
-                A_s_comp[:, ii] = s_comp.dict_Gauss_pt[prop_s_comp[ii]][:, 0]
+                if prop_s_comp[ii] == "linear_power_el_resistance":
+                    A_s_comp[:, ii] = s_comp.dict_Gauss_pt[prop_s_comp[ii]][:, 0]
+                else:
+                    A_s_comp[:, ii] = s_comp.dict_Gauss_pt[prop_s_comp[ii]]
             # end if prop_s_comp[ii] (cdp, 01/2021)
         # end for ii (cdp, 01/2021)
         with open(file_path, "w") as writer:
@@ -295,7 +298,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     # list_sol_key = ["temperature", "total_density", "total_isobaric_specific_heat", "total_thermal_conductivity", \
     # 							 "EXTFLX", "JHTFLX"]
     list_sol_key = ["temperature"]
-    list_sol_key_gauss = ["P_along"]
+    list_sol_key_gauss = ["current_along","voltage_drop_along","P_along"]
     # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
     # Round the time to save to n_digit_time digits only once
     time = np.around(cond.Space_save, n_digit_time)
