@@ -578,10 +578,20 @@ def save_simulation_time(simulation, conductor):
         )
         for ii in range(conductor.Time_save.size)
     }
+    ind_zcoord_gauss = {f"zcoord_g = {conductor.Time_save[0]} (m)": 0}
+    ind_zcoord_gauss.update({
+        f"zcoord_g = {conductor.Time_save[ii]} (m)": np.max(
+            np.nonzero(conductor.grid_features["zcoord_gauss"] <= round(conductor.Time_save[ii],conductor.n_digit_z))
+        )
+        for ii in range(1,conductor.Time_save.size)
+    }
+    )
     # construct file header only once (cdp, 08/2020)
     if simulation.num_step == 0:
         headers = ["time (s)"]
         headers.extend([str(key) for key in ind_zcoord.keys()])
+        headers_gauss = ["time (s)"]
+        headers_gauss.extend([str(key) for key in ind_zcoord_gauss.keys()])
         headers_inl_out = [
             "time (s)",
             "velocity_inl (m/s)",
@@ -651,6 +661,22 @@ def save_simulation_time(simulation, conductor):
                 s_comp.time_evol[key] = initialize_dictionaty_te(value, ind_zcoord)
                 # Save the headings only ones.
                 pd.DataFrame(columns=headers).to_csv(
+                    os.path.join(
+                        simulation.dict_path[
+                            f"Output_Time_evolution_{conductor.identifier}_dir"
+                        ],
+                        f"{s_comp.identifier}_{key}_te.tsv",
+                    ),
+                    sep="\t",
+                    index=False,
+                    header=True,
+                )
+            # End for key.
+            for key, value in s_comp.time_evol_gauss.items():
+                # Inizialize dictionary corresponding to key to a dictionary of empty lists for the first time.
+                s_comp.time_evol_gauss[key] = initialize_dictionaty_te(value, ind_zcoord_gauss)
+                # Save the headings only ones.
+                pd.DataFrame(columns=headers_gauss).to_csv(
                     os.path.join(
                         simulation.dict_path[
                             f"Output_Time_evolution_{conductor.identifier}_dir"
@@ -803,6 +829,30 @@ def save_simulation_time(simulation, conductor):
                 ),
                 simulation.transient_input["TEND"],
                 ind_zcoord,
+            )
+        # End for key.
+        for key, value in s_comp.time_evol_gauss.items():
+            # Update the contend of the dictionary of lists with propertiy 
+            # values at selected zcoord and current time.
+            if key == "linear_power_el_resistance":
+                s_comp.time_evol_gauss[key] = update_values(
+                    value, s_comp.dict_Gauss_pt[key][:,0], time, ind_zcoord_gauss)
+            else:
+                s_comp.time_evol_gauss[key] = update_values(
+                    value, s_comp.dict_Gauss_pt[key], time, ind_zcoord_gauss)
+            # Write the content of the dictionary to file, if conditions are 
+            # satisfied.
+            s_comp.time_evol_gauss[key] = save_te_on_file(
+                conductor,
+                s_comp.time_evol_gauss[key],
+                os.path.join(
+                    simulation.dict_path[
+                        f"Output_Time_evolution_{conductor.identifier}_dir"
+                    ],
+                    f"{s_comp.identifier}_{key}_te.tsv",
+                ),
+                simulation.transient_input["TEND"],
+                ind_zcoord_gauss,
             )
         # End for key.
     # End for s_comp.
