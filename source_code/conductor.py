@@ -3846,40 +3846,6 @@ class Conductor:
 
         # bozza della funzione Post_processing
 
-        # Loop on FluidComponent (cdp, 07/2020)
-        for fluid_comp in self.inventory["FluidComponent"].collection:
-            # Evaluate the other coolant properties in nodal points (nodal = True by default)
-            fluid_comp.coolant._eval_properties_nodal_gauss(
-                self, simulation.fluid_prop_aliases
-            )
-        # Loop on JacketComponents (cdp, 07/2020)
-        for jacket in self.inventory["JacketComponent"].collection:
-            jacket.get_current(self)
-            # MAGNETIC FIELD AS A FUNCTION OF POSITION
-            # call method get_magnetic_field
-            jacket.get_magnetic_field(self)
-        # end for jacket (cdp, 07/2020)
-        # Loop on StrandComponent (cdp, 07/2020)
-        for strand in self.inventory["StrandComponent"].collection:
-            # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
-            strand.get_magnetic_field_gradient(self)
-            # questa è la parte che credo sia rilevante
-            # only for StrandMixedComponent and StackComponent objects (cdp, 07/2020)
-            if strand.name != self.inventory["StrandStabilizerComponent"].name:
-                if strand.inputs["superconducting_material"] == "Nb3Sn":
-                    # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
-                    # call method get_eps to evaluate strain
-                    strand.get_eps(self)
-                # end if strand.inputs["superconducting_material"] (cdp, 08/2020)
-                # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
-                # and/or StackComponent properties in nodal points (cdp, 07/2020)
-                strand.get_superconductor_critical_prop(self)
-                # Evaluate current sharing temperature
-                strand.get_tcs()
-
-            # end if strand.name != self.inventory["StrandStabilizerComponent"].name \
-            # (cdp, 08/2020)
-
         # Loop on SolidComponent to evaluate the total final energy of \
         # SolidComponent, used to check the imposition of SolidComponent \
         # temperature initial spatial distribution (cdp, 12/2020)
@@ -3914,10 +3880,6 @@ class Conductor:
                     * s_comp.dict_Gauss_pt["temperature"]
                 )
         # end for s_comp (cdp, 12/2020)
-        # call method Get_transp_coeff to evaluate transport properties (heat \
-        # transfer coefficient and friction factor) in each nodal point \
-        # (cdp, 06/2020)
-        self.get_transp_coeff(simulation)
 
         # call method Mass_Energy_balance to get data for the space convergence \
         # (cdp, 09/2020)
