@@ -1,6 +1,3 @@
-import enum
-from sys import flags
-from properties_of_materials.stainless_steel import density_ss
 import numpy as np
 import pandas as pd
 import os
@@ -137,26 +134,54 @@ def save_simulation_space(conductor, f_path, n_digit_time):
     # headers_s_comp = "zcoord (m)	temperature (K)	density (kg/m^3)	spec_heat_p (J/kg/K)	ther_cond (W/m/K)	EXFTLX (W/m)	JHTFLX (W/m^2)"
     # prop_s_comp = ["zcoord", "temperature", "total_density", "total_isobaric_specific_heat", \
     # 							"total_thermal_conductivity", "EXTFLX", "JHTFLX"]
-    headers_s_comp = "zcoord (m)	temperature (K)"
-    prop_s_comp = ["zcoord", "temperature"]
-    for s_comp in conductor.inventory["SolidComponent"].collection:
+    headers_s_comp = "xcoord (m)	temperature (K)"
+    prop_s_comp = ["xcoord", "temperature"]
+    for s_comp in conductor.dict_obj_inventory["SolidComponents"]["Objects"]:
         file_path = os.path.join(
-            f_path, f"{s_comp.identifier}_({conductor.cond_num_step})_sd.tsv"
+            f_path, f"{s_comp.ID}_({conductor.cond_num_step})_sd.tsv"
         )
-        A_s_comp = np.zeros((conductor.grid_features["N_nod"], len(prop_s_comp)))
+        A_s_comp = np.zeros((conductor.dict_discretization["N_nod"], len(prop_s_comp)))
         for ii in range(len(prop_s_comp)):
-            if prop_s_comp[ii] == "zcoord":
-                A_s_comp[:, ii] = conductor.grid_features[prop_s_comp[ii]]
+            if prop_s_comp[ii] == "xcoord":
+                A_s_comp[:, ii] = conductor.dict_discretization[prop_s_comp[ii]]
             else:
-                A_s_comp[:, ii] = s_comp.dict_node_pt[prop_s_comp[ii]]
-                if prop_s_comp[ii] == "EXTFLX" or prop_s_comp[ii] == "JHTFLX":
-                    A_s_comp[:, ii] = s_comp.dict_node_pt[prop_s_comp[ii]][:, 0]
-                # end if prop_s_comp[ii] (cdp, 01/2021)
+                headers_strand = headers_reduced
+                prop_strand = prop_reduced
+        else: # Stabilizer
+            headers_strand = headers_reduced
+            prop_strand = prop_reduced
+        
+        A_strand = np.zeros((conductor.dict_discretization["N_nod"], len(prop_strand)))
+        for ii in range(len(prop_strand)):
+            if prop_strand[ii] == "xcoord":
+                A_strand[:, ii] = conductor.dict_discretization[prop_strand[ii]]
+            else:
+                A_strand[:, ii] = strand.dict_node_pt[prop_strand[ii]]
+            # end if prop_strand[ii] (cdp, 01/2021)
+        # end for ii (cdp, 01/2021)
+        with open(file_path, "w") as writer:
+            np.savetxt(
+                writer, A_strand, delimiter="\t", header=headers_strand, comments=""
+            )
+        
+    headers_jk = "xcoord (m)	temperature (K)"
+    prop_jk = ["xcoord", "temperature"]
+    # Loop to save jacket properties spatial distribution.
+    for jk in conductor.dict_obj_inventory["Jacket"]["Objects"]:
+        file_path = os.path.join(
+            f_path, f"{jk.ID}_({conductor.cond_num_step})_sd.tsv"
+        )
+        A_jk = np.zeros((conductor.dict_discretization["N_nod"], len(prop_jk)))
+        for ii in range(len(prop_jk)):
+            if prop_jk[ii] == "xcoord":
+                A_jk[:, ii] = conductor.dict_discretization[prop_jk[ii]]
+            else:
+                A_jk[:, ii] = jk.dict_node_pt[prop_jk[ii]]
             # end if prop_s_comp[ii] (cdp, 01/2021)
         # end for ii (cdp, 01/2021)
         with open(file_path, "w") as writer:
             np.savetxt(
-                writer, A_s_comp, delimiter="\t", header=headers_s_comp, comments=""
+                writer, A_jk, delimiter="\t", header=headers_jk, comments=""
             )
     # end for s_comp (cdp, 10/2020)
     # Save linear power due to electric resistance along the SOs (available in 
@@ -298,7 +323,6 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     # list_sol_key = ["temperature", "total_density", "total_isobaric_specific_heat", "total_thermal_conductivity", \
     # 							 "EXTFLX", "JHTFLX"]
     list_sol_key = ["temperature"]
-    list_sol_key_gauss = ["current_along","voltage_drop_along","P_along"]
     # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
     # Round the time to save to n_digit_time digits only once
     time = np.around(cond.Space_save, n_digit_time)
@@ -320,7 +344,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             dict_zcoord = dict()
         # end if fluid_comp (cdp, 01/2021)
         for ii in range(len(cond.Space_save)):
-            file_name = f"{fluid_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
+            file_name = f"{fluid_comp.ID}_({cond.num_step_save[ii]})_sd.tsv"
             file_load = os.path.join(f_path, file_name)
             # Load file file_name as data frame as a value of dictionary \
             # corresponding to key file_name (cdp, 11/2020)
@@ -340,8 +364,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             if ii == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
-                for jj in range(len(list_ch_key)):
-                    prop = list_ch_key[jj]
+                for jj, prop in enumerate(list_ch_key):
                     # decompose the data frame in four dataframes (cdp, 11/2020)
                     dict_df_new[prop] = dict_df[file_name].filter(
                         items=[header[jj + 1]]
@@ -352,8 +375,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                     )
                 # end for jj (cdp, 11/2020)
             else:
-                for jj in range(len(list_ch_key)):
-                    prop = list_ch_key[jj]
+                for jj, prop in enumerate(list_ch_key):
                     # construct the new data frames with concat method (cdp, 11/2020)
                     dict_df_new[prop] = pd.concat(
                         [
@@ -396,8 +418,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         dict_df = dict()
         dict_df_new = dict()
         for ii in range(len(cond.Space_save)):
-            file_name = f"{s_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
-            file_name_gauss = f"{s_comp.identifier}_({cond.num_step_save[ii]})_gauss_sd.tsv"
+            file_name = f"{s_comp.ID}_({cond.num_step_save[ii]})_sd.tsv"
             file_load = os.path.join(f_path, file_name)
             file_load_gauss = os.path.join(f_path, file_name_gauss)
             # Load file file_name as data frame as a value of dictionary \
@@ -414,9 +435,20 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             if ii == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
-                for jj in range(len(list_sol_key)):
-                    prop = list_sol_key[jj]
-                    # decompose the data frame in four dataframes (cdp, 11/2020)
+                if s_comp.KIND == "Mixed_sc_stab" or s_comp.KIND == "Super_conductor":
+                    # Check if current sharing temperature is evaluated at each
+                    # thermal time step.
+                    if s_comp.dict_operation["TCS_EVALUATION"]:
+                        list_sol_key = list_full
+                    else:
+                        list_sol_key = list_reduced
+                elif s_comp.KIND == "Stabilizer":
+                    list_sol_key = list_reduced
+                else: # Jacket
+                    list_sol_key = list_jk
+
+                for jj,prop in enumerate(list_sol_key):
+                    # decompose the data frame in several dataframes (cdp, 11/2020)
                     dict_df_new[prop] = dict_df[file_name].filter(
                         items=[header[jj + 1]]
                     )
@@ -436,8 +468,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                         columns={header_gauss[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
                     )
             else:
-                for jj in range(len(list_sol_key)):
-                    prop = list_sol_key[jj]
+                for jj,prop in enumerate(list_sol_key):
                     # construct the new data frames with concat method (cdp, 11/2020)
                     dict_df_new[prop] = pd.concat(
                         [
