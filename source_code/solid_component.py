@@ -1002,7 +1002,7 @@ class SolidComponent:
                 self.dict_node_pt["EXTFLX"][:, 0] = 0.0
                 self.flag_heating = "Off"
             # end if (cdp, 10/2020)
-        elif self.operations["IQFUN"] < 0:
+        elif self.operations["IQFUN"] == -1:
             if conductor.cond_time[-1] == 0:
                 # Build file path.
                 file_path = os.path.join(
@@ -1037,6 +1037,20 @@ class SolidComponent:
                     conductor.cond_time[-1],
                     self.heat_interp_flag,
                 )
+            # end if conductor.cond_num_step (cdp, 10/2020)
+        elif self.dict_operation["IQFUN"] == -2:
+            # AM2 part to be implemented
+            if conductor.cond_time[-1] == 0:
+                self.user_heat_function(conductor)
+            elif conductor.cond_num_step > 0:
+                if conductor.cond_num_step == 1:
+                    # Store the old values only immediately after the initializzation, since after that the whole SYSLOD array is saved and there is no need to compute twice the same values.
+                    self.dict_node_pt["EXTFLX"][:, 1] = self.dict_node_pt["EXTFLX"][
+                        :, 0
+                    ].copy()
+                # end if conductor.cond_num_step (cdp, 10/2020)
+                # call method load_user_defined_quantity to compute heat and overwrite the previous values.
+                self.user_heat_function(conductor)
             # end if conductor.cond_num_step (cdp, 10/2020)
         # end self.operations["IQFUN"] (cdp, 10/2020)
 
