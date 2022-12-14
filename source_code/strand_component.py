@@ -268,13 +268,14 @@ class StrandComponent(SolidComponent):
                 self.inputs["c0"],
                 self.inputs["Tc0m"],
             )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nbti(
-                bmax,
-                jop,
-                self.inputs["Bc20m"],
-                self.inputs["c0"],
-                self.inputs["Tc0m"],
-            )
+            # dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nbti(
+            #     bmax,
+            #     jop,
+            #     self.inputs["Bc20m"],
+            #     self.inputs["c0"],
+            #     self.inputs["Tc0m"],
+            # )
+            dict_dummy["T_cur_sharing_min"] = dict_dummy["T_cur_sharing"]
         elif self.inputs["superconducting_material"] == "Nb3Sn":
             dict_dummy["T_cur_sharing"] = current_sharing_temperature_nb3sn(
                 dict_dummy["B_field"],
@@ -284,14 +285,15 @@ class StrandComponent(SolidComponent):
                 self.inputs["Bc20m"],
                 self.inputs["c0"],
             )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nb3sn(
-                bmax,
-                dict_dummy["Epsilon"],
-                jop,
-                self.inputs["Tc0m"],
-                self.inputs["Bc20m"],
-                self.inputs["c0"],
-            )
+            # dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_nb3sn(
+            #     bmax,
+            #     dict_dummy["Epsilon"],
+            #     jop,
+            #     self.inputs["Tc0m"],
+            #     self.inputs["Bc20m"],
+            #     self.inputs["c0"],
+            # )
+            dict_dummy["T_cur_sharing_min"] = dict_dummy["T_cur_sharing"]
         elif self.inputs["superconducting_material"] == "YBCO":
             dict_dummy["T_cur_sharing"] = current_sharing_temperature_re123(
                 dict_dummy["B_field"],
@@ -300,13 +302,14 @@ class StrandComponent(SolidComponent):
                 self.inputs["Bc20m"],
                 self.inputs["c0"],
             )
-            dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_re123(
-                bmax,
-                jop,
-                self.inputs["Tc0m"],
-                self.inputs["Bc20m"],
-                self.inputs["c0"],
-            )
+            # dict_dummy["T_cur_sharing_min"] = current_sharing_temperature_re123(
+            #     bmax,
+            #     jop,
+            #     self.inputs["Tc0m"],
+            #     self.inputs["Bc20m"],
+            #     self.inputs["c0"],
+            # )
+            dict_dummy["T_cur_sharing_min"] = dict_dummy["T_cur_sharing"]
         elif self.inputs["superconducting_material"] == "scaling.dat":
 
             warnings.warn("Still to be understood what to do here!!")
