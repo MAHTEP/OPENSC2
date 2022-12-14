@@ -124,7 +124,7 @@ class StrandComponent(SolidComponent):
                     )
 
                 # call load_user_defined_quantity on the component.
-                self.dict_node_pt["op_current"] = do_interpolation(
+                self.dict_node_pt["alpha_B"] = do_interpolation(
                     self.alphab_interpolator,
                     conductor.grid_features["zcoord"],
                     conductor.cond_time[-1],
