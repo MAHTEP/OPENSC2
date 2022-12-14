@@ -250,10 +250,13 @@ class StrandComponent(SolidComponent):
 
     def eval_tcs(self, dict_dummy):
 
+        # Evaluate the current density with a suitable definition of the cross 
+        # section according to the definition of the scaling parameter c0. 
+        # A_current_density takes already into account of costheta, i.e., is 
+        # sloped.
         jop = (
-            np.abs(self.dict_node_pt["op_current"][0])
-            / (self.sc_cross_section / self.inputs["COSTETA"])
-            * np.ones(dict_dummy["B_field"].shape)
+            np.abs(self.dict_node_pt["op_current"])
+            / (self.cross_section_current_density)
         )
 
         bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
