@@ -227,21 +227,30 @@ def do_interpolation(interpolator, zcoord, time_step, kind):
 # End function do_interpolation
 
 
-def with_read_csv(fname, col_name, delimiter=";"):
+def with_read_csv(fname, sheet, delimiter=";"):
     """[summary]
 
     Args:
         fname ([type]): [description]
-        col_name ([type]): [description]
+        sheet ([type]): [description]
         delimiter (str, optional): [description]. Defaults to ";".
 
     Returns:
         [type]: [description]
     """
-    # The following works both for a single file with the spatial discretization for all the conductors and for a file with the spatial discretization for each conductor (i.e. one file with a single column for each conductor). The header of the column must be f"prefix_{conductor.name} [SI units]".
-    # Load the column of the file (exension dat, csv, or tsv) with the spatial discretization of the conductor named conductor.name as a series; then convert to numpy dropping NaN values.
+    # Works for a file with the spatial discretization for each conductor and 
+    # for a single file with a sheet for each conductor. The sheets in the file 
+    # must have 3 columns with the same number of rows with the following 
+    # content:
+    # column 1: coordinate along x direction
+    # column 2: coordinate along y direction
+    # column 3: coordinate along z direction
+    
+    # Load the column of the file (exension dat, csv, or tsv) with the spatial 
+    # discretization of the conductor named conductor.name as a series; then 
+    # convert to numpy dropping NaN values.
     vector = (
-        pd.read_csv(fname, sep=delimiter, usecols=[col_name], squeeze=True)
+        pd.read_csv(fname, sheet_name=sheet, sep=delimiter, squeeze=True)
         .dropna()
         .to_numpy()
     )
@@ -250,22 +259,30 @@ def with_read_csv(fname, col_name, delimiter=";"):
     # End function with_read_csv.
 
 
-def with_read_excel(fname, col_name, sheet=0):
+def with_read_excel(fname, sheet, delimiter=";"):
     """[summary]
 
     Args:
         fname ([type]): [description]
-        col_name ([type]): [description]
-        sheet (int, optional): [description]. Defaults to 0.
+        sheet ([type]): [description]
+        delimiter ([type]): [description]
 
     Returns:
         [type]: [description]
     """
-    # The following works both for a single file with the spatial discretization for all the conductors and for a file with the spatial discretization for each conductor (i.e. one file with a single column for each conductor). The header of the column must be f"x_{conductor.name} [m]".
-    # N.B. sheet non specified (to be added as features!!)
-    # Load the column of the file .xlsv with the spatial discretization of the conductor named conductor.name as a series; then convert to numpy dropping NaN values.
+    # Works for a file with the spatial discretization for each conductor and 
+    # for a single file with a sheet for each conductor. The sheets in the file 
+    # must have 3 columns with the same number of rows with the following 
+    # content:
+    # column 1: coordinate along x direction
+    # column 2: coordinate along y direction
+    # column 3: coordinate along z direction
+
+    # Load the column of the file .xlsv with the spatial discretization of the 
+    # conductor named conductor.name as a series; then convert to numpy 
+    # dropping NaN values.
     vector = (
-        pd.read_excel(fname, sheet_name=sheet, usecols=[col_name], squeeze=True)
+        pd.read_excel(fname, sheet_name=sheet, squeeze=True)
         .dropna()
         .to_numpy()
     )
