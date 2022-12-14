@@ -138,8 +138,8 @@ class StrandMixedComponent(StrandComponent):
             usecols=["Variable name", self.identifier],
         )[self.identifier].to_dict()
 
-        # Superconductor cross section in m^2
-        self.sc_cross_section = self.inputs["CROSSECTION"] / (
+        # Pure superconductor sloped cross section in m^2
+        self.sc_sloped_cross_section = self.inputs["CROSSECTION"] / (
             1.0 + self.inputs["STAB_NON_STAB"]
         )
         # Stabilizer cross section in m^2
@@ -180,6 +180,32 @@ class StrandMixedComponent(StrandComponent):
 
     def __str__(self):
         pass
+
+    def __compute_cross_section(self):
+        """Private method that computes the sloped cross section of the stabilizer and of the superconductor of the StrandMixedComponent.
+        """
+        # Perpendicular superconducting strand cross section.
+        self.sc_strand_cross_section = self.dict_input["N_sc_strand"] * np.pi * self.dict_input["d_sc_strand"] ** 2 / 4
+        # Sloped superconducting strand cross section.
+        self.sc_strand_sloped_cross_section = self.sc_strand_cross_section / self.dict_input["COSTETA"]
+        # Sloped stabilizer strand cross section.
+        self.stab_strand_sloped_cross_section = self.dict_input["N_stab_strand"] * np.pi * self.dict_input["d_stab_strand"] ** 2 / 4 / self.dict_input["COSTETA"]
+        # Superconductor perpendicular cross section in m^2. Remember that the 
+        # stab_non_stab is referred only to the sc_strand and does not include 
+        # the contribution fo the stab_strand.
+        self.sc_cross_section = self.sc_strand_cross_section / (
+            1.0 + self.inputs["STAB_NON_STAB"]
+        )
+        # Superconductor sloped cross section in m^2. Remember that the 
+        # stab_non_stab is referred only to the sc_strand and does not include 
+        # the contribution fo the stab_strand.
+        self.sc_sloped_cross_section = self.sc_strand_sloped_cross_section / (
+            1.0 + self.inputs["STAB_NON_STAB"]
+        )
+        # Stabilizer sloped cross section in m^2. It accounts for the 
+        # contribution of stabilizer strand cross section and for the fraction 
+        # of stabilizer in sc strands.
+        self.stab_sloped_cross_section = self.sc_strand_sloped_cross_section - self.sc_sloped_cross_section + self.stab_strand_sloped_cross_section
 
     def __reorganize_input(self):
         """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization."""
