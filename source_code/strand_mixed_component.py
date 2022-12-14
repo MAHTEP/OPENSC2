@@ -207,6 +207,22 @@ class StrandMixedComponent(StrandComponent):
         # of stabilizer in sc strands.
         self.stab_sloped_cross_section = self.sc_strand_sloped_cross_section - self.sc_sloped_cross_section + self.stab_strand_sloped_cross_section
 
+    def __get_current_density_cross_section(self, sheet):
+        """Private method that evalutates cross section used to compute the current density and the current sharing temperature according to the definiton of the critical current density scaling parameter c0.
+        """
+        if self.dict_input["C0_MODE"] == PHYSICAL_MODE:
+            # Physical definition for c0 is used, i.e., the value is normalized 
+            # with respect to the perpendicular superconducting cross section
+            # of a single superconducting strand.
+            self.cross_section_current_density = np.pi * self.dict_input["d_sc_strand"] ** 2 / (4 * (
+            1.0 + self.inputs["STAB_NON_STAB"]))
+        elif self.dict_input["C0_MODE"] == INGEGNERISTIC_MODE:
+            # Ingegneristic definition for c0 is used, i.e., the value is 
+            # normalized with respect to the perpendicular cross section of a single superconducting strand.
+            self.cross_section_current_density = np.pi * self.dict_input["d_sc_strand"] ** 2 / 4
+        else:
+            raise ValueError(f"Not valid value for flag self.dict_input['C0_MODE']. Flag value should be {PHYSICAL_MODE = } or {INGEGNERISTIC_MODE = }, current value is {self.dict_input['C0_MODE'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n")
+
     def __reorganize_input(self):
         """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization."""
 
