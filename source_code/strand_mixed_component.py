@@ -140,18 +140,6 @@ class StrandMixedComponent(StrandComponent):
             usecols=["Variable name", self.identifier],
         )[self.identifier].to_dict()
 
-        # Pure superconductor sloped cross section in m^2
-        self.sc_sloped_cross_section = self.inputs["CROSSECTION"] / (
-            1.0 + self.inputs["STAB_NON_STAB"]
-        )
-        # Stabilizer cross section in m^2
-        self.stabilizer_cross_section = np.array([
-            self.inputs["CROSSECTION"] - self.sc_cross_section]
-        )
-        # For the time being since user can define strand mix with a single 
-        # stabilizer material.
-        self.stabilizer_total_cross_section = self.stabilizer_cross_section.sum()
-
         self.__compute_cross_section()
         self.__get_current_density_cross_section(sheet)
         # Call SolidComponent class constructor to deal with StrandMixedComponent time \
