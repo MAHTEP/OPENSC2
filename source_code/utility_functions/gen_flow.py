@@ -363,7 +363,7 @@ def get_missing_pressure_no_hydraulic_parallel(
     # Invoke method eval_reynolds_from_mass_flow_rate to evaluate Reynolds number at known pressure and inlet temperature
     Re_known = fluid_comp.coolant.eval_reynolds_from_mass_flow_rate(mdot_inl, mu_known)
     # Friction factor at inlet pressure and temperature, nodal = None specities that total friction factor in Gen_Flow module is evaluated (cdp, 09/2020)
-    fluid_comp.channel.eval_friction_factor(Re_known, nodal=None)
+    fluid_comp.channel.eval_friction_factor(np.array([Re_known]), nodal=None)
     # Pressure drop evaluated with properties at inlet, to be able to deal \
     # with any fluid type (cdp, 09/2020)
     delta_p_old = float(
