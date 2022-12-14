@@ -1099,6 +1099,12 @@ class SolidComponent:
 
     # end Q0_where
 
+    def user_heat_function(self, arg):
+        # Method that allows user to define an arbitrary function for heat 
+        # load.
+        # To be edited.
+        pass
+
     def jhtflx_new_0(self, conductor):  # tesded: ok (cdp, 06/2020)
 
         """
