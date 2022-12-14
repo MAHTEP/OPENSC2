@@ -4675,7 +4675,7 @@ class Conductor:
 
     # End method _compute_heat_exchange_environment.
 
-    def load_user_defined_quantity(self, simulation, key, col_name):
+    def load_user_defined_quantity(self, simulation, key, sheet_name):
         """[summary]
 
         Args:
@@ -4689,7 +4689,7 @@ class Conductor:
         fname = os.path.join(self.BASE_PATH, self.file_input[key])
         # Call function used to open the file
         return simulation.func_open_aux[file_extension](
-            fname, col_name, simulation.default_vals[file_extension]
+            fname, sheet_name, simulation.default_vals[file_extension]
         )
 
         # End method load_user_defined_quantity.
