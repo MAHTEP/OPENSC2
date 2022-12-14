@@ -149,6 +149,9 @@ class StrandMixedComponent(StrandComponent):
         # For the time being since user can define strand mix with a single 
         # stabilizer material.
         self.stabilizer_total_cross_section = self.stabilizer_cross_section.sum()
+
+        self.__compute_cross_section()
+        self.__get_current_density_cross_section(sheet)
         # Call SolidComponent class constructor to deal with StrandMixedComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
         SolidComponent(simulation, self)
