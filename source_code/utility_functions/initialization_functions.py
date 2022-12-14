@@ -18,10 +18,11 @@ from cylindrical_helix import CylindricalHelix
 logger_discretization = logging.getLogger("opensc2Logger.discretization")
 
 
-def conductor_spatial_discretization(conductor: object):
+def conductor_spatial_discretization(simulation: object, conductor: object):
     """Function that evaluate the z component of the spatial discretization of conductor.
 
     Args:
+        simulation (object): simulation object, has all the information to the function to be load in case of user defined mesh.
         conductor (object): object whit the information to evaluate the spatial discretization and of which the spatial discretization should be evaluated.
     """
 
@@ -39,6 +40,16 @@ def conductor_spatial_discretization(conductor: object):
         zcoord = fixed_refined_spatial_discretization(
             conductor, np.zeros(conductor.grid_features["N_nod"])
         )
+    elif conductor.grid_input["ITYMSH"] == -1:
+        # User defined mesh
+        zcoord, conductor.grid_features["N_nod"] = conductor.load_user_defined_quantity(
+            simulation, "EXTERNAL_GRID", conductor.identifier
+        )
+        # In this case zcoord is a matrix storing on the 3rd column the 
+        # cooordiante along the z direction of the spatial discretization.
+        zcoord = zcoord[:,2]
+        # Compute the number of elements from the number of nodes
+        conductor.dict_discretization["Grid_input"]["NELEMS"] = conductor.grid_features["N_nod"] - 1
 
     check_grid_features(
         conductor.inputs["ZLENGTH"], zcoord[0], zcoord[-1], conductor.identifier
@@ -471,6 +482,7 @@ def assign_user_defined_spatial_discretization(
 
 
 def straight_coordinates(
+    sim: object,
     cond: object,
     comp: Union[
         FluidComponent,
@@ -485,26 +497,41 @@ def straight_coordinates(
     """Function that builds the straight coordinates of the barycenter of conductor components.
 
     Args:
+        sim (object): simulation object, has all the information to the function to be load in case of user defined mesh.
         cond (object): conductor object, has all the information to evaluate load and assign user defined grid.
         comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StackComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
         xb (float): x coordinate of the barycenter of the component (passed in this way due to the workaround in function build_coordinates_of_barycenter).
         yb (float): y coordinate of the barycenter of the component (passed in this way due to the workaround in function build_coordinates_of_barycenter).
     """
-    comp.coordinate["x"] = xb * np.ones(cond.grid_features["N_nod"])
-    comp.coordinate["y"] = yb * np.ones(cond.grid_features["N_nod"])
-    if (
-        cond.grid_input["ITYMSH"] == 0
-        or cond.grid_input["ITYMSH"] == 2
-        or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
-    ):
-        comp.coordinate["z"] = uniform_spatial_discretization(cond)
-    elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
-        comp.coordinate["z"] = fixed_refined_spatial_discretization(
-            cond, zcoord=np.zeros(cond.grid_features["N_nod"])
-        )
+    if cond.grid_input["ITYMSH"] >= 0:
+        comp.coordinate["x"] = xb * np.ones(cond.grid_features["N_nod"])
+        comp.coordinate["y"] = yb * np.ones(cond.grid_features["N_nod"])
+        if (
+            cond.grid_input["ITYMSH"] == 0
+            or cond.grid_input["ITYMSH"] == 2
+            or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
+        ):
+            comp.coordinate["z"] = uniform_spatial_discretization(cond)
+        elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
+            comp.coordinate["z"] = fixed_refined_spatial_discretization(
+                cond, zcoord=np.zeros(cond.grid_features["N_nod"])
+            )
+    else:
+        if cond.grid_input["ITYMSH"] == -1:
+            # User defined mesh
+            coordinate, _ = cond.load_user_defined_quantity(
+                sim, "EXTERNAL_GRID", cond.identifier
+            )
+            # Assign coordinate along x direction.
+            comp.coordinate["x"] = coordinate[:,0]
+            # Assign coordinate along y direction.
+            comp.coordinate["y"] = coordinate[:,1]
+            # Assign coordinate along x direction.
+            comp.coordinate["z"] = coordinate[:,2]
 
 
 def helicoidal_coordinates(
+    sim: object,
     cond: object,
     comp: Union[
         StrandMixedComponent,
@@ -515,6 +542,7 @@ def helicoidal_coordinates(
     """Function that builds the helicoidal coordinates of the barycenter of conductor components of kind StrandMixedComponent, StrandStabilizerComponent and StackComponent.
 
     Args:
+        sim (object): simulation object, has all the information to the function to be load in case of user defined mesh.
         cond (object): conductor object, has all the information to evaluate load and assign user defined grid.
         comp (Union[ StrandMixedComponent, StrandStabilizerComponent, StackComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
     """
@@ -524,26 +552,41 @@ def helicoidal_coordinates(
         cond.inputs["ZLENGTH"],
         comp.inputs["COSTETA"],
     )
-    # Evaluate the angular discretization according to the value of flag ITYMSH.
-    if (
-        cond.grid_input["ITYMSH"] == 0
-        or cond.grid_input["ITYMSH"] == 2
-        or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
-    ):
-        tau = uniform_angular_discretization(cond, comp)
-    elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
-        tau = fixed_refined_angular_discretization(
-            cond, comp, tau=np.zeros(cond.grid_features["N_nod"])
-        )
-    # Evalute coordinates exploiting the helix parametrization.
-    (
-        comp.coordinate["x"],
-        comp.coordinate["y"],
-        comp.coordinate["z"],
-    ) = comp.cyl_helix.helix_parametrization(tau)
+    if cond.grid_input["ITYMSH"] >= 0:
+        # Evaluate the angular discretization according to the value of flag 
+        # ITYMSH.
+        if (
+            cond.grid_input["ITYMSH"] == 0
+            or cond.grid_input["ITYMSH"] == 2
+            or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
+        ):
+            tau = uniform_angular_discretization(cond, comp)
+        elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
+            tau = fixed_refined_angular_discretization(
+                cond, comp, tau=np.zeros(cond.grid_features["N_nod"])
+            )
+        # Evalute coordinates exploiting the helix parametrization.
+        (
+            comp.coordinate["x"],
+            comp.coordinate["y"],
+            comp.coordinate["z"],
+        ) = comp.cyl_helix.helix_parametrization(tau)
+    else:
+        if cond.grid_input["ITYMSH"] == -1:
+            # User defined mesh
+            coordinate, _ = cond.load_user_defined_quantity(
+                sim, "EXTERNAL_GRID", cond.identifier
+            )
+            # Assign coordinate along x direction.
+            comp.coordinate["x"] = coordinate[:,0]
+            # Assign coordinate along y direction.
+            comp.coordinate["y"] = coordinate[:,1]
+            # Assign coordinate along x direction.
+            comp.coordinate["z"] = coordinate[:,2]
 
 
 def build_coordinates_of_barycenter(
+    sim: object,
     cond: object,
     comp: Union[
         FluidComponent,
@@ -556,6 +599,7 @@ def build_coordinates_of_barycenter(
     """Function that builds the coordinates of the barycenter of conductor components.
 
     Args:
+        sim (object): simulation object, has all the information to the function to be load in case of user defined mesh.
         cond (object): conductor object, has all the information to evaluate load and assign user defined grid.
         comp (Union[ FluidComponent, JacketComponent, StrandMixedComponent, StrandStabilizerComponent, StackComponent, ]): generic object for which the coordinates of the barycenter should be evaluated.
 
@@ -578,12 +622,12 @@ def build_coordinates_of_barycenter(
     if costheta == 1:
         # Evaluate straight spatial coordinates. The coordinates are assinged
         # directly to the component in the function.
-        straight_coordinates(cond, comp, xb, yb)
+        straight_coordinates(sim, cond, comp, xb, yb)
     else:
         if isinstance(comp, StrandComponent):
             if cond.inventory["StrandComponent"].number > 1:
                 # Evaluate helicoidal spatial coordinates. The coordinates are assinged directly to the component in the function.
-                helicoidal_coordinates(cond, comp)
+                helicoidal_coordinates(sim, cond, comp)
             elif cond.inventory["StrandComponent"].number == 1:
                 # Use straight spatial discretization in this case.
                 # Evaluate straight spatial coordinates. The coordinates are
@@ -591,7 +635,7 @@ def build_coordinates_of_barycenter(
                 warnings.warn(
                     "User defined only one strand component, it is considered straight since there is no need to evaluate the inductances."
                 )
-                straight_coordinates(cond, comp, xb, yb)
+                straight_coordinates(sim, cond, comp, xb, yb)
         else:
             raise ValueError(
                 r"$Cos(\theta)$"
