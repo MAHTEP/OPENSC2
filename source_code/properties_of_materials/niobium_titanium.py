@@ -305,6 +305,7 @@ def critical_current_density_nbti(
     gamma=1.8,
     delta=0.45,
     nn=1.7,
+    b_low=0.01,
 ):
 
     """
@@ -316,7 +317,7 @@ def critical_current_density_nbti(
     Returns:
         _type_: _description_
     """
-
+    magnetic_field = np.maximum(magnetic_field, b_low)
     bb = reduced_magnetic_field_nbti(magnetic_field, temperature, B_c20, T_c0, nn=nn)
     tau = reduced_temperature_nbti(temperature, T_c0)
 
