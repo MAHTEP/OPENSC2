@@ -552,7 +552,7 @@ def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit_time):
     new = dict()
     cols = list()
     time = np.around(cond.Space_save, n_digit_time)
-    for ii in range(len(cond.Space_save)):
+    for ii,_ in enumerate(cond.Space_save):
         file_name = f"{radix_old}_({cond.num_step_save[ii]})_sd.tsv"
         file_load = os.path.join(f_path, file_name)
         # Check if file exist and if True load it.
