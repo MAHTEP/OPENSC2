@@ -177,7 +177,8 @@ def electrical_resistivity_inconel718(TT):
 
     return RHOENE
 
-def density_inconel718(temperature: np.ndarray)->np.ndarray:
+
+def density_inconel718(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates inconel 718 density, assumed constant.
 

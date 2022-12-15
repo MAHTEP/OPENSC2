@@ -325,7 +325,7 @@ def critical_current_density_nbti(
     return (
         C_0
         / magnetic_field
-        * (1.0 - tau**nn) ** gamma
+        * (1.0 - tau ** nn) ** gamma
         * (
             delta * bb ** alpha[0] * (1.0 - bb) ** beta[0] / g_func(alpha[0], beta[0])
             + (1.0 - delta)

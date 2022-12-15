@@ -78,7 +78,8 @@ def isobaric_specific_heat_kapton(t):
 
     return cp  # end of the function
 
-def density_kapton(temperature: np.ndarray)->np.ndarray:
+
+def density_kapton(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates kapton density, assumed constant.
 
@@ -91,7 +92,8 @@ def density_kapton(temperature: np.ndarray)->np.ndarray:
     """
     return 1.380e3 * np.ones(temperature.shape)
 
-def electrical_resistivity_kapton(temperature: np.ndarray)->np.ndarray:
+
+def electrical_resistivity_kapton(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates kapton electrical resistivity, assumed constant.
 

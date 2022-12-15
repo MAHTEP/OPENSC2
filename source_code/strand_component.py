@@ -250,9 +250,9 @@ class StrandComponent(SolidComponent):
 
     def eval_tcs(self, dict_dummy):
 
-        # Evaluate the current density with a suitable definition of the cross 
-        # section according to the definition of the scaling parameter c0. 
-        # A_current_density takes already into account of costheta, i.e., is 
+        # Evaluate the current density with a suitable definition of the cross
+        # section according to the definition of the scaling parameter c0.
+        # A_current_density takes already into account of costheta, i.e., is
         # sloped.
         jop = (
             np.abs(self.dict_node_pt["op_current"])
@@ -347,7 +347,7 @@ class StrandComponent(SolidComponent):
                 )
 
                 if self.flagSpecfield_eps == 1:
-                   # Add also a logger
+                    # Add also a logger
                     warnings.warn("Still to be decided what to do here\n")
             elif self.operations["IEPS"] == 0:  # no strain (cdp, 06/2020)
                 self.dict_node_pt["Epsilon"] = np.zeros(
@@ -469,8 +469,7 @@ class StrandComponent(SolidComponent):
             / (electric_resistances.sum(axis=1))
         )
 
-
-    def __manage_fixed_potental(self, length:float):
+    def __manage_fixed_potental(self, length: float):
         """Method that deals with fixed potentials: converts fixed potential values to array if they are integers or strings and checks the coordinate where fixed potentials are assigned.
 
         Args:
@@ -480,18 +479,21 @@ class StrandComponent(SolidComponent):
         self.__checks_fix_potential_coordinate(length)
 
     def __convert_fixed_potential_to_array(self):
-        """Private method that allows to convert keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE to numpy array.
-        """
+        """Private method that allows to convert keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE to numpy array."""
         # Define dictionary with private methods.
-        private_metods = {int: self.__int_or_float_to_array, float: self.__int_or_float_to_array, str: self.__str_to_array}
+        private_metods = {
+            int: self.__int_or_float_to_array,
+            float: self.__int_or_float_to_array,
+            str: self.__str_to_array,
+        }
 
-        # Call private method self.__int_or_float_to_array if 
-        # type(self.operations[key]) is int (integer) or float; 
+        # Call private method self.__int_or_float_to_array if
+        # type(self.operations[key]) is int (integer) or float;
         # self.__str_to_array it type(self.operations[key]) is str (string).
         for key in ["FIX_POTENTIAL_COORDINATE", "FIX_POTENTIAL_VALUE"]:
             private_metods[type(self.operations[key])](key)
 
-    def __int_or_float_to_array(self, key:str):
+    def __int_or_float_to_array(self, key: str):
         """Private method that converts value corresponding to keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE of dictionary self.operations from integer or float to ndarray of float.
 
         Args:
@@ -500,7 +502,7 @@ class StrandComponent(SolidComponent):
         # Convert value corresponding to key from int to ndarray of float.
         self.operations[key] = np.array([self.operations[key]], dtype=float)
 
-    def __str_to_array(self, key:str):
+    def __str_to_array(self, key: str):
         """Private method that converts value corresponding to keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE of dictionary self.operations from str to ndarray of float.
 
         Args:
@@ -508,8 +510,8 @@ class StrandComponent(SolidComponent):
         """
         # Convert value corresponding to key from str to ndarray of float.
         self.operations[key] = np.array(self.operations[key].split(","), dtype=float)
-    
-    def __checks_fix_potential_coordinate(self, length:float):
+
+    def __checks_fix_potential_coordinate(self, length: float):
         """Private method that checks consistency between input values FIX_POTENTIAL_NUMBER, FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE after conversion of FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE to ndarray.
 
         Args:
@@ -537,7 +539,7 @@ class StrandComponent(SolidComponent):
                 f"Fixed potential coordinate cannot exceed conductor length:\n{np.max(self.operations['FIX_POTENTIAL_COORDINATE'])=}m;\n{length=}m"
             )
 
-    def __delete_fixed_potential_inputs(self, _:float):
+    def __delete_fixed_potential_inputs(self, _: float):
         """Method that forces self.operations["FIX_POTENTIAL_NUMBER"] to be zero and deletes no longer useful keys FIX_POTENTIAL_COORDINATE and FIX_POTENTIAL_VALUE from dictionary self.operations.
 
         Args:
@@ -550,7 +552,7 @@ class StrandComponent(SolidComponent):
         for key in ["FIX_POTENTIAL_COORDINATE", "FIX_POTENTIAL_VALUE"]:
             del self.operations[key]
 
-    def deal_with_fixed_potential(self, length:float):
+    def deal_with_fixed_potential(self, length: float):
         """Method that deals with fixed potential input. It converts True value to 1 (odd beaviour) if necessary; defines dictionary with private methods self.__manage_fixed_potental and self.__delete_fixed_potential_inputs, and calls them according to input value FIX_POTENTIAL_FLAG.
 
         Args:
@@ -566,8 +568,8 @@ class StrandComponent(SolidComponent):
         ]:
             if self.operations[key] == True:
                 self.operations[key] = 1
-        
-        # Define dictionary with methods inherited from class Strand used to 
+
+        # Define dictionary with methods inherited from class Strand used to
         # deal with fixed potential.
         methods = {
             True: self.__manage_fixed_potental,
@@ -575,6 +577,6 @@ class StrandComponent(SolidComponent):
         }
 
         # Calls method self.manage_equipotential_surfaces_index if
-        # FIX_POTENTIAL_FLAG is True; self.delete_fixed_potential_inputs if 
+        # FIX_POTENTIAL_FLAG is True; self.delete_fixed_potential_inputs if
         # FIX_POTENTIAL_FLAG is False.
         methods[self.operations["FIX_POTENTIAL_FLAG"]](length)

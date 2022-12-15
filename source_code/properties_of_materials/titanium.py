@@ -196,7 +196,8 @@ def electrical_resistivity_ti(TT):
 
     return RHOETI
 
-def density_ti(temperature: np.ndarray)->np.ndarray:
+
+def density_ti(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates titanium density, assumed constant.
 

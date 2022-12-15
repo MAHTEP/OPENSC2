@@ -68,7 +68,11 @@ class JacketComponent(SolidComponent):
         self.coordinate = dict()
         # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
         self.time_evol = dict(temperature=dict())
-        self.time_evol_gauss = dict(current_along = dict(), voltage_drop_along = dict(), linear_power_el_resistance = dict())
+        self.time_evol_gauss = dict(
+            current_along=dict(),
+            voltage_drop_along=dict(),
+            linear_power_el_resistance=dict(),
+        )
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(
             dict_file_path["input"],
@@ -92,7 +96,7 @@ class JacketComponent(SolidComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
 
-        # Call to method deal_with_flag_IOP_MODE to check and manipulate value 
+        # Call to method deal_with_flag_IOP_MODE to check and manipulate value
         # of flag self.operations["IOP_MODE"].
         self.deal_with_flag_IOP_MODE()
 
@@ -330,7 +334,10 @@ class JacketComponent(SolidComponent):
         # Check that jacket cross section given in input is consistent with the
         # evaluated one.
         tol = 1e-3
-        self.inputs["CROSSECTION"] = self.inputs["jacket_cross_section"] + self.inputs["insulation_cross_section"]
+        self.inputs["CROSSECTION"] = (
+            self.inputs["jacket_cross_section"]
+            + self.inputs["insulation_cross_section"]
+        )
         if (
             abs(self.__cross_section - self.inputs["CROSSECTION"])
             / self.inputs["CROSSECTION"]
@@ -372,7 +379,6 @@ class JacketComponent(SolidComponent):
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
             return density
 
-
     def jacket_isobaric_specific_heat(self, property: dict) -> np.ndarray:
         """Method that evaluates homogenized isobaric specific heat of the jacket, in the case it is made at most by two materials (jacket and insulation). Homogenization is based on material mass.
 
@@ -403,7 +409,9 @@ class JacketComponent(SolidComponent):
             # Evaluate homogenized isobaric specific heat of the jacket:
             # cp_eq = (cp_jk*A_jk*rho_jk + cp_in*A_in*rho_in)/(A_jk*rho_jk +
             # A_in*rho_in)
-            return (isobaric_specific_heat.T * self.__density_numerator).sum(axis=1)/self.__density_numerator_sum
+            return (isobaric_specific_heat.T * self.__density_numerator).sum(
+                axis=1
+            ) / self.__density_numerator_sum
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
             return isobaric_specific_heat
 
@@ -425,7 +433,9 @@ class JacketComponent(SolidComponent):
         if self.inputs["NUM_MATERIAL_TYPES"] > 1:
             # Evaluate homogenized thermal conductivity of the jacket:
             # k_eq = (A_jk*k_jk + A_in*k_in)/(A_jk + A_in)
-            return (thermal_conductivity.T * self.cross_sections).sum(axis=1)/ self.inputs["CROSSECTION"]
+            return (thermal_conductivity.T * self.cross_sections).sum(
+                axis=1
+            ) / self.inputs["CROSSECTION"]
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
             return thermal_conductivity
 
@@ -448,6 +458,8 @@ class JacketComponent(SolidComponent):
         if self.inputs["NUM_MATERIAL_TYPES"] > 1:
             # Evaluate homogenized electrical resistivity of the jacket:
             # rho_el_eq = (A_jk + A_in) * ((A_jk/rho_el_jk + A_in/rho_el_in))^-1
-            return self.inputs["CROSSECTION"]*np.reciprocal((self.cross_sections / electrical_resistivity.T).sum(axis=1))
+            return self.inputs["CROSSECTION"] * np.reciprocal(
+                (self.cross_sections / electrical_resistivity.T).sum(axis=1)
+            )
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
             return electrical_resistivity

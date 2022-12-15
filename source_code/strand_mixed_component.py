@@ -65,6 +65,7 @@ ELECTRICAL_RESISTIVITY_FUNC = dict(
 INGEGNERISTIC_MODE = 0
 PHYSICAL_MODE = 1
 
+
 class StrandMixedComponent(StrandComponent):
 
     # Class for mixed strands objects
@@ -119,7 +120,11 @@ class StrandMixedComponent(StrandComponent):
         self.coordinate = dict()
         # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
         self.time_evol = dict(temperature=dict(), B_field=dict(), T_cur_sharing=dict())
-        self.time_evol_gauss = dict(current_along = dict(), voltage_drop_along = dict(), linear_power_el_resistance = dict())
+        self.time_evol_gauss = dict(
+            current_along=dict(),
+            voltage_drop_along=dict(),
+            linear_power_el_resistance=dict(),
+        )
         self.dict_scaling_input = dict()
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(
@@ -153,7 +158,7 @@ class StrandMixedComponent(StrandComponent):
             del self.operations["B_field_units"]
         # end if (cdp, 07/2020)
 
-        # Call to method deal_with_flag_IOP_MODE to check and manipulate value 
+        # Call to method deal_with_flag_IOP_MODE to check and manipulate value
         # of flag self.operations["IOP_MODE"].
         self.deal_with_flag_IOP_MODE()
 
@@ -164,7 +169,7 @@ class StrandMixedComponent(StrandComponent):
         self.__reorganize_input()
         self.__check_consistency(conductor)
 
-        # Call method deal_with_fixed_potential to manipulate input about fixed 
+        # Call method deal_with_fixed_potential to manipulate input about fixed
         # potential values.
         self.deal_with_fixed_potential(conductor.inputs["ZLENGTH"])
 
@@ -195,14 +200,13 @@ class StrandMixedComponent(StrandComponent):
         self.sc_sloped_cross_section = self.sc_strand_sloped_cross_section / (
             1.0 + self.inputs["STAB_NON_STAB"]
         )
-        # Stabilizer sloped cross section in m^2. It accounts for the 
-        # contribution of stabilizer strand cross section and for the fraction 
+        # Stabilizer sloped cross section in m^2. It accounts for the
+        # contribution of stabilizer strand cross section and for the fraction
         # of stabilizer in sc strands.
         self.stab_sloped_cross_section = self.sc_strand_sloped_cross_section - self.sc_sloped_cross_section + self.stab_strand_sloped_cross_section
 
     def __get_current_density_cross_section(self, sheet):
-        """Private method that evalutates cross section used to compute the current density and the current sharing temperature according to the definiton of the critical current density scaling parameter c0.
-        """
+        """Private method that evalutates cross section used to compute the current density and the current sharing temperature according to the definiton of the critical current density scaling parameter c0."""
         if self.dict_input["C0_MODE"] == PHYSICAL_MODE:
             # Physical definition for c0 is used, i.e., the value is normalized 
             # with respect to the perpendicular superconducting cross section
@@ -214,7 +218,9 @@ class StrandMixedComponent(StrandComponent):
             # normalized with respect to the perpendicular cross section of a single superconducting strand.
             self.cross_section_current_density = np.pi * self.dict_input["d_sc_strand"] ** 2 / 4
         else:
-            raise ValueError(f"Not valid value for flag self.dict_input['C0_MODE']. Flag value should be {PHYSICAL_MODE = } or {INGEGNERISTIC_MODE = }, current value is {self.dict_input['C0_MODE'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n")
+            raise ValueError(
+                f"Not valid value for flag self.dict_input['C0_MODE']. Flag value should be {PHYSICAL_MODE = } or {INGEGNERISTIC_MODE = }, current value is {self.dict_input['C0_MODE'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n"
+            )
 
     def __reorganize_input(self):
         """Private method that reorganizes input data stored in dictionary self.inputs to simplify the procedure of properties homogenization."""
@@ -339,19 +345,32 @@ class StrandMixedComponent(StrandComponent):
         # Set flag to false to trigger error in the next homogenized isobaric
         # specific heat evaluation if not done properly.
         self.__strand_density_flag = False
-        isobaric_specific_heat = np.zeros((property["temperature"].size,self.inputs["NUM_MATERIAL_TYPES"]))
+        isobaric_specific_heat = np.zeros(
+            (property["temperature"].size, self.inputs["NUM_MATERIAL_TYPES"])
+        )
         for ii, func in enumerate(self.isobaric_specific_heat_function):
             if func.__name__ == "isobaric_specific_heat_nb3sn":
-                isobaric_specific_heat[:,ii] = func(property["temperature"],   property["T_cur_sharing_min"],property["T_critical"],
-                self.inputs["Tc0m"])
+                isobaric_specific_heat[:, ii] = func(
+                    property["temperature"],
+                    property["T_cur_sharing_min"],
+                    property["T_critical"],
+                    self.inputs["Tc0m"],
+                )
             elif func.__name__ == "isobaric_specific_heat_nbti":
-                isobaric_specific_heat[:,ii] = func(property["temperature"],property["B_field"],property["T_cur_sharing_min"],property["T_critical"])
+                isobaric_specific_heat[:, ii] = func(
+                    property["temperature"],
+                    property["B_field"],
+                    property["T_cur_sharing_min"],
+                    property["T_critical"],
+                )
             else:
-                isobaric_specific_heat[:,ii] = func(property["temperature"])
+                isobaric_specific_heat[:, ii] = func(property["temperature"])
 
         # Evaluate homogenized isobaric specific heat of the strand mixed:
         # cp_eq = (cp_sc*rho_sc + stab_non_stab*cp_stab*rho_stab)/(rho_sc + stab_non_stab * rho_stab)
-        return (isobaric_specific_heat * self.__density_numerator).sum(axis=1)/self.__density_numerator_sum
+        return (isobaric_specific_heat * self.__density_numerator).sum(
+            axis=1
+        ) / self.__density_numerator_sum
         # return (isobaric_specific_heat * self.__density_numerator)/self.__density_numerator_sum.reshape(property["temperature"].size,1)
 
     def strand_thermal_conductivity(self, property: dict) -> np.ndarray:
@@ -363,10 +382,12 @@ class StrandMixedComponent(StrandComponent):
         Returns:
             np.ndarray: array with homogenized thermal conductivity of the strand mixed in W/m/K.
         """
-        thermal_conductivity = np.zeros((property["temperature"].size,self.inputs["NUM_MATERIAL_TYPES"]))
+        thermal_conductivity = np.zeros(
+            (property["temperature"].size, self.inputs["NUM_MATERIAL_TYPES"])
+        )
         for ii, func in enumerate(self.thermal_conductivity_function):
             if "cu" in func.__name__:
-                thermal_conductivity[:,ii] = func(
+                thermal_conductivity[:, ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
@@ -375,7 +396,9 @@ class StrandMixedComponent(StrandComponent):
                 thermal_conductivity[:, ii] = func(property["temperature"])
         # Evaluate homogenized thermal conductivity of the strand mixed:
         # k_eq = (K_sc + stab_non_stab * K_stab)/(1 + stab_non_stab)
-        return (thermal_conductivity * self.homogenization_cefficients).sum(axis=1) / self.homogenization_cefficients_sum
+        return (thermal_conductivity * self.homogenization_cefficients).sum(
+            axis=1
+        ) / self.homogenization_cefficients_sum
 
     def strand_electrical_resistivity_not_sc(self, property: dict) -> np.ndarray:
         """Method that evaluates electrical resisitivity of the stabilizer material of the strand mixed.
@@ -391,20 +414,19 @@ class StrandMixedComponent(StrandComponent):
         )
         for ii, func in enumerate(self.electrical_resistivity_function_not_sc):
             if "cu" in func.__name__:
-                electrical_resistivity[:,ii] = func(
+                electrical_resistivity[:, ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
                 )
             else:
-                electrical_resistivity[:,ii] = func(property["temperature"])
+                electrical_resistivity[:, ii] = func(property["temperature"])
         if self.inputs["NUM_MATERIAL_TYPES"] - 1 > 1:
             # Evaluate homogenized electrical resistivity of the strand mixed:
             # rho_el_eq = A_not_sc * (sum(A_i/rho_el_i))^-1 for any i not sc
             return self.stab_sloped_cross_section * np.reciprocal((self.stab_sloped_cross_section / electrical_resistivity).sum(axis=1))
         if self.inputs["NUM_MATERIAL_TYPES"] - 1 == 1:
             return electrical_resistivity.reshape(property["temperature"].size)
-
 
     def superconductor_power_law(
         self,
@@ -503,7 +525,7 @@ class StrandMixedComponent(StrandComponent):
                 self.__sc_current_residual,
                 0.0,
                 val,
-                args=(psi[ii],val),
+                args=(psi[ii], val),
                 maxiter=10,
                 disp=False,
             )
@@ -511,16 +533,19 @@ class StrandMixedComponent(StrandComponent):
         sc_current = optimize.newton(
             self.__sc_current_residual,
             sc_current_guess,
-            args=(psi,current),
+            args=(psi, current),
             fprime=self.__d_sc_current_residual,
             fprime2=self.__d2_sc_current_residual,
-            maxiter=1000
+            maxiter=1000,
         )
 
         return sc_current, current - sc_current
 
     def __sc_current_residual(
-        self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray], so_current: Union[float, np.ndarray]
+        self,
+        sc_current: Union[float, np.ndarray],
+        psi: Union[float, np.ndarray],
+        so_current: Union[float, np.ndarray],
     ) -> Union[float, np.ndarray]:
         """Private method that defines the residual function for the evaluation of the superconducting current with bysection and/or Newton-Rampson methods.
 
@@ -541,15 +566,21 @@ class StrandMixedComponent(StrandComponent):
         """
         # Checks on input arguments.
         if isinstance(sc_current, float):
-            if isinstance(psi, float) == False or isinstance(so_current, float) == False:
+            if (
+                isinstance(psi, float) == False
+                or isinstance(so_current, float) == False
+            ):
                 raise ValueError(
-                f"Arguments sc_current, psi and so_current must be of the same type (float).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
-            )
+                    f"Arguments sc_current, psi and so_current must be of the same type (float).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
+                )
         if isinstance(sc_current, np.ndarray):
-            if isinstance(psi, np.ndarray) == False or isinstance(so_current, np.ndarray) == False:
+            if (
+                isinstance(psi, np.ndarray) == False
+                or isinstance(so_current, np.ndarray) == False
+            ):
                 raise ValueError(
-                f"Arguments sc_current, psi and so_current must be of the same type (np.ndarray).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
-            )
+                    f"Arguments sc_current, psi and so_current must be of the same type (np.ndarray).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
+                )
             if sc_current.shape != psi.shape:
                 raise ValueError(
                     f"Arrays sc_current and psi must have the same shape.\n {sc_current.shape = };\n{psi.shape}.\n"
@@ -559,13 +590,13 @@ class StrandMixedComponent(StrandComponent):
                     f"Arrays sc_current and so_current must have the same shape.\n {sc_current.shape = };\n{so_current.shape}.\n"
                 )
 
-        return (
-            sc_current ** self.inputs["nn"]
-            + (sc_current - so_current) * psi
-        )
+        return sc_current ** self.inputs["nn"] + (sc_current - so_current) * psi
 
     def __d_sc_current_residual(
-        self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray], so_current: Union[float, np.ndarray]
+        self,
+        sc_current: Union[float, np.ndarray],
+        psi: Union[float, np.ndarray],
+        so_current: Union[float, np.ndarray],
     ) -> Union[float, np.ndarray]:
         """Private method that defines the first derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
 
@@ -581,7 +612,10 @@ class StrandMixedComponent(StrandComponent):
         return self.inputs["nn"] * sc_current ** (self.inputs["nn"] - 1) + psi
 
     def __d2_sc_current_residual(
-        self, sc_current: Union[float, np.ndarray], psi: Union[float, np.ndarray], so_current: Union[float, np.ndarray]
+        self,
+        sc_current: Union[float, np.ndarray],
+        psi: Union[float, np.ndarray],
+        so_current: Union[float, np.ndarray],
     ) -> Union[float, np.ndarray]:
         """Private method that defines the second derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
 
@@ -616,12 +650,16 @@ class StrandMixedComponent(StrandComponent):
         )
 
         # Get index that correspond to superconducting regime.
-        ind_sc_node = np.nonzero(self.dict_node_pt["op_current_sc"] / critical_current_node < 0.95)[0]
+        ind_sc_node = np.nonzero(
+            self.dict_node_pt["op_current_sc"] / critical_current_node < 0.95
+        )[0]
         ind_sc_gauss = np.nonzero(
             self.dict_Gauss_pt["op_current_sc"] / critical_current_gauss < 0.95
         )[0]
         # Get index that correspond to current sharing regime.
-        ind_sh_node = np.nonzero(self.dict_node_pt["op_current_sc"] / critical_current_node >= 0.95)[0]
+        ind_sh_node = np.nonzero(
+            self.dict_node_pt["op_current_sc"] / critical_current_node >= 0.95
+        )[0]
         ind_sh_gauss = np.nonzero(
             self.dict_Gauss_pt["op_current_sc"] / critical_current_gauss >= 0.95
         )[0]
@@ -652,8 +690,12 @@ class StrandMixedComponent(StrandComponent):
         if ind_sc_node.any():
             # Strand current in superconducting regime is the one carriend by the
             # superconducting material only.
-            self.dict_node_pt["op_current"][ind_sc_node] = self.dict_node_pt["op_current_sc"][ind_sc_node]
-            self.dict_Gauss_pt["op_current"][ind_sc_gauss] = self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss]
+            self.dict_node_pt["op_current"][ind_sc_node] = self.dict_node_pt[
+                "op_current_sc"
+            ][ind_sc_node]
+            self.dict_Gauss_pt["op_current"][ind_sc_gauss] = self.dict_Gauss_pt[
+                "op_current_sc"
+            ][ind_sc_gauss]
 
             # Compute superconducting electrical resistivity only in index for
             # which the superconducting regime is guaranteed, using the power low.
@@ -678,7 +720,7 @@ class StrandMixedComponent(StrandComponent):
             ] = self.electric_resistance(
                 conductor, "electrical_resistivity_superconductor", ind_sc_gauss
             )
-        
+
         ## SHARING OR NORMAL REGIME ##
 
         # Check that np array ind_sh_node is not empty.
@@ -689,7 +731,7 @@ class StrandMixedComponent(StrandComponent):
             # self.dict_node_pt["op_current"][ind_sh_node] = self.dict_node_pt["op_current"][ind_sh_node]
             # self.dict_Gauss_pt["op_current"][ind_sh_node] = self.op_current_so_gauss[ind_sh_gauss]
 
-            # Evaluate how the current is distributed solving the current 
+            # Evaluate how the current is distributed solving the current
             # divider problem in both nodal and Gauss points.
             sc_current_node, stab_current_node = self.solve_current_divider(
                 self.dict_node_pt["electrical_resistivity_stabilizer"][ind_sh_node],
@@ -705,14 +747,18 @@ class StrandMixedComponent(StrandComponent):
             # Get index of the normal region, to avoid division by 0 in evaluation
             # of sc electrical resistivity with the power law.
             ind_normal_node = np.nonzero(
-                (stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
-                > 0.999999) | (sc_current_node
-                < 1.0)
+                (
+                    stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
+                    > 0.999999
+                )
+                | (sc_current_node < 1.0)
             )[0]
             ind_normal_gauss = np.nonzero(
-                (stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
-                > 0.999999) | (sc_current_gauss
-                < 1.0)
+                (
+                    stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
+                    > 0.999999
+                )
+                | (sc_current_gauss < 1.0)
             )[0]
 
             ## NORMAL REGIME ONLY ##
@@ -722,9 +768,11 @@ class StrandMixedComponent(StrandComponent):
                 # Get the index of location of true current sharing region;
                 # overwrite ind_sh_node.
                 ind_sh_node = np.nonzero(
-                    (stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
-                    <= 0.999999) | (sc_current_node
-                    >= 1.0)
+                    (
+                        stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
+                        <= 0.999999
+                    )
+                    | (sc_current_node >= 1.0)
                 )[0]
 
             # Check that np array ind_sc_Gauss is not empty.
@@ -732,9 +780,12 @@ class StrandMixedComponent(StrandComponent):
                 # Get the index of location of true current sharing region;
                 # overwrite ind_sh_gauss.
                 ind_sh_gauss = np.nonzero(
-                    (stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
-                    <= 0.999999) | (sc_current_gauss
-                    >= 1.0)
+                    (
+                        stab_current_gauss
+                        / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
+                        <= 0.999999
+                    )
+                    | (sc_current_gauss >= 1.0)
                 )[0]
                 # Evaluate electic resistance in normal region (stabilizer only).
                 self.dict_Gauss_pt["electric_resistance"][
@@ -745,8 +796,8 @@ class StrandMixedComponent(StrandComponent):
 
             ## SHARING REGIME ONLY ##
 
-            # Evaluate the electrical resistivity of the superconductor 
-            # according to the power low in both nodal and Gauss points in 
+            # Evaluate the electrical resistivity of the superconductor
+            # according to the power low in both nodal and Gauss points in
             # Ohm*m.
             self.dict_node_pt["electrical_resistivity_superconductor"][
                 ind_sh_node

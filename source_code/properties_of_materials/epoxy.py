@@ -83,7 +83,8 @@ def isobaric_specific_heat_ep(t):
 
     return cp  # end of the function
 
-def density_ep(temperature: np.ndarray)->np.ndarray:
+
+def density_ep(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates epoxy density, assumed constant.
 
@@ -98,7 +99,7 @@ def density_ep(temperature: np.ndarray)->np.ndarray:
     return 1.220e3 * np.ones(temperature.shape)
 
 
-def electrical_resistivity_ep(temperature: np.ndarray)->np.ndarray:
+def electrical_resistivity_ep(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates epoxy electrical resistivity, assumed constant.
 

@@ -238,16 +238,16 @@ def with_read_csv(fname, sheet, delimiter=";"):
     Returns:
         [type]: [description]
     """
-    # Works for a file with the spatial discretization for each conductor and 
-    # for a single file with a sheet for each conductor. The sheets in the file 
-    # must have 3 columns with the same number of rows with the following 
+    # Works for a file with the spatial discretization for each conductor and
+    # for a single file with a sheet for each conductor. The sheets in the file
+    # must have 3 columns with the same number of rows with the following
     # content:
     # column 1: coordinate along x direction
     # column 2: coordinate along y direction
     # column 3: coordinate along z direction
-    
-    # Load the column of the file (exension dat, csv, or tsv) with the spatial 
-    # discretization of the conductor named conductor.name as a series; then 
+
+    # Load the column of the file (exension dat, csv, or tsv) with the spatial
+    # discretization of the conductor named conductor.name as a series; then
     # convert to numpy dropping NaN values.
     vector = (
         pd.read_csv(fname, sheet_name=sheet, sep=delimiter, squeeze=True)
@@ -270,22 +270,18 @@ def with_read_excel(fname, sheet, delimiter=";"):
     Returns:
         [type]: [description]
     """
-    # Works for a file with the spatial discretization for each conductor and 
-    # for a single file with a sheet for each conductor. The sheets in the file 
-    # must have 3 columns with the same number of rows with the following 
+    # Works for a file with the spatial discretization for each conductor and
+    # for a single file with a sheet for each conductor. The sheets in the file
+    # must have 3 columns with the same number of rows with the following
     # content:
     # column 1: coordinate along x direction
     # column 2: coordinate along y direction
     # column 3: coordinate along z direction
 
-    # Load the column of the file .xlsv with the spatial discretization of the 
-    # conductor named conductor.name as a series; then convert to numpy 
+    # Load the column of the file .xlsv with the spatial discretization of the
+    # conductor named conductor.name as a series; then convert to numpy
     # dropping NaN values.
-    vector = (
-        pd.read_excel(fname, sheet_name=sheet, squeeze=True)
-        .dropna()
-        .to_numpy()
-    )
+    vector = pd.read_excel(fname, sheet_name=sheet, squeeze=True).dropna().to_numpy()
     return vector, vector.shape[0]
 
     # End function with_read_csv.

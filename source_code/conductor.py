@@ -169,10 +169,13 @@ class Conductor:
         keys = [
             "EQUIPOTENTIAL_SURFACE_NUMBER",
             "EQUIPOTENTIAL_SURFACE_COORDINATE",
-            "INDUCTANCE_MODE", "ELECTRIC_SOLVER"
+            "INDUCTANCE_MODE",
+            "ELECTRIC_SOLVER",
         ]
-        self.operations.update({key:1 for key in keys if self.operations[key]})
-        self.operations.update({key:0 for key in keys if self.operations[key]==False})
+        self.operations.update({key: 1 for key in keys if self.operations[key]})
+        self.operations.update(
+            {key: 0 for key in keys if self.operations[key] == False}
+        )
 
         _ = {
             True: self.__manage_equipotential_surfaces_coordinate,
@@ -398,7 +401,9 @@ class Conductor:
                     # ["all_component"].collection: list of all objects
                     # (cdp, 09/2020)
                     self.inventory["StackComponent"].collection.append(
-                        StackComponent(simulation, sheet, ii, kindObj, dict_file_path, self)
+                        StackComponent(
+                            simulation, sheet, ii, kindObj, dict_file_path, self
+                        )
                     )
                     self.inventory["StrandComponent"].collection.append(
                         self.inventory["StackComponent"].collection[ii - 1]
@@ -471,7 +476,9 @@ class Conductor:
                     # ["all_component"].collection: list of all objects
                     # (cdp, 09/2020)
                     self.inventory["JacketComponent"].collection.append(
-                        JacketComponent(simulation, sheet, ii, kindObj, dict_file_path, self)
+                        JacketComponent(
+                            simulation, sheet, ii, kindObj, dict_file_path, self
+                        )
                     )
                     self.inventory["SolidComponent"].collection.append(
                         self.inventory["JacketComponent"].collection[ii - 1]
@@ -2075,8 +2082,10 @@ class Conductor:
             # superconducting regime and fractions of the total current that
             # flows in the total cross section of each strand or stack object
             # if in current sharing regime.
-            obj.get_current_fractions(self.total_sc_cross_section, self.total_so_cross_section, self.inventory)
-        
+            obj.get_current_fractions(
+                self.total_sc_cross_section, self.total_so_cross_section, self.inventory
+            )
+
         # call functions get_current, get_magnetic_field, get_magnetic_field_gradient, \
         # get_superconductor_critical_prop, get_heat, jhtflx_new_0, \
         # set_energy_counters, Get_transp_coeff @ time = 0 to perform \
@@ -2091,9 +2100,9 @@ class Conductor:
             s_comp.eval_sol_comp_properties(self.inventory)
         # end for s_comp.
 
-        # Loop to initialize electric related quantities for each 
+        # Loop to initialize electric related quantities for each
         # SolidComponent object.
-        # N.B. remember that JacketComponent objects do not carry current for 
+        # N.B. remember that JacketComponent objects do not carry current for
         # the time being so these quantities will remain 0.
         for obj in self.inventory["SolidComponent"].collection:
             obj.initialize_electric_quantities(self)
@@ -2766,13 +2775,17 @@ class Conductor:
                 f"After call method {self.__build_electric_mass_matrix.__name__}.\n"
             )
 
-        if self.grid_input["ITYMSH"] != 3 | self.grid_input["ITYMSH"] != -1 & self.build_electric_mass_matrix_flag == True:
-            # Discretization grid does not change at each time step so there is 
-            # no need to build electric mass matrix at each thermal time step 
-            # because inductances will not change since they are evaluating 
+        if (
+            self.grid_input["ITYMSH"]
+            != 3 | self.grid_input["ITYMSH"]
+            != -1 & self.build_electric_mass_matrix_flag
+            == True
+        ):
+            # Discretization grid does not change at each time step so there is
+            # no need to build electric mass matrix at each thermal time step
+            # because inductances will not change since they are evaluating
             # starting from the coordinates which are constant in this case: flag build_electric_mass_matrix_flag is therefore set to False.
             self.build_electric_mass_matrix_flag = False
-
 
         # Assign equivalue surfaces
         conductorlogger.debug(
@@ -2795,11 +2808,11 @@ class Conductor:
     def __build_electric_stiffness_matrix(self):
         """Private method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix."""
 
-        # Electric stiffness matrix initialization. Moved here from private 
-        # method __initialize_attributes because of matrix reduction carried 
+        # Electric stiffness matrix initialization. Moved here from private
+        # method __initialize_attributes because of matrix reduction carried
         # out in function fixed_value of module electric_auxiliary_functions.py.
-        # Need to think about this part since, at the state of the art of the 
-        # code, the only matrix that will change at each thermal time step is 
+        # Need to think about this part since, at the state of the art of the
+        # code, the only matrix that will change at each thermal time step is
         # the elctric resistance matrix.
         self.electric_stiffness_matrix = lil_matrix(
             (
@@ -2840,10 +2853,14 @@ class Conductor:
             # correct position (in the portion of the array dedicated to the
             # current).
 
-            self.equipotential_node_index[ii, :] = np.nonzero(self.nodal_coordinates.loc["StrandComponent", "z"].to_numpy() <= round(coord,self.n_digit_z))[0][
-                -self.inventory["StrandComponent"].number :
-            ] + self.total_elements_current_carriers
-            
+            self.equipotential_node_index[ii, :] = (
+                np.nonzero(
+                    self.nodal_coordinates.loc["StrandComponent", "z"].to_numpy()
+                    <= round(coord, self.n_digit_z)
+                )[0][-self.inventory["StrandComponent"].number :]
+                + self.total_elements_current_carriers
+            )
+
     def __assign_fix_potential(self):
         """Private method that assigns the value of the fixed potential on prescribed fixed potential surfaces."""
         jj = 0
@@ -2884,19 +2901,27 @@ class Conductor:
             # carrier.
             self.dict_node_pt["op_current"][-1] = -self.inputs["I0_OP_TOT"]
         elif self.inputs["I0_OP_MODE"] == IOP_FROM_FILE:
-            # Loop on SolidComponent objects to sum inlet and outlet current in 
+            # Loop on SolidComponent objects to sum inlet and outlet current in
             # order to get the total conductor inlet and outlet current.
             for obj in self.inventory["SolidComponent"].collection:
-                self.dict_node_pt["op_current"][0] = self.dict_node_pt["op_current"][0] + obj.dict_node_pt["op_current"][0]
-                self.dict_node_pt["op_current"][-1] = self.dict_node_pt["op_current"][-1] + obj.dict_node_pt["op_current"][-1]
-            # Change sign to the outlet curren since it is exiting the 
+                self.dict_node_pt["op_current"][0] = (
+                    self.dict_node_pt["op_current"][0]
+                    + obj.dict_node_pt["op_current"][0]
+                )
+                self.dict_node_pt["op_current"][-1] = (
+                    self.dict_node_pt["op_current"][-1]
+                    + obj.dict_node_pt["op_current"][-1]
+                )
+            # Change sign to the outlet curren since it is exiting the
             # conductor.
-            self.dict_node_pt["op_current"][-1] = - self.dict_node_pt["op_current"][-1]
+            self.dict_node_pt["op_current"][-1] = -self.dict_node_pt["op_current"][-1]
         elif self.inputs["I0_OP_MODE"] == IOP_FROM_EXT_FUNCTION:
 
             # All the current enters the first node of the first current
             # carrier.
-            self.dict_node_pt["op_current"][0] = custom_current_function(self.electric_time_step)
+            self.dict_node_pt["op_current"][0] = custom_current_function(
+                self.electric_time_step
+            )
             # All the current exits from the lats node of the last current
             # carrier.
             self.dict_node_pt["op_current"][-1] = -custom_current_function(
@@ -2906,8 +2931,7 @@ class Conductor:
         # End if self.dict_input["I0_OP_MODE"].
 
     def build_electric_known_term_vector(self):
-        """Method that builds the known therm vector for the electric module.
-        """
+        """Method that builds the known therm vector for the electric module."""
         self.electric_known_term_vector[
             self.total_elements_current_carriers :
         ] = self.dict_node_pt["op_current"]
@@ -3574,7 +3598,7 @@ class Conductor:
 
         self.grid_features["dz_max"] = self.grid_features["delta_z"].max()
         self.grid_features["dz_min"] = self.grid_features["delta_z"].min()
-        # Get the number of digits for rounding coordinates in order to find 
+        # Get the number of digits for rounding coordinates in order to find
         # indexes.
         self.n_digit_z = abs(int(np.floor(np.log10(self.grid_features["dz_min"])))) - 1
 

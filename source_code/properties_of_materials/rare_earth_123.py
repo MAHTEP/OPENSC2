@@ -112,18 +112,18 @@ def thermal_conductivity_re123(TT):
     intervals = [(TT <= 70.0), (TT > 70.0)]
     behaviour = [
         lambda TT: (
-            A[0] * TT**5
-            + B[0] * TT**4
-            + C[0] * TT**3
-            + D[0] * TT**2
+            A[0] * TT ** 5
+            + B[0] * TT ** 4
+            + C[0] * TT ** 3
+            + D[0] * TT ** 2
             + E[0] * TT
             + F[0]
         ),
         lambda TT: (
-            A[1] * TT**5
-            + B[1] * TT**4
-            + C[1] * TT**3
-            + D[1] * TT**2
+            A[1] * TT ** 5
+            + B[1] * TT ** 4
+            + C[1] * TT ** 3
+            + D[1] * TT ** 2
             + E[1] * TT
             + F[1]
         ),
@@ -184,7 +184,7 @@ def isobaric_specific_heat_re123(TT):
     EE = 0.239331954284042
     FF = -1.096191721280114
 
-    CPRE123 = AA * TT**5 + BB * TT**4 + CC * TT**3 + DD * TT**2 + EE * TT + FF
+    CPRE123 = AA * TT ** 5 + BB * TT ** 4 + CC * TT ** 3 + DD * TT ** 2 + EE * TT + FF
 
     return CPRE123
 

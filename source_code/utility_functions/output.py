@@ -151,7 +151,7 @@ def save_simulation_space(conductor, f_path, n_digit_time):
             else:
                 headers_strand = headers_reduced
                 prop_strand = prop_reduced
-        
+
         A_strand = np.zeros((conductor.grid_features["N_nod"], len(prop_strand)))
         for ii in range(len(prop_strand)):
             if prop_strand[ii] == "zcoord":
@@ -164,7 +164,7 @@ def save_simulation_space(conductor, f_path, n_digit_time):
             np.savetxt(
                 writer, A_strand, delimiter="\t", header=headers_strand, comments=""
             )
-        
+
     headers_jk = "zcoord (m)\ttemperature (K)"
     prop_jk = ["zcoord", "temperature"]
     # Loop to save jacket properties spatial distribution.
@@ -181,14 +181,19 @@ def save_simulation_space(conductor, f_path, n_digit_time):
             # end if prop_s_comp[ii] (cdp, 01/2021)
         # end for ii (cdp, 01/2021)
         with open(file_path, "w") as writer:
-            np.savetxt(
-                writer, A_jk, delimiter="\t", header=headers_jk, comments=""
-            )
+            np.savetxt(writer, A_jk, delimiter="\t", header=headers_jk, comments="")
     # end for s_comp (cdp, 10/2020)
-    # Save linear power due to electric resistance along the SOs (available in 
+    # Save linear power due to electric resistance along the SOs (available in
     # gauss nodal points).
-    headers_s_comp = "zcoord_gauss (m)\tcurrent_along (A)\tvoltage_drop_along (V)\tP_along (W/m)"
-    prop_s_comp = ["zcoord_gauss", "current_along", "voltage_drop_along","linear_power_el_resistance"]
+    headers_s_comp = (
+        "zcoord_gauss (m)\tcurrent_along (A)\tvoltage_drop_along (V)\tP_along (W/m)"
+    )
+    prop_s_comp = [
+        "zcoord_gauss",
+        "current_along",
+        "voltage_drop_along",
+        "linear_power_el_resistance",
+    ]
     for s_comp in conductor.inventory["SolidComponent"].collection:
         file_path = os.path.join(
             f_path, f"{s_comp.identifier}_({conductor.cond_num_step})_gauss_sd.tsv"
@@ -325,7 +330,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     # "EXTFLX", "JHTFLX"]
     list_sol_key_full = ["temperature", "T_cur_sharing"]
     list_sol_key_reduced = ["temperature"]
-    list_sol_key_gauss = ["current_along","voltage_drop_along","P_along"]
+    list_sol_key_gauss = ["current_along", "voltage_drop_along", "P_along"]
     list_jk = ["temperature"]
     # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
     # Round the time to save to n_digit_time digits only once
@@ -347,7 +352,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             # (cdp, 01/2021)
             dict_zcoord = dict()
         # end if fluid_comp (cdp, 01/2021)
-        for ii,_ in enumerate(cond.Space_save):
+        for ii, _ in enumerate(cond.Space_save):
             file_name = f"{fluid_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
             file_load = os.path.join(f_path, file_name)
             # Load file file_name as data frame as a value of dictionary \
@@ -421,9 +426,11 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
-        for ii,_ in enumerate(cond.Space_save):
+        for ii, _ in enumerate(cond.Space_save):
             file_name = f"{s_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
-            file_name_gauss = f"{s_comp.identifier}_({cond.num_step_save[ii]})_gauss_sd.tsv"
+            file_name_gauss = (
+                f"{s_comp.identifier}_({cond.num_step_save[ii]})_gauss_sd.tsv"
+            )
             file_load = os.path.join(f_path, file_name)
             file_load_gauss = os.path.join(f_path, file_name_gauss)
             # Load file file_name as data frame as a value of dictionary \
@@ -449,10 +456,10 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                         list_sol_key = list_sol_key_reduced
                 elif s_comp.KIND == "StrandStabilizerComponent":
                     list_sol_key = list_sol_key_reduced
-                else: # Jacket
+                else:  # Jacket
                     list_sol_key = list_jk
 
-                for jj,prop in enumerate(list_sol_key):
+                for jj, prop in enumerate(list_sol_key):
                     # decompose the data frame in several dataframes (cdp, 11/2020)
                     dict_df_new[prop] = dict_df[file_name].filter(
                         items=[header[jj + 1]]
@@ -462,7 +469,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                         columns={header[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
                     )
                 header_gauss = list(dict_df[file_name_gauss].columns.values.tolist())
-                for jj,_ in enumerate(list_sol_key_gauss):
+                for jj, _ in enumerate(list_sol_key_gauss):
                     prop = list_sol_key_gauss[jj]
                     # decompose the data frame in four dataframes (cdp, 11/2020)
                     dict_df_new[prop] = dict_df[file_name].filter(
@@ -470,10 +477,11 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                     )
                     # rename data frames columns (cdp, 11/2020)
                     dict_df_new[prop].rename(
-                        columns={header_gauss[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
+                        columns={header_gauss[jj + 1]: f"time = {time[ii]} (s)"},
+                        inplace=True,
                     )
             else:
-                for jj,prop in enumerate(list_sol_key):
+                for jj, prop in enumerate(list_sol_key):
                     # construct the new data frames with concat method (cdp, 11/2020)
                     dict_df_new[prop] = pd.concat(
                         [
@@ -485,18 +493,21 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                     dict_df_new[prop].rename(
                         columns={header[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
                     )
-                    for jj,prop in enumerate(list_sol_key_gauss):
+                    for jj, prop in enumerate(list_sol_key_gauss):
                         prop = list_sol_key_gauss[jj]
                         # construct the new data frames with concat method (cdp, 11/2020)
                         dict_df_new[prop] = pd.concat(
                             [
                                 dict_df_new[prop],
-                                dict_df[file_name_gauss].filter(items=[header_gauss[jj + 1]]),
+                                dict_df[file_name_gauss].filter(
+                                    items=[header_gauss[jj + 1]]
+                                ),
                             ],
                             axis=1,
                         )
                         dict_df_new[prop].rename(
-                            columns={header_gauss[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
+                            columns={header_gauss[jj + 1]: f"time = {time[ii]} (s)"},
+                            inplace=True,
                         )
             # end if ii (cdp, 11/2020)
         # end for ii (cdp, 11/2020)
@@ -552,7 +563,7 @@ def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit_time):
     new = dict()
     cols = list()
     time = np.around(cond.Space_save, n_digit_time)
-    for ii,_ in enumerate(cond.Space_save):
+    for ii, _ in enumerate(cond.Space_save):
         file_name = f"{radix_old}_({cond.num_step_save[ii]})_sd.tsv"
         file_load = os.path.join(f_path, file_name)
         # Check if file exist and if True load it.
@@ -610,17 +621,24 @@ def save_simulation_time(simulation, conductor):
 
     ind_zcoord = {
         f"zcoord = {conductor.Time_save[ii]} (m)": np.max(
-            np.nonzero(conductor.grid_features["zcoord"] <= round(conductor.Time_save[ii],conductor.n_digit_z))
+            np.nonzero(
+                conductor.grid_features["zcoord"]
+                <= round(conductor.Time_save[ii], conductor.n_digit_z)
+            )
         )
         for ii in range(conductor.Time_save.size)
     }
     ind_zcoord_gauss = {f"zcoord_g = {conductor.Time_save[0]} (m)": 0}
-    ind_zcoord_gauss.update({
-        f"zcoord_g = {conductor.Time_save[ii]} (m)": np.max(
-            np.nonzero(conductor.grid_features["zcoord_gauss"] <= round(conductor.Time_save[ii],conductor.n_digit_z))
-        )
-        for ii in range(1,conductor.Time_save.size)
-    }
+    ind_zcoord_gauss.update(
+        {
+            f"zcoord_g = {conductor.Time_save[ii]} (m)": np.max(
+                np.nonzero(
+                    conductor.grid_features["zcoord_gauss"]
+                    <= round(conductor.Time_save[ii], conductor.n_digit_z)
+                )
+            )
+            for ii in range(1, conductor.Time_save.size)
+        }
     )
     # construct file header only once (cdp, 08/2020)
     if simulation.num_step == 0:
@@ -710,7 +728,9 @@ def save_simulation_time(simulation, conductor):
             # End for key.
             for key, value in s_comp.time_evol_gauss.items():
                 # Inizialize dictionary corresponding to key to a dictionary of empty lists for the first time.
-                s_comp.time_evol_gauss[key] = initialize_dictionaty_te(value, ind_zcoord_gauss)
+                s_comp.time_evol_gauss[key] = initialize_dictionaty_te(
+                    value, ind_zcoord_gauss
+                )
                 # Save the headings only ones.
                 pd.DataFrame(columns=headers_gauss).to_csv(
                     os.path.join(
@@ -868,15 +888,17 @@ def save_simulation_time(simulation, conductor):
             )
         # End for key.
         for key, value in s_comp.time_evol_gauss.items():
-            # Update the contend of the dictionary of lists with propertiy 
+            # Update the contend of the dictionary of lists with propertiy
             # values at selected zcoord and current time.
             if key == "linear_power_el_resistance":
                 s_comp.time_evol_gauss[key] = update_values(
-                    value, s_comp.dict_Gauss_pt[key][:,0], time, ind_zcoord_gauss)
+                    value, s_comp.dict_Gauss_pt[key][:, 0], time, ind_zcoord_gauss
+                )
             else:
                 s_comp.time_evol_gauss[key] = update_values(
-                    value, s_comp.dict_Gauss_pt[key], time, ind_zcoord_gauss)
-            # Write the content of the dictionary to file, if conditions are 
+                    value, s_comp.dict_Gauss_pt[key], time, ind_zcoord_gauss
+                )
+            # Write the content of the dictionary to file, if conditions are
             # satisfied.
             s_comp.time_evol_gauss[key] = save_te_on_file(
                 conductor,
@@ -1070,7 +1092,9 @@ def save_convergence_data(cond, f_path, *n_digit_time, space_conv=True):
         )
         if space_conv:
             # build header for space convergence (cdp, 12/2020)
-            mass_energy_header = f"Nelems\t{discr_header}\tmass_bal (kg)\tenergy_bal (J)"
+            mass_energy_header = (
+                f"Nelems\t{discr_header}\tmass_bal (kg)\tenergy_bal (J)"
+            )
         elif space_conv == False:
             # build header for time convergence (cdp, 12/2020)
             mass_energy_header = discr_header + "\tmass_bal (kg)\tenergy_bal (J)"

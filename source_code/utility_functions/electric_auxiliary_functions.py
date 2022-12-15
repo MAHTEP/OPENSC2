@@ -3,6 +3,7 @@ from scipy import linalg, sparse
 from scipy.sparse.linalg import spsolve
 from typing import Union
 
+
 def custom_current_function(time: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """User defined custom function for the current beavior in time (and maybe in space).
 

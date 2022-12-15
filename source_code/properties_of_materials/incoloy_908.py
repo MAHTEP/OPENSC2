@@ -162,6 +162,7 @@ def electrical_resistivity_incoloy908(t):
 
     return rho  # end of the function
 
+
 def density_incoloy908(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates incoloy 908 density, assumed constant.

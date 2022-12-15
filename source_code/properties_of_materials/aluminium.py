@@ -148,13 +148,13 @@ def isobaric_specific_heat_al(TT):
         ]
 
         behaviour = [
-            lambda TT: (a1 * TT + a2 * TT**2 + a3 * TT**3),
-            lambda TT: (b0 + b1 * TT + b2 * TT**2 + b3 * TT**3 + b4 * TT**4),
+            lambda TT: (a1 * TT + a2 * TT ** 2 + a3 * TT ** 3),
+            lambda TT: (b0 + b1 * TT + b2 * TT ** 2 + b3 * TT ** 3 + b4 * TT ** 4),
             lambda TT: (
                 AA * TT / (a + TT) ** na
-                + BB * TT**2 / (b + TT) ** nb
-                + CC * TT**3 / (c + TT) ** nc
-                + DD * TT**4 / (d + TT) ** nd
+                + BB * TT ** 2 / (b + TT) ** nb
+                + CC * TT ** 3 / (c + TT) ** nc
+                + DD * TT ** 4 / (d + TT) ** nd
             ),
         ]
 

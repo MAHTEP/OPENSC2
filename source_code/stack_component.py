@@ -156,7 +156,11 @@ class StackComponent(StrandComponent):
         self.coordinate = dict()
         # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
         self.time_evol = dict(temperature=dict(), B_field=dict(), T_cur_sharing=dict())
-        self.time_evol_gauss = dict(current_along = dict(), voltage_drop_along = dict(), linear_power_el_resistance = dict())
+        self.time_evol_gauss = dict(
+            current_along=dict(),
+            voltage_drop_along=dict(),
+            linear_power_el_resistance=dict(),
+        )
         self.dict_scaling_input = dict()
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(
@@ -185,7 +189,7 @@ class StackComponent(StrandComponent):
             del self.operations["B_field_units"]
         # end if
 
-        # Call to method deal_with_flag_IOP_MODE to check and manipulate value 
+        # Call to method deal_with_flag_IOP_MODE to check and manipulate value
         # of flag self.operations["IOP_MODE"].
         self.deal_with_flag_IOP_MODE()
 
@@ -196,7 +200,7 @@ class StackComponent(StrandComponent):
         # be done or not (depends on homogenized density evaluation).
         self.__stack_density_flag = False
 
-        # Call method deal_with_fixed_potential to manipulate input about fixed 
+        # Call method deal_with_fixed_potential to manipulate input about fixed
         # potential values.
         self.deal_with_fixed_potential(conductor.inputs["ZLENGTH"])
 
@@ -430,7 +434,9 @@ class StackComponent(StrandComponent):
         )
         # Evaluate homogenized isobaric specific heat of the stack:
         # cp_eq = sum(s_i*rho_i*cp_i)/sum(s_i*rho_i)
-        return (isobaric_specific_heat.T * self.__density_numerator).sum(axis=1)/ self.__density_numerator_sum
+        return (isobaric_specific_heat.T * self.__density_numerator).sum(
+            axis=1
+        ) / self.__density_numerator_sum
 
     def stack_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
@@ -442,20 +448,22 @@ class StackComponent(StrandComponent):
             np.ndarray: array with homogenized thermal conductivity of the stack of tapes in W/m/K.
         """
         thermal_conductivity = np.zeros(
-            (property["temperature"].size,self.inputs["Material_number"])
+            (property["temperature"].size, self.inputs["Material_number"])
         )
         for ii, func in enumerate(self.thermal_conductivity_function):
             if "cu" in func.__name__:
-                thermal_conductivity[:,ii] = func(
+                thermal_conductivity[:, ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
                 )
             else:
-                thermal_conductivity[:,ii] = func(property["temperature"])
+                thermal_conductivity[:, ii] = func(property["temperature"])
         # Evaluate homogenized thermal conductivity of the stack:
         # k_eq = sum(s_i*k_i)/s
-        return (thermal_conductivity * self.material_thickness).sum(axis=1)/ self.tape_thickness
+        return (thermal_conductivity * self.material_thickness).sum(
+            axis=1
+        ) / self.tape_thickness
 
     def stack_electrical_resistivity_not_sc(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized electrical resistivity for not superconducting materials of the stack, which is the same of the tape if the tapes constituting the stack are equals to each other. Homogenization is based on the thickness of tape layers.
@@ -471,17 +479,19 @@ class StackComponent(StrandComponent):
         )
         for ii, func in enumerate(self.electrical_resistivity_function_not_sc):
             if "cu" in func.__name__:
-                electrical_resistivity[:,ii] = func(
+                electrical_resistivity[:, ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
                 )
             else:
-                electrical_resistivity[:,ii] = func(property["temperature"])
+                electrical_resistivity[:, ii] = func(property["temperature"])
         if self.inputs["Material_number"] - 1 > 1:
             # Evaluate homogenized electrical resistivity of the stack:
             # rho_el_eq = s_not_sc * (sum(s_i/rho_el_i))^-1 for any i not sc
-            return self.tape_thickness_not_sc * np.reciprocal((self.material_thickness_not_sc/electrical_resistivity).sum(axis=1))
+            return self.tape_thickness_not_sc * np.reciprocal(
+                (self.material_thickness_not_sc / electrical_resistivity).sum(axis=1)
+            )
         elif self.inputs["Material_number"] - 1 == 1:
             return electrical_resistivity.reshape(property["temperature"].size)
 
@@ -575,26 +585,29 @@ class StackComponent(StrandComponent):
                 self.__sc_current_residual,
                 0.0,
                 val,
-                args=(psi[ii],val),
+                args=(psi[ii], val),
                 maxiter=10,
                 disp=False,
             )
-        
+
         # Evaluate superconducting with Halley's method
         sc_current = optimize.newton(
             self.__sc_current_residual,
             sc_current_guess,
-            args=(psi,current),
+            args=(psi, current),
             fprime=self.__d_sc_current_residual,
             fprime2=self.__d2_sc_current_residual,
-            maxiter=1000
+            maxiter=1000,
         )
 
         return sc_current, current - sc_current
 
     def __sc_current_residual(
-        self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray], so_current: Union[float, np.ndarray]
-    ) ->Union[float, np.ndarray]:
+        self,
+        sc_current: Union[float, np.ndarray],
+        psi: Union[float, np.ndarray],
+        so_current: Union[float, np.ndarray],
+    ) -> Union[float, np.ndarray]:
         """Private method that defines the residual function for the evaluation of the superconducting current with bysection and/or Newton-Rampson methods.
 
         Args:
@@ -613,15 +626,21 @@ class StackComponent(StrandComponent):
         """
         # Checks on input arguments.
         if isinstance(sc_current, float):
-            if isinstance(psi, float) == False or isinstance(so_current, float) == False:
+            if (
+                isinstance(psi, float) == False
+                or isinstance(so_current, float) == False
+            ):
                 raise ValueError(
-                f"Arguments sc_current, psi and so_current must be of the same type (float).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
-            )
+                    f"Arguments sc_current, psi and so_current must be of the same type (float).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
+                )
         if isinstance(sc_current, np.ndarray):
-            if isinstance(psi, np.ndarray) == False or isinstance(so_current, np.ndarray) == False:
+            if (
+                isinstance(psi, np.ndarray) == False
+                or isinstance(so_current, np.ndarray) == False
+            ):
                 raise ValueError(
-                f"Arguments sc_current, psi and so_current must be of the same type (np.ndarray).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
-            )
+                    f"Arguments sc_current, psi and so_current must be of the same type (np.ndarray).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
+                )
             if sc_current.shape != psi.shape:
                 raise ValueError(
                     f"Arrays sc_current and psi must have the same shape.\n {sc_current.shape = };\n{psi.shape}.\n"
@@ -631,14 +650,14 @@ class StackComponent(StrandComponent):
                     f"Arrays sc_current and so_current must have the same shape.\n {sc_current.shape = };\n{so_current.shape}.\n"
                 )
 
-        return (
-            sc_current ** self.inputs["nn"]
-            + (sc_current - so_current) * psi
-        )
+        return sc_current ** self.inputs["nn"] + (sc_current - so_current) * psi
 
     def __d_sc_current_residual(
-        self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray],so_current: Union[float, np.ndarray]
-    ) ->Union[float, np.ndarray]:
+        self,
+        sc_current: Union[float, np.ndarray],
+        psi: Union[float, np.ndarray],
+        so_current: Union[float, np.ndarray],
+    ) -> Union[float, np.ndarray]:
         """Private method that defines the first derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
 
         Args:
@@ -653,8 +672,11 @@ class StackComponent(StrandComponent):
         return self.inputs["nn"] * sc_current ** (self.inputs["nn"] - 1) + psi
 
     def __d2_sc_current_residual(
-        self, sc_current:Union[float, np.ndarray], psi:Union[float, np.ndarray], so_current: Union[float, np.ndarray]
-    ) ->Union[float, np.ndarray]:
+        self,
+        sc_current: Union[float, np.ndarray],
+        psi: Union[float, np.ndarray],
+        so_current: Union[float, np.ndarray],
+    ) -> Union[float, np.ndarray]:
         """Private method that defines the second derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
 
         Args:
@@ -688,12 +710,16 @@ class StackComponent(StrandComponent):
         )
 
         # Get index that correspond to superconducting regime.
-        ind_sc_node = np.nonzero(self.dict_node_pt["op_current_sc"] / critical_current_node < 0.95)[0]
+        ind_sc_node = np.nonzero(
+            self.dict_node_pt["op_current_sc"] / critical_current_node < 0.95
+        )[0]
         ind_sc_gauss = np.nonzero(
             self.dict_Gauss_pt["op_current_sc"] / critical_current_gauss < 0.95
         )[0]
         # Get index that correspond to current sharing regime.
-        ind_sh_node = np.nonzero(self.dict_node_pt["op_current_sc"] / critical_current_node >= 0.95)[0]
+        ind_sh_node = np.nonzero(
+            self.dict_node_pt["op_current_sc"] / critical_current_node >= 0.95
+        )[0]
         ind_sh_gauss = np.nonzero(
             self.dict_Gauss_pt["op_current_sc"] / critical_current_gauss >= 0.95
         )[0]
@@ -714,8 +740,12 @@ class StackComponent(StrandComponent):
 
         # Strand current in superconducting regime is the one carriend by the
         # superconducting material only.
-        self.dict_node_pt["op_current"][ind_sc_node] = self.dict_node_pt["op_current_sc"][ind_sc_node]
-        self.dict_Gauss_pt["op_current"][ind_sc_gauss] = self.dict_Gauss_pt["op_current_sc"][ind_sc_gauss]
+        self.dict_node_pt["op_current"][ind_sc_node] = self.dict_node_pt[
+            "op_current_sc"
+        ][ind_sc_node]
+        self.dict_Gauss_pt["op_current"][ind_sc_gauss] = self.dict_Gauss_pt[
+            "op_current_sc"
+        ][ind_sc_gauss]
 
         # Initialize array of superconducting electrical resistivit in nodal and Gauss points to None.
         self.dict_node_pt["electrical_resistivity_superconductor"] = np.full_like(
@@ -772,14 +802,18 @@ class StackComponent(StrandComponent):
         # Get index of the normal region, to avoid division by 0 in evaluation
         # of sc electrical resistivity with the power law.
         ind_normal_node = np.nonzero(
-            (stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
-            > 0.999999) | (sc_current_node
-            < 1.0)
+            (
+                stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
+                > 0.999999
+            )
+            | (sc_current_node < 1.0)
         )[0]
         ind_normal_gauss = np.nonzero(
-            (stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
-            > 0.999999) | (sc_current_gauss
-            < 1.0)
+            (
+                stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
+                > 0.999999
+            )
+            | (sc_current_gauss < 1.0)
         )[0]
 
         ## NORMAL REGIME ONLY ##
@@ -787,17 +821,21 @@ class StackComponent(StrandComponent):
             # Get the index of location of true current sharing region;
             # overwrite ind_sh_node.
             ind_sh_node = np.nonzero(
-                (stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
-                <= 0.999999) | (sc_current_node
-                >= 1.0)
+                (
+                    stab_current_node / self.dict_node_pt["op_current"][ind_sh_node]
+                    <= 0.999999
+                )
+                | (sc_current_node >= 1.0)
             )[0]
         if ind_normal_gauss.any():
             # Get the index of location of true current sharing region;
             # overwrite ind_sh_gauss.
             ind_sh_gauss = np.nonzero(
-                (stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
-                <= 0.999999) | (sc_current_gauss
-                >= 1.0)
+                (
+                    stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_sh_gauss]
+                    <= 0.999999
+                )
+                | (sc_current_gauss >= 1.0)
             )[0]
             # Evaluate electic resistance in normal region (stabilizer only).
             self.dict_Gauss_pt["electric_resistance"][

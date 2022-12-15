@@ -45,11 +45,13 @@ def conductor_spatial_discretization(simulation: object, conductor: object):
         zcoord, conductor.grid_features["N_nod"] = conductor.load_user_defined_quantity(
             simulation, "EXTERNAL_GRID", conductor.identifier
         )
-        # In this case zcoord is a matrix storing on the 3rd column the 
+        # In this case zcoord is a matrix storing on the 3rd column the
         # cooordiante along the z direction of the spatial discretization.
-        zcoord = zcoord[:,2]
+        zcoord = zcoord[:, 2]
         # Compute the number of elements from the number of nodes
-        conductor.dict_discretization["Grid_input"]["NELEMS"] = conductor.grid_features["N_nod"] - 1
+        conductor.dict_discretization["Grid_input"]["NELEMS"] = (
+            conductor.grid_features["N_nod"] - 1
+        )
 
     check_grid_features(
         conductor.inputs["ZLENGTH"], zcoord[0], zcoord[-1], conductor.identifier
@@ -75,9 +77,7 @@ def uniform_spatial_discretization(conductor: object) -> np.ndarray:
 
 def uniform_angular_discretization(
     conductor: object,
-    comp: Union[
-        StrandMixedComponent, StrandStabilizerComponent, StackComponent
-    ],
+    comp: Union[StrandMixedComponent, StrandStabilizerComponent, StackComponent],
 ) -> np.ndarray:
     """Function that evaluates uniform angular discretization, used for helicoidal geometry.
 
@@ -204,9 +204,7 @@ def fixed_refined_spatial_discretization(
 
 def fixed_refined_angular_discretization(
     conductor: object,
-    comp: Union[
-        StrandMixedComponent, StrandStabilizerComponent, StackComponent
-    ],
+    comp: Union[StrandMixedComponent, StrandStabilizerComponent, StackComponent],
     tau: np.ndarray,
 ) -> np.ndarray:
     """Function that evaluate fixed refined angular discretization, used for hlicoidal geometry.
@@ -523,11 +521,11 @@ def straight_coordinates(
                 sim, "EXTERNAL_GRID", cond.identifier
             )
             # Assign coordinate along x direction.
-            comp.coordinate["x"] = coordinate[:,0]
+            comp.coordinate["x"] = coordinate[:, 0]
             # Assign coordinate along y direction.
-            comp.coordinate["y"] = coordinate[:,1]
+            comp.coordinate["y"] = coordinate[:, 1]
             # Assign coordinate along x direction.
-            comp.coordinate["z"] = coordinate[:,2]
+            comp.coordinate["z"] = coordinate[:, 2]
 
 
 def helicoidal_coordinates(
@@ -553,7 +551,7 @@ def helicoidal_coordinates(
         comp.inputs["COSTETA"],
     )
     if cond.grid_input["ITYMSH"] >= 0:
-        # Evaluate the angular discretization according to the value of flag 
+        # Evaluate the angular discretization according to the value of flag
         # ITYMSH.
         if (
             cond.grid_input["ITYMSH"] == 0
@@ -578,11 +576,11 @@ def helicoidal_coordinates(
                 sim, "EXTERNAL_GRID", cond.identifier
             )
             # Assign coordinate along x direction.
-            comp.coordinate["x"] = coordinate[:,0]
+            comp.coordinate["x"] = coordinate[:, 0]
             # Assign coordinate along y direction.
-            comp.coordinate["y"] = coordinate[:,1]
+            comp.coordinate["y"] = coordinate[:, 1]
             # Assign coordinate along x direction.
-            comp.coordinate["z"] = coordinate[:,2]
+            comp.coordinate["z"] = coordinate[:, 2]
 
 
 def build_coordinates_of_barycenter(

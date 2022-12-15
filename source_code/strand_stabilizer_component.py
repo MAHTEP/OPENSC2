@@ -94,7 +94,11 @@ class StrandStabilizerComponent(StrandComponent):
         self.coordinate = dict()
         # Empty dictionary of list to save variable time evolutions at selected spatial coordinates.
         self.time_evol = dict(temperature=dict(), B_field=dict())
-        self.time_evol_gauss = dict(current_along = dict(), voltage_drop_along = dict(), linear_power_el_resistance = dict())
+        self.time_evol_gauss = dict(
+            current_along=dict(),
+            voltage_drop_along=dict(),
+            linear_power_el_resistance=dict(),
+        )
         self.dict_scaling_input = dict()
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(
@@ -126,12 +130,11 @@ class StrandStabilizerComponent(StrandComponent):
             # Remove key B_field_units.
             del self.operations["B_field_units"]
 
-        # Call to method deal_with_flag_IOP_MODE to check and manipulate value 
+        # Call to method deal_with_flag_IOP_MODE to check and manipulate value
         # of flag self.operations["IOP_MODE"].
         self.deal_with_flag_IOP_MODE()
 
-
-        # Call method deal_with_fixed_potential to manipulate input about fixed 
+        # Call method deal_with_fixed_potential to manipulate input about fixed
         # potential values.
         self.deal_with_fixed_potential(conductor.inputs["ZLENGTH"])
 
@@ -205,7 +208,7 @@ class StrandStabilizerComponent(StrandComponent):
                 property["temperature"]
             )
 
-    def get_electric_resistance(self, conductor:object) -> np.ndarray:
+    def get_electric_resistance(self, conductor: object) -> np.ndarray:
         f"""Method that evaluate the electric resistance in Gauss node only, used to build the electric_resistance_matrix.
 
         Args:

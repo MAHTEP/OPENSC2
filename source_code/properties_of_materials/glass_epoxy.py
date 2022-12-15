@@ -84,7 +84,7 @@ def isobaric_specific_heat_ge(t):
 
 
 # Function rho_ge starts here
-def density_ge(temperature: np.ndarray)->np.ndarray:
+def density_ge(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates glass-epoxy density, assumed constant.
 
@@ -100,7 +100,8 @@ def density_ge(temperature: np.ndarray)->np.ndarray:
 
 # end function rho_ge (cdp, 01/2021)
 
-def electrical_resistivity_ge(temperature: np.ndarray)->np.ndarray:
+
+def electrical_resistivity_ge(temperature: np.ndarray) -> np.ndarray:
     """
     Function that evaluates glass-epoxy electrical resistivity, assumed constant.
 

@@ -145,8 +145,10 @@ class SolidComponent:
             dict: dictionary with updated material properties in nodal points or Gauss points according to the value of flag nodal in method eval_sol_comp_properties of class SolidComponent.
         """
 
-        if (self.name == inventory["StrandMixedComponent"].name or 
-        self.name == inventory["StrandStabilizerComponent"].name):
+        if (
+            self.name == inventory["StrandMixedComponent"].name
+            or self.name == inventory["StrandStabilizerComponent"].name
+        ):
             dict_dummy.update(total_density=self.strand_density(dict_dummy))
             dict_dummy.update(
                 total_isobaric_specific_heat=self.strand_isobaric_specific_heat(
@@ -718,7 +720,9 @@ class SolidComponent:
 
     # # end Eval_properties
 
-    def get_current_fractions(self, total_sc_area: float, total_so_area: float, inventory: dict):
+    def get_current_fractions(
+        self, total_sc_area: float, total_so_area: float, inventory: dict
+    ):
         """Method that evaluates: 1) fraction of the total current that flows in superconductor cross section of each strand or stack object if in superconducting regime (op_current_fraction_sc); 2) fraction of the total current that flows in the total cross section (superconductor and not superconductor or stabilizer materials) of each strand or stack object if in current sharing regime (op_current_fraction_sh). Both are methods of the generic object.
 
         Note: for the time being both fractions are set to 0.0 for objects of kind JacketComponent.
@@ -731,21 +735,29 @@ class SolidComponent:
 
         # Fraction of the total current that goes in the superconductor cross
         # section in superconducting regime.
-        if (self.name == inventory["StrandMixedComponent"].name or 
-        self.name == inventory["StackComponent"].name):
+        if (
+            self.name == inventory["StrandMixedComponent"].name
+            or self.name == inventory["StackComponent"].name
+        ):
             self.op_current_fraction_sc = self.sc_cross_section / total_sc_area
-        elif (self.name == inventory["JacketComponent"].name or 
-        self.name == inventory["StrandStabilizerComponent"].name):
+        elif (
+            self.name == inventory["JacketComponent"].name
+            or self.name == inventory["StrandStabilizerComponent"].name
+        ):
             self.op_current_fraction_sc = 0.0
 
         # Fraction of the total current that goes in the strand or thape cross
         # section in current sharing regime.
-        if (self.name == inventory["StackComponent"].name or self.name == inventory["StrandMixedComponent"].name or self.name == inventory["StrandStabilizerComponent"].name):
+        if (
+            self.name == inventory["StackComponent"].name
+            or self.name == inventory["StrandMixedComponent"].name
+            or self.name == inventory["StrandStabilizerComponent"].name
+        ):
             self.op_current_fraction_sh = self.inputs["CROSSECTION"] / total_so_area
         else:  # jacket object.
             self.op_current_fraction_sh = 0.0
 
-    def __check_current_mode(self, conductor:object):
+    def __check_current_mode(self, conductor: object):
         """Private method that checks consistency between flags conductor.inputs['I0_OP_MODE'] and self.operations['IOP_MODE'] to deal with current definition.
 
         Args:
@@ -755,17 +767,24 @@ class SolidComponent:
             ValueError: self.operations["IOP_MODE"] != None and conductor.inputs["I0_OP_MODE"] == -1 and self.operations["IOP_MODE"] != -1.
             ValueError: self.operations["IOP_MODE"] != None and conductor.inputs["I0_OP_MODE"] == 0 and self.operations["IOP_MODE"] != 0.
         """
-        
+
         # Initialize dictionary with error message to be printed.
-        message_switch = {-1: f"{conductor.inputs['I0_OP_MODE']=} implies that current carried by object {self.identifier = } should be read from file. Flag self.operations['IOP_MODE'] should be set to -1; current value is {self.operations['IOP_MODE']=}. Please check sheet {self.identifier} of input file conductor_operation.xlsx.\n",
-        0: f"{conductor.inputs['I0_OP_MODE']=} implies that current carried by object {self.identifier = } is evaluated from the code since the total current carried by the conductor is assigned. Flag self.operations['IOP_MODE'] should be set to 0; current value is {self.operations['IOP_MODE']=}. Please check sheet {self.identifier} of input file conductor_operation.xlsx.\n"}
-        
-        # Check consistency between flags conductor.inputs['I0_OP_MODE'] and 
+        message_switch = {
+            -1: f"{conductor.inputs['I0_OP_MODE']=} implies that current carried by object {self.identifier = } should be read from file. Flag self.operations['IOP_MODE'] should be set to -1; current value is {self.operations['IOP_MODE']=}. Please check sheet {self.identifier} of input file conductor_operation.xlsx.\n",
+            0: f"{conductor.inputs['I0_OP_MODE']=} implies that current carried by object {self.identifier = } is evaluated from the code since the total current carried by the conductor is assigned. Flag self.operations['IOP_MODE'] should be set to 0; current value is {self.operations['IOP_MODE']=}. Please check sheet {self.identifier} of input file conductor_operation.xlsx.\n",
+        }
+
+        # Check consistency between flags conductor.inputs['I0_OP_MODE'] and
         # self.operations['IOP_MODE'].
         if self.operations["IOP_MODE"] != None:
-            if conductor.inputs["I0_OP_MODE"] == -1 and self.operations["IOP_MODE"] != -1:
+            if (
+                conductor.inputs["I0_OP_MODE"] == -1
+                and self.operations["IOP_MODE"] != -1
+            ):
                 raise ValueError(message_switch[conductor.inputs["I0_OP_MODE"]])
-            elif conductor.inputs["I0_OP_MODE"] == 0 and self.operations["IOP_MODE"] != 0:
+            elif (
+                conductor.inputs["I0_OP_MODE"] == 0 and self.operations["IOP_MODE"] != 0
+            ):
                 raise ValueError(message_switch[conductor.inputs["I0_OP_MODE"]])
 
     def get_current(self, conductor: object):
@@ -778,7 +797,7 @@ class SolidComponent:
             ValueError: if a not valid value is given to flag I0_OP_MODE.
         """
 
-        # Check consistency between flags conductor.inputs['I0_OP_MODE'] 
+        # Check consistency between flags conductor.inputs['I0_OP_MODE']
         # and self.operations['IOP_MODE'] only the first time.
         if conductor.cond_time[-1] == 0:
             self.__check_current_mode(conductor)
@@ -801,7 +820,9 @@ class SolidComponent:
                     (
                         self.current_interpolator,
                         self.current_interp_flag,
-                    ) = build_interpolator(current_df, self.operations["IOP_INTERPOLATION"])
+                    ) = build_interpolator(
+                        current_df, self.operations["IOP_INTERPOLATION"]
+                    )
 
                 # Evaluate current of generic solid component object by
                 # interpolation.
@@ -812,20 +833,27 @@ class SolidComponent:
                     self.current_interp_flag,
                 )
 
-                if self.current_interp_flag == 'time_only':
+                if self.current_interp_flag == "time_only":
                     # Convert to array
-                    self.dict_node_pt["op_current"] = self.dict_node_pt["op_current"]*np.ones(conductor.grid_features["N_nod"])
+                    self.dict_node_pt["op_current"] = self.dict_node_pt[
+                        "op_current"
+                    ] * np.ones(conductor.grid_features["N_nod"])
                 # Evaluate current in the Gauss nodal points.
                 self.dict_Gauss_pt["op_current"] = (
-                    self.dict_node_pt["op_current"][:-1] + self.dict_node_pt["op_current"][1:]
+                    self.dict_node_pt["op_current"][:-1]
+                    + self.dict_node_pt["op_current"][1:]
                 ) / 2.0
                 # This is exploited in the electric resistance evaluation.
-                if (self.name == conductor.inventory["StackComponent"].name
-                or self.name == conductor.inventory["StrandMixedComponent"].name):
+                if (
+                    self.name == conductor.inventory["StackComponent"].name
+                    or self.name == conductor.inventory["StrandMixedComponent"].name
+                ):
                     # Build an alias for convenience when dealing with electric
                     # resistance evaluation.
                     self.dict_node_pt["op_current_sc"] = self.dict_node_pt["op_current"]
-                    self.dict_Gauss_pt["op_current_sc"] = self.dict_Gauss_pt["op_current"]
+                    self.dict_Gauss_pt["op_current_sc"] = self.dict_Gauss_pt[
+                        "op_current"
+                    ]
 
                 if self.flagSpecfield_current == 2:
                     # Add also a logger
@@ -840,17 +868,21 @@ class SolidComponent:
                     * np.ones(conductor.grid_features["N_nod"])
                 )
                 self.dict_Gauss_pt["op_current"] = (
-                    self.dict_node_pt["op_current"][:-1] + self.dict_node_pt["op_current"][1:]
+                    self.dict_node_pt["op_current"][:-1]
+                    + self.dict_node_pt["op_current"][1:]
                 ) / 2.0
-                if (self.name == conductor.inventory["StackComponent"].name
-                or self.name == conductor.inventory["StrandMixedComponent"].name):
+                if (
+                    self.name == conductor.inventory["StackComponent"].name
+                    or self.name == conductor.inventory["StrandMixedComponent"].name
+                ):
                     self.dict_node_pt["op_current_sc"] = (
                         conductor.inputs["I0_OP_TOT"]
                         * self.op_current_fraction_sc
                         * np.ones(conductor.grid_features["N_nod"])
                     )
                     self.dict_Gauss_pt["op_current_sc"] = (
-                        self.dict_node_pt["op_current_sc"][:-1] + self.dict_node_pt["op_current_sc"][1:]
+                        self.dict_node_pt["op_current_sc"][:-1]
+                        + self.dict_node_pt["op_current_sc"][1:]
                     ) / 2.0
             else:
                 raise ValueError(
@@ -858,20 +890,21 @@ class SolidComponent:
                 )
         else:
             # The object does not carry a current; arrays are initialized to 0.
-            # Initialize array op_current to 0 in dictionary dict_node_pt to 
+            # Initialize array op_current to 0 in dictionary dict_node_pt to
             # avoid error.
             self.dict_node_pt["op_current"] = np.zeros(conductor.grid_features["N_nod"])
-            # Initialize array op_current to 0 in dictionary dict_Gauss_pt to 
+            # Initialize array op_current to 0 in dictionary dict_Gauss_pt to
             # avoid error.
             self.dict_Gauss_pt["op_current"] = np.zeros(conductor.grid_input["NELEMS"])
             # This is exploited in the electric resistance evaluation.
-            if (self.name == conductor.inventory["StackComponent"].name
-            or self.name == conductor.inventory["StrandMixedComponent"].name):
+            if (
+                self.name == conductor.inventory["StackComponent"].name
+                or self.name == conductor.inventory["StrandMixedComponent"].name
+            ):
                 # Build an alias for convenience when dealing with electric
                 # resistance evaluation.
                 self.dict_node_pt["op_current_sc"] = self.dict_node_pt["op_current"]
                 self.dict_Gauss_pt["op_current_sc"] = self.dict_Gauss_pt["op_current"]
-
 
     # end Get_I
 
@@ -911,7 +944,10 @@ class SolidComponent:
                     self.dict_node_pt["B_field"] = (
                         self.dict_node_pt["B_field"] * conductor.inputs["I0_OP_TOT"]
                     )
-                if conductor.inputs["I0_OP_MODE"] != 0 and conductor.inputs["I0_OP_TOT"] > 0:
+                if (
+                    conductor.inputs["I0_OP_MODE"] != 0
+                    and conductor.inputs["I0_OP_TOT"] > 0
+                ):
                     #### bfield e' un self e' un vettore
                     self.dict_node_pt["B_field"] = (
                         self.dict_node_pt["B_field"]
@@ -929,7 +965,9 @@ class SolidComponent:
                     self.operations["BISS"],
                     self.operations["BOSS"],
                     conductor.grid_features["N_nod"],
-                ) + conductor.inputs["I0_OP_TOT"] / conductor.inputs["I0_OP_TOT"] * np.linspace(
+                ) + conductor.inputs["I0_OP_TOT"] / conductor.inputs[
+                    "I0_OP_TOT"
+                ] * np.linspace(
                     self.operations["BITR"],
                     self.operations["BOTR"],
                     conductor.grid_features["N_nod"],
@@ -1114,7 +1152,7 @@ class SolidComponent:
     # end Q0_where
 
     def user_heat_function(self, arg):
-        # Method that allows user to define an arbitrary function for heat 
+        # Method that allows user to define an arbitrary function for heat
         # load.
         # To be edited.
         pass
@@ -1189,17 +1227,21 @@ class SolidComponent:
 
     # end JHTFLX_new_0
 
-    def initialize_electric_quantities(self,conductor):
+    def initialize_electric_quantities(self, conductor):
         """Method that initializes to zero some arrays that are an outcome of the electric method for each SolidComponent object:
 
-            * self.dict_Gauss_pt["current_along"];
-            * self.dict_Gauss_pt["voltage_drop_along"];
-            * self.dict_node_pt["total_power_el_cond"].
+        * self.dict_Gauss_pt["current_along"];
+        * self.dict_Gauss_pt["voltage_drop_along"];
+        * self.dict_node_pt["total_power_el_cond"].
         """
-        
+
         self.dict_Gauss_pt["current_along"] = np.zeros(conductor.grid_input["NELEMS"])
-        self.dict_Gauss_pt["voltage_drop_along"] = np.zeros(conductor.grid_input["NELEMS"])
-        self.dict_node_pt["total_power_el_cond"] = np.zeros(conductor.grid_features["N_nod"])
+        self.dict_Gauss_pt["voltage_drop_along"] = np.zeros(
+            conductor.grid_input["NELEMS"]
+        )
+        self.dict_node_pt["total_power_el_cond"] = np.zeros(
+            conductor.grid_features["N_nod"]
+        )
 
     def get_joule_power_along(self, conductor: object):
         """Method that evaluate the contribution to the total power in the element of Joule power (in W/m) due to the electic resistances along the SolidComponent objects.
@@ -1225,7 +1267,7 @@ class SolidComponent:
                         :, 1
                     ] = self.dict_Gauss_pt["linear_power_el_resistance"][:, 0].copy()
                 if self.name != "Z_JACKET":
-                    # Evaluate Joule linear power along the strand in W/m, due 
+                    # Evaluate Joule linear power along the strand in W/m, due
                     # to electric resistances only for current carriers:
                     # P_along = I_along * Delta V_along / (Delta_z)
                     self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
@@ -1245,7 +1287,7 @@ class SolidComponent:
                     :, 1:4
                 ] = self.dict_Gauss_pt["linear_power_el_resistance"][:, 0:3].copy()
                 if self.name != "Z_JACKET":
-                    # Evaluate Joule linear power along the strand in W/m, due 
+                    # Evaluate Joule linear power along the strand in W/m, due
                     # to electric resistances only for current carriers:
                     # P_along = I_along * Delta V_along / (Delta_z)
                     self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
@@ -1278,8 +1320,8 @@ class SolidComponent:
                         :, 1
                     ] = self.dict_node_pt["total_linear_power_el_cond"][:, 0].copy()
                 if self.name != "Z_JACKET":
-                    # Evaluate total Joule linear power across the strand in 
-                    # W/m, due to electric conductance only for current 
+                    # Evaluate total Joule linear power across the strand in
+                    # W/m, due to electric conductance only for current
                     # carriers:
                     # P_l_t = P_t / Delta_z_tilde
                     self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
@@ -1298,8 +1340,8 @@ class SolidComponent:
                     :, 1:4
                 ] = self.dict_node_pt["total_linear_power_el_cond"][:, 0:3].copy()
                 if self.name != "Z_JACKET":
-                    # Evaluate total Joule linear power across the strand in 
-                    # W/m, due to electric conductance only for current 
+                    # Evaluate total Joule linear power across the strand in
+                    # W/m, due to electric conductance only for current
                     # carriers:
                     # P_l_t = P_t / Delta_z_tilde
                     self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
@@ -1404,13 +1446,15 @@ class SolidComponent:
             # Convert string to lower case.
             self.operations["IOP_MODE"] = self.operations["IOP_MODE"].lower()
             # Check if string value is "none".
-            if  self.operations["IOP_MODE"] == "none":
+            if self.operations["IOP_MODE"] == "none":
                 # Convert string "none" to None.
                 self.operations["IOP_MODE"] = None
             else:
-                raise ValueError(f"Not valid value to flag self.operations['IOP_MODE']. Possible values are -1, 0 or 'none', current value is {self.operations['IOP_MODE']=}. Check sheet {self.identifier} of input file conuctor_operation.xlsx.\n")
+                raise ValueError(
+                    f"Not valid value to flag self.operations['IOP_MODE']. Possible values are -1, 0 or 'none', current value is {self.operations['IOP_MODE']=}. Check sheet {self.identifier} of input file conuctor_operation.xlsx.\n"
+                )
         else:
-            # Temporary solution to mangage input file loading, strange 
+            # Temporary solution to mangage input file loading, strange
             # behavior: 1 are converted to True but 0 not converted to False.
             if self.operations["IOP_MODE"] == True:
                 self.operations["IOP_MODE"] = 1
