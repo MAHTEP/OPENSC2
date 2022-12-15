@@ -32,10 +32,10 @@ def save_properties(conductor, f_path):
     ]
     header_chan = "zcoord (m)"
     for jj in range(len(list_prop_chan)):
-        header_chan = f"{header_chan}	{list_prop_chan[jj]} {list_units[jj]}"
-    header_st = "zcoord (m)	temperature (K)	B_field (T)	T_cur_sharing (K)"
-    header_stab = "zcoord (m)	temperature (K)	B_field (T)"
-    header_jk = "zcoord (m)	temperature (K)"
+        header_chan = f"{header_chan}\t{list_prop_chan[jj]} {list_units[jj]}"
+    header_st = "zcoord (m)\ttemperature (K)\tB_field (T)\tT_cur_sharing (K)"
+    header_stab = "zcoord (m)\ttemperature (K)\tB_field (T)"
+    header_jk = "zcoord (m)\ttemperature (K)"
     for fluid_comp in conductor.inventory["FluidComponent"].collection:
         A_chan = np.zeros(
             (
@@ -111,7 +111,7 @@ def save_simulation_space(conductor, f_path, n_digit_time):
         "total_density",
         "friction_factor",
     ]
-    header_chan = "zcoord (m)	velocity (m/s)	pressure (Pa)	temperature (K)	total_density (kg/m^3)\tfriction_factor (~)"
+    header_chan = "zcoord (m)\tvelocity (m/s)\tpressure (Pa)\ttemperature (K)\ttotal_density (kg/m^3)\tfriction_factor (~)"
     for fluid_comp in conductor.inventory["FluidComponent"].collection:
         file_path = os.path.join(
             f_path, f"{fluid_comp.identifier}_({conductor.cond_num_step})_sd.tsv"
@@ -131,11 +131,11 @@ def save_simulation_space(conductor, f_path, n_digit_time):
         with open(file_path, "w") as writer:
             np.savetxt(writer, A_chan, delimiter="\t", header=header_chan, comments="")
     # end for fluid_comp (cdp, 10/2020)
-    # headers_s_comp = "zcoord (m)	temperature (K)	density (kg/m^3)	spec_heat_p (J/kg/K)	ther_cond (W/m/K)	EXFTLX (W/m)	JHTFLX (W/m^2)"
+    # headers_s_comp = "zcoord (m)\ttemperature (K)\tdensity (kg/m^3)\tspec_heat_p (J/kg/K)\tther_cond (W/m/K)\tEXFTLX (W/m)\tJHTFLX (W/m^2)"
     # prop_s_comp = ["zcoord", "temperature", "total_density", "total_isobaric_specific_heat", \
-    # 							"total_thermal_conductivity", "EXTFLX", "JHTFLX"]
-    headers_full = "zcoord (m)	temperature (K)\tcurrent_sharing_temperature (K)"
-    headers_reduced = "zcoord (m)	temperature (K)"
+    # "total_thermal_conductivity", "EXTFLX", "JHTFLX"]
+    headers_full = "zcoord (m)\ttemperature (K)\tcurrent_sharing_temperature (K)"
+    headers_reduced = "zcoord (m)\ttemperature (K)"
     prop_full = ["zcoord", "temperature", "T_cur_sharing"]
     prop_reduced = ["zcoord", "temperature"]
     for strand in conductor.inventory["StrandComponent"].collection:
@@ -165,7 +165,7 @@ def save_simulation_space(conductor, f_path, n_digit_time):
                 writer, A_strand, delimiter="\t", header=headers_strand, comments=""
             )
         
-    headers_jk = "zcoord (m)	temperature (K)"
+    headers_jk = "zcoord (m)\ttemperature (K)"
     prop_jk = ["zcoord", "temperature"]
     # Loop to save jacket properties spatial distribution.
     for jk in conductor.inventory["JacketComponent"].collection:
@@ -322,7 +322,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         "friction_factor",
     ]
     # list_sol_key = ["temperature", "total_density", "total_isobaric_specific_heat", "total_thermal_conductivity", \
-    # 							 "EXTFLX", "JHTFLX"]
+    # "EXTFLX", "JHTFLX"]
     list_sol_key_full = ["temperature", "T_cur_sharing"]
     list_sol_key_reduced = ["temperature"]
     list_sol_key_gauss = ["current_along","voltage_drop_along","P_along"]
@@ -1046,7 +1046,7 @@ def save_convergence_data(cond, f_path, *n_digit_time, space_conv=True):
         )
         if space_conv:
             # build header and array (cdp, 12/2020)
-            header = "Nelems	" + discr_header
+            header = "Nelems\t" + discr_header
         elif space_conv == False:
             # build header and array (cdp, 12/2020)
             header = discr_header
@@ -1070,10 +1070,10 @@ def save_convergence_data(cond, f_path, *n_digit_time, space_conv=True):
         )
         if space_conv:
             # build header for space convergence (cdp, 12/2020)
-            mass_energy_header = f"Nelems	{discr_header}	mass_bal (kg)	energy_bal (J)"
+            mass_energy_header = f"Nelems\t{discr_header}\tmass_bal (kg)\tenergy_bal (J)"
         elif space_conv == False:
             # build header for time convergence (cdp, 12/2020)
-            mass_energy_header = discr_header + "	mass_bal (kg)	energy_bal (J)"
+            mass_energy_header = discr_header + "\tmass_bal (kg)\tenergy_bal (J)"
         # end if space_conv (cdp, 12/2020)
         # Write file f_name for the first time: headings and first row of data \
         # (cdp, 12/2020)
@@ -1105,7 +1105,7 @@ def save_convergence_data(cond, f_path, *n_digit_time, space_conv=True):
                 ),
             )
         )
-        header_chan = "velocity (m/s)	pressure (Pa)	temperature (K)"
+        header_chan = "velocity (m/s)\tpressure (Pa)\ttemperature (K)"
         A_chan[:, 0] = fluid_comp.coolant.dict_node_pt["velocity"]
         A_chan[:, 1] = fluid_comp.coolant.dict_node_pt["pressure"]
         A_chan[:, 2] = fluid_comp.coolant.dict_node_pt["temperature"]
