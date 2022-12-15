@@ -323,7 +323,10 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     ]
     # list_sol_key = ["temperature", "total_density", "total_isobaric_specific_heat", "total_thermal_conductivity", \
     # 							 "EXTFLX", "JHTFLX"]
-    list_sol_key = ["temperature"]
+    list_sol_key_full = ["temperature", "T_cur_sharing"]
+    list_sol_key_reduced = ["temperature"]
+    list_sol_key_gauss = ["current_along","voltage_drop_along","P_along"]
+    list_jk = ["temperature"]
     # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
     # Round the time to save to n_digit_time digits only once
     time = np.around(cond.Space_save, n_digit_time)
@@ -344,8 +347,8 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             # (cdp, 01/2021)
             dict_zcoord = dict()
         # end if fluid_comp (cdp, 01/2021)
-        for ii in range(len(cond.Space_save)):
-            file_name = f"{fluid_comp.ID}_({cond.num_step_save[ii]})_sd.tsv"
+        for ii,_ in enumerate(cond.Space_save):
+            file_name = f"{fluid_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
             file_load = os.path.join(f_path, file_name)
             # Load file file_name as data frame as a value of dictionary \
             # corresponding to key file_name (cdp, 11/2020)
@@ -418,8 +421,9 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
-        for ii in range(len(cond.Space_save)):
-            file_name = f"{s_comp.ID}_({cond.num_step_save[ii]})_sd.tsv"
+        for ii,_ in enumerate(cond.Space_save):
+            file_name = f"{s_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
+            file_name_gauss = f"{s_comp.identifier}_({cond.num_step_save[ii]})_gauss_sd.tsv"
             file_load = os.path.join(f_path, file_name)
             file_load_gauss = os.path.join(f_path, file_name_gauss)
             # Load file file_name as data frame as a value of dictionary \
@@ -436,15 +440,15 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             if ii == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
-                if s_comp.KIND == "Mixed_sc_stab" or s_comp.KIND == "Super_conductor":
+                if s_comp.KIND == "Mixed_sc_stab" or s_comp.KIND == "Stack":
                     # Check if current sharing temperature is evaluated at each
                     # thermal time step.
                     if s_comp.dict_operation["TCS_EVALUATION"]:
-                        list_sol_key = list_full
+                        list_sol_key = list_sol_key_full
                     else:
-                        list_sol_key = list_reduced
-                elif s_comp.KIND == "Stabilizer":
-                    list_sol_key = list_reduced
+                        list_sol_key = list_sol_key_reduced
+                elif s_comp.KIND == "StrandStabilizerComponent":
+                    list_sol_key = list_sol_key_reduced
                 else: # Jacket
                     list_sol_key = list_jk
 
@@ -458,7 +462,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                         columns={header[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
                     )
                 header_gauss = list(dict_df[file_name_gauss].columns.values.tolist())
-                for jj in range(len(list_sol_key_gauss)):
+                for jj,_ in enumerate(list_sol_key_gauss):
                     prop = list_sol_key_gauss[jj]
                     # decompose the data frame in four dataframes (cdp, 11/2020)
                     dict_df_new[prop] = dict_df[file_name].filter(
@@ -481,7 +485,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                     dict_df_new[prop].rename(
                         columns={header[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
                     )
-                    for jj in range(len(list_sol_key_gauss)):
+                    for jj,prop in enumerate(list_sol_key_gauss):
                         prop = list_sol_key_gauss[jj]
                         # construct the new data frames with concat method (cdp, 11/2020)
                         dict_df_new[prop] = pd.concat(
