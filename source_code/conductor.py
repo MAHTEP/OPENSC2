@@ -539,7 +539,7 @@ class Conductor:
             for comp in self.inventory["all_component"].collection:
                 build_coordinates_of_barycenter(simulation,self,comp)
             # Evaluate conductor spatial discretization along z axis. This is used for the thermal fluid-dynamic solution.
-            conductor_spatial_discretization(self)
+            conductor_spatial_discretization(simulation,self)
         else:
             # Call function user_defined_grid: makes ckecks on the user defined
             # grid and then assinge the coordinates to the conductor components.
