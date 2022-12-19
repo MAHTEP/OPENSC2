@@ -179,31 +179,61 @@ class StrandMixedComponent(StrandComponent):
     def __str__(self):
         pass
 
-    def __compute_cross_section(self):
+    def __compute_cross_section(self,sheet):
         """Private method that computes the sloped cross section of the stabilizer and of the superconductor of the StrandMixedComponent.
+
+        Args:
+            sheet (Chartsheet | Worksheet | ReadOnlyWorksheet): sheet with input data for StrandMixedComponent definition.
+
+        Raises:
+            ValueError: if self.inputs["ISTAB_NON_STAB"] =! 0 or self.inputs["ISTAB_NON_STAB"] != 1
         """
         # Perpendicular superconducting strand cross section.
         self.sc_strand_cross_section = self.dict_input["N_sc_strand"] * np.pi * self.dict_input["d_sc_strand"] ** 2 / 4
         # Sloped superconducting strand cross section.
         self.sc_strand_sloped_cross_section = self.sc_strand_cross_section / self.dict_input["COSTETA"]
-        # Sloped stabilizer strand cross section.
-        self.stab_strand_sloped_cross_section = self.dict_input["N_stab_strand"] * np.pi * self.dict_input["d_stab_strand"] ** 2 / 4 / self.dict_input["COSTETA"]
-        # Superconductor perpendicular cross section in m^2. Remember that the 
-        # stab_non_stab is referred only to the sc_strand and does not include 
-        # the contribution fo the stab_strand.
-        self.sc_cross_section = self.sc_strand_cross_section / (
-            1.0 + self.inputs["STAB_NON_STAB"]
+        # Perpendicular segregated stabilizer strand cross section.
+        self.stab_segr_cross_section = self.dict_input["N_stab_strand"] * np.pi * self.dict_input["d_stab_strand"] ** 2 / 4
+        # Sloped segregated stabilizer strand cross section.
+        self.stab_segr_sloped_cross_section = self.stab_segr_cross_section / self.dict_input["COSTETA"]
+        if self.inputs["ISTAB_NON_STAB"] == MODE_0:
+            # Superconductor perpendicular cross section in m^2. Remember that 
+            # stab_non_stab is referred only to the sc_strand and does not 
+            # include the contribution of the segregated stabilizer.
+            self.sc_cross_section = self.sc_strand_cross_section / (
+                1.0 + self.inputs["STAB_NON_STAB"]
+            )
+            # Evaluate the total stab_non_stab ratio, accounting for the 
+            # segregated stabilizer strands:
+            # alpha_tot = (A_stab_segr + A_stab_matrix) / A_sc
+            # A_stab_matrix = A_sc * alpha
+            # Input value is overwritten.
+            self.inputs["STAB_NON_STAB"] = (self.stab_segr_cross_section + self.inputs["STAB_NON_STAB"] * self.sc_cross_section) / self.sc_cross_section
+        elif self.inputs["ISTAB_NON_STAB"] == MODE_1:
+            # Superconductor perpendicular cross section in m^2. Remember that 
+            # stab_non_stab includes both the contribution of the stabilizer 
+            # constituting the matrix and of segregated stabilizer.
+            self.sc_cross_section = self.inputs["CROSSECTION"] / (
+                1.0 + self.inputs["STAB_NON_STAB"]
+            )
+        else:
+            raise ValueError(
+                f"Not valid value for flag self.dict_input['ISTAB_NON_STAB']. Flag value should be {MODE_0 = } or {MODE_1 = }, current value is {self.dict_input['ISTAB_NON_STAB'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n"
+            )
+
+        # Superconductor sloped cross section in m^2. This definition is 
+        # independent from flag ISTAB_NON_STAB.
+        self.sc_sloped_cross_section = self.sc_cross_section / (
+            self.dict_input["COSTETA"]
         )
-        # Superconductor sloped cross section in m^2. Remember that the 
-        # stab_non_stab is referred only to the sc_strand and does not include 
-        # the contribution fo the stab_strand.
-        self.sc_sloped_cross_section = self.sc_strand_sloped_cross_section / (
-            1.0 + self.inputs["STAB_NON_STAB"]
-        )
+        # Stabilizer total perpendicular cross section in m^2. It accounts for 
+        # the segregated stabilizer strands and for the stabilizer constituting 
+        # the matrix in sc strands.
+        self.stab_cross_section = self.inputs["STAB_NON_STAB"] * self.sc_cross_section
         # Stabilizer sloped cross section in m^2. It accounts for the
         # contribution of stabilizer strand cross section and for the fraction
         # of stabilizer in sc strands.
-        self.stab_sloped_cross_section = self.sc_strand_sloped_cross_section - self.sc_sloped_cross_section + self.stab_strand_sloped_cross_section
+        self.stab_sloped_cross_section = self.inputs["STAB_NON_STAB"] * self.sc_sloped_cross_section
 
     def __get_current_density_cross_section(self, sheet):
         """Private method that evalutates cross section used to compute the current density and the current sharing temperature according to the definiton of the critical current density scaling parameter c0."""
