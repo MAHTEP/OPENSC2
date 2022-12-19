@@ -227,7 +227,7 @@ class Conductor:
 
         # Call private method __coordinates to build grid coordinates.
         conductorlogger.debug(f"Before call method {self.__coordinates.__name__}")
-        self.__coordinates()
+        self.__coordinates(simulation)
         conductorlogger.debug(f"After call method {self.__coordinates.__name__}")
 
         # Call private method __initialize_attributes to initialize all the other useful and necessary attributes of class Conductor.
@@ -530,14 +530,14 @@ class Conductor:
             ]
         ).sum()
 
-    def __coordinates(self):
+    def __coordinates(self,simulation):
         """Private method that allows to evaluate the grid coordinates and assign them to the conductor objects and its comonents according to the value of flag grid_input["ITYMSH"]."""
         if self.grid_input["ITYMSH"] >= 0:
             n_nod = self.grid_input["NELEMS"] + 1
             file_path = os.path.join(self.BASE_PATH, self.file_input["GRID_DEFINITION"])
             self.grid_features["N_nod"] = check_max_node_number(n_nod, self, file_path)
             for comp in self.inventory["all_component"].collection:
-                build_coordinates_of_barycenter(self, comp)
+                build_coordinates_of_barycenter(simulation,self,comp)
             # Evaluate conductor spatial discretization along z axis. This is used for the thermal fluid-dynamic solution.
             conductor_spatial_discretization(self)
         else:
