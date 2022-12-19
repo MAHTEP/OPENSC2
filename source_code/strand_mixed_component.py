@@ -146,7 +146,7 @@ class StrandMixedComponent(StrandComponent):
             usecols=["Variable name", self.identifier],
         )[self.identifier].to_dict()
 
-        self.__compute_cross_section()
+        self.__compute_cross_section(sheet)
         self.__get_current_density_cross_section(sheet)
         # Call SolidComponent class constructor to deal with StrandMixedComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
