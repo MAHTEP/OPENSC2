@@ -64,7 +64,8 @@ ELECTRICAL_RESISTIVITY_FUNC = dict(
 
 INGEGNERISTIC_MODE = 0
 PHYSICAL_MODE = 1
-
+MODE_0 = 0
+MODE_1 = 1
 
 class StrandMixedComponent(StrandComponent):
 
