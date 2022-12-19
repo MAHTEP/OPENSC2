@@ -190,13 +190,13 @@ class StrandMixedComponent(StrandComponent):
             ValueError: if self.inputs["ISTAB_NON_STAB"] =! 0 or self.inputs["ISTAB_NON_STAB"] != 1
         """
         # Perpendicular superconducting strand cross section.
-        self.sc_strand_cross_section = self.dict_input["N_sc_strand"] * np.pi * self.dict_input["d_sc_strand"] ** 2 / 4
+        self.sc_strand_cross_section = self.inputs["N_sc_strand"] * np.pi * self.inputs["d_sc_strand"] ** 2 / 4
         # Sloped superconducting strand cross section.
-        self.sc_strand_sloped_cross_section = self.sc_strand_cross_section / self.dict_input["COSTETA"]
+        self.sc_strand_sloped_cross_section = self.sc_strand_cross_section / self.inputs["COSTETA"]
         # Perpendicular segregated stabilizer strand cross section.
-        self.stab_segr_cross_section = self.dict_input["N_stab_strand"] * np.pi * self.dict_input["d_stab_strand"] ** 2 / 4
+        self.stab_segr_cross_section = self.inputs["N_stab_strand"] * np.pi * self.inputs["d_stab_strand"] ** 2 / 4
         # Sloped segregated stabilizer strand cross section.
-        self.stab_segr_sloped_cross_section = self.stab_segr_cross_section / self.dict_input["COSTETA"]
+        self.stab_segr_sloped_cross_section = self.stab_segr_cross_section / self.inputs["COSTETA"]
         if self.inputs["ISTAB_NON_STAB"] == MODE_0:
             # Superconductor perpendicular cross section in m^2. Remember that 
             # stab_non_stab is referred only to the sc_strand and does not 
@@ -219,13 +219,13 @@ class StrandMixedComponent(StrandComponent):
             )
         else:
             raise ValueError(
-                f"Not valid value for flag self.dict_input['ISTAB_NON_STAB']. Flag value should be {MODE_0 = } or {MODE_1 = }, current value is {self.dict_input['ISTAB_NON_STAB'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n"
+                f"Not valid value for flag self.inputs['ISTAB_NON_STAB']. Flag value should be {MODE_0 = } or {MODE_1 = }, current value is {self.inputs['ISTAB_NON_STAB'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n"
             )
 
         # Superconductor sloped cross section in m^2. This definition is 
         # independent from flag ISTAB_NON_STAB.
         self.sc_sloped_cross_section = self.sc_cross_section / (
-            self.dict_input["COSTETA"]
+            self.inputs["COSTETA"]
         )
         # Stabilizer total perpendicular cross section in m^2. It accounts for 
         # the segregated stabilizer strands and for the stabilizer constituting 
@@ -238,19 +238,19 @@ class StrandMixedComponent(StrandComponent):
 
     def __get_current_density_cross_section(self, sheet):
         """Private method that evalutates cross section used to compute the current density and the current sharing temperature according to the definiton of the critical current density scaling parameter c0."""
-        if self.dict_input["C0_MODE"] == PHYSICAL_MODE:
+        if self.inputs["C0_MODE"] == PHYSICAL_MODE:
             # Physical definition for c0 is used, i.e., the value is normalized 
             # with respect to the perpendicular superconducting cross section
             # of a single superconducting strand.
-            self.cross_section_current_density = np.pi * self.dict_input["d_sc_strand"] ** 2 / (4 * (
+            self.cross_section_current_density = np.pi * self.inputs["d_sc_strand"] ** 2 / (4 * (
             1.0 + self.inputs["STAB_NON_STAB"]))
-        elif self.dict_input["C0_MODE"] == INGEGNERISTIC_MODE:
+        elif self.inputs["C0_MODE"] == INGEGNERISTIC_MODE:
             # Ingegneristic definition for c0 is used, i.e., the value is 
             # normalized with respect to the perpendicular cross section of a single superconducting strand.
-            self.cross_section_current_density = np.pi * self.dict_input["d_sc_strand"] ** 2 / 4
+            self.cross_section_current_density = np.pi * self.inputs["d_sc_strand"] ** 2 / 4
         else:
             raise ValueError(
-                f"Not valid value for flag self.dict_input['C0_MODE']. Flag value should be {PHYSICAL_MODE = } or {INGEGNERISTIC_MODE = }, current value is {self.dict_input['C0_MODE'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n"
+                f"Not valid value for flag self.inputs['C0_MODE']. Flag value should be {PHYSICAL_MODE = } or {INGEGNERISTIC_MODE = }, current value is {self.inputs['C0_MODE'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n"
             )
 
     def __reorganize_input(self):
