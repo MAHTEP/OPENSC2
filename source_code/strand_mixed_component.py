@@ -833,14 +833,14 @@ class StrandMixedComponent(StrandComponent):
             self.dict_node_pt["electrical_resistivity_superconductor"][
                 ind_sh_node
             ] = self.superconductor_power_law(
-                sc_current_node[ind_sh_node],
+                sc_current_node,
                 critical_current_node[ind_sh_node],
                 self.dict_node_pt["J_critical"][ind_sh_node],
             )
             self.dict_Gauss_pt["electrical_resistivity_superconductor"][
                 ind_sh_gauss
             ] = self.superconductor_power_law(
-                sc_current_gauss[ind_sh_gauss],
+                sc_current_gauss,
                 critical_current_gauss[ind_sh_gauss],
                 self.dict_Gauss_pt["J_critical"][ind_sh_gauss],
             )
