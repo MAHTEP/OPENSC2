@@ -145,7 +145,7 @@ def save_simulation_space(conductor, f_path, n_digit_time):
         if strand.KIND != "StrandStabilizerComponent":
             # Check if current sharing temperature is evaluated at each
             # thermal time step.
-            if strand.dict_operation["TCS_EVALUATION"]:
+            if strand.operations["TCS_EVALUATION"]:
                 headers_strand = headers_full
                 prop_strand = prop_full
             else:
@@ -450,7 +450,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                 if s_comp.KIND == "Mixed_sc_stab" or s_comp.KIND == "Stack":
                     # Check if current sharing temperature is evaluated at each
                     # thermal time step.
-                    if s_comp.dict_operation["TCS_EVALUATION"]:
+                    if s_comp.operations["TCS_EVALUATION"]:
                         list_sol_key = list_sol_key_full
                     else:
                         list_sol_key = list_sol_key_reduced
