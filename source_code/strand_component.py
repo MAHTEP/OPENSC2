@@ -408,13 +408,14 @@ class StrandComponent(SolidComponent):
     # end method User_scaling_margin (cdp, 10/2020)
 
     def electric_resistance(
-        self, conductor: object, electrical_resistivity_key: str, ind: np.ndarray
+        self, conductor: object, electrical_resistivity_key: str, cross_section_key: str, ind: np.ndarray
     ) -> np.ndarray:
         f"""Method that evaluate electric resistance of a single material, such as superconductor, stabilizer, stainless steel and other electric conducting material.
 
         Args:
             conductor (object): class Conductor object in which distance between consecutive nodes is stored to do the calculation.
             electrical_resistivity_key (str): dictionary key for the electrical resistivity of the material.
+            cross_section_key (str): dictionary key for the perpendicular cross section of the material.
             ind (np.ndarray): array with the index of the location in wich electric resistance should be evaluated with this method.
 
         Returns:
@@ -423,7 +424,7 @@ class StrandComponent(SolidComponent):
         return (
             self.dict_Gauss_pt[electrical_resistivity_key][ind]
             * conductor.node_distance[("StrandComponent", self.identifier)][ind]
-            / self.inputs["CROSSECTION"]
+            / self.cross_section[cross_section_key]
         )
 
     def parallel_electric_resistance(
