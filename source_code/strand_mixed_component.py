@@ -458,7 +458,7 @@ class StrandMixedComponent(StrandComponent):
         if self.inputs["NUM_MATERIAL_TYPES"] - 1 > 1:
             # Evaluate homogenized electrical resistivity of the strand mixed:
             # rho_el_eq = A_not_sc * (sum(A_i/rho_el_i))^-1 for any i not sc
-            return self.stab_sloped_cross_section * np.reciprocal((self.stab_sloped_cross_section / electrical_resistivity).sum(axis=1))
+            return self.cross_section["stab_sloped"] * np.reciprocal((self.cross_section["stab_sloped"] / electrical_resistivity).sum(axis=1))
         if self.inputs["NUM_MATERIAL_TYPES"] - 1 == 1:
             return electrical_resistivity.reshape(property["temperature"].size)
 
@@ -546,7 +546,7 @@ class StrandMixedComponent(StrandComponent):
             rho_el_stabilizer
             * critical_current ** self.inputs["nn"]
             / self.inputs["E0"]
-            / self.stab_sloped_cross_section
+            / self.cross_section["stab_sloped"]
         )
 
         # Initialize guess.
