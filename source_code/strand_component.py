@@ -428,13 +428,14 @@ class StrandComponent(SolidComponent):
         )
 
     def parallel_electric_resistance(
-        self, conductor: object, electrical_resistivity_keys: list, ind: np.ndarray
+        self, conductor: object, electrical_resistivity_keys: list, cross_section_keys: list, ind: np.ndarray
     ) -> np.ndarray:
         f"""Method that evaluate electric resistance in the case of a parallel of two electric conducting materials, as is the case for StackComponent and StrandMixedComponent in current sharing regime.
 
         Args:
             conductor (object): class Conductor object in which distance between consecutive nodes is stored to do the calculation.
             electrical_resistivity_key (list): list of dictionary key for the electrical resistivity of the materials (typical values for the application of this software are electrical_resistivity_superconductor and electrical_resistivity_stabilizer).
+            cross_section_keys (list): list of dictionary key for the cross section of the materials (typical values for the application of this software are sc and stab).
             ind (np.ndarray): array with the index of the location in wich electric resistance should be evaluated with this method.
 
         Raises:
@@ -455,12 +456,24 @@ class StrandComponent(SolidComponent):
             raise ValueError(
                 f"All items in list electrical_resistivity_keys must be of type string. {electrical_resistivity_keys = }.\n"
             )
+        
+        if cross_section_keys.size != electrical_resistivity_keys.size:
+            # Check list lenght.
+            raise ValueError(
+                f"List cross_section_keys must have the seme size of list electrical_resistivity_keys; {cross_section_keys = }\n{electrical_resistivity_keys = }.\n"
+            )
+
+        if not all(isinstance(item, str) for item in cross_section_keys):
+            # Check that all items in list are string.
+            raise ValueError(
+                f"All items in list cross_section_keys must be of type string. {cross_section_keys = }.\n"
+            )
 
         # Electric resistance matrix initialization.
         electric_resistances = np.zeros((ind.size, 2))
         # Evaluate electri resistances
         for ii, item in enumerate(electrical_resistivity_keys):
-            electric_resistances[:, ii] = self.electric_resistance(conductor, item, ind)
+            electric_resistances[:, ii] = self.electric_resistance(conductor, item, cross_section_keys[ii], ind)
 
         # Evaluate parallel electric resistance:
         # R_eq = R1*R2/(R1+R2)
