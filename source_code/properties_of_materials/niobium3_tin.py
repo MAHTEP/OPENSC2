@@ -303,12 +303,12 @@ def critical_current_density_nb3sn(T, B, EPSLON, TC0M, BC20M, C0):
     # ppp = 0.56
     # qqq = 1.75
     # Actual used values
-    ppp = 0.63
-    qqq = 2.1
+    # ppp = 0.63
+    # qqq = 2.1
 
     # from file scaling_input.dat (cdp, 10/2020)
-    # ppp = 0.84 # [] real - low field exponent of the pinning force (ppp~0.5)
-    # qqq = 2.57 # [] real - high field exponent of the pinning force (qqq~2)
+    ppp = 0.84 # [] real - low field exponent of the pinning force (ppp~0.5)
+    qqq = 2.57 # [] real - high field exponent of the pinning force (qqq~2)
 
     BLOW = 0.01
 
@@ -407,15 +407,15 @@ def SNBSN(EPSLON):
     SS = np.zeros(EPSLON.shape)  # variable initialization
 
     # Actual used values
-    Ca1 = 45.74  # [] real - strain fitting constant
-    Ca2 = 4.431  # [] real - strain fitting constant
-    EPS0a = 0.232e-2  # [] real - residual strain component
+    # Ca1 = 45.74  # [] real - strain fitting constant
+    # Ca2 = 4.431  # [] real - strain fitting constant
+    # EPS0a = 0.232e-2  # [] real - residual strain component
 
     # from file scaling_input.dat (cdp, 10/2020)
-    # Ca1 = 47.02 # [] real - strain fitting constant
-    # Ca2 = 11.76 # [] real - strain fitting constant
-    # EPS0a = 2.31e-3 #[] real - residual strain component
-    # EPSm = 3.97e-3 #[] real - tensile strain at which the maximum critical
+    Ca1 = 47.02 # [] real - strain fitting constant
+    Ca2 = 11.76 # [] real - strain fitting constant
+    EPS0a = 2.31e-3 #[] real - residual strain component
+    EPSm = 3.97e-3 #[] real - tensile strain at which the maximum critical
 
     # %*ESSE(EPSsh) !crb (July 24, 2011)
     EPSsh = Ca2 * EPS0a / np.sqrt(Ca1**2.0e0 - Ca2**2.0e0)
