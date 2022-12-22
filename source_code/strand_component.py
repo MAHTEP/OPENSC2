@@ -256,7 +256,7 @@ class StrandComponent(SolidComponent):
         # sloped.
         jop = (
             np.abs(self.dict_node_pt["op_current"])
-            / (self.cross_section_current_density)
+            / (self.cross_section["current_density"])
         )
 
         bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
