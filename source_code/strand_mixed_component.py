@@ -679,7 +679,7 @@ class StrandMixedComponent(StrandComponent):
         """
 
         critical_current_gauss = (
-            self.sc_cross_section * self.dict_Gauss_pt["J_critical"]
+            self.cross_section["sc"] * self.dict_Gauss_pt["J_critical"]
         )
 
         # Make initialization only once for each conductor object.
@@ -711,7 +711,7 @@ class StrandMixedComponent(StrandComponent):
             self.dict_Gauss_pt["electric_resistance"][
                 ind_zero
             ] = self.electric_resistance(
-                conductor, "electrical_resistivity_stabilizer", ind_zero
+                conductor, "electrical_resistivity_stabilizer", "stab", ind_zero
             )
 
         # Check if np array ind_not_zero is not empty: deal with index that 
@@ -752,7 +752,7 @@ class StrandMixedComponent(StrandComponent):
                 self.dict_Gauss_pt["electric_resistance"][ind_not_zero[
                     ind_sc_gauss
                 ]] = self.electric_resistance(
-                    conductor, "electrical_resistivity_superconductor", ind_not_zero[ind_sc_gauss]
+                    conductor, "electrical_resistivity_superconductor", "stab", ind_not_zero[ind_sc_gauss]
                 )
 
             ## SHARING OR NORMAL REGIME ##
@@ -807,7 +807,7 @@ class StrandMixedComponent(StrandComponent):
                     self.dict_Gauss_pt["electric_resistance"][
                         ind_shf_gauss[2]
                     ] = self.electric_resistance(
-                        conductor, "electrical_resistivity_stabilizer", ind_shf_gauss[2]
+                        conductor, "electrical_resistivity_stabilizer", "stab", ind_shf_gauss[2]
                     )
                 else:
                     # Get final index of the location of the current sharing 
@@ -838,7 +838,7 @@ class StrandMixedComponent(StrandComponent):
                     [
                         "electrical_resistivity_superconductor",
                         "electrical_resistivity_stabilizer",
-                    ],
+                    ],["sc","stab"],
                     ind_shf_gauss[2],
                 )
 
