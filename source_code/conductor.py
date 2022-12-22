@@ -524,7 +524,7 @@ class Conductor:
         ).sum()
         self.total_sc_cross_section = np.array(
             [
-                obj.sc_cross_section
+                obj.cross_section["sc"]
                 for obj in self.inventory["StrandComponent"].collection
                 if isinstance(obj, (StackComponent, StrandMixedComponent))
             ]
