@@ -739,7 +739,7 @@ class SolidComponent:
             self.name == inventory["StrandMixedComponent"].name
             or self.name == inventory["StackComponent"].name
         ):
-            self.op_current_fraction_sc = self.sc_cross_section / total_sc_area
+            self.op_current_fraction_sc = self.cross_section["sc"] / total_sc_area
         elif (
             self.name == inventory["JacketComponent"].name
             or self.name == inventory["StrandStabilizerComponent"].name
