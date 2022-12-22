@@ -457,10 +457,10 @@ class StrandComponent(SolidComponent):
                 f"All items in list electrical_resistivity_keys must be of type string. {electrical_resistivity_keys = }.\n"
             )
         
-        if cross_section_keys.size != electrical_resistivity_keys.size:
+        if len(cross_section_keys) != 2:
             # Check list lenght.
             raise ValueError(
-                f"List cross_section_keys must have the seme size of list electrical_resistivity_keys; {cross_section_keys = }\n{electrical_resistivity_keys = }.\n"
+                f"List cross_section_keys must have 2 items; {cross_section_keys = }.\n"
             )
 
         if not all(isinstance(item, str) for item in cross_section_keys):
