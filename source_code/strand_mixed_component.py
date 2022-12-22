@@ -731,25 +731,24 @@ class StrandMixedComponent(StrandComponent):
             if ind_sc_gauss.any():
                 # Current in superconducting regime is the carried by
                 # superconducting material only.
-                self.dict_Gauss_pt["op_current"][ind_not_zero][ind_sc_gauss] = self.dict_Gauss_pt[
+                self.dict_Gauss_pt["op_current"][ind_not_zero[ind_sc_gauss]] = self.dict_Gauss_pt[
                     "op_current_sc"
-                ][ind_not_zero][ind_sc_gauss]
+                ][ind_not_zero[ind_sc_gauss]]
 
                 # Compute superconducting electrical resistivity only in index 
                 # for which the superconducting regime is guaranteed, using the 
                 # power low.
-                self.dict_Gauss_pt["electrical_resistivity_superconductor"][ind_not_zero][
-                    ind_sc_gauss
-                ] = self.superconductor_power_law(
-                    self.dict_Gauss_pt["op_current_sc"][ind_not_zero][ind_sc_gauss],
-                    critical_current_gauss[ind_not_zero][ind_sc_gauss],
-                    self.dict_Gauss_pt["J_critical"][ind_not_zero][ind_sc_gauss],
+                self.dict_Gauss_pt["electrical_resistivity_superconductor"][ind_not_zero[ind_sc_gauss]] = self.superconductor_power_law(
+                    self.dict_Gauss_pt["op_current"][ind_not_zero[ind_sc_gauss]],
+                    critical_current_gauss[ind_not_zero[ind_sc_gauss]],
+                    self.dict_Gauss_pt["J_critical"][ind_not_zero[ind_sc_gauss]]
                 )
+
                 # Evaluate electic resistance in superconducting region 
                 # (superconductor only).
-                self.dict_Gauss_pt["electric_resistance"][ind_not_zero][
+                self.dict_Gauss_pt["electric_resistance"][ind_not_zero[
                     ind_sc_gauss
-                ] = self.electric_resistance(
+                ]] = self.electric_resistance(
                     conductor, "electrical_resistivity_superconductor", ind_not_zero[ind_sc_gauss]
                 )
 
@@ -765,9 +764,9 @@ class StrandMixedComponent(StrandComponent):
                 # Evaluate how the current is distributed solving the current
                 # divider problem in Gauss point.
                 sc_current_gauss, stab_current_gauss = self.solve_current_divider(
-                    self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_not_zero][ind_sh_gauss],
-                    critical_current_gauss[ind_not_zero][ind_sh_gauss],
-                    self.dict_Gauss_pt["op_current"][ind_not_zero][ind_sh_gauss],
+                    self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_not_zero[ind_sh_gauss]],
+                    critical_current_gauss[ind_not_zero[ind_sh_gauss]],
+                    self.dict_Gauss_pt["op_current"][ind_not_zero[ind_sh_gauss]]
                 )
 
                 # Get index of the normal region, to avoid division by 0 in 
@@ -775,7 +774,7 @@ class StrandMixedComponent(StrandComponent):
                 # power law.
                 ind_normal_gauss = np.nonzero(
                     (
-                        stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_not_zero][ind_sh_gauss]
+                        stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_not_zero[ind_sh_gauss]]
                         > 0.999999
                     )
                     | (sc_current_gauss < 1.0)
@@ -789,7 +788,7 @@ class StrandMixedComponent(StrandComponent):
                     ind_sht_gauss = np.nonzero(
                         (
                             stab_current_gauss
-                            / self.dict_Gauss_pt["op_current"][ind_not_zero][ind_sh_gauss]
+                            / self.dict_Gauss_pt["op_current"][ind_not_zero[ind_sh_gauss]]
                             <= 0.999999
                         )
                         | (sc_current_gauss >= 1.0)
@@ -798,7 +797,7 @@ class StrandMixedComponent(StrandComponent):
                     # Get final index of the location of the current sharing 
                     # zone, keeping into account that sc_current_gauss is 
                     # already filtered on ind_not_zero[ind_sh_gauss].
-                    ind_shf_gauss = {1:ind_sht_gauss,2:ind_not_zero[ind_sh_gauss][ind_sht_gauss]}
+                    ind_shf_gauss = {1:ind_sht_gauss,2:ind_not_zero[ind_sh_gauss[ind_sht_gauss]]}
 
                     # Evaluate electic resistance in normal region (stabilizer 
                     # only).
