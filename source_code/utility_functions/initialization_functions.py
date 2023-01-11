@@ -302,7 +302,7 @@ def fixed_refined_angular_discretization(
 
         tau_beg = 0.0
         tau_end = tau[n_elem["left"] + 1 - ii]
-        tau[1 : n_elem["left"] + 1 - ii] = np.linspace(
+        tau[: n_elem["left"] + 1 - ii] = np.linspace(
             tau_beg, tau_end, n_elem["left"] + 1 - ii
         )
 
