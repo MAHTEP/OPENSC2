@@ -215,7 +215,7 @@ def critical_current_density_re123(T, B, TC0M, BC20M, c0):
     #   B     x    magnetic field    T
     #   TC0M  x    critical temperature (B=0)    K
     #   BC20M     x    upper critical field (T=0)    T
-    #   c0    x    normalization constant     A T/m**2
+    #   c0    x    normalization constant     A * T ** (beta - 1) / m**2
     #   JCRe-123    x  critical current density    A/m**2
     #
     # Other functions called: BCRE123
