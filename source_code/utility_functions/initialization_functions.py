@@ -247,6 +247,7 @@ def fixed_refined_angular_discretization(
         conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"]
     ) / (2 * np.pi * comp.cyl_helix.reduced_pitch)
 
+
     assert (
         comp.cyl_helix.winding_number
         - (n_winding["left"] + n_winding["ref"] + n_winding["right"])
@@ -564,6 +565,11 @@ def helicoidal_coordinates(
         comp.inputs["COSTETA"],
     )
     if cond.grid_input["ITYMSH"] >= 0:
+        # Check if some strand component is still to be considered straigth.
+        if np.isclose(comp.inputs["X_barycenter"], 0.0) and np.isclose(comp.inputs["Y_barycenter"], 0.0):
+            # Straight strand component: call function straight_coordinates.
+            straight_coordinates(sim, cond, comp, comp.inputs["X_barycenter"], comp.inputs["Y_barycenter"])
+            return
         # Evaluate the angular discretization according to the value of flag
         # ITYMSH.
         if (
