@@ -1076,7 +1076,7 @@ class SolidComponent:
                     self.heat_interp_flag,
                 )
             # end if conductor.cond_num_step (cdp, 10/2020)
-        elif self.dict_operation["IQFUN"] == -2:
+        elif self.operations["IQFUN"] == -2:
             # AM2 part to be implemented
             if conductor.cond_time[-1] == 0:
                 self.user_heat_function(conductor)
