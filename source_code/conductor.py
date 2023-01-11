@@ -2517,7 +2517,7 @@ class Conductor:
             )
             .sum(axis="columns")
             .apply(np.sqrt)
-            .to_nparray()
+            .to_numpy()
         )  # distance
         return distance
 
