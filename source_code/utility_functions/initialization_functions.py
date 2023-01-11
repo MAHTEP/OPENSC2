@@ -255,8 +255,21 @@ def fixed_refined_angular_discretization(
 
     dtau_ref = 2 * np.pi * n_winding["ref"] / conductor.grid_input["NELREF"]
 
-    if (dtau_ref >= conductor.grid_input["SIZMIN"]) and (
-        dtau_ref <= conductor.grid_input["SIZMAX"]
+    # Evaluate the number of elements needed if SIZEMIN is used in for the 
+    # discretization of the refined region.
+    N_ref_min = np.round((conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"]) / conductor.grid_input["SIZMIN"])
+    # Evaluate the number of elements needed if SIZEMAX is used in for the 
+    # discretization of the refined region.
+    N_ref_max = np.round((conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"]) / conductor.grid_input["SIZMAX"])
+    # Evaluate the minimum value of dtau according to SIZEMIN given in input:
+    # dtau_min = 2 * pi * n_winding_ref / N_ref_min
+    dtau_min = 2 * np.pi * n_winding["ref"] / N_ref_min
+    # Evaluate the maximum value of dtau according to SIZEMAX given in input:
+    # dtau_max = 2 * pi * n_winding_ref / N_ref_max
+    dtau_max = 2 * np.pi * n_winding["ref"] * N_ref_max
+
+    if (dtau_ref >= dtau_min) and (
+        dtau_ref <= dtau_max
     ):
 
         tau_beg = 2 * np.pi * n_winding["left"] + dtau_ref
@@ -264,13 +277,13 @@ def fixed_refined_angular_discretization(
         tau[
             n_elem["left"] + 1 : (n_elem["left"] + 1) + (conductor.grid_input["NELREF"])
         ] = np.linspace(tau_beg, tau_end, conductor.grid_input["NELREF"] + 1)
-    elif dtau_ref < conductor.grid_input["SIZMIN"]:
+    elif dtau_ref < dtau_min:
         raise ValueError(
-            f"ERROR: {dtau_ref=} m in refined zone < {conductor.grid_input['SIZMIN']=} m!!!\n"
+            f"ERROR: {dtau_ref=} rad in refined zone < {dtau_min=} rad!!!\n"
         )
-    elif dtau_ref > conductor.grid_input["SIZMAX"]:
+    elif dtau_ref > dtau_max:
         raise ValueError(
-            f"ERROR: {dtau_ref=} m in refined zone > {conductor.grid_input['SIZMAX']} m!!!\n"
+            f"ERROR: {dtau_ref=} rad in refined zone > {dtau_max} rad!!!\n"
         )
 
     if n_elem["left"] > 0:
