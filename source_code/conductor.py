@@ -2866,19 +2866,20 @@ class Conductor:
         jj = 0
         tol = 1e-10
         for kk, obj in enumerate(self.inventory["StrandComponent"].collection):
-            # Assign potential values.
-            self.fixed_potential_value[
-                jj : jj + obj.operations["FIX_POTENTIAL_NUMBER"]
-            ] = obj.operations["FIX_POTENTIAL_VALUE"]
-            # Find and assign the index corresponding to fix potential
-            # coordinates.
-            for ii, coord in enumerate(obj.operations["FIX_POTENTIAL_COORDINATE"], jj):
-                self.fixed_potential_index[ii] = (
-                    (self.nodal_coordinates.loc["StrandComponent", "z"] - coord).abs()
-                    <= tol
-                ).to_numpy().nonzero()[0][kk] + self.total_elements_current_carriers
+            if obj.operations["FIX_POTENTIAL_FLAG"]:
+                # Assign potential values.
+                self.fixed_potential_value[
+                    jj : jj + obj.operations["FIX_POTENTIAL_NUMBER"]
+                ] = obj.operations["FIX_POTENTIAL_VALUE"]
+                # Find and assign the index corresponding to fix potential
+                # coordinates.
+                for ii, coord in enumerate(obj.operations["FIX_POTENTIAL_COORDINATE"], jj):
+                    self.fixed_potential_index[ii] = (
+                        (self.nodal_coordinates.loc["StrandComponent", "z"] - coord).abs()
+                        <= tol
+                    ).to_numpy().nonzero()[0][kk] + self.total_elements_current_carriers
 
-            jj += obj.operations["FIX_POTENTIAL_NUMBER"]
+                jj += obj.operations["FIX_POTENTIAL_NUMBER"]
 
     def eval_total_operating_current(self):
         """Method that evaluates the total electric current flowing in the conductor according to the value of flag I0_OP_MODE:
