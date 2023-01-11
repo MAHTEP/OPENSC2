@@ -452,7 +452,7 @@ class Conductor:
                     # (cdp, 09/2020)
                     self.inventory["StrandStabilizerComponent"].collection.append(
                         StrandStabilizerComponent(
-                            simulation, sheet, ii, kindObj, dict_file_path
+                            simulation, sheet, ii, kindObj, dict_file_path, self
                         )
                     )
                     self.inventory["StrandComponent"].collection.append(
