@@ -36,11 +36,20 @@ from properties_of_materials.niobium3_tin import (
     density_nb3sn,
 )
 
+# HTS properties
+from properties_of_materials.rare_earth_123 import (
+    thermal_conductivity_re123,
+    isobaric_specific_heat_re123,
+    density_re123,
+)
+
+
 DENSITY_FUNC = dict(
     al=density_al,
     cu=density_cu,
     nb3sn=density_nb3sn,
     nbti=density_nbti,
+    hts=density_re123,
 )
 
 THERMAL_CONDUCTIVITY_FUNC = dict(
@@ -48,6 +57,7 @@ THERMAL_CONDUCTIVITY_FUNC = dict(
     cu=thermal_conductivity_cu_nist,
     nb3sn=thermal_conductivity_nb3sn,
     nbti=thermal_conductivity_nbti,
+    hts=thermal_conductivity_re123,
 )
 
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
@@ -55,6 +65,7 @@ ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
     cu=isobaric_specific_heat_cu_nist,
     nb3sn=isobaric_specific_heat_nb3sn,
     nbti=isobaric_specific_heat_nbti,
+    hts=isobaric_specific_heat_re123,
 )
 
 ELECTRICAL_RESISTIVITY_FUNC = dict(
