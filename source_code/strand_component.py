@@ -255,7 +255,7 @@ class StrandComponent(SolidComponent):
         # A_current_density takes already into account of costheta, i.e., is
         # sloped.
         jop = (
-            np.abs(self.dict_node_pt["op_current"])
+            np.abs(dict_dummy["op_current"])
             / (self.cross_section["current_density"])
         )
 
