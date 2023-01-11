@@ -275,7 +275,7 @@ def fixed_refined_angular_discretization(
         tau_beg = 2 * np.pi * n_winding["left"] + dtau_ref
         tau_end = 2 * np.pi * (n_winding["left"] + n_winding["ref"])
         tau[
-            n_elem["left"] + 1 : (n_elem["left"] + 1) + (conductor.grid_input["NELREF"])
+            n_elem["left"] + 1 : (n_elem["left"] + 1) + (conductor.grid_input["NELREF"] + 1)
         ] = np.linspace(tau_beg, tau_end, conductor.grid_input["NELREF"] + 1)
     elif dtau_ref < dtau_min:
         raise ValueError(
