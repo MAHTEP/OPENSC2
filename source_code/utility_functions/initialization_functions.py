@@ -326,10 +326,10 @@ def fixed_refined_angular_discretization(
             ) / (n_elem["left"] - ii - 1)
             ii = ii + 1
 
-        tau_beg = tau[(n_elem["left"] + 1) + (conductor.grid_input["NELREF"]) + ii - 1]
+        tau_beg = tau[n_elem["left"] + conductor.grid_input["NELREF"] + ii - 1]
         tau_end = 2 * np.pi * comp.cyl_helix.winding_number
         tau[
-            (n_elem["left"] + 1) + (conductor.grid_input["NELREF"]) + ii - 1 : -1
+            n_elem["left"] + conductor.grid_input["NELREF"] + ii - 1:
         ] = np.linspace(tau_beg, tau_end, n_elem["right"] + 1 - ii + 1)
 
     return tau
