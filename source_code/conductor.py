@@ -3553,7 +3553,7 @@ class Conductor:
             # Loop to assign values to each StrandComponent.
             for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
                 obj.dict_node_pt["total_power_el_cond"] = joule_power_across_node[
-                    ii :: self.grid_features["N_nod"]
+                    ii :: self.inventory["StrandComponent"].number
                 ]
 
     def electric_method(self):
