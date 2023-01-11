@@ -49,7 +49,7 @@ DENSITY_FUNC = dict(
     cu=density_cu,
     nb3sn=density_nb3sn,
     nbti=density_nbti,
-    hts=density_re123,
+    ybco=density_re123,
 )
 
 THERMAL_CONDUCTIVITY_FUNC = dict(
@@ -57,7 +57,7 @@ THERMAL_CONDUCTIVITY_FUNC = dict(
     cu=thermal_conductivity_cu_nist,
     nb3sn=thermal_conductivity_nb3sn,
     nbti=thermal_conductivity_nbti,
-    hts=thermal_conductivity_re123,
+    ybco=thermal_conductivity_re123,
 )
 
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
@@ -65,7 +65,7 @@ ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
     cu=isobaric_specific_heat_cu_nist,
     nb3sn=isobaric_specific_heat_nb3sn,
     nbti=isobaric_specific_heat_nbti,
-    hts=isobaric_specific_heat_re123,
+    ybco=isobaric_specific_heat_re123,
 )
 
 ELECTRICAL_RESISTIVITY_FUNC = dict(
