@@ -3173,17 +3173,17 @@ class Conductor:
                 * (
                     np.arcsinh(
                         lmod[ii :: self.inventory["StrandComponent"].number]
-                        / obj.radius
+                        / obj.cyl_helix.radius
                     )
                     - np.sqrt(
                         1.0
                         + (
-                            obj.radius
+                            obj.cyl_helix.radius
                             / lmod[ii :: self.inventory["StrandComponent"].number]
                         )
                         ** 2
                     )
-                    + obj.radius / lmod[ii :: self.inventory["StrandComponent"].number]
+                    + obj.cyl_helix.radius / lmod[ii :: self.inventory["StrandComponent"].number]
                 )
             )
         return self_inductance
@@ -3206,17 +3206,17 @@ class Conductor:
                         lmod[ii :: self.inventory["StrandComponent"].number]
                         + np.sqrt(
                             lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                            + obj.radius ** 2
+                            + obj.cyl_helix.radius ** 2
                         )
                     )
-                    / obj.radius
+                    / obj.cyl_helix.radius
                 )
                 - np.sqrt(
                     lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                    + obj.radius ** 2
+                    + obj.cyl_helix.radius ** 2
                 )
                 + lmod[ii :: self.inventory["StrandComponent"].number] / 4
-                + obj.radius
+                + obj.cyl_helix.radius
             )
 
         return self_inductance
@@ -3358,17 +3358,17 @@ class Conductor:
                         lmod[ii :: self.inventory["StrandComponent"].number]
                         + np.sqrt(
                             lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                            + obj.radius ** 2
+                            + obj.cyl_helix.radius ** 2
                         )
                     )
-                    / obj.radius
+                    / obj.cyl_helix.radius
                 )
                 - np.sqrt(
                     lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                    + obj.radius ** 2
+                    + obj.cyl_helix.radius ** 2
                 )
                 + lmod[ii :: self.inventory["StrandComponent"].number] / 4
-                + obj.radius
+                + obj.cyl_helix.radius
             )
         # End for
 
