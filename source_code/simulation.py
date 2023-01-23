@@ -421,21 +421,6 @@ class Simulation:
                 # call sensor to plot results at any time the user asks (cdp, 07/2020)
             # End for conductor (cdp, 07/2020)
         # end while (cdp, 07/2020)
-        # Loop on conductors (cdp, 12/2020)
-        for cond in self.list_of_Conductors:
-            # save simulation spatial distribution at TEND (cdp, 01/2021)
-            save_simulation_space(
-                cond,
-                self.dict_path[f"Output_Spatial_distribution_{cond.identifier}_dir"],
-                abs(self.n_digit_time),
-            )
-            # Call function Save_properties to save the conductor final solution \
-            # (cdp, 12/2020)
-            save_properties(
-                cond, self.dict_path[f"Output_Solution_{cond.identifier}_dir"]
-            )
-        # end for cond (cdp, 12/2020)
-        print("Saved final solution\n")
         print("End simulation called " + self.transient_input["SIMULATION"] + "\n")
 
     # end method Conductor_solution (cdp, 09/2020)
