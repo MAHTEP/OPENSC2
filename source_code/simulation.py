@@ -426,11 +426,25 @@ class Simulation:
     # end method Conductor_solution (cdp, 09/2020)
 
     def conductor_post_processing(self):
-        # loop to save the norm of the solution at the end of the transient for \
-        # each conductor, usefull to make space convergence (cdp, 09/2020)
+        # loop to save the norm of the solution at the end of the transient for 
+        # each conductor, usefull to make space convergence
         # t_end = np.array([self.transient_input["TEND"]])
         for cond in self.list_of_Conductors:
             cond.post_processing(self)
+
+            # save simulation spatial distribution at TEND.
+            save_simulation_space(
+                cond,
+                self.dict_path[f"Output_Spatial_distribution_{cond.identifier}_dir"],
+                abs(self.n_digit_time),
+            )
+            # Call function Save_properties to save the conductor final 
+            # solution.
+            save_properties(
+                cond, self.dict_path[f"Output_Solution_{cond.identifier}_dir"]
+            )
+            print("Saved final solution\n")
+
             reorganize_spatial_distribution(
                 cond,
                 self.dict_path[f"Output_Spatial_distribution_{cond.identifier}_dir"],
