@@ -3200,6 +3200,11 @@ class Conductor:
         self_inductance = np.zeros(lmod.shape)
 
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
+            if self.inventory["StrandComponent"].number > 1:
+                radius = obj.cyl_helix.radius ** 2
+            else:
+                radius = obj.radius
+
             self_inductance[ii :: self.inventory["StrandComponent"].number] = 2 * (
                 lmod[ii :: self.inventory["StrandComponent"].number]
                 * np.log(
@@ -3207,17 +3212,17 @@ class Conductor:
                         lmod[ii :: self.inventory["StrandComponent"].number]
                         + np.sqrt(
                             lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                            + obj.cyl_helix.radius ** 2
+                            + radius ** 2
                         )
                     )
-                    / obj.cyl_helix.radius
+                    / radius
                 )
                 - np.sqrt(
                     lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                    + obj.cyl_helix.radius ** 2
+                    + radius ** 2
                 )
                 + lmod[ii :: self.inventory["StrandComponent"].number] / 4
-                + obj.cyl_helix.radius
+                + radius
             )
 
         return self_inductance
@@ -3555,6 +3560,12 @@ class Conductor:
                 obj.dict_node_pt["total_power_el_cond"] = joule_power_across_node[
                     ii :: self.inventory["StrandComponent"].number
                 ]
+
+    def __foo(self):
+        pass
+
+
+
 
     def electric_method(self):
         """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls private method self.__electric_solution_reorganization to reorganize the electric solution.
