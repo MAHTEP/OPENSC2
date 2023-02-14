@@ -3760,12 +3760,7 @@ class Conductor:
 
         # PROPERTIES AT THE GAUSS POINT (CENTRE OF THE ELEMENT)
 
-        # Fluid components (cdp, 07/2020)
-        for fluid_comp in self.inventory["FluidComponent"].collection:
-            # Evaluate coolant properties in Gauss points
-            fluid_comp.coolant._eval_properties_nodal_gauss(
-                self, simulation.fluid_prop_aliases, nodal=False
-            )
+        # Fluid component properties are evaluated in get_transp_coeff
 
         # JacketComponent (cdp, 07/2020)
         for jacket in self.inventory["JacketComponent"].collection:
