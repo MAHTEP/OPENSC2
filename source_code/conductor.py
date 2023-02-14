@@ -1987,37 +1987,6 @@ class Conductor:
             fluid_comp.coolant._eval_nodal_pressure_temperature_velocity_initialization(
                 self
             )
-            # Evaluate the density (if necessary) and the mass flow rate in points (nodal = True by default)
-            fluid_comp.coolant._compute_density_and_mass_flow_rates_nodal_gauss(self)
-            temp_ave = (
-                temp_ave
-                + fluid_comp.coolant.dict_node_pt["temperature"]
-                / self.inventory["FluidComponent"].number
-            )
-            # Enthaly balance: dt*sum((mdot*w)_out - (mdot*w)_inl), used to check \
-            # the imposition of SolidComponent temperature initial spatial \
-            # distribution (cdp, 12/2020)
-            # N.B. queste istruzioni posso inserirle in un metodo della classe.
-            self.enthalpy_balance = self.enthalpy_balance + simulation.transient_input[
-                "STPMIN"
-            ] * (
-                fluid_comp.coolant.dict_node_pt["mass_flow_rate"][-1]
-                * fluid_comp.coolant.dict_node_pt["total_enthalpy"][-1]
-                - fluid_comp.coolant.dict_node_pt["mass_flow_rate"][0]
-                * fluid_comp.coolant.dict_node_pt["total_enthalpy"][0]
-            )
-            self.enthalpy_out = (
-                self.enthalpy_out
-                + simulation.transient_input["STPMIN"]
-                * fluid_comp.coolant.dict_node_pt["mass_flow_rate"][-1]
-                * fluid_comp.coolant.dict_node_pt["total_enthalpy"][-1]
-            )
-            self.enthalpy_inl = (
-                self.enthalpy_inl
-                + simulation.transient_input["STPMIN"]
-                * fluid_comp.coolant.dict_node_pt["mass_flow_rate"][0]
-                * fluid_comp.coolant.dict_node_pt["total_enthalpy"][0]
-            )
 
         ## For each solid component evaluate temperature (cdp, 07/2020)
         ## If needed read only the sub matrix describing channel - solid objects \
@@ -2102,6 +2071,41 @@ class Conductor:
         # the time being so these quantities will remain 0.
         for obj in self.inventory["SolidComponent"].collection:
             obj.initialize_electric_quantities(self)
+
+        # ENERGY BALANCE FLUID COMPONENTS
+        for fluid_comp in self.inventory["FluidComponent"].collection:
+            # Evaluate the density (if necessary) and the mass flow rate in 
+            # points (nodal = True by default)
+            fluid_comp.coolant._compute_density_and_mass_flow_rates_nodal_gauss(self)
+            temp_ave = (
+                temp_ave
+                + fluid_comp.coolant.dict_node_pt["temperature"]
+                / self.inventory["FluidComponent"].number
+            )
+            # Enthalpy balance: dt*sum((mdot*w)_out - (mdot*w)_inl), used to 
+            # check the imposition of SolidComponent temperature initial 
+            # spatial distribution.
+            # N.B. queste istruzioni posso inserirle in un metodo della classe.
+            self.enthalpy_balance = self.enthalpy_balance + simulation.transient_input[
+                "STPMIN"
+            ] * (
+                fluid_comp.coolant.dict_node_pt["mass_flow_rate"][-1]
+                * fluid_comp.coolant.dict_node_pt["total_enthalpy"][-1]
+                - fluid_comp.coolant.dict_node_pt["mass_flow_rate"][0]
+                * fluid_comp.coolant.dict_node_pt["total_enthalpy"][0]
+            )
+            self.enthalpy_out = (
+                self.enthalpy_out
+                + simulation.transient_input["STPMIN"]
+                * fluid_comp.coolant.dict_node_pt["mass_flow_rate"][-1]
+                * fluid_comp.coolant.dict_node_pt["total_enthalpy"][-1]
+            )
+            self.enthalpy_inl = (
+                self.enthalpy_inl
+                + simulation.transient_input["STPMIN"]
+                * fluid_comp.coolant.dict_node_pt["mass_flow_rate"][0]
+                * fluid_comp.coolant.dict_node_pt["total_enthalpy"][0]
+            )
 
         # Initialize the Energy of the SolidComponent (cdp, 12/2020)
         self.E_sol_ini = 0.0
