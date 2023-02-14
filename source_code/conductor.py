@@ -1987,10 +1987,6 @@ class Conductor:
             fluid_comp.coolant._eval_nodal_pressure_temperature_velocity_initialization(
                 self
             )
-            # Evaluate the other coolant properties in nodal points (nodal = True by default)
-            fluid_comp.coolant._eval_properties_nodal_gauss(
-                self, simulation.fluid_prop_aliases
-            )
             # Evaluate the density (if necessary) and the mass flow rate in points (nodal = True by default)
             fluid_comp.coolant._compute_density_and_mass_flow_rates_nodal_gauss(self)
             temp_ave = (
