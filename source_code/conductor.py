@@ -3964,6 +3964,12 @@ class Conductor:
 
         # loop to evaluate htc_steady for each channel according to its geometry (cpd 06/2020)
         for fluid_comp in self.inventory["FluidComponent"].collection:
+
+            # Evaluate coolant properties in nodal points.
+            fluid_comp.coolant._eval_properties_nodal_gauss(
+                self, simulation.fluid_prop_aliases, flag_nodal
+            )
+
             # Define dictionary to select nodal or gauss properties according to the value of flag_nodal.0
             dict_dummy_chan = {
                 True: fluid_comp.coolant.dict_node_pt,
