@@ -223,7 +223,7 @@ class Coolant(FluidComponentInput):
         """
         if nodal:
             self.dict_node_pt = self._compute_density_and_mass_flow_rates(
-                self.dict_node_pt, conductor
+                self.dict_node_pt
             )
         else:
             # Velocity directly evaluated from the value in nodal point, averaging on two consecutives nodes.
@@ -233,7 +233,7 @@ class Coolant(FluidComponentInput):
                 + self.dict_node_pt["velocity"][1:]
             ) / 2.0
             self.dict_Gauss_pt = self._compute_density_and_mass_flow_rates(
-                self.dict_Gauss_pt, conductor
+                self.dict_Gauss_pt
             )
 
     # End method _compute_density_and_mass_flow_rates_nodal_gauss
