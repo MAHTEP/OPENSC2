@@ -3945,13 +3945,11 @@ class Conductor:
     """
         # Properties evaluation in each nodal point (cdp, 07/2020)
         if flag_nodal:
-            dict_dummy = self.dict_node_pt
-            self.dict_node_pt = self.eval_transp_coeff(simulation, dict_dummy)
+            self.dict_node_pt = self.eval_transp_coeff(simulation, self.dict_node_pt)
         # Properties evaluation in each Gauss point (cdp, 07/2020)
         elif flag_nodal == False:
-            dict_dummy = self.dict_Gauss_pt
             self.dict_Gauss_pt = self.eval_transp_coeff(
-                simulation, dict_dummy, flag_nodal=False
+                simulation, self.dict_Gauss_pt, flag_nodal=False
             )
 
     # end method Get_transp_coeff (cdp, 09/2020)
