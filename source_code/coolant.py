@@ -238,17 +238,15 @@ class Coolant(FluidComponentInput):
 
     # End method _compute_density_and_mass_flow_rates_nodal_gauss
 
-    def _compute_density_and_mass_flow_rates(self, dict_dummy, conductor):
-        if conductor.cond_num_step > 0:
-            # Compute density spatial distribution in nodal points or in Gauss points, only in if conductor.num_time_step > 0 since at the Initialization phase it is evaluated calling method _eval_properties_nodal_gauss
-            dict_dummy["total_density"] = PropsSI(
-                "Dmass",
-                "T",
-                dict_dummy["temperature"],
-                "P",
-                dict_dummy["pressure"],
-                self.type,
-            )
+    def _compute_density_and_mass_flow_rates(self, dict_dummy):
+        dict_dummy["total_density"] = PropsSI(
+            "Dmass",
+            "T",
+            dict_dummy["temperature"],
+            "P",
+            dict_dummy["pressure"],
+            self.type,
+        )
         # end if conductor.num_time_step > 0
         # Compute mass flow rate spatial distribution
         dict_dummy["mass_flow_rate"] = (
