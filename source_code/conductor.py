@@ -3824,21 +3824,19 @@ class Conductor:
                 / 2.0
             )
             strand.get_magnetic_field(self, nodal=False)
-            # Joule along is divided by 2 because its contribution is shared
-            # between Q1 and Q2.
+
             strand.dict_Gauss_pt["Q1"] = (
                 strand.dict_node_pt["JHTFLX"][:-1]
                 + strand.dict_node_pt["EXTFLX"][:-1]
                 + strand.dict_node_pt["total_linear_power_el_cond"][:-1]
-                + strand.dict_Gauss_pt["linear_power_el_resistance"] / 2
+                + strand.dict_Gauss_pt["linear_power_el_resistance"]
             )
-            # Joule along is divided by 2 because its contribution is shared
-            # between Q1 and Q2.
+
             strand.dict_Gauss_pt["Q2"] = (
                 strand.dict_node_pt["JHTFLX"][1:]
                 + strand.dict_node_pt["EXTFLX"][1:]
                 + strand.dict_node_pt["total_linear_power_el_cond"][1:]
-                + strand.dict_Gauss_pt["linear_power_el_resistance"] / 2
+                + strand.dict_Gauss_pt["linear_power_el_resistance"]
             )
             # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
             strand.get_magnetic_field_gradient(self, nodal=False)
