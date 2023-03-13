@@ -3561,11 +3561,29 @@ class Conductor:
                     ii :: self.inventory["StrandComponent"].number
                 ]
 
-    def __foo(self):
-        pass
+    def __compute_voltage_sum(self):
+        """Private method that evaluates the total voltage between to consecutive diagnostic spatial coordinates, assigning the computed value to the rightmost one.
+        """
+        # Get diagonostic spatial coordinates indexes exploiting list comprehension.
+        foo = [np.max(
+                    np.nonzero(
+                        self.grid_features["zcoord_gauss"]
+                        <= round(self.Time_save[ii], self.n_digit_z)
+                    )
+                )
+                for ii in range(1, self.Time_save.size)]
+        # Convert diagonostic spatial coordinates indexes to numpy array.
+        ind_zcoord_gauss = np.array([0, *foo])
 
-
-
+        # Loop to assign values to each StrandComponent.
+        for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
+            # Loop to compute voltage sum for each pair of consecutive 
+            # diagonostic spatial coordinates indexes. These values are saved 
+            # as time evolutions at those spatial coordinates.
+            for ii, idx in enumerate(ind_zcoord_gauss,1):
+                if ii < ind_zcoord_gauss.shape[0]:
+                    idxp = ind_zcoord_gauss[ii]
+                    obj.dict_Gauss_pt["voltage_drop_along_sum"][idxp] = obj.dict_Gauss_pt["voltage_drop_along"][idx:idxp+1].sum()
 
     def electric_method(self):
         """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls private method self.__electric_solution_reorganization to reorganize the electric solution.
