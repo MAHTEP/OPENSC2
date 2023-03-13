@@ -570,8 +570,8 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
         C,
     )
     # * CHECK THAT JOP IS BELOW THE UPPER CRITICAL VALUE
-    # Find element index such that 0 < JOP < JC[Bstar_ind] (cdp, 06/2020)
-    ind = np.nonzero((JOP[Bstar_ind] < JC[Bstar_ind]) & (JOP[Bstar_ind] > 0.0))[
+    # Find element index such that 0 <= JOP < JC[Bstar_ind] (cdp, 06/2020)
+    ind = np.nonzero((JOP[Bstar_ind] < JC[Bstar_ind]) & (JOP[Bstar_ind] >= 0.0))[
         0
     ]  # this is a numpy array (cdp, 06/2020)
     JC_ind = Bstar_ind[ind]  # this is an array (cdp, 06/2020)
