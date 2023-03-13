@@ -549,7 +549,6 @@ class StrandMixedComponent(StrandComponent):
         Raises:
             ValueError: if arrays rho_el_stabilizer and critical_current does not have the same shape.
 
-
         Returns:
             Tuple[np.ndarray, np.ndarray]: superconducting current array in A, stabilizer current array in A.
         """
@@ -573,7 +572,7 @@ class StrandMixedComponent(StrandComponent):
             rho_el_stabilizer
             * critical_current ** self.inputs["nn"]
             / self.inputs["E0"]
-            / self.cross_section["stab_sloped"]
+            / self.cross_section["stab"]
         )
 
         # Initialize guess.
