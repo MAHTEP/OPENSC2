@@ -151,6 +151,9 @@ def save_simulation_space(conductor, f_path, n_digit_time):
             else:
                 headers_strand = headers_reduced
                 prop_strand = prop_reduced
+        else:
+            headers_strand = headers_reduced
+            prop_strand = prop_reduced
 
         A_strand = np.zeros((conductor.grid_features["N_nod"], len(prop_strand)))
         for ii in range(len(prop_strand)):
