@@ -705,7 +705,7 @@ class StrandMixedComponent(StrandComponent):
         """
 
         critical_current_gauss = (
-            self.cross_section["current_density"] * self.dict_Gauss_pt["J_critical"]
+            self.cross_section["sc"] * self.dict_Gauss_pt["J_critical"]
         )
 
         # Make initialization only once for each conductor object.
@@ -778,7 +778,7 @@ class StrandMixedComponent(StrandComponent):
                 self.dict_Gauss_pt["electric_resistance"][ind_not_zero[
                     ind_sc_gauss
                 ]] = self.electric_resistance(
-                    conductor, "electrical_resistivity_superconductor", "stab", ind_not_zero[ind_sc_gauss]
+                    conductor, "electrical_resistivity_superconductor", "sc", ind_not_zero[ind_sc_gauss]
                 )
 
             ## SHARING OR NORMAL REGIME ##
