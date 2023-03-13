@@ -162,6 +162,11 @@ def electric_steady_state_solution(conductor: object):
 
     solution_completion(conductor, idx, electric_solution)
 
+    # Restore original size of the electric known term vector:
+    conductor.electric_known_term_vector = np.zeros(
+        conductor.total_elements_current_carriers + conductor.total_nodes_current_carriers
+    )
+
 
 def electric_transient_solution(conductor: object):
     """Function that solves the electric problem in the transient case. Exploits sparse matrix with scipy sparse."
