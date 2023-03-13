@@ -3952,10 +3952,10 @@ class Conductor:
     def eval_transp_coeff(self, simulation, dict_dummy, flag_nodal=True):
 
         """
-    Method that actually computes channels friction factor and heat transfer \
-    coefficient between channels, channel and solid component, solid \
-    components, both in nodal and Gauss points. (cpd 06/2020)
-    """
+        Method that actually computes channels friction factor and heat 
+        transfer coefficient between channels, channel and solid component, 
+        solid components, both in nodal and Gauss points.
+        """
 
         # loop to evaluate htc_steady for each channel according to its geometry (cpd 06/2020)
         for fluid_comp in self.inventory["FluidComponent"].collection:
@@ -4004,6 +4004,10 @@ class Conductor:
                     True: s_comp.dict_node_pt,
                     False: s_comp.dict_Gauss_pt,
                 }
+                # Multiplier used in both cases (positive and negative flag).
+                mlt = self.dict_df_coupling["HTC_multiplier"].at[
+                            fluid_comp_r.identifier, s_comp.identifier
+                        ]
                 # Rationale: compute dictionary vaules only if there is an interface \
                 # (cdp, 09/2020)
                 if (
@@ -4061,9 +4065,6 @@ class Conductor:
                             htc_full_transient = (htc_Kapitza * htc_transient) / (
                                 htc_Kapitza + htc_transient
                             )
-                        mlt = self.dict_df_coupling["HTC_multiplier"].at[
-                            fluid_comp_r.identifier, s_comp.identifier
-                        ]
                         # Assign to the HTC key of dictionary dict_dummy the dictionary whit the information about heat trasfer coefficient betweent channel fluid_comp_r and solid s_comp. Interface identification is given by the key name itself: f"{fluid_comp_r.identifier}_{s_comp.identifier}". This inner dictionary consists of a single key-value pair. (cdp, 07/2020)
                         dict_dummy["HTC"]["ch_sol"][
                             self.dict_topology["ch_sol"][fluid_comp_r.identifier][
@@ -4087,7 +4088,7 @@ class Conductor:
                             fluid_comp_r.identifier, s_comp.identifier
                         ] * np.ones(
                             dict_dummy_chan_r[flag_nodal]["temperature"].shape
-                        )
+                        ) * mlt
             # end loop on SolidComponent
             # nested loop on channel - channel objects (cdp, 06/2020)
             for _, fluid_comp_c in enumerate(
@@ -4097,6 +4098,10 @@ class Conductor:
                     True: fluid_comp_c.coolant.dict_node_pt,
                     False: fluid_comp_c.coolant.dict_Gauss_pt,
                 }
+                # Multiplier used in both cases (positive and negative flag).
+                mlt = self.dict_df_coupling["HTC_multiplier"].at[
+                            fluid_comp_r.identifier, fluid_comp_c.identifier
+                        ]
                 if (
                     self.dict_df_coupling["contact_perimeter_flag"].at[
                         fluid_comp_r.identifier, fluid_comp_c.identifier
@@ -4119,9 +4124,7 @@ class Conductor:
                         htc1 = fluid_comp_r.channel.dict_htc_steady[flag_nodal]
                         # dummy
                         htc2 = fluid_comp_c.channel.dict_htc_steady[flag_nodal]
-                        mlt = self.dict_df_coupling["HTC_multiplier"].at[
-                            fluid_comp_r.identifier, fluid_comp_c.identifier
-                        ]
+
                         dict_dummy["HTC"]["ch_ch"]["Open"][interface_name] = (
                             mlt * htc1 * htc2 / (htc1 + htc2)
                         )
@@ -4154,14 +4157,14 @@ class Conductor:
                             fluid_comp_r.identifier, fluid_comp_c.identifier
                         ] * np.ones(
                             dict_dummy_chan_r[flag_nodal]["temperature"].shape
-                        )
+                        ) * mlt
                         dict_dummy["HTC"]["ch_ch"]["Close"][
                             interface_name
                         ] = self.dict_df_coupling["contact_HTC"].at[
                             fluid_comp_r.identifier, fluid_comp_c.identifier
                         ] * np.ones(
                             dict_dummy_chan_r[flag_nodal]["temperature"].shape
-                        )
+                        ) * mlt
             # end for loop cc
         # end for loop rr
         # nested loop on solid - solid objects (cdp, 06/2020)
@@ -4177,6 +4180,10 @@ class Conductor:
                     True: s_comp_c.dict_node_pt,
                     False: s_comp_c.dict_Gauss_pt,
                 }
+                # Multiplier used in both cases (positive and negative flag).
+                mlt = self.dict_df_coupling["HTC_multiplier"].at[
+                            s_comp_r.identifier, s_comp_c.identifier
+                        ]
                 if (
                     self.dict_df_coupling["contact_perimeter_flag"].at[
                         s_comp_r.identifier, s_comp_c.identifier
@@ -4204,9 +4211,7 @@ class Conductor:
                     ):
                         # Thermal contact.
                         htc_solid = 500.0
-                        mlt = self.dict_df_coupling["HTC_multiplier"].at[
-                            s_comp_r.identifier, s_comp_c.identifier
-                        ]
+                        
                         dict_dummy["HTC"]["sol_sol"]["cond"][
                             self.dict_topology["sol_sol"][s_comp_r.identifier][
                                 s_comp_c.identifier
@@ -4233,7 +4238,7 @@ class Conductor:
                             s_comp_r.identifier, s_comp_c.identifier
                         ] * np.ones(
                             dict_dummy_comp_r[flag_nodal]["temperature"].shape
-                        )
+                        ) * mlt
                     elif (
                         self.dict_df_coupling["HTC_choice"].at[
                             s_comp_r.identifier, s_comp_c.identifier
@@ -4294,7 +4299,7 @@ class Conductor:
                                     dict_dummy_comp_c[flag_nodal]["temperature"],
                                     dict_dummy_comp_r[flag_nodal]["temperature"],
                                     view_factor_rec,
-                                )
+                                ) * mlt
                             # End if s_comp_r.inputs["Outer_perimeter"].
                         # End if emissivity.
                     elif (
@@ -4312,7 +4317,7 @@ class Conductor:
                             s_comp_r.identifier, s_comp_c.identifier
                         ] * np.ones(
                             dict_dummy_comp_r[flag_nodal]["temperature"].shape
-                        )
+                        ) * mlt
                     # End if self.dict_df_coupling["HTC_choice"].at[s_comp_r.identifier, s_comp_c.identifier]
             # end for loop cc
 
@@ -4364,7 +4369,7 @@ class Conductor:
                                 dict_dummy["HTC"]["env_sol"][key]["conv"]["top"],
                             ) = simulation.environment.eval_heat_transfer_coefficient(
                                 self, dict_dummy_comp_r[flag_nodal]["temperature"]
-                            )
+                            ) * mlt
                         else:
                             # Circular conductor
                             if flag_nodal == False:
@@ -4390,7 +4395,7 @@ class Conductor:
                             * self.inputs["Phi_conv"]
                             * np.ones(
                                 dict_dummy_comp_r[flag_nodal]["temperature"].shape
-                            )
+                            ) * mlt
                         )
                     elif (
                         self.dict_df_coupling["HTC_choice"].at[
@@ -4406,7 +4411,7 @@ class Conductor:
                             simulation,
                             s_comp_r,
                             dict_dummy_comp_r[flag_nodal]["temperature"],
-                        )
+                        ) * mlt
                     elif (
                         self.dict_df_coupling["HTC_choice"].at[
                             simulation.environment.KIND, s_comp_r.identifier
@@ -4421,7 +4426,7 @@ class Conductor:
                             * self.inputs["Phi_rad"]
                             * np.ones(
                                 dict_dummy_comp_r[flag_nodal]["temperature"].shape
-                            )
+                            ) * mlt
                         )
                     elif (
                         self.dict_df_coupling["HTC_choice"].at[
@@ -4434,7 +4439,7 @@ class Conductor:
                             simulation.environment.eval_heat_transfer_coefficient(
                                 self, dict_dummy_comp_r[flag_nodal]["temperature"]
                             )
-                            * self.inputs["Phi_conv"]
+                            * self.inputs["Phi_conv"] * mlt
                         )
 
                         dict_dummy["HTC"]["env_sol"][key][
@@ -4443,7 +4448,7 @@ class Conductor:
                             simulation,
                             s_comp_r,
                             dict_dummy_comp_r[flag_nodal]["temperature"],
-                        )
+                        ) * mlt
                     elif (
                         self.dict_df_coupling["HTC_choice"].at[
                             simulation.environment.KIND, s_comp_r.identifier
@@ -4458,7 +4463,7 @@ class Conductor:
                             simulation.environment.KIND, s_comp_r.identifier
                         ] * np.ones(
                             dict_dummy_comp_r[flag_nodal]["temperature"].shape
-                        )
+                        ) * mlt
                     # End if self.dict_df_coupling["HTC_choice"].at[simulation.environment.KIND, s_comp_r.identifier]
                 else:
                     # Raise error
