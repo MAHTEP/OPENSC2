@@ -250,13 +250,13 @@ class StrandComponent(SolidComponent):
 
     def eval_tcs(self, dict_dummy):
 
-        # Evaluate the current density with a suitable definition of the cross
-        # section according to the definition of the scaling parameter c0.
-        # A_current_density takes already into account of costheta, i.e., is
-        # sloped.
+        # The scaling parameter c0 is converted to the physic definition if the 
+        # ingegneristic definition is given as input. Therefore, for the 
+        # evaluation of the current densities the total superconducting 
+        # perpendicular cross section is always used.
         jop = (
             np.abs(dict_dummy["op_current"])
-            / (self.cross_section["current_density"])
+            / (self.cross_section["sc"])
         )
 
         bmax = dict_dummy["B_field"] * (1 + dict_dummy["alpha_B"])
