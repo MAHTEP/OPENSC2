@@ -265,18 +265,20 @@ class StrandMixedComponent(StrandComponent):
 
     def __get_current_density_cross_section(self, sheet):
         """Private method that evalutates cross section used to compute the current density and the current sharing temperature according to the definiton of the critical current density scaling parameter c0."""
-        if self.inputs["C0_MODE"] == PHYSICAL_MODE:
-            # Physical definition for c0 is used, i.e., the value is normalized 
-            # with respect to the perpendicular superconducting cross section
-            # of a single superconducting strand.
-            self.cross_section["current_density"] = np.pi * self.inputs["d_sc_strand"] ** 2 / (4 * (
-            1.0 + self.inputs["STAB_NON_STAB"]))
-        elif self.inputs["C0_MODE"] == INGEGNERISTIC_MODE:
+                
+        if self.inputs["C0_MODE"] == INGEGNERISTIC_MODE:
             # Ingegneristic definition for c0 is used, i.e., the value is 
-            # normalized with respect to the perpendicular cross section of a 
-            # single superconducting strand.
-            self.cross_section["current_density"] = np.pi * self.inputs["d_sc_strand"] ** 2 / 4
-        else:
+            # normalized with respect to the total perpendicular cross section 
+            # of superconducting strand.
+
+            # Convert the ingegneristic definition to the physical definition 
+            # (normalized with respect to the total perpendicular cross section 
+            # of the superconductor) in order to use the superconducting cross 
+            # section in the electric model.
+            self.inputs["c0"] = self.inputs["c0"] * (1. + self.cross_section["alpha_0"])
+        elif (self.inputs["C0_MODE"] != PHYSICAL_MODE
+                and self.inputs["C0_MODE"] != INGEGNERISTIC_MODE
+            ):
             raise ValueError(
                 f"Not valid value for flag self.inputs['C0_MODE']. Flag value should be {PHYSICAL_MODE = } or {INGEGNERISTIC_MODE = }, current value is {self.inputs['C0_MODE'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n"
             )
