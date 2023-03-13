@@ -377,7 +377,7 @@ class JacketComponent(SolidComponent):
             self.__density_numerator_sum = self.__density_numerator.sum(axis=1)
             return self.__density_numerator_sum / self.inputs["CROSSECTION"]
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
-            return density
+            return density[0]
 
     def jacket_isobaric_specific_heat(self, property: dict) -> np.ndarray:
         """Method that evaluates homogenized isobaric specific heat of the jacket, in the case it is made at most by two materials (jacket and insulation). Homogenization is based on material mass.
@@ -413,7 +413,7 @@ class JacketComponent(SolidComponent):
                 axis=1
             ) / self.__density_numerator_sum
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
-            return isobaric_specific_heat
+            return isobaric_specific_heat[0]
 
     def jacket_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
@@ -437,7 +437,7 @@ class JacketComponent(SolidComponent):
                 axis=1
             ) / self.inputs["CROSSECTION"]
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
-            return thermal_conductivity
+            return thermal_conductivity[0]
 
     def jacket_electrical_resistivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized electrical resistivity otf the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
@@ -462,4 +462,4 @@ class JacketComponent(SolidComponent):
                 (self.cross_sections / electrical_resistivity.T).sum(axis=1)
             )
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
-            return electrical_resistivity
+            return electrical_resistivity[0]
