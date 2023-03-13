@@ -145,6 +145,9 @@ def electric_steady_state_solution(conductor: object):
         conductor.electric_known_term_vector.shape[0]
     )
 
+    # Electric known term initializazion.
+    conductor.build_electric_known_term_vector()
+
     # Apply Diriclet boundary conditions
     idx = fixed_value(conductor)
 
