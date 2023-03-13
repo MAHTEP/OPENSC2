@@ -136,6 +136,7 @@ class StrandMixedComponent(StrandComponent):
             current_along=dict(),
             voltage_drop_along=dict(),
             linear_power_el_resistance=dict(),
+            voltage_drop_along_sum=dict(),
         )
         self.dict_scaling_input = dict()
         # Dictionary initialization: inputs.
