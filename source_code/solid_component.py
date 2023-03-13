@@ -1232,11 +1232,15 @@ class SolidComponent:
 
         * self.dict_Gauss_pt["current_along"];
         * self.dict_Gauss_pt["voltage_drop_along"];
+        * self.dict_Gauss_pt["voltage_drop_along_sum"];
         * self.dict_node_pt["total_power_el_cond"].
         """
 
         self.dict_Gauss_pt["current_along"] = np.zeros(conductor.grid_input["NELEMS"])
         self.dict_Gauss_pt["voltage_drop_along"] = np.zeros(
+            conductor.grid_input["NELEMS"]
+        )
+        self.dict_Gauss_pt["voltage_drop_along_sum"] = np.zeros(
             conductor.grid_input["NELEMS"]
         )
         self.dict_node_pt["total_power_el_cond"] = np.zeros(
