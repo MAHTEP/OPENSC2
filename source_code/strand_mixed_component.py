@@ -824,10 +824,18 @@ class StrandMixedComponent(StrandComponent):
                         | (sc_current_gauss >= 1.0)
                     )[0]
 
-                    # Get final index of the location of the current sharing 
-                    # zone, keeping into account that sc_current_gauss is 
-                    # already filtered on ind_not_zero[ind_sh_gauss].
-                    ind_shf_gauss = {1:ind_sht_gauss,2:ind_not_zero[ind_sh_gauss[ind_sht_gauss]]}
+                    if ind_sht_gauss:
+                        # Get final index of the location of the current 
+                        # sharing zone, keeping into account that 
+                        # sc_current_gauss is already filtered on ind_not_zero
+                        # [ind_sh_gauss].
+                        ind_shf_gauss = {1:ind_sht_gauss,2:ind_not_zero[ind_sh_gauss[ind_sht_gauss]]}
+                    else:
+                        # Get final index of the location of the current 
+                        # sharing zone, keeping into account that 
+                        # sc_current_gauss is already filtered on ind_not_zero
+                        # [ind_sh_gauss] and that ind_sht_gauss is empty.
+                        ind_shf_gauss = {1:ind_sht_gauss,2:ind_not_zero[ind_sh_gauss]}
 
                     # Evaluate electic resistance in normal region (stabilizer 
                     # only).
@@ -846,39 +854,39 @@ class StrandMixedComponent(StrandComponent):
                     ind_shf_gauss = {1:np.nonzero(ind_sh_gauss>=0)[0],2:ind_not_zero[ind_sh_gauss]}
 
                 ## SHARING REGIME ONLY ##
-                
-                # Evaluate the electrical resistivity of the superconductor
-                # according to the power low in Gauss point in Ohm*m.
-                self.dict_Gauss_pt["electrical_resistivity_superconductor"][
-                    ind_shf_gauss[2]
-                ] = self.superconductor_power_law(
-                    sc_current_gauss[ind_shf_gauss[1]],
-                    critical_current_gauss[ind_shf_gauss[2]],
-                    self.dict_Gauss_pt["J_critical"][ind_shf_gauss[2]],
-                )
+                if ind_shf_gauss[1].any():
+                    # Evaluate the electrical resistivity of the superconductor
+                    # according to the power low in Gauss point in Ohm*m.
+                    self.dict_Gauss_pt["electrical_resistivity_superconductor"][
+                        ind_shf_gauss[2]
+                    ] = self.superconductor_power_law(
+                        sc_current_gauss[ind_shf_gauss[1]],
+                        critical_current_gauss[ind_shf_gauss[2]],
+                        self.dict_Gauss_pt["J_critical"][ind_shf_gauss[2]],
+                    )
 
-                # Evaluate the equivalent electric resistance in Ohm.
-                self.dict_Gauss_pt["electric_resistance"][
-                    ind_shf_gauss[2]
-                ] = self.parallel_electric_resistance(
-                    conductor,
-                    [
-                        "electrical_resistivity_superconductor",
-                        "electrical_resistivity_stabilizer",
-                    ],["sc","stab"],
-                    ind_shf_gauss[2],
-                )
-                
-                # Compute voltage along stabilizer.
-                v_stab = self.dict_Gauss_pt["electrical_resistivity_stabilizer"][
-                    ind_shf_gauss[2]
-                ] * stab_current_gauss[ind_shf_gauss[1]] / self.cross_section["stab"]
-                # Compute voltage along superconductor
-                v_sc = self.inputs["E0"] * (sc_current_gauss[ind_shf_gauss[1]] / critical_current_gauss[ind_shf_gauss[2]]) ** self.inputs["nn"]
-                # Check that the voltage along stabilizer is equal to the 
-                # voltage along superconductor (i.e, check the reliability of 
-                # the current divider).
-                if all(np.isclose(v_stab,v_sc)) == False:
-                    raise ValueError(f"Voltage drop along superconductor and stabilizer must be the same.")
+                    # Evaluate the equivalent electric resistance in Ohm.
+                    self.dict_Gauss_pt["electric_resistance"][
+                        ind_shf_gauss[2]
+                    ] = self.parallel_electric_resistance(
+                        conductor,
+                        [
+                            "electrical_resistivity_superconductor",
+                            "electrical_resistivity_stabilizer",
+                        ],["sc","stab"],
+                        ind_shf_gauss[2],
+                    )
+                    
+                    # Compute voltage along stabilizer.
+                    v_stab = self.dict_Gauss_pt["electrical_resistivity_stabilizer"][
+                        ind_shf_gauss[2]
+                    ] * stab_current_gauss[ind_shf_gauss[1]] / self.cross_section["stab"]
+                    # Compute voltage along superconductor
+                    v_sc = self.inputs["E0"] * (sc_current_gauss[ind_shf_gauss[1]] / critical_current_gauss[ind_shf_gauss[2]]) ** self.inputs["nn"]
+                    # Check that the voltage along stabilizer is equal to the 
+                    # voltage along superconductor (i.e, check the reliability of 
+                    # the current divider).
+                    if all(np.isclose(v_stab,v_sc)) == False:
+                        raise ValueError(f"Voltage drop along superconductor and stabilizer must be the same.")
 
         return self.dict_Gauss_pt["electric_resistance"]
