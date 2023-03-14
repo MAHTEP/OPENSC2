@@ -135,6 +135,9 @@ class StrandStabilizerComponent(StrandComponent):
         # of flag self.operations["IOP_MODE"].
         self.deal_with_flag_IOP_MODE()
 
+        # Equivalent radius
+        self.radius = np.sqrt(self.inputs["CROSSECTION"] / np.pi)
+
         # Call method deal_with_fixed_potential to manipulate input about fixed
         # potential values.
         self.deal_with_fixed_potential(conductor.inputs["ZLENGTH"])
