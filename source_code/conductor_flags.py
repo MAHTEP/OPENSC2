@@ -1,9 +1,9 @@
 # Flags for the current definition
 
 # User does not define a current: do not use the electric module
-IOP_NOT_DEFINED = 0
+IOP_NOT_DEFINED = None
 # Constant value read from input file conductor_definition.xlsx
-IOP_CONSTANT = 1
+IOP_CONSTANT = 0
 # Initial current spatial distribution load form auxiliary input file
 IOP_FROM_FILE = -1
 # Current beavior as function of space and time from user defined function
