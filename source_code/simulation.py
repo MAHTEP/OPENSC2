@@ -6,6 +6,7 @@ from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
 import warnings
 
 from conductor import Conductor
+from conductor_flags import IOP_NOT_DEFINED
 from environment import Environment
 from utility_functions.auxiliary_functions import (
     check_repeated_headings,
