@@ -309,11 +309,13 @@ class Simulation:
                 # if self.num_step > 1:
                 conductor.operating_conditions(self)
                 # end if self.num_step
-                # Call to electric_electric method allows to define,
-                # initialize, solve and reorganize the electric problem.
-                conductor.eval_total_operating_current()
-                if abs(conductor.dict_node_pt["op_current"][0]) > 0:
-                    conductor.electric_method()
+                
+                # Use electric method only if needed, i.e., user specifies a 
+                # current.
+                if conductor.inputs["I0_OP_MODE"] != IOP_NOT_DEFINED:
+                    # Call to electric_electric method allows to define, 
+                    # initialize, solve and reorganize the electric problem.
+                    conductor.eval_total_operating_current()
 
                 # call step to solve the problem @ new timestep (cdp, 07/2020)
                 step(
