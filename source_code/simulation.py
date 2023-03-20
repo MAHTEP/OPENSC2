@@ -170,6 +170,14 @@ class Simulation:
             self.simulation_time = [0.0]
             self.num_step = 0
             cond.initialization(self, gui)
+            # Use electric method only if needed, i.e., user specifies a 
+            # current.
+            if cond.inputs["I0_OP_MODE"] != IOP_NOT_DEFINED:
+                # Call to electric_electric method allows to define, 
+                # initialize, solve and reorganize the electric problem.
+                cond.eval_total_operating_current()
+                cond.electric_method()
+
             # plot conductor initialization spatial distribution (cdp, 12/2020)
             plot_properties(self, cond)
             save_simulation_time(self, cond)
