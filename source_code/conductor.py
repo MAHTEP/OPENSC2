@@ -148,8 +148,10 @@ class Conductor:
         if self.inputs["UPWIND"] == True:
             self.inputs["UPWIND"] = 1
 
-        if self.inputs["ELECTRIC_TIME_STEP"] == "None":
-            self.inputs["ELECTRIC_TIME_STEP"] = None
+        for key in ["I0_OP_MODE","ELECTRIC_TIME_STEP"]:
+            if isinstance(self.inputs[key],str) and self.inputs[key].lower() == "none":
+                self.inputs[key] = None
+        
 
         # Load the sheet CONDUCTOR_operation form file conducor_definition.xlsx as a disctionary.
         self.operations = pd.read_excel(
