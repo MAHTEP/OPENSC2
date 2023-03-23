@@ -823,14 +823,17 @@ class StrandMixedComponent(StrandComponent):
                         )
                         | (sc_current_gauss >= 1.0)
                     )[0]
-
-                    if ind_sht_gauss:
+                    
+                    # Check if nparray ind_sht_gauss is not empty.
+                    if ind_sht_gauss.any():
+                        # ind_sht_gauss is not empty.
                         # Get final index of the location of the current 
                         # sharing zone, keeping into account that 
                         # sc_current_gauss is already filtered on ind_not_zero
                         # [ind_sh_gauss].
                         ind_shf_gauss = {1:ind_sht_gauss,2:ind_not_zero[ind_sh_gauss[ind_sht_gauss]]}
                     else:
+                        # ind_sht_gauss is empty.
                         # Get final index of the location of the current 
                         # sharing zone, keeping into account that 
                         # sc_current_gauss is already filtered on ind_not_zero
