@@ -1,4 +1,5 @@
 # Import packages
+from decimal import Decimal
 import logging
 from typing_extensions import Self
 from openpyxl import load_workbook
