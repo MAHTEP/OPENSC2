@@ -3634,7 +3634,7 @@ class Conductor:
         self.grid_features["dz_min"] = self.grid_features["delta_z"].min()
         # Get the number of digits for rounding coordinates in order to find
         # indexes.
-        self.n_digit_z = abs(int(np.floor(np.log10(self.grid_features["dz_min"])))) - 1
+        self.__count_sigfigs(str(self.grid_features["dz_min"]))
 
         # Compute the coordintate of the Gauss point.
         self.grid_features["zcoord_gauss"] = (
