@@ -3655,6 +3655,22 @@ class Conductor:
             self.grid_features["zcoord"][-1] - self.grid_features["zcoord"][-2]
         ) / 2
 
+    def __count_sigfigs(self,numstr:str):
+        """Private method that counts the number of significant digits.
+        N.B: quite general but does not work for all cases; see 
+        https://stackoverflow.com/questions/8101353/counting-significant-figures-in-python
+
+        Args:
+            numstr (str): number of which find the significant digits
+        """
+        decimal_norm = Decimal(numstr).normalize()
+        if str(decimal_norm) == "0":
+            # Deal with cases "0", "00", "00...0"
+            self.n_digit_z = 0
+        else:
+            # Deal with cases specified in https://stackoverflow.com/questions/8101353/counting-significant-figures-in-python
+            self.n_digit_z = len(Decimal(numstr).as_tuple().digits)
+
     def operating_conditions(self, simulation):
 
         """
