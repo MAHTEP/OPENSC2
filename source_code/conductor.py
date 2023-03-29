@@ -3670,6 +3670,17 @@ class Conductor:
         else:
             # Deal with cases specified in https://stackoverflow.com/questions/8101353/counting-significant-figures-in-python
             self.n_digit_z = len(Decimal(numstr).as_tuple().digits)
+    
+    def build_heat_source(self, simulation):
+        """Method that builds heat source therms in nodal and Gauss points for 
+        strand and jacket objects.
+
+        Args:
+            simulation (object): object with all information about the simulation.
+        """
+        # Refactor both private methods!
+        self.__build_heat_source_nodal_pt(simulation)
+        self.__build_heat_source_gauss_pt()
 
     def __build_heat_source_nodal_pt(self, simulation):
         """Private method that builds heat source therms in nodal points for 
