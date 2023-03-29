@@ -2075,6 +2075,10 @@ class Conductor:
         for obj in self.inventory["SolidComponent"].collection:
             obj.initialize_electric_quantities(self)
 
+        # Initialize to zeros all quantities related to heat source in nodal 
+        # points.
+        self.__build_heat_source_nodal_pt(simulation)
+
         # ENERGY BALANCE FLUID COMPONENTS
         for fluid_comp in self.inventory["FluidComponent"].collection:
             # Evaluate the density (if necessary) and the mass flow rate in 
