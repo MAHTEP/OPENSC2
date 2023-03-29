@@ -3754,6 +3754,66 @@ class Conductor:
             # End for jacket_c.
         # End for rr.
 
+    def __build_heat_source_gauss_pt(self):
+        """Private method that builds heat source therms in Gauss points for 
+        strand and jacket objects."""
+
+        # Loop on StrandComponent objects.
+        for strand in self.inventory["StrandComponent"].collection:
+
+            strand.dict_Gauss_pt["Q1"] = (
+                strand.dict_node_pt["JHTFLX"][:-1]
+                + strand.dict_node_pt["EXTFLX"][:-1]
+                + strand.dict_node_pt["total_linear_power_el_cond"][:-1]
+                + strand.dict_Gauss_pt["linear_power_el_resistance"]
+            )
+
+            strand.dict_Gauss_pt["Q2"] = (
+                strand.dict_node_pt["JHTFLX"][1:]
+                + strand.dict_node_pt["EXTFLX"][1:]
+                + strand.dict_node_pt["total_linear_power_el_cond"][1:]
+                + strand.dict_Gauss_pt["linear_power_el_resistance"]
+            )
+        
+        # Loop on JacketComponents objects.
+        for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
+
+            jacket.dict_Gauss_pt["Q1"] = (
+                jacket.dict_node_pt["JHTFLX"][:-1] + jacket.dict_node_pt["EXTFLX"][:-1]
+            )
+            jacket.dict_Gauss_pt["Q2"] = (
+                jacket.dict_node_pt["JHTFLX"][1:] + jacket.dict_node_pt["EXTFLX"][1:]
+            )
+            # Add the radiative heat contribution with the environment.
+            jacket.dict_Gauss_pt["Q1"] = (
+                jacket.dict_Gauss_pt["Q1"] + jacket.radiative_heat_env[:-1]
+            )
+            jacket.dict_Gauss_pt["Q2"] = (
+                jacket.dict_Gauss_pt["Q2"] + jacket.radiative_heat_env[1:]
+            )
+
+            # Nested loop jacket - jacket.
+            for _, jacket_c in enumerate(
+                self.inventory["JacketComponent"].collection[rr + 1 :]
+            ):
+                key = f"{jacket.identifier}_{jacket_c.identifier}"
+                # Add the radiative heat contribution between inner surface of the enclosure and inner jackets.
+                jacket.dict_Gauss_pt["Q1"] = (
+                    jacket.dict_Gauss_pt["Q1"] + jacket.radiative_heat_inn[key][:-1]
+                )
+                jacket.dict_Gauss_pt["Q2"] = (
+                    jacket.dict_Gauss_pt["Q2"] + jacket.radiative_heat_inn[key][1:]
+                )
+
+                jacket_c.dict_Gauss_pt["Q1"] = (
+                    jacket_c.dict_Gauss_pt["Q1"] + jacket_c.radiative_heat_inn[key][:-1]
+                )
+                jacket_c.dict_Gauss_pt["Q2"] = (
+                    jacket_c.dict_Gauss_pt["Q2"] + jacket_c.radiative_heat_inn[key][1:]
+                )
+            # End for jacket_c.
+        # end for jacket.
+
     def operating_conditions(self, simulation):
 
         """
