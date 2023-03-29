@@ -2327,6 +2327,10 @@ class Conductor:
             .apply(np.sqrt)
         )
 
+        #
+        if self.inventory["StrandComponent"].number == 1:
+            self.node_distance = self.node_distance / self.inventory["StrandComponent"].collection[0].inputs["COSTETA"]
+
     def __compute_gauss_node_distance(self):
         """Private method that evaluates the distance between consecutive gauss node (the mid point of the element), thaking into account all the coordinates (x,y,z). Values are stored in attribute gauss_node_distance."""
         self.gauss_node_distance = np.zeros(self.total_nodes)
@@ -3600,15 +3604,18 @@ class Conductor:
         """
         self.electric_preprocessing()
 
-        if self.operations["ELECTRIC_SOLVER"] == STATIC_ELECTRIC_SOLVER:
+        if self.cond_num_step == 0:
             electric_steady_state_solution(self)
-        elif self.operations["ELECTRIC_SOLVER"] == TRANSIENT_ELECTRIC_SOLVER:
-            self.__get_electric_time_step()
-            electric_transient_solution(self)
         else:
-            raise ValueError(
-                f"{self.identifier = }\nInput variable ELECTRIC_SOLVER should be equal to {STATIC_ELECTRIC_SOLVER = } or {TRANSIENT_ELECTRIC_SOLVER = }. Current value {self.operations['ELECTRIC_SOLVER'] = } is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
-            )
+            if self.operations["ELECTRIC_SOLVER"] == STATIC_ELECTRIC_SOLVER:
+                electric_steady_state_solution(self)
+            elif self.operations["ELECTRIC_SOLVER"] == TRANSIENT_ELECTRIC_SOLVER:
+                self.__get_electric_time_step()
+                electric_transient_solution(self)
+            else:
+                raise ValueError(
+                    f"{self.identifier = }\nInput variable ELECTRIC_SOLVER should be equal to {STATIC_ELECTRIC_SOLVER = } or {TRANSIENT_ELECTRIC_SOLVER = }. Current value {self.operations['ELECTRIC_SOLVER'] = } is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
+                )
         # Call method __electric_solution_reorganization: reorganize electric
         # solution and computes useful quantities used in the Joule power
         # evaluation.
@@ -3880,6 +3887,7 @@ class Conductor:
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
             jacket.get_magnetic_field(self)
+
         self.eval_gauss_point(simulation)
 
     # end Operating_conditions
