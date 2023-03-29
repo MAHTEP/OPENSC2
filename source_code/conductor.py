@@ -3872,25 +3872,7 @@ class Conductor:
                     strand.get_tcs()
             # end if strand.name != self.inventory["StrandStabilizerComponent"].name \
             # (cdp, 08/2020)
-            if self.cond_num_step == 0 and strand.operations["IQFUN"] == 0:
-                # call method get_heat only once to initialize key EXTFLX of dictionary \
-                # dict_node_pt to zeros (cdp, 11/2020)
-                strand.get_heat(self)
-            elif strand.operations["IQFUN"] != 0:
-                # call method get_heat to evaluate external heating only if heating is on \
-                # (cdp, 10/2020)
-                strand.get_heat(self)
-            # end if strand.operations["IQFUN"] (cdp, 10/2020)
-            # call method jhtflx_new_0 to initialize JHTFLX to zeros for each \
-            # conductor solid components (cdp, 06/2020)
-            strand.jhtflx_new_0(self)
-            # Evaluate joule power due to electric resistance along strand object.
-            strand.get_joule_power_along(self)
-            # Evaluate joule power due to electric conductance across strand object.
-            strand.get_joule_power_across(self)
-            # call set_energy_counters to initialize EEXT and EJHT to zeros for each \
-            # conductor solid components (cdp, 06/2020)
-            strand.set_energy_counters(self)
+            
         # end for strand (cdp,07/2020)
         # Loop on JacketComponents objects
         for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
@@ -3898,52 +3880,6 @@ class Conductor:
             # MAGNETIC FIELD AS A FUNCTION OF POSITION
             # call method get_magnetic_field
             jacket.get_magnetic_field(self)
-            if self.cond_num_step == 0 and jacket.operations["IQFUN"] == 0:
-                # call method get_heat only once to initialize key EXTFLX of dictionary \
-                # dict_node_pt to zeros (cdp, 11/2020)
-                jacket.get_heat(self)
-            elif jacket.operations["IQFUN"] != 0:
-                # call method get_heat to evaluate external heating only if heating is on\
-                # (cdp, 10/2020)
-                jacket.get_heat(self)
-            # end if jacket.operations["IQFUN"] (cdp, 10/2020)
-            # call method jhtflx_new_0 to initialize JHTFLX to zeros for each \
-            # conductor solid components (cdp, 06/2020)
-            jacket.jhtflx_new_0(self)
-            # Evaluate joule power due to electric resistance along strand object.
-            jacket.get_joule_power_along(self)
-            # Evaluate joule power due to electric conductance across strand object.
-            jacket.get_joule_power_across(self)
-            # call set_energy_counters to initialize EEXT and EJHT to zeros for each \
-            # conductor solid components (cdp, 06/2020)
-            jacket.set_energy_counters(self)
-            if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    simulation.environment.KIND, jacket.identifier
-                ]
-                == 1
-            ):
-                # Evaluate the external heat by radiation in nodal points.
-                jacket._radiative_source_therm_env(self, simulation.environment)
-            # End if self.dict_df_coupling["contact_perimeter_flag"]
-            for _, jacket_c in enumerate(
-                self.inventory["JacketComponent"].collection[rr + 1 :]
-            ):
-                if (
-                    abs(
-                        self.dict_df_coupling["HTC_choice"].at[
-                            jacket.identifier, jacket_c.identifier
-                        ]
-                    )
-                    == 3
-                ):
-                    # Evaluate the inner heat exchange by radiation in nodal points.
-                    jacket._radiative_heat_exc_inner(self, jacket_c)
-                    jacket_c._radiative_heat_exc_inner(self, jacket)
-                # End if abs.
-            # End for cc.
-        # End for rr.
-
         self.eval_gauss_point(simulation)
 
     # end Operating_conditions
