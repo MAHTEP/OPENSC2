@@ -167,6 +167,7 @@ def electric_steady_state_solution(conductor: object):
         conductor.total_elements_current_carriers + conductor.total_nodes_current_carriers
     )
 
+    conductor.electric_solution_steady = conductor.electric_solution.copy()
 
 def electric_transient_solution(conductor: object):
     """Function that solves the electric problem in the transient case. Exploits sparse matrix with scipy sparse."
