@@ -710,7 +710,7 @@ class StrandMixedComponent(StrandComponent):
         )
 
         # Make initialization only once for each conductor object.
-        if conductor.cond_num_step == 1:
+        if conductor.cond_num_step == 0:
             # Initialize electric resistance arrays in Gauss point; this is the 
             # equivalent electrical resistance, thus it is defined in this way:
             # R_eq = R_sc if superconducting regime
