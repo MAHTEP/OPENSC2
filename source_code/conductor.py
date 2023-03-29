@@ -3671,6 +3671,89 @@ class Conductor:
             # Deal with cases specified in https://stackoverflow.com/questions/8101353/counting-significant-figures-in-python
             self.n_digit_z = len(Decimal(numstr).as_tuple().digits)
 
+    def __build_heat_source_nodal_pt(self, simulation):
+        """Private method that builds heat source therms in nodal points for 
+        strand and jacket objects.
+
+        Args:
+            simulation (object): object with all information about the simulation.
+        """
+        
+        # Loop on StrandComponent objects.
+        for strand in self.inventory["StrandComponent"].collection:
+            if self.cond_num_step == 0 and strand.operations["IQFUN"] == 0:
+                # Call method get_heat only once to initialize key EXTFLX of
+                # dictionary dict_node_pt to zeros.
+                strand.get_heat(self)
+            elif strand.operations["IQFUN"] != 0:
+                # Call method get_heat to evaluate external heating only if 
+                # heating is on.
+                strand.get_heat(self)
+            
+            # Call method jhtflx_new_0 to initialize JHTFLX to zeros for each 
+            # conductor solid components.
+            strand.jhtflx_new_0(self)
+            # Evaluate joule power due to electric resistance along strand 
+            # object.
+            strand.get_joule_power_along(self)
+            # Evaluate joule power due to electric conductance across strand 
+            # object.
+            strand.get_joule_power_across(self)
+            # Call set_energy_counters to initialize EEXT and EJHT to zeros for 
+            # each conductor solid components.
+            strand.set_energy_counters(self)
+
+        # Loop on JacketComponents objects.
+        for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
+            if self.cond_num_step == 0 and jacket.operations["IQFUN"] == 0:
+                # Call method get_heat only once to initialize key EXTFLX of 
+                # dictionary dict_node_pt to zeros.
+                jacket.get_heat(self)
+            elif jacket.operations["IQFUN"] != 0:
+                # Call method get_heat to evaluate external heating only if 
+                # heating is on.
+                jacket.get_heat(self)
+
+            # Call method jhtflx_new_0 to initialize JHTFLX to zeros for each 
+            # conductor solid components.
+            jacket.jhtflx_new_0(self)
+            # Evaluate joule power due to electric resistance along jacket 
+            # object.
+            jacket.get_joule_power_along(self)
+            # Evaluate joule power due to electric conductance across jacket 
+            # object.
+            jacket.get_joule_power_across(self)
+            # Call set_energy_counters to initialize EEXT and EJHT to zeros for 
+            # each conductor solid components.
+            jacket.set_energy_counters(self)
+            if (
+                self.dict_df_coupling["contact_perimeter_flag"].at[
+                    simulation.environment.KIND, jacket.identifier
+                ]
+                == 1
+            ):
+                # Evaluate the external heat by radiation in nodal points.
+                jacket._radiative_source_therm_env(self, simulation.environment)
+            # End if self.dict_df_coupling["contact_perimeter_flag"]
+            for _, jacket_c in enumerate(
+                self.inventory["JacketComponent"].collection[rr + 1 :]
+            ):
+                if (
+                    abs(
+                        self.dict_df_coupling["HTC_choice"].at[
+                            jacket.identifier, jacket_c.identifier
+                        ]
+                    )
+                    == 3
+                ):
+                    # Evaluate the inner heat exchange by radiation in nodal 
+                    # points.
+                    jacket._radiative_heat_exc_inner(self, jacket_c)
+                    jacket_c._radiative_heat_exc_inner(self, jacket)
+                # End if abs.
+            # End for jacket_c.
+        # End for rr.
+
     def operating_conditions(self, simulation):
 
         """
