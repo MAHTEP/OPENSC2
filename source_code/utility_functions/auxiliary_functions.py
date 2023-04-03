@@ -149,12 +149,12 @@ def build_interpolator(df, interpolation_kind="linear"):
         _type_: _description_
     """
     # Convert the index of the dataframe to space points used in the interpolation function.
-    strand_space_points = df.index.to_numpy()
+    strand_space_points = df.index.to_numpy(dtype=float)
 
     # Convert the columns of the dataframe to time points used in the interpolation function.
-    strand_time_points = df.columns.to_numpy()
+    strand_time_points = df.columns.to_numpy(dtype=float)
 
-    known_val = df.to_numpy()
+    known_val = df.to_numpy(dtype=float)
 
     if strand_time_points.size == 1 and strand_space_points.size > 1:
         # Values are constant in time but not in space.
