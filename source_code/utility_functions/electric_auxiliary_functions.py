@@ -136,6 +136,16 @@ def electric_steady_state_solution(conductor: object):
     Args:
         conductor (object): object with all the information needed to solve the electric problem.
     """
+
+    # Evaluate electromagnetic properties and quantities in Gauss points, 
+    # method __eval_Gauss_point_em is invoked inside method 
+    # operating_conditions_em. Method operating_conditions_em is 
+    # called at each time step before function step because the 
+    # method for the integration in time is implicit.
+    conductor.operating_conditions_em()
+    # Evaluate all matrices needed to solve the electromagnetic problem.
+    conductor.electric_preprocessing()
+
     if conductor.electric_known_term_vector.shape[0] == []:
         conductor.electric_known_term_vector = np.zeros(
             conductor.electric_stiffness_matrix.shape[0]
