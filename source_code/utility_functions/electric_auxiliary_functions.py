@@ -190,64 +190,81 @@ def electric_transient_solution(conductor: object):
     ).astype(int)
 
     if conductor.electric_known_term_vector.shape[0] == []:
-        conductor.electric_known_term_vector = np.zeros(
-            conductor.electric_stiffness_matrix.shape[0]
+        conductor.electric_known_term_vector = np.zeros_like(
+            conductor.electric_solution_steady
         )
 
-    conductor.electric_solution = np.zeros(
-        conductor.electric_known_term_vector.shape[0]
-    )
+    # Solution initialization.
+    if conductor.cond_el_num_step == 0:
+        # Steady here means "everything is constant in time"; remember that a 
+        # steady state can also be characterized by quantities that change in 
+        # time but periodically (e.g. sinusoidally).
+        conductor.electric_solution = conductor.electric_solution_steady.copy()
 
-    # Electric known term initializazion
+    # Electric known term initializazion: it is necessary according to how 
+    # method build_electric_known_term_vector works (to improved by 
+    # refactoring).
     conductor.build_electric_known_term_vector()
     conductor.electric_known_term_vector_old = (
         conductor.electric_known_term_vector.copy()
     )
 
-    electric_stiffness_matrix = conductor.electric_stiffness_matrix.copy()
-    # Final form of the electric stiffness matrix
-    conductor.electric_stiffness_matrix = (
-        conductor.electric_mass_matrix / conductor.electric_time_step
-        + conductor.electric_theta * electric_stiffness_matrix
-    )
-    foo = (
-        conductor.electric_mass_matrix / conductor.electric_time_step
-        - (1.0 - conductor.electric_theta) * electric_stiffness_matrix
-    )
-
-    # Electric_known_term must be zeros when fixed_value is called.
-    conductor.electric_known_term_vector = np.zeros(
-        conductor.electric_known_term_vector_old.shape
-    )
-    # Apply Diriclet boundary conditions
-    idx = fixed_value(conductor)
-
-    # fixed_value changes the electric_known_term_vector
-    electric_known_term_vector_reduced = conductor.electric_known_term_vector.copy()
-    # Restore original size of the electric known term vector
-    conductor.electric_known_term_vector = np.zeros(
-        conductor.electric_known_term_vector_old.shape
-    )
-
-    # Electric loop
-    for _ in range(1, TIME_STEP_NUMBER):
+    # Electric loop -> convertire in un while?
+    for nn in range(1, TIME_STEP_NUMBER):
 
         conductor.electric_time += conductor.electric_time_step
+        conductor.cond_el_num_step = nn
+        # Evaluate electromagnetic properties and quantities in Gauss points, 
+        # method __eval_Gauss_point_em is invoked inside method 
+        # operating_conditions_em. Method operating_conditions_em is called at 
+        # each time step before function step because the method for the 
+        # integration in time is implicit.
+        conductor.operating_conditions_em()
+        # Evaluate all matrices needed to solve the electromagnetic problem.
+        # N.B it is not needed to evaluate at each time step the inductance 
+        # matrix, only the resistance matrix should be updated at each time 
+        # step: to be improved with refactoring.
+        conductor.electric_preprocessing()
 
-        # Update known term vector
+        electric_stiffness_matrix = conductor.electric_stiffness_matrix.copy()
+        # Final form of the electric stiffness matrix
+        conductor.electric_stiffness_matrix = (
+            conductor.electric_mass_matrix / conductor.electric_time_step
+            + conductor.electric_theta * electric_stiffness_matrix
+        )
+        foo = (
+            conductor.electric_mass_matrix / conductor.electric_time_step
+            - (1.0 - conductor.electric_theta) * electric_stiffness_matrix
+        )
+
+        # Electric_known_term must be zeros when fixed_value is called.
+        conductor.electric_known_term_vector = np.zeros_like(
+            conductor.electric_solution_steady #conductor.electric_known_term_vector_old
+        )
+        # Apply Diriclet boundary conditions.
+        idx = fixed_value(conductor)
+
+        # fixed_value changes the electric_known_term_vector
+        electric_known_term_vector_reduced = conductor.electric_known_term_vector.copy()
+        # Restore original size of the electric known term vector
+        conductor.electric_known_term_vector = np.zeros_like(
+            conductor.electric_known_term_vector_old
+        )
+
+        # Update known term vector.
         conductor.build_electric_known_term_vector()
         # Build and manipulate the right hand side
         conductor.build_right_hand_side(foo, electric_known_term_vector_reduced, idx)
 
-        conductor.electric_known_term_vector_old = (
-            conductor.electric_known_term_vector.copy()
-        )
-
-        # solution
+        # Solution.
         electric_solution = spsolve(
             conductor.electric_stiffness_matrix,
             conductor.electric_right_hand_side,
             permc_spec="NATURAL",
         )
 
+        # Update old known therm vector.
+        conductor.electric_known_term_vector_old = (
+            conductor.electric_known_term_vector.copy()
+        )
         solution_completion(conductor, idx, electric_solution)
