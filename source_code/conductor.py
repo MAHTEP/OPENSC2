@@ -872,6 +872,10 @@ class Conductor:
         # Electric time initialization, to be understood where to actually do
         # this
         self.electric_time = 0.0  # s
+        # Initialize the number of electric time steps to 0. This attribute 
+        # will be updated at each electric time step; for each thermal time 
+        # step it will start from 1. Value 0 is assumed only at initialization.
+        self.cond_el_num_step = 0
 
         # conductorlogger.debug(
         #     f"Before call method {self.__initialize_mesh_dataframe.__name__}\n"
