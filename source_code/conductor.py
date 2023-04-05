@@ -3994,6 +3994,69 @@ class Conductor:
         # transfer coefficient and friction factor) in each Gauss point
         self.get_transp_coeff(simulation, flag_nodal=False)
 
+    def __eval_gauss_point_em(self):
+        """
+        Private method that evaluates material properties and coefficients at the Gauss point, i.e at the centre of the element.
+        """
+
+        # JacketComponent
+        for jacket in self.inventory["JacketComponent"].collection:
+            
+            jacket.get_magnetic_field(self, nodal=False)
+            if self.cond_el_num_step <= 1:
+                # Evaluate properties only at initialization (0) and at 
+                # the first electric time step (1).
+                jacket.eval_sol_comp_properties(self.inventory, nodal=False)
+            else:
+                # Update only electrical resistivity at each electri time step.
+                jacket.dict_Gauss_pt["total_electrical_resistivity"] = jacket.jacket_electrical_resistivity(
+                        jacket.dict_Gauss_pt
+                    )
+
+        # StrandComponent
+        for strand in self.inventory["StrandComponent"].collection:
+            strand.get_magnetic_field(self, nodal=False)
+
+            # call method get_magnetic_field_gradient for each StrandComponent object
+            strand.get_magnetic_field_gradient(self, nodal=False)
+            # only for StrandMixedComponent and StackComponent objects
+            if not isinstance(strand, StrandStabilizerComponent):
+                if strand.inputs["superconducting_material"] == "Nb3Sn":
+                    if self.cond_el_num_step <= 1:
+                            # Evaluate strain only at initialization (0) and at 
+                            # the first electric time step (1).
+                            strand.get_eps(self,nodal=False)
+                    strand.get_superconductor_critical_prop(self)
+                    if (
+                        strand.operations["TCS_EVALUATION"] == False
+                        and self.cond_num_step == 0
+                    ):
+                        strand.get_tcs(nodal=False)
+                    elif strand.operations["TCS_EVALUATION"] == True:
+                        if self.cond_el_num_step <= 1:
+                            # Evaluate current sharing temperature only at 
+                            # initialization (0) and at the first electric time 
+                            # step (1)
+                            strand.get_tcs(nodal=False)
+            # end if strand.name != self.inventory["StrandStabilizerComponent"].
+            # name.
+            # Evaluate SolidComponent properties
+            if self.cond_el_num_step <= 1:
+                # Evaluate properties only at initialization (0) and at 
+                # the first electric time step (1).
+                strand.eval_sol_comp_properties(self.inventory, nodal=False)
+            else:
+                # Update only electrical resistivity (stabilizer) at each 
+                # electric time step.
+                if isinstance(strand,StrandMixedComponent):
+                    strand.dict_Gauss_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity_not_sc(
+                            strand.dict_Gauss_pt
+                        )
+                elif isinstance(strand, StrandStabilizerComponent):
+                    strand.dict_Gauss_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity(
+                            strand.dict_Gauss_pt
+                        )
+
     def post_processing(self, simulation):
 
         # bozza della funzione Post_processing
