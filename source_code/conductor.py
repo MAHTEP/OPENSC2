@@ -3895,6 +3895,41 @@ class Conductor:
         self.get_transp_coeff(simulation)
 
         self.__eval_gauss_point_th(simulation)
+
+    def operating_conditions_em(self):
+        """Method that evaluates electromagnetic (em) operating conditions also in Gauss points."""
+
+        for strand in self.inventory["StrandComponent"].collection:
+            strand.get_current(self)
+            strand.get_magnetic_field(self)
+            strand.get_magnetic_field_gradient(self)
+            
+            # only for StrandMixedComponent and StackComponent objects
+            if not isinstance(strand, StrandStabilizerComponent):
+                if strand.inputs["superconducting_material"] == "Nb3Sn":
+                    if self.cond_el_num_step <= 1:
+                        # Evaluate strain only at initialization (0) and at 
+                        # the first electric time step (1).
+                        strand.get_eps(self)
+                strand.get_superconductor_critical_prop(self)
+                if (
+                    strand.operations["TCS_EVALUATION"] == False
+                    and self.cond_num_step == 0
+                ):
+                    strand.get_tcs()
+                elif strand.operations["TCS_EVALUATION"] == True:
+                    if self.cond_el_num_step <= 1:
+                        # Evaluate current sharing temperature only at 
+                        # initialization (0) and at the first electriC time 
+                        # step (1).
+                        strand.get_tcs()
+
+        for jacket in self.inventory["JacketComponent"].collection:
+            jacket.get_current(self)
+            jacket.get_magnetic_field(self)
+
+        self.__eval_gauss_point_em()
+
     def eval_gauss_point(self, simulation):
 
         """
