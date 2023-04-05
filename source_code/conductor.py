@@ -2058,11 +2058,13 @@ class Conductor:
                 self.total_sc_cross_section, self.total_so_cross_section, self.inventory
             )
 
-        # call functions get_current, get_magnetic_field, get_magnetic_field_gradient, \
-        # get_superconductor_critical_prop, get_heat, jhtflx_new_0, \
-        # set_energy_counters, Get_transp_coeff @ time = 0 to perform \
-        # initialization (cdp, 07/2020)
-        self.operating_conditions(simulation)
+        # Initialize thermal hydraulic quantities in both nodal and Gauss 
+        # points.
+        self.operating_conditions_th(simulation)
+        # Initialize electromagnetic quantities in both nodal and Gauss 
+        # points.
+        self.operating_conditions_em()
+
         # Loop on SolidComponent (cdp, 01/2021)
         # N.B. questo loop si potrebbe fare usando map.
         for s_comp in self.inventory["SolidComponent"].collection:
