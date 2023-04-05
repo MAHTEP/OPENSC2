@@ -3604,17 +3604,15 @@ class Conductor:
         Raises:
             ValueError: if to flag self.operations["ELECTRIC_SOLVER"] user assigns not valid value.
         """
-        self.electric_preprocessing()
 
-        if self.operations["ELECTRIC_SOLVER"] == STATIC_ELECTRIC_SOLVER:
+        if self.cond_num_step == 0:
             electric_steady_state_solution(self)
-        elif self.operations["ELECTRIC_SOLVER"] == TRANSIENT_ELECTRIC_SOLVER:
-            self.__get_electric_time_step()
-            electric_transient_solution(self)
         else:
-            raise ValueError(
-                f"{self.identifier = }\nInput variable ELECTRIC_SOLVER should be equal to {STATIC_ELECTRIC_SOLVER = } or {TRANSIENT_ELECTRIC_SOLVER = }. Current value {self.operations['ELECTRIC_SOLVER'] = } is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
-            )
+            self.__get_electric_time_step()
+            # Always solve the electromagnetic problem as a transient problem. 
+            # This is not general but edge cases are few and mostly "theoretic".
+            electric_transient_solution(self)
+        
         # Call method __electric_solution_reorganization: reorganize electric
         # solution and computes useful quantities used in the Joule power
         # evaluation.
