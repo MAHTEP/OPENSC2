@@ -3835,61 +3835,6 @@ class Conductor:
             # End for jacket_c.
         # end for jacket.
 
-    def operating_conditions(self, simulation):
-
-        """
-        Method tha calls functions get_current, get_magnetic_field, get_magnetic_field_gradient, get_superconductor_critical_prop, get_heat, jhtflx_new_0, set_energy_counters, Get_transp_coeff at each time step to evaluate properies and quantities in each node of spatial discretization.
-        """
-
-        # Build delta_z and delta_z_tilde in as keys in attribute dictionary
-        # self.grid_features.
-        self.__update_grid_features()
-
-        # Evaluate transport coefficients in nodal points.
-        self.get_transp_coeff(simulation)
-
-        # Loop on StrandComponent objects (csp, 07/2020)
-        for strand in self.inventory["StrandComponent"].collection:
-            strand.get_current(self)
-            # MAGNETIC FIELD AS A FUNCTION OF POSITION
-            # call method get_magnetic_field
-            strand.get_magnetic_field(self)
-            # call method get_magnetic_field_gradient for each StrandComponent object (cdp, 06/2020)
-            strand.get_magnetic_field_gradient(self)
-            if strand.name != self.inventory["StrandStabilizerComponent"].name:
-                if strand.inputs["superconducting_material"] == "Nb3Sn":
-                    # mix or superconducor strands objects made of Nb3Sn (cdp, 08/2020)
-                    # call method get_eps to evaluate strain
-                    strand.get_eps(self)
-                # end if strand.inputs["superconducting_material"] (cdp, 08/2020)
-                # Call get_superconductor_critical_prop to evaluate StrandMixedComponent \
-                # and/or StackComponent properties in nodal points. Added to allow \
-                # storage of current sharing temperature time evolution values in \
-                # user defined nodal points (cdp, 08/2020)
-                strand.get_superconductor_critical_prop(self)
-                if (
-                    strand.operations["TCS_EVALUATION"] == False
-                    and self.cond_num_step == 0
-                ):
-                    # Evaluate current sharing temperature only at the first time step.
-                    strand.get_tcs()
-                elif strand.operations["TCS_EVALUATION"] == True:
-                    # Evaluate current sharing temperature at each time step.
-                    strand.get_tcs()
-            # end if strand.name != self.inventory["StrandStabilizerComponent"].name \
-            # (cdp, 08/2020)
-            
-        # end for strand (cdp,07/2020)
-        # Loop on JacketComponents objects
-        for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
-            jacket.get_current(self)
-            # MAGNETIC FIELD AS A FUNCTION OF POSITION
-            # call method get_magnetic_field
-            jacket.get_magnetic_field(self)
-        self.eval_gauss_point(simulation)
-
-    # end Operating_conditions
-
     def operating_conditions_th(self,simulation):
         """Method that evaluates thermal hydraulic (th) operating conditions also in Gauss points."""
 
