@@ -3888,6 +3888,13 @@ class Conductor:
 
     # end Operating_conditions
 
+    def operating_conditions_th(self,simulation):
+        """Method that evaluates thermal hydraulic (th) operating conditions also in Gauss points."""
+
+        self.__update_grid_features()
+        self.get_transp_coeff(simulation)
+
+        self.__eval_gauss_point_th(simulation)
     def eval_gauss_point(self, simulation):
 
         """
