@@ -24,7 +24,6 @@ from conductor_flags import (
     SELF_INDUCTANCE_MODE_1,
     SELF_INDUCTANCE_MODE_2,
     STATIC_ELECTRIC_SOLVER,
-    TRANSIENT_ELECTRIC_SOLVER,
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent

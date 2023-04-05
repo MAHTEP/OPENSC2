@@ -28,5 +28,3 @@ APPROXIMATE_INDUCTANCE = 1
 
 # Flag to solve the electric problem in steady state conditions.
 STATIC_ELECTRIC_SOLVER = 0
-# Flag to solve the electric problem in transient conditions.
-TRANSIENT_ELECTRIC_SOLVER = 1
