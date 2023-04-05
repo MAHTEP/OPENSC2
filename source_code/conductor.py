@@ -3956,6 +3956,37 @@ class Conductor:
 
     # end Eval_Gauss_point
 
+    def __eval_gauss_point_th(self, simulation):
+        """
+        Method that evaluates temperatures and transport coefficients at the Gauss point, i.e at the centre of the element.
+        N.B. Fluid component properties are evaluated calling method get_transp_coeff.
+        """
+
+        # JacketComponent
+        for jacket in self.inventory["JacketComponent"].collection:
+            jacket.dict_Gauss_pt["temperature"] = (
+                np.abs(
+                    jacket.dict_node_pt["temperature"][:-1]
+                    + jacket.dict_node_pt["temperature"][1:]
+                )
+                / 2.0
+            )
+        # end for rr.
+
+        # StrandComponent
+        for strand in self.inventory["StrandComponent"].collection:
+            strand.dict_Gauss_pt["temperature"] = (
+                np.abs(
+                    strand.dict_node_pt["temperature"][:-1]
+                    + strand.dict_node_pt["temperature"][1:]
+                )
+                / 2.0
+            )
+
+        # call method Get_transp_coeff to evaluate transport properties (heat
+        # transfer coefficient and friction factor) in each Gauss point
+        self.get_transp_coeff(simulation, flag_nodal=False)
+
     def post_processing(self, simulation):
 
         # bozza della funzione Post_processing
