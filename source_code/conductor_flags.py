@@ -28,3 +28,6 @@ APPROXIMATE_INDUCTANCE = 1
 
 # Flag to solve the electric problem in steady state conditions.
 STATIC_ELECTRIC_SOLVER = 0
+
+# Default number for electric time step
+ELECTRIC_TIME_STEP_NUMBER = 50
