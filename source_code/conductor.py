@@ -3435,13 +3435,13 @@ class Conductor:
 
         # Rimuovere gli if.
         if self.inputs["ELECTRIC_TIME_STEP"] == None:
-            self.electric_time_step = self.time_step / 500
+            self.electric_time_step = self.time_step / ELECTRIC_TIME_STEP_NUMBER
         else:
             if self.inputs["ELECTRIC_TIME_STEP"] < 0.0:
                 raise ValueError[
                     f"Electric time step must be > 0.0 s; current value is: {self.inputs['ELECTRIC_TIME_STEP']=}s\n"
                 ]
-            if self.inputs["ELECTRIC_TIME_STEP"] >= self.time_step:
+            if self.inputs["ELECTRIC_TIME_STEP"] > self.time_step:
                 raise ValueError[
                     f"Electric time step must be < than thermal time step; current values are: {self.time_step=}s\n; {self.inputs['ELECTRIC_TIME_STEP']=}s\n"
                 ]
