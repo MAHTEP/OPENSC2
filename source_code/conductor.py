@@ -3938,7 +3938,7 @@ class Conductor:
                             # Evaluate strain only at initialization (0) and at 
                             # the first electric time step (1).
                             strand.get_eps(self,nodal=False)
-                    strand.get_superconductor_critical_prop(self)
+                    strand.get_superconductor_critical_prop(self,nodal=False)
                     if (
                         strand.operations["TCS_EVALUATION"] == False
                         and self.cond_num_step == 0
