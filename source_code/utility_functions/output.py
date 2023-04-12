@@ -341,6 +341,35 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
     # Round the time to save to n_digit_time digits only once
     time = np.around(cond.Space_save, n_digit_time)
+
+    # declare dictionary to store the spatial diccretizations only once.
+    dict_zcoord = dict()
+    # Loop to save spatial coordinates.
+    for ii,_ in enumerate(cond.Space_save):
+        # Check if FluidComponent collection is not empty.
+        if cond.inventory["FluidComponent"].collection:
+            # FluidComponent collection is not empty.
+            comp = cond.inventory["FluidComponent"].collection[0]
+        else:
+            # FluidComponent collection is empty: use first item in 
+            # SolidComponent collection.
+            comp = cond.inventory["SolidComponent"].collection[0]
+
+        file_name = f"{comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
+        file_load = os.path.join(f_path, file_name)
+        # Load dataframe.
+        df = pd.read_csv(file_load, delimiter="\t")
+        # store the spatial discretizations at each required time step in file 
+        # zcoord.tsv.
+        dict_zcoord[f"time = {time[ii]} (s)"] = df["zcoord (m)"]
+    # convert the dictionary to a DataFrame
+    df_zcoord = pd.DataFrame(dict_zcoord)
+    # build file name
+    file_name = f"zcoord.tsv"
+    path_save = os.path.join(f_path, file_name)
+    # save the DataFrame as file zcoord.tsv
+    df_zcoord.to_csv(path_save, sep="\t", index=False)
+
     # loop on FluidComponent (cdp, 11/2020)
     for fluid_comp in cond.inventory["FluidComponent"].collection:
         # create a list of files that have the fluid_comp.identifier and User in the name \
@@ -350,14 +379,6 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
-        if (
-            fluid_comp.identifier
-            == cond.inventory["FluidComponent"].collection[0].identifier
-        ):
-            # declare dictionary to store the spatial diccretizations only once \
-            # (cdp, 01/2021)
-            dict_zcoord = dict()
-        # end if fluid_comp (cdp, 01/2021)
         for ii, _ in enumerate(cond.Space_save):
             file_name = f"{fluid_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
             file_load = os.path.join(f_path, file_name)
@@ -368,14 +389,6 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             )
             # Delete the old file format.
             os.remove(file_load)
-            if (
-                fluid_comp.identifier
-                == cond.inventory["FluidComponent"].collection[0].identifier
-            ):
-                # store the spatial discretizations at each required time step in file \
-                # zcoord.tsv only once (cdp,01/2021)
-                dict_zcoord[f"time = {time[ii]} (s)"] = dict_df[file_name]["zcoord (m)"]
-            # end if fluid_comp.identifier (cdp, 01/2021)
             if ii == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
@@ -414,18 +427,6 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             # save the data frame, without the row index name (cdp, 11/2020)
             dict_df_new[prop].to_csv(path_save, sep="\t", index=False)
         # end for prop (cdp, 11/2020)
-        if (
-            fluid_comp.identifier
-            == cond.inventory["FluidComponent"].collection[0].identifier
-        ):
-            # convert the dictionary to a DataFrame (cdp,01/2021)
-            df_zcoord = pd.DataFrame(dict_zcoord)
-            # build file name (cdp, 01/2021)
-            file_name = f"zcoord.tsv"
-            path_save = os.path.join(f_path, file_name)
-            # save the DataFrame as file zcoord.tsv
-            df_zcoord.to_csv(path_save, sep="\t", index=False)
-            # end if fluid_comp.identifier (cdp, 01/2021)
     # end for fluid_comp (cdp, 11/2020)
     # loop on SolidComponent (cdp, 11/2020)
     for s_comp in cond.inventory["SolidComponent"].collection:
