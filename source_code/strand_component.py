@@ -127,7 +127,7 @@ class StrandComponent(SolidComponent):
                 self.dict_node_pt["alpha_B"] = do_interpolation(
                     self.alphab_interpolator,
                     conductor.grid_features["zcoord"],
-                    conductor.cond_time[-1],
+                    conductor.electric_time[-1],
                     self.alphab_interp_flag,
                 )
 
@@ -342,7 +342,7 @@ class StrandComponent(SolidComponent):
                 self.dict_node_pt["Epsilon"] = do_interpolation(
                     self.eps_interpolator,
                     conductor.grid_features["zcoord"],
-                    conductor.cond_time[-1],
+                    conductor.electric_time[-1],
                     self.eps_interp_flag,
                 )
 

@@ -829,7 +829,7 @@ class SolidComponent:
                 self.dict_node_pt["op_current"] = do_interpolation(
                     self.current_interpolator,
                     conductor.grid_features["zcoord"],
-                    conductor.cond_time[-1],
+                    conductor.electric_time,
                     self.current_interp_flag,
                 )
 
@@ -936,7 +936,7 @@ class SolidComponent:
                 self.dict_node_pt["B_field"] = do_interpolation(
                     self.bfield_interpolator,
                     conductor.grid_features["zcoord"],
-                    conductor.cond_time[-1],
+                    conductor.electric_time,
                     self.bfield_interp_flag,
                 )
                 if self.operations["B_field_units"] == "T/A":
