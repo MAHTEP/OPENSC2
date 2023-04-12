@@ -209,8 +209,8 @@ def electric_transient_solution(conductor: object):
         conductor.electric_known_term_vector.copy()
     )
 
-    # Electric loop -> convertire in un while?
-    for nn in range(1, TIME_STEP_NUMBER):
+    # Electric loop
+    for nn in range(1, TIME_STEP_NUMBER+1):
 
         conductor.electric_time += conductor.electric_time_step
         conductor.cond_el_num_step = nn
@@ -220,6 +220,10 @@ def electric_transient_solution(conductor: object):
         # each time step before function step because the method for the 
         # integration in time is implicit.
         conductor.operating_conditions_em()
+        # Call conductor method eval_total_operating_current after call to 
+        # operating_condition_em that evaluates the operating current at the 
+        # current electric time step for each conductor component.
+        conductor.eval_total_operating_current()
         # Evaluate all matrices needed to solve the electromagnetic problem.
         # N.B it is not needed to evaluate at each time step the inductance 
         # matrix, only the resistance matrix should be updated at each time 
