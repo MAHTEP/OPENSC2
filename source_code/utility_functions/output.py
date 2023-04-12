@@ -7,32 +7,35 @@ def save_properties(conductor, f_path):
 
     """Functions that save .tsv files with suitable file names, FluidComponent and SolidComponent initialization and final solution, together with spatial coordinate discretization. Channels saved variables are: temperature, pressure, density, viscosity, specific heat at constant pressure, thermal conductivity, velocity, Reynolds number and Prandtl number. StrandComponent saved variables are: temperature, density, specific heat at constant pressure, thermal conductivity, magnetic field, electrical resistivity, current sharing temperature; jackets saved variables are temperature, specific heat at constant pressure, thermal conductivity, magnetic field, electrical resistivity."""
 
-    list_prop_chan = list(
-        conductor.inventory["FluidComponent"].collection[0].coolant.dict_node_pt.keys()
-    )
-    list_prop_chan.append("friction_factor")
-    list_units = [
-        "(Pa)",
-        "(K)",
-        "(kg/m^3)",
-        "(m/s)",
-        "(1/K)",
-        "(1/Pa)",
-        "(~)",
-        "(Pa*s)",
-        "(J/kg)",
-        "(J/kg/K)",
-        "(J/kg/K)",
-        "(m/s)",
-        "(W/m/K)",
-        "(~)",
-        "(~)",
-        "(kg/s)",
-        "(~)",
-    ]
-    header_chan = "zcoord (m)"
-    for jj in range(len(list_prop_chan)):
-        header_chan = f"{header_chan}\t{list_prop_chan[jj]} {list_units[jj]}"
+    # Check if FluidComponent collection is not empty.
+    if conductor.inventory["FluidComponent"].collection:
+        # FludiComponent collection is not empty.
+        list_prop_chan = list(
+            conductor.inventory["FluidComponent"].collection[0].coolant.dict_node_pt.keys()
+        )
+        list_prop_chan.append("friction_factor")
+        list_units = [
+            "(Pa)",
+            "(K)",
+            "(kg/m^3)",
+            "(m/s)",
+            "(1/K)",
+            "(1/Pa)",
+            "(~)",
+            "(Pa*s)",
+            "(J/kg)",
+            "(J/kg/K)",
+            "(J/kg/K)",
+            "(m/s)",
+            "(W/m/K)",
+            "(~)",
+            "(~)",
+            "(kg/s)",
+            "(~)",
+        ]
+        header_chan = "zcoord (m)"
+        for jj in range(len(list_prop_chan)):
+            header_chan = f"{header_chan}\t{list_prop_chan[jj]} {list_units[jj]}"
     header_st = "zcoord (m)\ttemperature (K)\tB_field (T)\tT_cur_sharing (K)"
     header_stab = "zcoord (m)\ttemperature (K)\tB_field (T)"
     header_jk = "zcoord (m)\ttemperature (K)"
