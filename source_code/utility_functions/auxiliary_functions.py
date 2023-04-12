@@ -130,7 +130,7 @@ def load_auxiliary_files(file_path, sheetname):
     wb = load_workbook(file_path, data_only=True)
     sheet = wb[sheetname]
     return (
-        pd.read_excel(file_path, sheet_name=sheetname, header=0, index_col=0),
+        pd.read_excel(file_path, sheet_name=sheetname, header=None),
         sheet.cell(1, 1).value,
     )
 
