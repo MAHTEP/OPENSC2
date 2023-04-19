@@ -3,6 +3,7 @@ from scipy import linalg, sparse
 from scipy.sparse.linalg import spsolve
 from typing import Union
 
+from conductor_flags import ELECTRIC_TIME_STEP_NUMBER
 
 def custom_current_function(time: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """User defined custom function for the current beavior in time (and maybe in space).
@@ -185,9 +186,6 @@ def electric_transient_solution(conductor: object):
     Args:
         conductor (object): object with all the information needed to solve the electric problem.
     """
-    TIME_STEP_NUMBER = np.ceil(
-        conductor.electric_time_end / conductor.electric_time_step
-    ).astype(int)
 
     if conductor.electric_known_term_vector.shape[0] == []:
         conductor.electric_known_term_vector = np.zeros_like(
@@ -210,7 +208,7 @@ def electric_transient_solution(conductor: object):
     )
 
     # Electric loop
-    for nn in range(1, TIME_STEP_NUMBER+1):
+    for nn in range(1, ELECTRIC_TIME_STEP_NUMBER+1):
 
         conductor.electric_time += conductor.electric_time_step
         conductor.cond_el_num_step = nn
