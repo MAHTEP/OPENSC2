@@ -1273,10 +1273,10 @@ class SolidComponent:
                 if self.name != "Z_JACKET":
                     # Evaluate Joule linear power along the strand in W/m, due
                     # to electric resistances only for current carriers:
-                    # P_along = I_along * Delta V_along / (Delta_z * costheta)
+                    # P_along = R_along * I_along ^2 / (Delta_z * costheta)
                     self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
-                        self.dict_Gauss_pt["current_along"]
-                        * self.dict_Gauss_pt["voltage_drop_along"]
+                        self.dict_Gauss_pt["current_along"] ** 2
+                        * self.dict_Gauss_pt["electric_resistance"]
                         / (conductor.grid_features["delta_z"] * self.inputs["COSTETA"])
                     )
         elif conductor.inputs["METHOD"] == "AM4":
@@ -1293,10 +1293,10 @@ class SolidComponent:
                 if self.name != "Z_JACKET":
                     # Evaluate Joule linear power along the strand in W/m, due
                     # to electric resistances only for current carriers:
-                    # P_along = I_along * Delta V_along / (Delta_z * costheta)
+                    # P_along = R_along * I_along ^2 / (Delta_z * costheta)
                     self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
-                        self.dict_Gauss_pt["current_along"]
-                        * self.dict_Gauss_pt["voltage_drop_along"]
+                        self.dict_Gauss_pt["current_along"] ** 2
+                        * self.dict_Gauss_pt["electric_resistance"]
                         / (conductor.grid_features["delta_z"] * self.inputs["COSTETA"])
                     )
 
