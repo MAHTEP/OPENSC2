@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
+from typing import Union
 import warnings
 
 from conductor import Conductor
