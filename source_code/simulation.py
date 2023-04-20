@@ -315,7 +315,6 @@ class Simulation:
                 if conductor.inputs["I0_OP_MODE"] != IOP_NOT_DEFINED:
                     # Call to electric_electric method allows to define, 
                     # initialize, solve and reorganize the electric problem.
-                    conductor.eval_total_operating_current()
                     conductor.electric_method()
 
                 conductor.build_heat_source(self)
