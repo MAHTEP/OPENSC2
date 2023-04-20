@@ -96,21 +96,30 @@ class Simulation:
 
     # end method __init__ (cdp, 06/2020)
 
-    def __count_sigfigs(self,numstr:str):
+    def __count_sigfigs(self,num:Union[int,float]):
         """Private method that counts the number of significant digits.
         N.B: quite general but does not work for all cases; see 
         https://stackoverflow.com/questions/8101353/counting-significant-figures-in-python
 
         Args:
-            numstr (str): number of which find the significant digits
+            num Union[int,float]: number of which find the significant digits
         """
+
+        numstr = str(num)
         decimal_norm = Decimal(numstr).normalize()
         if str(decimal_norm) == "0":
             # Deal with cases "0", "00", "00...0"
             self.n_digit_time = 0
         else:
-            # Deal with cases specified in https://stackoverflow.com/questions/8101353/counting-significant-figures-in-python
-            self.n_digit_time = len(decimal_norm.as_tuple().exponent)
+            if num < 0.0:
+                # Not the correct number of significant digits but rather the 
+                # number of digits to be displayed.
+                # E.g. 0.01 gives n_digit_time = 2 rather than n_digit_time = 1 
+                # (which is the correct one).
+                self.n_digit_time = len(decimal_norm.as_tuple().exponent)
+            else:
+                # Deal with cases specified in https://stackoverflow.com/questions/8101353/counting-significant-figures-in-python
+                len(Decimal(numstr).as_tuple().digits)
 
     def conductor_instance(self):
         # Load spread-sheet conductor_definition.xlsx
