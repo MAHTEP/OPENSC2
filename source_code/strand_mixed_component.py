@@ -5,6 +5,7 @@ from typing import Tuple, Union
 
 from solid_component import SolidComponent
 from strand_component import StrandComponent
+from utility_functions.auxiliary_functions import check_costheta
 
 # Aluminium properties
 from properties_of_materials.aluminium import (
@@ -158,6 +159,8 @@ class StrandMixedComponent(StrandComponent):
             usecols=["Variable name", self.identifier],
         )[self.identifier].to_dict()
 
+        # Check that costheta is in the range (0,1].
+        check_costheta(self,dict_file_path["input"],sheet)
         self.__compute_cross_section(sheet)
         self.__get_current_density_cross_section(sheet)
         # Call SolidComponent class constructor to deal with StrandMixedComponent time \
