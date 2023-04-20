@@ -4738,7 +4738,9 @@ class Conductor:
         # print(f"E_residual = {E_residual} J\n")
 
         print(f"Energy balance = {self.energy_balance} J\n")
-        print(f"Outer inner power ratio % = {1e2*self.outer_pow/self.inner_pow} ~")
+        # Print outer inner power ration only if inner_pow is not 0.0
+        if self.inner_pow != 0.0:
+            print(f"Outer inner power ratio % = {1e2*self.outer_pow/self.inner_pow} ~")
 
     # end method Mass_Energy_balance (cdp, 09/2020)
 
