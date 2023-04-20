@@ -3,6 +3,8 @@ import pandas as pd
 from solid_component import SolidComponent
 from strand_component import StrandComponent
 
+from utility_functions.auxiliary_functions import check_costheta
+
 # Aluminium properties
 from properties_of_materials.aluminium import (
     thermal_conductivity_al,
@@ -119,6 +121,9 @@ class StrandStabilizerComponent(StrandComponent):
             index_col=0,
             usecols=["Variable name", self.identifier],
         )[self.identifier].to_dict()
+
+        # Check that costheta is in the range (0,1].
+        check_costheta(self,dict_file_path["input"],sheet)
 
         # Call SolidComponent class constructor to deal with StrandStabilizerComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
