@@ -65,7 +65,7 @@ class Simulation:
         # get the order of maginitude of the minimum time step to make proper 
         # rounds to when saving data and figures of solution spatial 
         # distribution at default or User defined times.
-        self.__count_sigfigs(str(self.transient_input["STPMIN"]))
+        self.__count_sigfigs(self.transient_input["STPMIN"])
         self.list_of_Conductors = list()
         # Define the environment object as an attribute of the simulation
         self.environment = Environment(
