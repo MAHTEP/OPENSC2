@@ -887,8 +887,8 @@ class StrandMixedComponent(StrandComponent):
                     # Compute voltage along superconductor
                     v_sc = self.inputs["E0"] * (sc_current_gauss[ind_shf_gauss[1]] / critical_current_gauss[ind_shf_gauss[2]]) ** self.inputs["nn"]
                     # Check that the voltage along stabilizer is equal to the 
-                    # voltage along superconductor (i.e, check the reliability of 
-                    # the current divider).
+                    # voltage along superconductor (i.e, check the reliability 
+                    # of the current divider).
                     if all(np.isclose(v_stab,v_sc)) == False:
                         raise ValueError(f"Voltage drop along superconductor and stabilizer must be the same.")
 
