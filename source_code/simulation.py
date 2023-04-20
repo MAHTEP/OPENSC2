@@ -62,8 +62,10 @@ class Simulation:
             usecols=["Variable name", "Value"],
         )["Value"].to_dict()
         self.flag_start = False
-        # get the order of maginitude of the minimum time step to make proper rounds to when saving data and figures of solution spatial distribution at default or User defined times.
-        self.n_digit_time = abs(int(np.floor(np.log10(self.transient_input["STPMIN"]))))
+        # get the order of maginitude of the minimum time step to make proper 
+        # rounds to when saving data and figures of solution spatial 
+        # distribution at default or User defined times.
+        self.__count_sigfigs(str(self.transient_input["STPMIN"]))
         self.list_of_Conductors = list()
         # Define the environment object as an attribute of the simulation
         self.environment = Environment(
