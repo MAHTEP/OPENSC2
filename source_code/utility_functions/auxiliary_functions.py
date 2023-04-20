@@ -96,6 +96,22 @@ def check_object_number(object, path_1, path_2, sheet_1, sheet_2):
 
 # End function check_object_number.
 
+def check_costheta(object,path:str,sheet):
+    """Function that checks COSTHETA value in sheet conductor_input.xlsx for instances of class StrandComponent.
+
+    Args:
+        object (StrandComponent): instance of class StrandComponent.
+        path (str): path to the input file with information on the value of COSTHETA.
+        sheet (_type_): workbook sheet.
+
+    Raises:
+        ValueError: if object.inputs["COSTETA"] = 0.0 or if abs(object.inputs["COSTETA"]) > 1.0
+    """
+    
+    if np.isclose(object.inputs["COSTETA"], 0.0) or abs(object.inputs["COSTETA"]) > 1.0:
+        raise ValueError(
+            f"ERROR in class {object.__class__.__name__} method __init__: cos(theta) must be in the range (0,1]. Current value is {object.inputs['COSTETA']}.\nPlease, check sheet {sheet.title} in file {path}.\n"
+        )
 
 def set_diagnostic(vv, **kwargs):
     """[summary]
