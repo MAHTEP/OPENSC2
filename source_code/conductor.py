@@ -2333,6 +2333,19 @@ class Conductor:
             .apply(np.sqrt)
         )
 
+        # noda_distance correction.
+        if self.inventory["StrandComponent"].number == 1:
+            # In this case attribute node_distance does not account for the 
+            # twist pich of the strand, i.e. the strand is straight. Apply the 
+            # costheta correction to account for the real distance between 
+            # nodal points. This correction has an impact only in the 
+            # evaluation of the quantity used in the electromagnetic module, as 
+            # for instance electric resistance, electric conductance and 
+            # inductance.
+            # This is not necessary if there are more than one 
+            # strand since in this case the helicoidal coordinates are used.
+            self.node_distance = self.node_distance / self.inventory["StrandComponent"].collection[0].inputs["COSTETA"]
+
     def __compute_gauss_node_distance(self):
         """Private method that evaluates the distance between consecutive gauss node (the mid point of the element), thaking into account all the coordinates (x,y,z). Values are stored in attribute gauss_node_distance."""
         self.gauss_node_distance = np.zeros(self.total_nodes)
