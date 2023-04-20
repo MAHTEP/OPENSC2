@@ -8,6 +8,8 @@ from typing import Tuple, Union
 from solid_component import SolidComponent
 from strand_component import StrandComponent
 
+from utility_functions.auxiliary_functions import check_costheta
+
 # Cu properties
 from properties_of_materials.copper import (
     thermal_conductivity_cu_nist,
@@ -180,6 +182,9 @@ class StackComponent(StrandComponent):
             index_col=0,
             usecols=["Variable name", self.identifier],
         )[self.identifier].to_dict()
+
+        # Check that costheta is in the range (0,1].
+        check_costheta(self,dict_file_path["input"],sheet)
 
         # Call SolidComponent class constructor to deal with StrandMixedComponent time \
         # steps for current, external heating and so on
