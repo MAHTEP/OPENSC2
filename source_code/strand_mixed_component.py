@@ -161,8 +161,8 @@ class StrandMixedComponent(StrandComponent):
 
         # Check that costheta is in the range (0,1].
         check_costheta(self,dict_file_path["input"],sheet)
-        self.__compute_cross_section(sheet)
-        self.__get_current_density_cross_section(sheet)
+        self.__compute_cross_section(sheet, dict_file_path["input"])
+        self.__get_current_density_cross_section(sheet, dict_file_path["input"])
         # Call SolidComponent class constructor to deal with StrandMixedComponent time \
         # steps for current, external heating and so on (cdp, 11/2020)
         SolidComponent(simulation, self)
