@@ -216,7 +216,7 @@ class StrandMixedComponent(StrandComponent):
         # Sloped segregated stabilizer strand cross section.
         self.cross_section["stab_segr_sloped"] = self.cross_section["stab_segr"] / self.inputs["COSTETA"]
 
-        # Check cross section consistency
+        # Check cross section consistency.
         self.__check_cross_section(sheet, file_path)
 
         if self.inputs["ISTAB_NON_STAB"] == MODE_0:
@@ -288,8 +288,16 @@ class StrandMixedComponent(StrandComponent):
         if not np.isclose(tot_cross_section):
             raise ValueError(f"Total cross section must be consistent with the evaluated total cross sections: total cross section is {self.cross_section['total']} evaluated total cross {tot_cross_section}. Please, check sheet {sheet.title} in input file {file_path}.")
 
-    def __get_current_density_cross_section(self, sheet):
-        """Private method that evalutates cross section used to compute the current density and the current sharing temperature according to the definiton of the critical current density scaling parameter c0."""
+    def __get_current_density_cross_section(self, sheet, file_path:str):
+        """Private method that evalutates cross section used to compute the current density and the current sharing temperature according to the definiton of the critical current density scaling parameter c0.
+
+        Args:
+            sheet (Chartsheet | Worksheet | ReadOnlyWorksheet): sheet with input data for StrandMixedComponent definition.
+            file_path (str): path to the input file.
+
+        Raises:
+            ValueError: if self.inputs["C0_MODE"] =! 0 or self.inputs["C0_MODE"] != 1
+        """
                 
         if self.inputs["C0_MODE"] == INGEGNERISTIC_MODE:
             # Ingegneristic definition for c0 is used, i.e., the value is 
@@ -305,7 +313,7 @@ class StrandMixedComponent(StrandComponent):
                 and self.inputs["C0_MODE"] != INGEGNERISTIC_MODE
             ):
             raise ValueError(
-                f"Not valid value for flag self.inputs['C0_MODE']. Flag value should be {PHYSICAL_MODE = } or {INGEGNERISTIC_MODE = }, current value is {self.inputs['C0_MODE'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n"
+                f"Not valid value for flag self.inputs['C0_MODE']. Flag value should be {PHYSICAL_MODE = } or {INGEGNERISTIC_MODE = }, current value is {self.inputs['C0_MODE'] = }.\nPlease check in sheet {sheet} of input file {file_path}.\n"
             )
 
     def __reorganize_input(self):
