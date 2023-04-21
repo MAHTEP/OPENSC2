@@ -3200,17 +3200,17 @@ class Conductor:
                 * (
                     np.arcsinh(
                         lmod[ii :: self.inventory["StrandComponent"].number]
-                        / obj.cyl_helix.radius
+                        / obj.radius
                     )
                     - np.sqrt(
                         1.0
                         + (
-                            obj.cyl_helix.radius
+                            obj.radius
                             / lmod[ii :: self.inventory["StrandComponent"].number]
                         )
                         ** 2
                     )
-                    + obj.cyl_helix.radius / lmod[ii :: self.inventory["StrandComponent"].number]
+                    + obj.radius / lmod[ii :: self.inventory["StrandComponent"].number]
                 )
             )
         return self_inductance
@@ -3226,10 +3226,6 @@ class Conductor:
         self_inductance = np.zeros(lmod.shape)
 
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
-            if self.inventory["StrandComponent"].number > 1:
-                radius = obj.cyl_helix.radius ** 2
-            else:
-                radius = obj.radius
 
             self_inductance[ii :: self.inventory["StrandComponent"].number] = 2 * (
                 lmod[ii :: self.inventory["StrandComponent"].number]
@@ -3238,17 +3234,17 @@ class Conductor:
                         lmod[ii :: self.inventory["StrandComponent"].number]
                         + np.sqrt(
                             lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                            + radius ** 2
+                            + obj.radius ** 2
                         )
                     )
-                    / radius
+                    / obj.radius
                 )
                 - np.sqrt(
                     lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                    + radius ** 2
+                    + obj.radius ** 2
                 )
                 + lmod[ii :: self.inventory["StrandComponent"].number] / 4
-                + radius
+                + obj.radius
             )
 
         return self_inductance
@@ -3390,17 +3386,17 @@ class Conductor:
                         lmod[ii :: self.inventory["StrandComponent"].number]
                         + np.sqrt(
                             lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                            + obj.cyl_helix.radius ** 2
+                            + obj.radius ** 2
                         )
                     )
-                    / obj.cyl_helix.radius
+                    / obj.radius
                 )
                 - np.sqrt(
                     lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                    + obj.cyl_helix.radius ** 2
+                    + obj.radius ** 2
                 )
                 + lmod[ii :: self.inventory["StrandComponent"].number] / 4
-                + obj.cyl_helix.radius
+                + obj.radius
             )
         # End for
 
