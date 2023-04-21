@@ -195,11 +195,12 @@ class StrandMixedComponent(StrandComponent):
     def __str__(self):
         pass
 
-    def __compute_cross_section(self,sheet):
+    def __compute_cross_section(self,sheet, file_path:str):
         """Private method that computes the sloped cross section of the stabilizer and of the superconductor of the StrandMixedComponent.
 
         Args:
             sheet (Chartsheet | Worksheet | ReadOnlyWorksheet): sheet with input data for StrandMixedComponent definition.
+            file_path (str): path to the input file.
 
         Raises:
             ValueError: if self.inputs["ISTAB_NON_STAB"] =! 0 or self.inputs["ISTAB_NON_STAB"] != 1
@@ -214,6 +215,10 @@ class StrandMixedComponent(StrandComponent):
         self.cross_section["stab_segr"] = self.inputs["N_stab_strand"] * np.pi * self.inputs["d_stab_strand"] ** 2 / 4
         # Sloped segregated stabilizer strand cross section.
         self.cross_section["stab_segr_sloped"] = self.cross_section["stab_segr"] / self.inputs["COSTETA"]
+
+        # Check cross section consistency
+        self.__check_cross_section(sheet, file_path)
+
         if self.inputs["ISTAB_NON_STAB"] == MODE_0:
             # Superconductor perpendicular cross section in m^2. Remember that 
             # stab_non_stab is referred only to the sc_strand and does not 
@@ -250,7 +255,7 @@ class StrandMixedComponent(StrandComponent):
 
         else:
             raise ValueError(
-                f"Not valid value for flag self.inputs['ISTAB_NON_STAB']. Flag value should be {MODE_0 = } or {MODE_1 = }, current value is {self.inputs['ISTAB_NON_STAB'] = }.\nPlease check in sheet {sheet} of input file conductor_input.xlsx.\n"
+                f"Not valid value for flag self.inputs['ISTAB_NON_STAB']. Flag value should be {MODE_0 = } or {MODE_1 = }, current value is {self.inputs['ISTAB_NON_STAB'] = }.\nPlease check in sheet {sheet} of input file {file_path}.\n"
             )
 
         # Superconductor sloped cross section in m^2. This definition is 
