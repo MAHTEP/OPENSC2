@@ -267,6 +267,22 @@ class StrandMixedComponent(StrandComponent):
         # of stabilizer in sc strands.
         self.cross_section["stab_sloped"] = self.cross_section["alpha_1"] * self.cross_section["sc_sloped"]
 
+    def __check_cross_section(self, sheet, file_path:str):
+        """Private method that checks the consistency of the cross section given in input by the user and the one that can be evaluated starting from the diameters and the number of the strands that constitute the StrandMixedComponent.
+
+        Args:
+            sheet (Chartsheet | Worksheet | ReadOnlyWorksheet): sheet with input data for StrandMixedComponent definition.
+            file_path (str): path to the input file.
+
+        Raises:
+            ValueError: if there is not consistency between the total cross section in input and the evaluated one.
+        """
+
+        tot_cross_section = self.cross_section["sc_strand"] + self.cross_section["stab_segr"]
+
+        if not np.isclose(tot_cross_section):
+            raise ValueError(f"Total cross section must be consistent with the evaluated total cross sections: total cross section is {self.cross_section['total']} evaluated total cross {tot_cross_section}. Please, check sheet {sheet.title} in input file {file_path}.")
+
     def __get_current_density_cross_section(self, sheet):
         """Private method that evalutates cross section used to compute the current density and the current sharing temperature according to the definiton of the critical current density scaling parameter c0."""
                 
