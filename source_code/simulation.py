@@ -112,7 +112,7 @@ class Simulation:
             # Deal with cases "0", "00", "00...0"
             self.n_digit_time = 0
         else:
-            if num < 0.0:
+            if 0.0 < num < 1.0:
                 # Not the correct number of significant digits but rather the 
                 # number of digits to be displayed.
                 # E.g. 0.01 gives n_digit_time = 2 rather than n_digit_time = 1 
