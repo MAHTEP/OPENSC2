@@ -285,7 +285,7 @@ class StrandMixedComponent(StrandComponent):
 
         tot_cross_section = self.cross_section["sc_strand"] + self.cross_section["stab_segr"]
 
-        if not np.isclose(tot_cross_section):
+        if not np.isclose(self.cross_section["total"],tot_cross_section):
             raise ValueError(f"Total cross section must be consistent with the evaluated total cross sections: total cross section is {self.cross_section['total']} evaluated total cross {tot_cross_section}. Please, check sheet {sheet.title} in input file {file_path}.")
 
     def __get_current_density_cross_section(self, sheet, file_path:str):
