@@ -135,9 +135,9 @@ class StrandMixedComponent(StrandComponent):
         self.time_evol = dict(temperature=dict(), B_field=dict(), T_cur_sharing=dict())
         self.time_evol_gauss = dict(
             current_along=dict(),
-            voltage_drop_along=dict(),
+            delta_voltage_along=dict(),
             linear_power_el_resistance=dict(),
-            voltage_drop_along_sum=dict(),
+            delta_voltage_along_sum=dict(),
         )
         self.dict_scaling_input = dict()
         # Dictionary initialization: inputs.
@@ -922,6 +922,6 @@ class StrandMixedComponent(StrandComponent):
                     # voltage along superconductor (i.e, check the reliability 
                     # of the current divider).
                     if all(np.isclose(v_stab,v_sc)) == False:
-                        raise ValueError(f"Voltage drop along superconductor and stabilizer must be the same.")
+                        raise ValueError(f"Voltage difference along superconductor and stabilizer must be the same.")
 
         return self.dict_Gauss_pt["electric_resistance"]

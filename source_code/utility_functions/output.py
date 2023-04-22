@@ -192,12 +192,12 @@ def save_simulation_space(conductor, f_path, n_digit_time):
     # Save linear power due to electric resistance along the SOs (available in
     # gauss nodal points).
     headers_s_comp = (
-        "zcoord_gauss (m)\tcurrent_along (A)\tvoltage_drop_along (V)\tP_along (W/m)"
+        "zcoord_gauss (m)\tcurrent_along (A)\tdelta_voltage_along (V)\tP_along (W/m)"
     )
     prop_s_comp = [
         "zcoord_gauss",
         "current_along",
-        "voltage_drop_along",
+        "delta_voltage_along",
         "linear_power_el_resistance",
     ]
     for s_comp in conductor.inventory["SolidComponent"].collection:
@@ -336,7 +336,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     # "EXTFLX", "JHTFLX"]
     list_sol_key_full = ["temperature", "T_cur_sharing"]
     list_sol_key_reduced = ["temperature"]
-    list_sol_key_gauss = ["current_along", "voltage_drop_along", "P_along"]
+    list_sol_key_gauss = ["current_along", "delta_voltage_along", "P_along"]
     list_jk = ["temperature"]
     # lists all the file .tsv in subfolder Spatial_distribution (cdp, 11/2020)
     # Round the time to save to n_digit_time digits only once

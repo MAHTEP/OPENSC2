@@ -3487,8 +3487,8 @@ class Conductor:
     def __electric_solution_reorganization(self):
         """Private method that reorganizes the electric solution. Specifically it:
         * extracts edge current (current along StrandComponent) and nodal potentials from electric solution array;
-        * computes voltage drop along StrandComponent;
-        * assignes current along StrandComponent and voltage drop along StrandComponent.
+        * computes voltage difference along StrandComponent;
+        * assignes current along StrandComponent and voltage difference along StrandComponent.
         """
 
         # Extract edge current (current along StrandComponent) from
@@ -3500,8 +3500,8 @@ class Conductor:
             self.total_elements_current_carriers :
         ]
 
-        # Compute voltage drop along StrandComponent.
-        voltage_drop_along = -self.incidence_matrix @ self.nodal_potential
+        # Compute voltage difference along StrandComponent.
+        delta_voltage_along = -self.incidence_matrix @ self.nodal_potential
 
         # Loop to assign values to each StrandComponent.
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
@@ -3509,7 +3509,7 @@ class Conductor:
                 ii :: self.inventory["StrandComponent"].number
             ]
 
-            obj.dict_Gauss_pt["voltage_drop_along"] = voltage_drop_along[
+            obj.dict_Gauss_pt["delta_voltage_along"] = delta_voltage_along[
                 ii :: self.inventory["StrandComponent"].number
             ]
 
@@ -3528,9 +3528,9 @@ class Conductor:
             # If there is only one StrandComponent object, total_power_el_cond
             # is equal to 0 as from initialization.
 
-            # Compute voltage drop due to electric condutances across
+            # Compute voltage difference due to electric condutances across
             # StrandComponent objects.
-            self.voltage_drop_across = np.real(
+            self.delta_voltage_across = np.real(
                 self.contact_incidence_matrix @ self.nodal_potential
             )
 
@@ -3547,10 +3547,10 @@ class Conductor:
             # Converison from instantaneous to effective values (used in sinusoidal
             # regime).
             if self.operations["ELECTRIC_SOLVER"] == STATIC_ELECTRIC_SOLVER:
-                # Conversion of voltage drop across electric conductances:
+                # Conversion of voltage difference across electric conductances:
                 # Delta_V_across_eff = Delta_V_across / sqrt(2)
-                self.voltage_drop_across = self.voltage_drop_across / np.sqrt(2.0)
-                # Conversion of voltage drop across electric conductances:
+                self.delta_voltage_across = self.delta_voltage_across / np.sqrt(2.0)
+                # Conversion of voltage difference across electric conductances:
                 # I_across_eff = I_across / sqrt(2)
                 self.current_across = self.current_across / np.sqrt(2.0)
 
@@ -3563,7 +3563,7 @@ class Conductor:
             # N_c = number of electric contact on a single cross section;
             # N_n = number of nodes (or number of cross sections);
             # N_ct = total number of electric contacts.
-            joule_power_across = self.voltage_drop_across * self.current_across
+            joule_power_across = self.delta_voltage_across * self.current_across
 
             # Evaluate the contribution of the joule power due to conductances
             # between SolidComponent in each node of the spatial discretization.
@@ -3605,7 +3605,7 @@ class Conductor:
             for ii, idx in enumerate(ind_zcoord_gauss,1):
                 if ii < ind_zcoord_gauss.shape[0]:
                     idxp = ind_zcoord_gauss[ii]
-                    obj.dict_Gauss_pt["voltage_drop_along_sum"][idxp] = obj.dict_Gauss_pt["voltage_drop_along"][idx:idxp+1].sum()
+                    obj.dict_Gauss_pt["delta_voltage_along_sum"][idxp] = obj.dict_Gauss_pt["delta_voltage_along"][idx:idxp+1].sum()
 
     def electric_method(self):
         """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls private method self.__electric_solution_reorganization to reorganize the electric solution.
