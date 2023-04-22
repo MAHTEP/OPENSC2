@@ -120,7 +120,7 @@ class Simulation:
                 self.n_digit_time = len(decimal_norm.as_tuple().exponent)
             else:
                 # Deal with cases specified in https://stackoverflow.com/questions/8101353/counting-significant-figures-in-python
-                len(Decimal(numstr).as_tuple().digits)
+                self.n_digit_time = len(Decimal(numstr).as_tuple().digits)
 
     def conductor_instance(self):
         # Load spread-sheet conductor_definition.xlsx
