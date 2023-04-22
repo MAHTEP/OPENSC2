@@ -117,7 +117,7 @@ class Simulation:
                 # number of digits to be displayed.
                 # E.g. 0.01 gives n_digit_time = 2 rather than n_digit_time = 1 
                 # (which is the correct one).
-                self.n_digit_time = len(decimal_norm.as_tuple().exponent)
+                self.n_digit_time = abs(decimal_norm.as_tuple().exponent)
             else:
                 # Deal with cases specified in https://stackoverflow.com/questions/8101353/counting-significant-figures-in-python
                 self.n_digit_time = len(Decimal(numstr).as_tuple().digits)
