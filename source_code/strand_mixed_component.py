@@ -746,13 +746,13 @@ class StrandMixedComponent(StrandComponent):
             # Initialize electric resistance arrays in Gauss point; this is the 
             # equivalent electrical resistance, thus it is defined in this way:
             # R_eq = R_sc if superconducting regime
-            # R_eq = R_sc * R_stab/(R_sc + R_stab) is sharing or normal regime
+            # R_eq = R_sc * R_stab/(R_sc + R_stab) is normal regime.
             self.dict_Gauss_pt["electric_resistance"] = np.full_like(
                 self.dict_Gauss_pt["temperature"], None
             )
 
-            # Initialize array of superconducting electrical resistivit in Gauss 
-            # point to None.
+            # Initialize array of superconducting electrical resistivit in 
+            # Gauss point to None.
             self.dict_Gauss_pt["electrical_resistivity_superconductor"] = np.full_like(
                 self.dict_Gauss_pt["temperature"], None
             )
@@ -782,8 +782,8 @@ class StrandMixedComponent(StrandComponent):
             ind_sc_gauss = np.nonzero(
                 self.dict_Gauss_pt["op_current_sc"][ind_not_zero] / critical_current_gauss[ind_not_zero] < 0.95
             )[0]
-            # Get index that correspond to current sharing regime.
-            ind_sh_gauss = np.nonzero(
+            # Get index that correspond to the normal regime.
+            ind_normal_gauss = np.nonzero(
                 self.dict_Gauss_pt["op_current_sc"][ind_not_zero] / critical_current_gauss[ind_not_zero] >= 0.95
             )[0]
 
@@ -814,63 +814,61 @@ class StrandMixedComponent(StrandComponent):
                     conductor, "electrical_resistivity_superconductor", "sc", ind_not_zero[ind_sc_gauss]
                 )
 
-            ## SHARING OR NORMAL REGIME ##
+            ## NORMAL REGIME ##
 
-            # Check if np array ind_sh_gauss is not empty.
-            if ind_sh_gauss.any():
-
-                # Current in sharing regime is carried by both the
-                # superconducting and the stabilizer materials.
-                # self.dict_Gauss_pt["op_current"][ind_sh_node] = self.op_current_so_gauss[ind_sh_gauss]
+            # Check if np array ind_normal_gauss is not empty.
+            if ind_normal_gauss.any():
 
                 # Evaluate how the current is distributed solving the current
                 # divider problem in Gauss point.
                 sc_current_gauss, stab_current_gauss = self.solve_current_divider(
-                    self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_not_zero[ind_sh_gauss]],
-                    critical_current_gauss[ind_not_zero[ind_sh_gauss]],
-                    self.dict_Gauss_pt["op_current"][ind_not_zero[ind_sh_gauss]]
+                    self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_not_zero[ind_normal_gauss]],
+                    critical_current_gauss[ind_not_zero[ind_normal_gauss]],
+                    self.dict_Gauss_pt["op_current"][ind_not_zero[ind_normal_gauss]]
                 )
 
-                # Get index of the normal region, to avoid division by 0 in 
+                # Get index of the normal region where all the current is
+                # carried by the stabilizer, to avoid division by 0 in 
                 # evaluation of superconducting electrical resistivity with the 
                 # power law.
-                ind_normal_gauss = np.nonzero(
+                ind_stab_gauss = np.nonzero(
                     (
-                        stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_not_zero[ind_sh_gauss]]
+                        stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_not_zero[ind_normal_gauss]]
                         > 0.999999
                     )
                     | (sc_current_gauss < 1.0)
                 )[0]
 
-                ## NORMAL REGIME ONLY ##
-
-                # Check if np array ind_normal_gauss is not empty.
-                if ind_normal_gauss.any():
-                    # Get the index of location of true current sharing region.
-                    ind_sht_gauss = np.nonzero(
+                ## CURRENT CARRIED BY THE STABILIZER ##
+                # Check if np array ind_stab_gauss is not empty.
+                if ind_stab_gauss.any():
+                    # Get the index of location of current sharing region, if 
+                    # any.
+                    ind_sh_gauss = np.nonzero(
                         (
                             stab_current_gauss
-                            / self.dict_Gauss_pt["op_current"][ind_not_zero[ind_sh_gauss]]
+                            / self.dict_Gauss_pt["op_current"][ind_not_zero[ind_normal_gauss]]
                             <= 0.999999
                         )
                         | (sc_current_gauss >= 1.0)
                     )[0]
                     
-                    # Check if nparray ind_sht_gauss is not empty.
-                    if ind_sht_gauss.any():
-                        # ind_sht_gauss is not empty.
+                    # Check if nparray ind_sh_gauss is not empty.
+                    if ind_sh_gauss.any():
+                        # ind_sh_gauss is not empty.
                         # Get final index of the location of the current 
                         # sharing zone, keeping into account that 
-                        # sc_current_gauss is already filtered on ind_not_zero
-                        # [ind_sh_gauss].
-                        ind_shf_gauss = {1:ind_sht_gauss,2:ind_not_zero[ind_sh_gauss[ind_sht_gauss]]}
+                        # sc_current_gauss is already filtered on 
+                        # ind_not_zero[ind_normal_gauss].
+                        ind_shf_gauss = {1:ind_sh_gauss,2:ind_not_zero[ind_normal_gauss[ind_sh_gauss]]}
                     else:
-                        # ind_sht_gauss is empty.
+                        # ind_sh_gauss is empty.
                         # Get final index of the location of the current 
                         # sharing zone, keeping into account that 
-                        # sc_current_gauss is already filtered on ind_not_zero
-                        # [ind_sh_gauss] and that ind_sht_gauss is empty.
-                        ind_shf_gauss = {1:ind_sht_gauss,2:ind_not_zero[ind_sh_gauss]}
+                        # sc_current_gauss is already filtered on 
+                        # ind_not_zero[ind_normal_gauss] and that ind_sh_gauss 
+                        # is empty.
+                        ind_shf_gauss = {1:ind_sh_gauss,2:ind_not_zero[ind_normal_gauss]}
 
                     # Evaluate electic resistance in normal region (stabilizer 
                     # only).
@@ -882,13 +880,14 @@ class StrandMixedComponent(StrandComponent):
                 else:
                     # Get final index of the location of the current sharing 
                     # zone, keeping into account that sc_current_gauss is 
-                    # already filtered on ind_not_zero[ind_sh_gauss]. In this 
-                    # case there in no normal zone so we need to exploit all 
-                    # the index in array ind_sh_gauss for the array 
+                    # already filtered on ind_not_zero[ind_normal_gauss]. In 
+                    # this case the current is shared between the 
+                    # superconductor and the stabilizer, so we need to exploit 
+                    # all the index in array ind_normal_gauss for the array 
                     # sc_current_gauss.
-                    ind_shf_gauss = {1:np.nonzero(ind_sh_gauss>=0)[0],2:ind_not_zero[ind_sh_gauss]}
+                    ind_shf_gauss = {1:np.nonzero(ind_normal_gauss>=0)[0],2:ind_not_zero[ind_normal_gauss]}
 
-                ## SHARING REGIME ONLY ##
+                ## CURRENT SHARED BY THE SUPERCONDUCTOR AND THE STABILIZER ##
                 if ind_shf_gauss[1].any():
                     # Evaluate the electrical resistivity of the superconductor
                     # according to the power low in Gauss point in Ohm*m.
