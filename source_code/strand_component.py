@@ -1,10 +1,8 @@
 import warnings
 from solid_component import SolidComponent
-from openpyxl import load_workbook
 import numpy as np
 import os
 from utility_functions.auxiliary_functions import (
-    get_from_xlsx,
     load_auxiliary_files,
     build_interpolator,
     do_interpolation,
@@ -27,7 +25,6 @@ from properties_of_materials.niobium3_tin import (
 
 # RE123 properties
 from properties_of_materials.rare_earth_123 import (
-    critical_magnetic_field_re123,
     critical_current_density_re123,
     current_sharing_temperature_re123,
 )

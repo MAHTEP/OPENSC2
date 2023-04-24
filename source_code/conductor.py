@@ -8,8 +8,6 @@ from scipy.sparse import coo_matrix, csr_matrix, lil_matrix, diags
 from scipy import constants, integrate
 import pandas as pd
 import os
-import sys
-import warnings
 
 # import classes
 from component_collection import ComponentCollection

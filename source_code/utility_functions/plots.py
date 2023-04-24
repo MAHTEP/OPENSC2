@@ -3,12 +3,9 @@ import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 
-# from matplotlib import animation as animation
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import os
 import numpy as np
 import pandas as pd
-import warnings
 
 
 def plot_properties(simulation, cond, what="initialization"):
@@ -1428,19 +1425,7 @@ def plot_time_animation(simulation, conductor):
                         loc="best", fontsize=8, framealpha=0.2
                     )
                 # end if conductor.cond_time[-1] (cdp, 10/2020)
-                # conductor.dict_canvas["mfr"][fluid_comp.identifier] = FigureCanvasTkAgg(\
-                # 										conductor.dict_Figure_animation["mfr"][fluid_comp.identifier], \
-                # 										master = gui.chan_sheet)
-                # conductor.dict_canvas["mfr"][fluid_comp.identifier].get_tk_widget().grid(row = 1, \
-                # 	column = ii)
-                # conductor.dict_canvas["mfr"][fluid_comp.identifier].draw()
             # end for ii (cdp, 10/2020)
-            # conductor.dict_canvas["T_max"][l_type] = FigureCanvasTkAgg(\
-            # 											conductor.dict_Figure_animation["T_max"][l_type], \
-            # 											master = gui.chan_sheet)
-            # conductor.dict_canvas["T_max"][l_type].get_tk_widget().grid(row = 0, \
-            # 	column = 0, columnspan = 2)
-            # conductor.dict_canvas["T_max"][l_type].draw()
         elif l_type == "StrandComponent":
             # loop on StrandComponent (cdp, 10/2020)
             for strand in conductor.inventory["StrandComponent"].collection:
@@ -1458,12 +1443,6 @@ def plot_time_animation(simulation, conductor):
                 conductor.dict_axes_animation["T_max"][l_type].legend(
                     loc="best", fontsize=8, framealpha=0.2
                 )
-            # conductor.dict_canvas["T_max"][l_type] = FigureCanvasTkAgg(\
-            # 											conductor.dict_Figure_animation["T_max"][l_type], \
-            # 											master = gui.str_sheet)
-            # conductor.dict_canvas["T_max"][l_type].get_tk_widget().grid(row = 0, \
-            # 	column = 0)
-            # conductor.dict_canvas["T_max"][l_type].draw()
         elif l_type == "JacketComponent":
             # for the time being do not make figures for JacketComponents objects \
             # (cdp, 10/2020)
@@ -1471,41 +1450,6 @@ def plot_time_animation(simulation, conductor):
         # end if l_type (cdp, 10/2020)
     # end for l_type (cdp, 10/2020)
 
-    # START figure to plot SYSLOD spatial distribution at each time step \
-    # (cdp, 10/2020)
-    # if conductor.cond_time[-1] == 0:
-    # 	conductor.Figure_SYSLOD, (conductor.axes_SYSLOD_str, \
-    # 	conductor.axes_SYSLOD_jk) = \
-    # 		plt.subplots(num = f"{simulation.transient_input['SIMULATION']}: {conductor.identifier} SYSLOD spatial distribution", nrows = 2, ncols = 1, sharex = True, figsize = (8, 6))
-    # 	conductor.axes_SYSLOD_str.grid(True)
-    # 	conductor.axes_SYSLOD_str.set(xlabel = "$x\ m$", \
-    # 			ylabel = "$SYSLOD W/m$", \
-    # 			title = f"STRAND SYSLOD spatial distribution")
-    # 	conductor.axes_SYSLOD_jk.grid(True)
-    # 	conductor.axes_SYSLOD_jk.set(xlabel = "$x\ m$", \
-    # 			ylabel = "$SYSLOD W/m$", \
-    # 			title = f"JACKET SYSLOD spatial distribution")
-    # else:
-    # 	# strand
-    # 	conductor.axes_SYSLOD_str.plot(conductor.grid_features["zcoord"], \
-    # 		conductor.dict_Step["SYSLOD"]\
-    # 		[conductor.dict_N_equation["FluidComponent"]:\
-    # 		conductor.dict_N_equation["Total"]:\
-    # 		conductor.dict_N_equation["NODOFS"],0], \
-    # 		label = conductor.cond_time[-1])
-    # 	# jacket
-    # 	conductor.axes_SYSLOD_jk.plot(conductor.grid_features["zcoord"], \
-    # 		conductor.dict_Step["SYSLOD"]\
-    # 		[conductor.dict_N_equation["FluidComponent"] + \
-    # 		conductor.dict_N_equation["StrandComponent"]:conductor.dict_N_equation["Total"]: \
-    # 		conductor.dict_N_equation["NODOFS"],0], \
-    # 			label = conductor.cond_time[-1])
-    # 	conductor.axes_SYSLOD_str.legend(bbox_to_anchor = (1.11, 1), \
-    # 		loc = 'upper right', fontsize = 8, framealpha = 0.2)
-    # 	conductor.axes_SYSLOD_jk.legend(bbox_to_anchor = (1.11, 1), \
-    # 		loc = 'upper right', fontsize = 8, framealpha = 0.2)
-    # END figure to plot SYSLOD spatial distribution at each time step \
-    # (cdp, 10/2020)
     if conductor.cond_time[-1] == 0:
         # plt.show(block = False)
         # close figure related to JacketComponent objects (cdp, 10/2020)

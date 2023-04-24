@@ -387,21 +387,6 @@ class Simulation:
                         * fluid_comp.coolant.dict_node_pt["total_enthalpy"][0]
                     )
                 # end for fluid_comp (cdp, 10/2020)
-                # Loop on SolidComponent (cdp, 01/2021)
-                # for s_comp in conductor.inventory["SolidComponent"]\
-                # 	["Objects"]:
-                # 	if s_comp.name != "STR_STAB" and s_comp.name != "Z_JACKET":
-                # 		# Call Get_superconductor_critical_prop to evaluate \
-                # 		# StrandMixedComponent and/or StackComponent properties in nodal points.
-                # 		# In questo modo le calclo 2 volte, qui e alla successiva chiamata \
-                # 		# dell methodo Operating conditions, da sistemare per ottimizzare.
-                # 		s_comp.Get_superconductor_critical_prop(self, Where = "nodal")
-                # 	# compute, average density, thermal conductivity, specifi heat at \
-                # 	# constant pressure and electrical resistivity with the updated \
-                # 	# Solidcomponents temperature in nodal points (cdp, 01/2021)
-                # 	s_comp.Eval_sol_comp_properties(conductor.inventory, \
-                # 		Where = "nodal")
-                ## end for s_comp (cdp, 01/2021)
 
                 # Compute radiative heat exchanged between jackets.
                 conductor.compute_radiative_heat_exhange_jk()
@@ -431,31 +416,6 @@ class Simulation:
                         abs(self.n_digit_time),
                     )
                 # end if isave
-                ##
-                # end if conductor.i_save_space[i_save]
-                # for key in list(conductor.dict_Space_save.keys()):
-                # 	if "done" not in key:
-                # 		# do not consider the flags (cdp, 08/2020)
-                # 		if conductor.dict_Space_save[key] > 0:
-                # 			conductor.dict_Space_save[key] = round(\
-                # 																conductor.dict_Space_save[key], 14) - \
-                # 																conductor.time_step
-                # 		# reached time values to save the solution and plot it \
-                # 			# cdp, 08/2020)
-                # 			flag_rename = Save_simulation_space(conductor, \
-                # 									self.dict_path[f"Output_Spatial_distribution_{conductor.identifier}_dir"], \
-                # 									Who = "User")
-                # 			# Saved the solution, this time is no longer considered \
-                # 			# (cdp, 08/2020)
-                # 			conductor.dict_Space_save[f"{key}_done"] = 1
-                # 			if flag_rename == False:
-                # 				# Update the list of times at which make plots of the solution \
-                # 				# spatial distributions only if flag_rename is False; if it is \
-                # 				# True the update is already done above in the Default part \
-                # 				# (cdp, 10/2020)
-                # 				conductor.plot_space_distribution.append(\
-                # 					conductor.cond_time[-1])
-
                 # Save variables time evolution at given spatial coordinates \
                 # (cdp, 08/2020)
                 save_simulation_time(self, conductor)
@@ -823,54 +783,3 @@ class Simulation:
             os.chmod(path, S_IREAD | S_IRGRP | S_IROTH)
 
     # End method save_input_files
-
-
-##############################################################################
-
-## This code was part of the old version of method Simulation_folders_manager, may be useful in future so I do not delete it. ##
-
-# Gives an error due to a too long path: it thakes into account of \
-# other features of the simulations together with the method, that is \
-# the one considered below to shorten the path (cpd, 10/2020)
-# block = list()
-# block.append("ZLENGTH_" + str(cond.inputs["ZLENGTH"]))
-# if cond.self.inputs["METHOD"] == "BE":
-# 	block.append("BE")
-# elif cond.self.inputs["METHOD"] == "CN]":
-# 	block.append("CN")
-# elif cond.self.inputs["METHOD"] == "AM4":
-# 	block.append("AM4")
-# end if cond.inputs["METHOD"] (cdp, 10/2020)
-# block.append("IOP0_TOT_" + str(cond.inputs["I0_OP_TOT"]))
-# INTIAL_val = str()
-# for ii in range(cond.inventory["FluidComponent"]["Number"]):
-# 	fluid_comp = cond.inventory["FluidComponent"]["Objects"][ii]
-# 	if cond.inventory["FluidComponent"]["Number"] == 1:
-# 		INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"])
-# 	elif cond.inventory["FluidComponent"]["Number"] > 1:
-# 		if ii < cond.inventory["FluidComponent"]["Number"] - 1:
-# 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"]) + ","
-# 		elif ii == cond.inventory["FluidComponent"]["Number"] - 1:
-# 			INTIAL_val = INTIAL_val + str(fluid_comp.coolant.operations["INTIAL"])
-# 		# end if ii (cdp, 10/2020)
-# 	# end if cond.inventory["FluidComponent"]["Number"] \
-# 	# (cdp, 10/2020)
-## end for ii (cdp, 10/2020)
-# block.append(f"INTIAL_({INTIAL_val})")
-# XQEND_val = str()
-# for ii in range(cond.inventory["SolidComponent"]["Number"]):
-# 	s_comp = cond.inventory["SolidComponent"]["Objects"][ii]
-# 	if cond.inventory["SolidComponent"]["Number"] == 1:
-# 		XQEND_val = XQEND_val + str(s_comp.operations["XQEND"])
-# 	elif cond.inventory["SolidComponent"]["Number"] > 1:
-# 		if ii < cond.inventory["SolidComponent"]["Number"] - 1:
-# 			XQEND_val = XQEND_val + str(s_comp.operations["XQEND"]) + ","
-# 		elif ii == cond.inventory["SolidComponent"]["Number"] - 1:
-# 			XQEND_val = XQEND_val + str(s_comp.operations["XQEND"])
-# 		# end if ii (cdp, 10/2020)
-# 	# end if cond.inventory["SolidComponent"]["Number"] \
-# 	# (cdp, 10/2020)
-## end for ii (cdp, 10/2020)
-# block.append(f"XQEND_({XQEND_val})")
-## Join the block together using _ ad separator (cdp, 10/2020)
-# self.dict_path["Sub_dir"] = "_".join([f"{val}" for val in block])

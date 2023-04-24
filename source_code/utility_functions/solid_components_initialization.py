@@ -1,8 +1,6 @@
 # Placido Daniele 11/2020
 
-import warnings
 import numpy as np
-import os
 
 
 def solid_components_temperature_initialization(cond):

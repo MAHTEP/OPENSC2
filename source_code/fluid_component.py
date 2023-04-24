@@ -14,7 +14,6 @@ properties:
 """
 
 import pandas as pd
-import os
 
 
 class FluidComponentInput:
