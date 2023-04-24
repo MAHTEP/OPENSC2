@@ -16,6 +16,7 @@ from conductor_flags import (
     APPROXIMATE_INDUCTANCE,
     ELECTRIC_CONDUCTANCE_UNIT_LENGTH,
     ELECTRIC_CONDUCTANCE_NOT_UNIT_LENGTH,
+    IOP_NOT_DEFINED,
     IOP_CONSTANT,
     IOP_FROM_EXT_FUNCTION,
     IOP_FROM_FILE,
@@ -150,7 +151,11 @@ class Conductor:
         for key in ["I0_OP_MODE","ELECTRIC_TIME_STEP"]:
             if isinstance(self.inputs[key],str) and self.inputs[key].lower() == "none":
                 self.inputs[key] = None
-        
+                
+        # Set total current to 0.0 A if user specifies no current with flag 
+        # I0_OP_MODE.
+        if self.inputs["I0_OP_MODE"] is IOP_NOT_DEFINED:
+            self.inputs["I0_OP_TOT"] = 0.0
 
         # Load the sheet CONDUCTOR_operation form file conducor_definition.xlsx as a disctionary.
         self.operations = pd.read_excel(
