@@ -8,6 +8,13 @@ from utility_functions.auxiliary_functions import (
     do_interpolation,
 )
 
+from conductor_flags import (
+    IOP_NOT_DEFINED,
+    IOP_CONSTANT,
+    IOP_FROM_FILE,
+    IOP_FROM_EXT_FUNCTION,
+)
+
 class SolidComponent:
     def __init__(self, simulation, s_comp):
 
