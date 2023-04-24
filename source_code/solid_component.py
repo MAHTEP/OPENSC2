@@ -206,6 +206,7 @@ class SolidComponent:
             conductor (object): ConductorComponent object with all informations to make the calculation.
 
         Raises:
+            ValueError: if I0_OP_MODE is -2 (still to be implemented).
             ValueError: if a not valid value is given to flag I0_OP_MODE.
         """
 
@@ -217,7 +218,7 @@ class SolidComponent:
         # Get current.
         if self.operations["IOP_MODE"] != None:
             # The object carryes a current and its value is defied as below.
-            if conductor.inputs["I0_OP_MODE"] == -1:
+            if conductor.inputs["I0_OP_MODE"] == IOP_FROM_FILE:
 
                 if conductor.cond_time[-1] == 0:
                     # Build file path.
@@ -270,7 +271,7 @@ class SolidComponent:
                 if self.flagSpecfield_current == 2:
                     # Add also a logger
                     warnings.warn("Still to be decided what to do here\n")
-            elif conductor.inputs["I0_OP_MODE"] == 0:
+            elif conductor.inputs["I0_OP_MODE"] == IOP_CONSTANT:
                 # Evaluate both attributes self.dict_node_pt["op_current"] and
                 # self.dict_node_pt["op_current_sc"] for convenience in the evaluation of
                 # electrical resistivity.
@@ -297,13 +298,18 @@ class SolidComponent:
                         + self.dict_node_pt["op_current_sc"][1:]
                     ) / 2.0
 
-            elif conductor.inputs["I0_OP_MODE"] == None:
+            elif conductor.inputs["I0_OP_MODE"] == IOP_NOT_DEFINED:
                 # User does not specify a current: set current carrient 
                 # operating current to zero only the first time in both nodal 
                 # and gauss points.
                 if conductor.cond_num_step == 0:
                     self.dict_node_pt["op_current"] = np.zeros(conductor.grid_features["N_nod"])
                     self.dict_Gauss_pt["op_current"] = np.zeros(conductor.grid_input["NELEMS"])
+            
+            elif conductor.inputs["I0_OP_MODE"] == IOP_FROM_EXT_FUNCTION:
+                raise ValueError(
+                    f"Current from external function to be implemented!"
+                )
             else:
                 raise ValueError(
                     f"Not defined value for flag I0_OP_MODE: {conductor.inputs['I0_OP_MODE']=}.\n"
