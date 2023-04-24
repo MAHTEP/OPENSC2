@@ -289,6 +289,14 @@ class SolidComponent:
                         self.dict_node_pt["op_current_sc"][:-1]
                         + self.dict_node_pt["op_current_sc"][1:]
                     ) / 2.0
+
+            elif conductor.inputs["I0_OP_MODE"] == None:
+                # User does not specify a current: set current carrient 
+                # operating current to zero only the first time in both nodal 
+                # and gauss points.
+                if conductor.cond_num_step == 0:
+                    self.dict_node_pt["op_current"] = np.zeros(conductor.grid_features["N_nod"])
+                    self.dict_Gauss_pt["op_current"] = np.zeros(conductor.grid_input["NELEMS"])
             else:
                 raise ValueError(
                     f"Not defined value for flag I0_OP_MODE: {conductor.inputs['I0_OP_MODE']=}.\n"
