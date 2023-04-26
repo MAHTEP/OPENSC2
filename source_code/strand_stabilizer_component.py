@@ -226,8 +226,7 @@ class StrandStabilizerComponent(StrandComponent):
         Returns:
             np.ndarray: array of electrical resistance in Ohm of length {conductor.grid_input["NELEMS"] = }.
         """
-        return (
-            self.dict_Gauss_pt["electrical_resistivity_stabilizer"]
+        self.dict_Gauss_pt["electric_resistance"] = (self.dict_Gauss_pt["electrical_resistivity_stabilizer"]
             * conductor.node_distance[("StrandComponent", self.identifier)]
-            / self.inputs["CROSSECTION"]
-        )
+            / self.inputs["CROSSECTION"])
+        return self.dict_Gauss_pt["electric_resistance"]
