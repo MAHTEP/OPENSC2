@@ -3947,21 +3947,21 @@ class Conductor:
             if not isinstance(strand, StrandStabilizerComponent):
                 if strand.inputs["superconducting_material"] == "Nb3Sn":
                     if self.cond_el_num_step <= 1:
-                            # Evaluate strain only at initialization (0) and at 
-                            # the first electric time step (1).
-                            strand.get_eps(self,nodal=False)
-                    strand.get_superconductor_critical_prop(self,nodal=False)
-                    if (
-                        strand.operations["TCS_EVALUATION"] == False
-                        and self.cond_num_step == 0
-                    ):
+                        # Evaluate strain only at initialization (0) and at 
+                        # the first electric time step (1).
+                        strand.get_eps(self,nodal=False)
+                strand.get_superconductor_critical_prop(self,nodal=False)
+                if (
+                    strand.operations["TCS_EVALUATION"] == False
+                    and self.cond_num_step == 0
+                ):
+                    strand.get_tcs(nodal=False)
+                elif strand.operations["TCS_EVALUATION"] == True:
+                    if self.cond_el_num_step <= 1:
+                        # Evaluate current sharing temperature only at 
+                        # initialization (0) and at the first electric time 
+                        # step (1)
                         strand.get_tcs(nodal=False)
-                    elif strand.operations["TCS_EVALUATION"] == True:
-                        if self.cond_el_num_step <= 1:
-                            # Evaluate current sharing temperature only at 
-                            # initialization (0) and at the first electric time 
-                            # step (1)
-                            strand.get_tcs(nodal=False)
             # end if strand.name != self.inventory["StrandStabilizerComponent"].
             # name.
             # Evaluate SolidComponent properties
