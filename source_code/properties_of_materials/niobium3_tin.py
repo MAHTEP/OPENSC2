@@ -578,26 +578,48 @@ def current_sharing_temperature_nb3sn(B, EPSLON, JOP, TC0M, BC20M, C):
     if JC_ind.size == 0:
         return TCS
 
-    # FIND CURRENT SHARING TEMPERATURE WITH BISECTION (cdp, 09/2020)
+    # Get index for which JOP[JC_ind] is 0.0 (use <= 0.0 to be sure to get the 
+    # correct index sice JOP is always >= 0.0).
+    ind_0 = np.nonzero(JOP[JC_ind] <= 0)[0]
+    # Check how many zero values there are.
+    if ind_0.size == JC_ind.size:
+        # All values are equal to 0.0 A/m^2: the current sharing temperature is 
+        # equal to the critical temperature at the given magnetic field and 
+        # strain by definition.
+        return critical_temperature_nb3sn(B[ind_0], EPSLON[ind_0], TC0M, BC20M)
+    else:
+        # Not all values are equal to 0.0 A/m^2.
+        # Get index for which JOP[JC_ind] is > 0.0 A/m^2.
+        ind_not_0 = np.nonzero(JOP[JC_ind])[0]
 
-    T_upper = critical_temperature_nb3sn(B[JC_ind], EPSLON[JC_ind], TC0M, BC20M)
+        # Evalutate critical temperature at the given magnetic field and 
+        # strain.
+        T_upper = critical_temperature_nb3sn(B[JC_ind], EPSLON[JC_ind], TC0M, BC20M)
 
-    for ii, vv in enumerate(JC_ind):
+        # Set the current sharing temperature to the critical temperature for 
+        # all the index in which JOP[JC_ind] = 0.0 A/m^2 (by definition).
+        TCS[JC_ind[ind_0]] = T_upper[JC_ind[ind_0]]
+        
+        # FIND CURRENT SHARING TEMPERATURE WITH BISECTION
 
-        T_lower = np.array([3.5])
+        # Loop to evaluate the current sharing temperature for all the index in 
+        # which JOP[JC_ind] > 0.0 A/m^2.
+        for ii, vv in enumerate(JC_ind[ind_not_0]):
+            
+            T_lower = np.array([3.5])
 
-        ex_args = (B[vv], EPSLON[vv], JOP[vv], TC0M, BC20M, C)
-        # Evaluate current sharing temperature with bisection method.
-        TCS[vv] = optimize.bisect(
-            critical_current_density_bisection_nb3sn,
-            T_lower,
-            T_upper[ii],
-            ex_args,
-            xtol=1e-5,
-        )
-    # End for ii.
+            ex_args = (B[vv], EPSLON[vv], JOP[vv], TC0M, BC20M, C)
+            # Evaluate current sharing temperature with bisection method.
+            TCS[vv] = optimize.bisect(
+                critical_current_density_bisection_nb3sn,
+                T_lower,
+                T_upper[ii],
+                ex_args,
+                xtol=1e-5,
+            )
+        # End for ii.
 
-    return TCS  # end of the function
+        return TCS  # end of the function
 
 
 # Function rho_Nb3Sn starts here
