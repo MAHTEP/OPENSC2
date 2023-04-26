@@ -227,20 +227,6 @@ def step(conductor, environment, qsource, num_step):
     # remember that LMPMAS came from mandm.for subroutine SETNUM (cdp, 07/2020)
     ALFA = 0.0
 
-    # for jj in range(conductor.inventory["FluidComponent"].number):
-    # 	fluid_comp = conductor.inventory["FluidComponent"].collection[jj]
-    # 	# Get the solution at the previous time step
-    # 	SYSVAR[jj:conductor.dict_N_equation["Total"]:conductor.dict_N_equation["NODOFS"]] = \
-    # 																								fluid_comp.coolant.dict_node_pt["velocity"]
-    # 	SYSVAR[jj+conductor.inventory["FluidComponent"].number:\
-    # 		conductor.dict_N_equation["Total"]:conductor.dict_N_equation["NODOFS"]] = fluid_comp.coolant.dict_node_pt["pressure"]
-    # 	SYSVAR[jj+2*conductor.inventory["FluidComponent"].number:\
-    # 		conductor.dict_N_equation["Total"]:conductor.dict_N_equation["NODOFS"]] = fluid_comp.coolant.dict_node_pt["temperature"]
-    # for ll in range(conductor.inventory["SolidComponent"].number):
-    # 	comp = conductor.inventory["SolidComponent"].collection[ll]
-    # 	SYSVAR[ll + conductor.dict_N_equation["FluidComponent"]:conductor.dict_N_equation["Total"]:conductor.dict_N_equation["NODOFS"]] = \
-    # 																						comp.dict_node_pt["temperature"]
-
     # COMPUTE AND ASSEMBLE THE ELEMENT NON-LINEAR MATRICES AND LOADS
 
     # dictionaties declaration (cdp, 07/2020)
@@ -492,23 +478,6 @@ def step(conductor, environment, qsource, num_step):
                 * np.abs(fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii])
                 / 2.0
             )
-            # UPWIND differencing contribution a' la Taylor-Galerkin
-            # This is necessary to guarantee numarical stability, do not came from \
-            # KMAT algebraic construction (cdp, 07/2020)
-            # velocity equation (cdp, 07/2020)
-            # KMAT[jj, jj] = conductor.time_step*UPWEQT[jj]*\
-            # 														 fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]/2.
-            # pressure equation (cdp, 07/2020)
-            # KMAT[jj+conductor.inventory["FluidComponent"].number, jj+\
-            # conductor.inventory["FluidComponent"].number] = conductor.time_step*\
-            # 													UPWEQT[jj+conductor.inventory["FluidComponent"].number]*\
-            # 													fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]/2.
-            # temperature equation (cdp, 07/2020)
-            # KMAT[jj+2*conductor.inventory["FluidComponent"].number, jj+\
-            # 2*conductor.inventory["FluidComponent"].number] = conductor.time_step*\
-            # 												UPWEQT[jj+2*conductor.inventory["FluidComponent"].number]*\
-            # 												fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]/2.
-            # END K MATRIX: fluid components equations (cdp, 07/2020)
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
             # velocity equation: main diagonal elements construction (cdp, 07/2020)
@@ -993,8 +962,6 @@ def step(conductor, environment, qsource, num_step):
                 * s_comp_l.dict_Gauss_pt["total_thermal_conductivity"][ii]
                 / s_comp_l.inputs["COSTETA"]
             )
-            # KMAT[neq, neq] = s_comp_l.inputs["CROSSECTION"]*\
-            # 								 s_comp_l.dict_Gauss_pt["total_thermal_conductivity"][ii]
             # END K MATRIX: solid components equation (cdp, 07/2020)
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
@@ -1108,7 +1075,6 @@ def step(conductor, environment, qsource, num_step):
                                 f"{environment.KIND}_{s_comp_l.identifier}"
                             ]["conv"][ii]
                         )
-                # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.identifier]
             # End s_comp_l.name
 
             # END S MATRIX: solid components equation (cdp, 07/2020)
@@ -1428,11 +1394,6 @@ def step(conductor, environment, qsource, num_step):
         # ASSEMBLE THE MATRICES AND THE LOAD VECTOR
         # array smart (cdp, 07/2020) check ok
         for iii in range(conductor.dict_band["Half"]):
-            # This will not work properly, even if may look correct (cdp, 09/2020)
-            # MASMAT[conductor.dict_band["Half"] - iii - 1:conductor.dict_band["Full"] - iii, \
-            # 	jump:jump + conductor.dict_band["Half"]] = \
-            # 	MASMAT[conductor.dict_band["Half"] - iii - 1:conductor.dict_band["Full"] - iii, \
-            # 	jump:jump + conductor.dict_band["Half"]] + ELMMAT
             MASMAT[
                 conductor.dict_band["Half"]
                 - iii
@@ -1577,9 +1538,6 @@ def step(conductor, environment, qsource, num_step):
     # ** END MATRICES CONSTRUCTION (cdp, 07/2020) **
 
     # SCRIPT TO SAVE MATRICES MASMAT, FLXMAT, DIFMAT, SORMAT, SYSVAR, SYSLOD.
-    # if conductor.cond_num_step == 1:
-    #   path_matr = os.path.join("C:/Users/Daniele.Placido", "Matrices")
-    #   os.makedirs(path_matr, exist_ok = True)
 
     # if abs(conductor.Space_save[conductor.i_save] - conductor.cond_time[-1])/conductor.cond_time[-1] <= 1e-6 or conductor.cond_num_step == 0:
     #   masmat_fname = os.path.join(
@@ -2194,25 +2152,6 @@ def step(conductor, environment, qsource, num_step):
                     ] = 1.0
                     Known[Iit_out[fluid_comp_j.channel.flow_dir[0]]] = T_out
             # End if fluid_comp_j.channel.flow_dir[0] == "forward"
-
-            # Old before backflow introduction
-            # # T_inl
-            # if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
-            #   SYSMAT[0:conductor.dict_band["Full"], Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = 0.0
-            #   # main diagonal (cdp, 08/2020)
-            #   SYSMAT[conductor.dict_band["Half"] - 1, Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = 1.0
-            #   Known[Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = fluid_comp_j.coolant.operations["TEMINL"]
-            # # p_out
-            # SYSMAT[0:conductor.dict_band["Full"], Iip_out[fluid_comp_j.channel.flow_dir[0]]] = 0.0
-            # # main diagonal (cdp, 08/2020)
-            # SYSMAT[conductor.dict_band["Half"] - 1, Iip_out[fluid_comp_j.channel.flow_dir[0]]] = 1.0
-            # Known[Iip_out[fluid_comp_j.channel.flow_dir[0]]] = p_out
-            # # T_out
-            # if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
-            #   SYSMAT[0:conductor.dict_band["Full"], Iit_out[fluid_comp_j.channel.flow_dir[0]]] = 0.0
-            #   # main diagonal (cdp, 08/2020)
-            #   SYSMAT[conductor.dict_band["Half"] - 1, Iit_out[fluid_comp_j.channel.flow_dir[0]]] = 1.0
-            #   Known[Iit_out[fluid_comp_j.channel.flow_dir[0]]] = T_out
 
     # end for jj
 
