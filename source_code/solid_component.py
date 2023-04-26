@@ -687,7 +687,7 @@ class SolidComponent:
                 self.dict_Gauss_pt["linear_power_el_resistance"] = np.zeros(
                     (conductor.grid_input["NELEMS"], 2)
                 )
-            elif conductor.cond_time[-1] > 0:
+            elif conductor.cond_time[-1] > 0 and conductor.inputs["I0_OP_MODE"] != None:
                 if conductor.cond_num_step == 1:
                     # Store the old values only immediately after the
                     # initializzation, since after that the whole SYSLOD array
@@ -712,7 +712,7 @@ class SolidComponent:
                 self.dict_Gauss_pt["linear_power_el_resistance"] = np.zeros(
                     (conductor.grid_features["N_nod"], 4)
                 )
-            elif conductor.cond_time[-1] > 0:
+            elif conductor.cond_time[-1] > 0 and conductor.inputs["I0_OP_MODE"] != None:
                 self.dict_Gauss_pt["linear_power_el_resistance"][
                     :, 1:4
                 ] = self.dict_Gauss_pt["linear_power_el_resistance"][:, 0:3].copy()
