@@ -3823,6 +3823,10 @@ class Conductor:
                 jacket.dict_Gauss_pt["Q2"] + jacket.radiative_heat_env[1:]
             )
 
+        # Separate nested loop is needed in order to define quantities 
+        # dict_Gauss_pt["Q1"] and dict_Gauss_pt["Q2"] for component jacket_c in 
+        # the previous loop, otherwise a key error will be raised.
+        for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
             # Nested loop jacket - jacket.
             for _, jacket_c in enumerate(
                 self.inventory["JacketComponent"].collection[rr + 1 :]
