@@ -395,7 +395,7 @@ class StrandMixedComponent(StrandComponent):
         if self.strand_material.size != self.inputs["NUM_MATERIAL_TYPES"]:
             # Message to be completed!
             raise ValueError(
-                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the strand mixed ({self.inputs['NUM_MATERIAL_TYPES'] = }) is inconsistent with the number of defined materials ({self.tape_material.size = }).\nPlease check..."
+                f"{conductor.identifier = } -> {self.identifier = }\nThe number of material constituting the strand mixed ({self.inputs['NUM_MATERIAL_TYPES'] = }) is inconsistent with the number of defined materials ({self.strand_material.size = }).\nPlease check..."
             )
 
     def strand_density(self, property: dict) -> np.ndarray:
