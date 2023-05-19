@@ -201,7 +201,7 @@ class JacketComponent(SolidComponent):
                 # Update value at the current time step.
                 self.radiative_heat_inn[key][:, 0] = (
                     conductor.dict_interf_peri["sol_sol"][key]
-                    * conductor.dict_node_pt["HTC"]["sol_sol"][key]["rad"]
+                    * conductor.dict_node_pt["HTC"]["sol_sol"]["rad"][key]
                     * (
                         jk_inner.dict_node_pt["temperature"]
                         - self.dict_node_pt["temperature"]
@@ -222,7 +222,7 @@ class JacketComponent(SolidComponent):
                 # Update value at the current time step.
                 self.radiative_heat_inn[key][:, 0] = (
                     conductor.dict_interf_peri["sol_sol"][key]
-                    * conductor.dict_node_pt["HTC"]["sol_sol"][key]["rad"]
+                    * conductor.dict_node_pt["HTC"]["sol_sol"]["rad"][key]
                     * (
                         jk_inner.dict_node_pt["temperature"]
                         - self.dict_node_pt["temperature"]
