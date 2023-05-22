@@ -2,7 +2,9 @@ import bisect
 import numpy as np
 from openpyxl import load_workbook
 import pandas as pd
+from collections import namedtuple
 from scipy import interpolate
+from typing import Union
 import warnings
 
 
@@ -742,3 +744,27 @@ def read_interp_file(file_path, comp, *INTIAL, **options):
             ):
                 Data_matrix[ii, :] = np.array(values)
         return [flag, tt, Data_matrix, sheet]
+
+def filter_component(iterable:Union[list,tuple],item:object)->tuple:
+    """Function that returns a new collection of tuple (index,object) with all the objects except the one in item; index are the locations of the objects in iterable. The returned collection (tuple) preserves the order of the items in iterable.
+
+    Args:
+        iterable (Union[list,tuple]): collection of object to be filtered.
+        item (object): element to be removed from iterable.
+
+    Raises:
+        TypeError: if iterable is not a list or a tuple.
+
+    Returns:
+        tuple: collection of tuple (index,object). All objects from iterable exctep the element passed as item are collected. Index stores the original location in iterable; items order is preserved.
+    """
+
+    # Namedtuple constructor.
+    Obj_info = namedtuple("Obj_info",["idx","obj"])
+    # Sanity check.
+    if isinstance(iterable, (list,tuple)):
+        # Return a new collection of (index,obj) without item preserving the 
+        # order.
+        return tuple(Obj_info(index,obj) for index,obj in enumerate(iterable) if obj != item)
+    else:
+        raise TypeError(f"Iterable should be of type list or tuple; current type is {type(iterable)}")
