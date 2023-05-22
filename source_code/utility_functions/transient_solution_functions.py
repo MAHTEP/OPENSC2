@@ -182,7 +182,6 @@ def step(conductor, environment, qsource, num_step):
 
     path = os.path.join(conductor.BASE_PATH, conductor.file_input["EXTERNAL_FLOW"])
     TINY = 1.0e-5
-    str_check = "no interface"
 
     # CLUCA ADDNOD = MAXNOD*(ICOND-1)
 
@@ -527,11 +526,10 @@ def step(conductor, environment, qsource, num_step):
                 # performed, which makes thinks not easy to do; it is simpler 
                 # to construct interface names combining channels identifier 
                 interface_name = natural_sort(fluid_comp_j, fluid_comp_k.obj)
-                flag_ch_ch_contact = conductor.dict_interf_peri["ch_ch"][
+                # Check for valid interface.
+                if interface_name in conductor.dict_interf_peri["ch_ch"][
                     "Open"
-                ].get(interface_name, str_check)
-                # It is allowed to compare float with string (cdp, 09/2020)
-                if flag_ch_ch_contact != str_check:
+                ]:
                     # Perform calculation only if there is an interface, this 
                     # will reduce the computational time.
                     
@@ -847,10 +845,8 @@ def step(conductor, environment, qsource, num_step):
                 # conductor.dict_topology["ch_sol"][fluid_comp_r.identifier][s_comp.identifier] \
                 # but it is shorter so I decide to use it here (cdp, 09/2020)
                 chan_sol_topology = f"{fluid_comp_j.identifier}_{s_comp.identifier}"
-                flag_chan_sol_contact = conductor.dict_interf_peri["ch_sol"].get(
-                    chan_sol_topology, str_check
-                )
-                if flag_chan_sol_contact != str_check:
+                # Check for valid interface.
+                if chan_sol_topology in conductor.dict_interf_peri["ch_sol"]:
                     # Perform calculation only if there is an interface, this \
                     # will reduce the computational time (cdp, 09/2020)
                     # pressure equation: above main diagonal elements
@@ -986,10 +982,8 @@ def step(conductor, environment, qsource, num_step):
                 # [s_comp_l.identifier] but it is shorter so I decide to 
                 # use it here.
                 s_comp_topology = natural_sort(s_comp_l, s_comp_m.obj)
-                flag_sol_sol_contact = conductor.dict_interf_peri["sol_sol"].get(
-                    s_comp_topology, str_check
-                )
-                if flag_sol_sol_contact != str_check:
+                # Check for valid interface.
+                if s_comp_topology in conductor.dict_interf_peri["sol_sol"]:
                     # Perform calculation only if there is an interface, 
                     # this will reduce the computational time.
 
@@ -1020,10 +1014,8 @@ def step(conductor, environment, qsource, num_step):
             # end for s_comp_m (cdp, 07/2020)
             for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponent"].collection):
                 chan_sol_topology = f"{fluid_comp_j.identifier}_{s_comp_l.identifier}"
-                flag_chan_sol_contact = conductor.dict_interf_peri["ch_sol"].get(
-                    chan_sol_topology, str_check
-                )
-                if flag_chan_sol_contact != str_check:
+                # Check for valid interface.
+                if chan_sol_topology in conductor.dict_interf_peri["ch_sol"]:
                     # Perform calculation only if there is an interface, this \
                     # will reduce the computational time (cdp, 09/2020)
                     # SOLID COMPONENTS CONDUCTION EQUATION: main diagonal element \
