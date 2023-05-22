@@ -4,7 +4,10 @@ import numpy as np
 import os
 import re
 from scipy.linalg import solve_banded
-from utility_functions.auxiliary_functions import get_from_xlsx
+from utility_functions.auxiliary_functions import (
+    get_from_xlsx,
+    filter_component,
+)
 
 
 def get_time_step(conductor, transient_input, num_step):
@@ -511,278 +514,321 @@ def step(conductor, environment, qsource, num_step):
                 ]
                 * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
             )
-            for kk, fluid_comp_k in enumerate(conductor.inventory["FluidComponent"].collection):
-                if kk != jj:
 
-                    # Construct interface name: it can be found also in \
-                    # dict_topology["ch_ch"] but a search in dictionaties \
-                    # "Hydraulic_parallel" and "Thermal_contact" should be performed, \
-                    # which makes thinks not easy to do; it is simpler to construct \
-                    # interface names combining channels identifier (cdp, 09/2020)
-                    interface_name = natural_sort(fluid_comp_j, fluid_comp_k)
-                    flag_ch_ch_contact = conductor.dict_interf_peri["ch_ch"][
-                        "Open"
-                    ].get(interface_name, str_check)
-                    # It is allowed to compare float with string (cdp, 09/2020)
-                    if flag_ch_ch_contact != str_check:
-                        # Perform calculation only if there is an interface, this \
-                        # will reduce the computational time (cdp, 09/2020)
-                        # velocity equation: above/below main diagonal elements \
-                        # construction (cdp, 07/2020)
-                        # (j,j+num_fluid_components) [Pres_j] (cdp, 07/2020)
-                        SMAT[
-                            jj,
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                        ] = SMAT[
-                            jj,
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                        ] - (
-                            conductor.dict_Gauss_pt["K1"][interface_name][ii]
-                            * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-                            - conductor.dict_Gauss_pt["K2"][interface_name][ii]
-                        ) / (
-                            fluid_comp_j.channel.inputs["CROSSECTION"]
-                            * fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
-                        )
-                        # (j,k + num_fluid_components:2*num_fluid_components) [Pres_k] \
-                        # (cdp, 07/2020)
-                        SMAT[
-                            jj,
-                            kk
-                            + conductor.inventory["FluidComponent"].number,
-                        ] = (
-                            conductor.dict_Gauss_pt["K1"][interface_name][ii]
-                            * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-                            - conductor.dict_Gauss_pt["K2"][interface_name][ii]
-                        ) / (
-                            fluid_comp_j.channel.inputs["CROSSECTION"]
-                            * fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
-                        )
-                        # pressure equation: main diagonal elements construction \
-                        # (cdp, 07/2020)
-                        # (j+num_fluid_components,j+num_fluid_components) [Pres_j] \
-                        # (cdp, 07/2020)
-                        SMAT[
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                        ] = SMAT[
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                        ] + (
-                            fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                            / fluid_comp_j.channel.inputs["CROSSECTION"]
-                        ) * (
-                            conductor.dict_Gauss_pt["K3"][interface_name][ii]
+            f_comp_filter = filter_component(
+                conductor.inventory["FluidComponent"].collection,
+                fluid_comp_j,
+                )
+            for fluid_comp_k in f_comp_filter:
+
+                # Construct interface name: it can be found also in 
+                # dict_topology["ch_ch"] but a search in dictionaties 
+                # "Hydraulic_parallel" and "Thermal_contact" should be 
+                # performed, which makes thinks not easy to do; it is simpler 
+                # to construct interface names combining channels identifier 
+                interface_name = natural_sort(fluid_comp_j, fluid_comp_k.obj)
+                flag_ch_ch_contact = conductor.dict_interf_peri["ch_ch"][
+                    "Open"
+                ].get(interface_name, str_check)
+                # It is allowed to compare float with string (cdp, 09/2020)
+                if flag_ch_ch_contact != str_check:
+                    # Perform calculation only if there is an interface, this 
+                    # will reduce the computational time.
+                    
+                    # VELOCITY EQUATION: above/below main diagonal elements
+                    # construction:
+                    # (j,j+num_fluid_components) [Pres_j]
+                    SMAT[
+                        jj,
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                    ] = SMAT[
+                        jj,
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                    ] - (
+                        conductor.dict_Gauss_pt["K1"][interface_name][ii]
+                        * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
+                        - conductor.dict_Gauss_pt["K2"][interface_name][ii]
+                    ) / (
+                        fluid_comp_j.channel.inputs["CROSSECTION"]
+                        * fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
+                    )
+                    
+                    # (j,k + num_fluid_components:2*num_fluid_components) 
+                    # [Pres_k]
+                    SMAT[
+                        jj,
+                        fluid_comp_k.idx
+                        + conductor.inventory["FluidComponent"].number,
+                    ] = (
+                        conductor.dict_Gauss_pt["K1"][interface_name][ii]
+                        * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
+                        - conductor.dict_Gauss_pt["K2"][interface_name][ii]
+                    ) / (
+                        fluid_comp_j.channel.inputs["CROSSECTION"]
+                        * fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
+                    )
+                    
+                    # PRESSURE EQUATION: main diagonal elements construction:
+                    # (j+num_fluid_components,j+num_fluid_components) [Pres_j]
+                    SMAT[
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                    ] = SMAT[
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                    ] + (
+                        fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
+                        / fluid_comp_j.channel.inputs["CROSSECTION"]
+                    ) * (
+                        conductor.dict_Gauss_pt["K3"][interface_name][ii]
+                        - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
+                        * conductor.dict_Gauss_pt["K2"][interface_name][ii]
+                        - (
+                            fluid_comp_j.coolant.dict_Gauss_pt["total_enthalpy"][ii]
                             - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-                            * conductor.dict_Gauss_pt["K2"][interface_name][ii]
-                            - (
-                                fluid_comp_j.coolant.dict_Gauss_pt["total_enthalpy"][ii]
-                                - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-                                ** 2
-                                / 2.0
-                                - fluid_comp_j.coolant.dict_Gauss_pt[
-                                    "total_speed_of_sound"
-                                ][ii]
-                                ** 2
-                                / fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                            )
-                            * conductor.dict_Gauss_pt["K1"][interface_name][ii]
+                            ** 2
+                            / 2.0
+                            - fluid_comp_j.coolant.dict_Gauss_pt[
+                                "total_speed_of_sound"
+                            ][ii]
+                            ** 2
+                            / fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
                         )
-                        # pressure equation: above/below main diagonal elements \
-                        # construction (cdp, 07/2020)
-                        # (j+num_fluid_components,\
-                        # k + num_fluid_components:2*num_fluid_components) [Pres_k] \
-                        # (cdp, 07/2020)
-                        SMAT[
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                            kk
-                            + conductor.inventory["FluidComponent"].number,
-                        ] = -(
-                            fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                            / fluid_comp_j.channel.inputs["CROSSECTION"]
-                        ) * (
-                            conductor.dict_Gauss_pt["K3"][interface_name][ii]
+                        * conductor.dict_Gauss_pt["K1"][interface_name][ii]
+                    )
+                    
+                    # PRESSURE EQUATION: above/below main diagonal elements
+                    # construction:
+                    # (j+num_fluid_components,\
+                    # k + num_fluid_components:2*num_fluid_components) [Pres_k] 
+                    SMAT[
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                        fluid_comp_k.idx
+                        + conductor.inventory["FluidComponent"].number,
+                    ] = -(
+                        fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
+                        / fluid_comp_j.channel.inputs["CROSSECTION"]
+                    ) * (
+                        conductor.dict_Gauss_pt["K3"][interface_name][ii]
+                        - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
+                        * conductor.dict_Gauss_pt["K2"][interface_name][ii]
+                        - (
+                            fluid_comp_j.coolant.dict_Gauss_pt["total_enthalpy"][ii]
                             - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-                            * conductor.dict_Gauss_pt["K2"][interface_name][ii]
-                            - (
-                                fluid_comp_j.coolant.dict_Gauss_pt["total_enthalpy"][ii]
-                                - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-                                ** 2
-                                / 2.0
-                                - fluid_comp_j.coolant.dict_Gauss_pt[
-                                    "total_speed_of_sound"
-                                ][ii]
-                                ** 2
-                                / fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                            )
-                            * conductor.dict_Gauss_pt["K1"][interface_name][ii]
+                            ** 2
+                            / 2.0
+                            - fluid_comp_j.coolant.dict_Gauss_pt[
+                                "total_speed_of_sound"
+                            ][ii]
+                            ** 2
+                            / fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
                         )
-                        # (j+num_fluid_components,j+2*num_fluid_components) [Temp_j] I \
-                        # (cdp, 07/2020)
-                        SMAT[
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                            jj
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                        ] = SMAT[
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                            jj
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                        ] + (
-                            fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                            / fluid_comp_j.channel.inputs["CROSSECTION"]
-                        ) * (
-                            conductor.dict_interf_peri["ch_ch"]["Open"][interface_name]
-                            * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
-                                interface_name
+                        * conductor.dict_Gauss_pt["K1"][interface_name][ii]
+                    )
+                    
+                    # (j+num_fluid_components,j+2*num_fluid_components) 
+                    # [Temp_j] I
+                    SMAT[
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                        jj
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                    ] = SMAT[
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                        jj
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                    ] + (
+                        fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
+                        / fluid_comp_j.channel.inputs["CROSSECTION"]
+                    ) * (
+                        conductor.dict_interf_peri["ch_ch"]["Open"][interface_name]
+                        * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
+                            interface_name
+                        ][ii]
+                        + conductor.dict_interf_peri["ch_ch"]["Close"][
+                            interface_name
+                        ]
+                        * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Close"][
+                            interface_name
+                        ][ii]
+                    )
+
+                    # (j+num_fluid_components, 
+                    # k + 2*num_fluid_components:dict_N_equation
+                    # ["FluidComponent"]) [Temp_j]
+                    SMAT[
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                        fluid_comp_k.idx
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                    ] = -(
+                        fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
+                        / fluid_comp_j.channel.inputs["CROSSECTION"]
+                    ) * (
+                        conductor.dict_interf_peri["ch_ch"]["Open"][interface_name]
+                        * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
+                            interface_name
+                        ][ii]
+                        + conductor.dict_interf_peri["ch_ch"]["Close"][
+                            interface_name
+                        ]
+                        * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Close"][
+                            interface_name
+                        ][ii]
+                    )
+                    
+                    # TEMPERATURE EQUATION: elements below main diagonal \
+                    # construction:
+                    # (j+2*num_fluid_components,j+num_fluid_components) [Pres_j]
+                    SMAT[
+                        jj
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                    ] = SMAT[
+                        jj
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                        jj
+                        + conductor.inventory["FluidComponent"].number,
+                    ] + 1.0 / (
+                        fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
+                        * fluid_comp_j.coolant.dict_Gauss_pt[
+                            "total_isochoric_specific_heat"
+                        ][ii]
+                        * fluid_comp_j.channel.inputs["CROSSECTION"]
+                    ) * (
+                        conductor.dict_Gauss_pt["K3"][interface_name][ii]
+                        - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
+                        * conductor.dict_Gauss_pt["K2"][interface_name][ii]
+                        - (
+                            fluid_comp_j.coolant.dict_Gauss_pt["total_enthalpy"][ii]
+                            - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
+                            ** 2
+                            / 2.0
+                            - fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
+                            * fluid_comp_j.coolant.dict_Gauss_pt[
+                                "total_isochoric_specific_heat"
                             ][ii]
-                            + conductor.dict_interf_peri["ch_ch"]["Close"][
-                                interface_name
-                            ]
-                            * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Close"][
-                                interface_name
-                            ][ii]
+                            * fluid_comp_j.coolant.dict_Gauss_pt["temperature"][ii]
                         )
-                        # (j+num_fluid_components,\
-                        # k + 2*num_fluid_components:dict_N_equation["FluidComponent"]) [Temp_j] # (cdp, 07/2020)
-                        SMAT[
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                            kk
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                        ] = -(
-                            fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                            / fluid_comp_j.channel.inputs["CROSSECTION"]
-                        ) * (
-                            conductor.dict_interf_peri["ch_ch"]["Open"][interface_name]
-                            * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
-                                interface_name
-                            ][ii]
-                            + conductor.dict_interf_peri["ch_ch"]["Close"][
-                                interface_name
-                            ]
-                            * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Close"][
-                                interface_name
-                            ][ii]
-                        )
-                        # temperature equation: elements below main diagonal \
-                        # construction (cdp, 07/2020)
-                        # (j+2*num_fluid_components,j+num_fluid_components) [Pres_j] \
-                        # (cdp, 07/2020)
-                        SMAT[
-                            jj
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                        ] = SMAT[
-                            jj
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                            jj
-                            + conductor.inventory["FluidComponent"].number,
-                        ] + 1.0 / (
+                        * conductor.dict_Gauss_pt["K1"][interface_name][ii]
+                    )
+                    
+                    # (j+2*num_fluid_components,\
+                    # k + num_fluid_components:2*num_fluid_components) [Pres_k]
+                    SMAT[
+                        jj
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                        fluid_comp_k.idx
+                        + conductor.inventory["FluidComponent"].number,
+                    ] = (
+                        -1.0
+                        / (
                             fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
                             * fluid_comp_j.coolant.dict_Gauss_pt[
                                 "total_isochoric_specific_heat"
                             ][ii]
                             * fluid_comp_j.channel.inputs["CROSSECTION"]
-                        ) * (
+                        )
+                        * (
                             conductor.dict_Gauss_pt["K3"][interface_name][ii]
                             - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
                             * conductor.dict_Gauss_pt["K2"][interface_name][ii]
                             - (
-                                fluid_comp_j.coolant.dict_Gauss_pt["total_enthalpy"][ii]
+                                fluid_comp_j.coolant.dict_Gauss_pt[
+                                    "total_enthalpy"
+                                ][ii]
                                 - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
                                 ** 2
                                 / 2.0
-                                - fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
+                                - fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][
+                                    ii
+                                ]
                                 * fluid_comp_j.coolant.dict_Gauss_pt[
                                     "total_isochoric_specific_heat"
                                 ][ii]
-                                * fluid_comp_j.coolant.dict_Gauss_pt["temperature"][ii]
+                                * fluid_comp_j.coolant.dict_Gauss_pt["temperature"][
+                                    ii
+                                ]
                             )
                             * conductor.dict_Gauss_pt["K1"][interface_name][ii]
                         )
-                        # (j+2*num_fluid_components,\
-                        # k + num_fluid_components:2*num_fluid_components) [Pres_k] \
-                        # (cdp, 07/2020)
-                        SMAT[
-                            jj
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                            kk
-                            + conductor.inventory["FluidComponent"].number,
-                        ] = (
-                            -1.0
-                            / (
-                                fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
-                                * fluid_comp_j.coolant.dict_Gauss_pt[
-                                    "total_isochoric_specific_heat"
-                                ][ii]
-                                * fluid_comp_j.channel.inputs["CROSSECTION"]
-                            )
-                            * (
-                                conductor.dict_Gauss_pt["K3"][interface_name][ii]
-                                - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-                                * conductor.dict_Gauss_pt["K2"][interface_name][ii]
-                                - (
-                                    fluid_comp_j.coolant.dict_Gauss_pt[
-                                        "total_enthalpy"
-                                    ][ii]
-                                    - fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-                                    ** 2
-                                    / 2.0
-                                    - fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][
-                                        ii
-                                    ]
-                                    * fluid_comp_j.coolant.dict_Gauss_pt[
-                                        "total_isochoric_specific_heat"
-                                    ][ii]
-                                    * fluid_comp_j.coolant.dict_Gauss_pt["temperature"][
-                                        ii
-                                    ]
-                                )
-                                * conductor.dict_Gauss_pt["K1"][interface_name][ii]
-                            )
-                        )
-                        # temperature equation: main diagonal element construction \
-                        # (cdp, 07/2020)
-                        # (j+2*num_fluid_components,j+2*num_fluid_components) \
-                        # [Temp_j] I (cdp, 07/2020)
-                        SMAT[
-                            jj
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                            jj
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                        ] = SMAT[
-                            jj
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                            jj
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                        ] + 1.0 / (
+                    )
+                    
+                    # TEMPERATURE EQUATION: main diagonal element construction:
+                    # (j+2*num_fluid_components,j+2*num_fluid_components) 
+                    # [Temp_j] I
+                    SMAT[
+                        jj
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                        jj
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                    ] = SMAT[
+                        jj
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                        jj
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                    ] + 1.0 / (
+                        fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
+                        * fluid_comp_j.coolant.dict_Gauss_pt[
+                            "total_isochoric_specific_heat"
+                        ][ii]
+                        * fluid_comp_j.channel.inputs["CROSSECTION"]
+                    ) * (
+                        conductor.dict_interf_peri["ch_ch"]["Open"][interface_name]
+                        * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
+                            interface_name
+                        ][ii]
+                        + conductor.dict_interf_peri["ch_ch"]["Close"][
+                            interface_name
+                        ]
+                        * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Close"][
+                            interface_name
+                        ][ii]
+                    )
+                    
+                    # TEMPERATURE EQUATION: above/below main diagonal elements 
+                    # construction:
+                    # (j+2*num_fluid_components,k + 2*num_fluid_components) 
+                    # [Temp_k]
+                    SMAT[
+                        jj
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                        fluid_comp_k.idx
+                        + 2
+                        * conductor.inventory["FluidComponent"].number,
+                    ] = (
+                        -1.0
+                        / (
                             fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
                             * fluid_comp_j.coolant.dict_Gauss_pt[
                                 "total_isochoric_specific_heat"
                             ][ii]
                             * fluid_comp_j.channel.inputs["CROSSECTION"]
-                        ) * (
-                            conductor.dict_interf_peri["ch_ch"]["Open"][interface_name]
+                        )
+                        * (
+                            conductor.dict_interf_peri["ch_ch"]["Open"][
+                                interface_name
+                            ]
                             * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
                                 interface_name
                             ][ii]
@@ -793,44 +839,9 @@ def step(conductor, environment, qsource, num_step):
                                 interface_name
                             ][ii]
                         )
-                        # temperature equation: above/below main diagonal elements \
-                        # construction (cdp, 07/2020)
-                        # (j+2*num_fluid_components,k + 2*num_fluid_components) [Temp_k] \
-                        # (cdp, 07/2020)
-                        SMAT[
-                            jj
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                            kk
-                            + 2
-                            * conductor.inventory["FluidComponent"].number,
-                        ] = (
-                            -1.0
-                            / (
-                                fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
-                                * fluid_comp_j.coolant.dict_Gauss_pt[
-                                    "total_isochoric_specific_heat"
-                                ][ii]
-                                * fluid_comp_j.channel.inputs["CROSSECTION"]
-                            )
-                            * (
-                                conductor.dict_interf_peri["ch_ch"]["Open"][
-                                    interface_name
-                                ]
-                                * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
-                                    interface_name
-                                ][ii]
-                                + conductor.dict_interf_peri["ch_ch"]["Close"][
-                                    interface_name
-                                ]
-                                * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Close"][
-                                    interface_name
-                                ][ii]
-                            )
-                        )
-                    # end if flag_ch_ch_contact (cdp, 09/2020)
-                # end if kk != jj (cdp, 07/2020)
-            # end for kk (cdp, 07/2020)
+                    )
+                # end if flag_ch_ch_contact (cdp, 09/2020)
+
             for ll, s_comp in enumerate(conductor.inventory["SolidComponent"].collection):
                 # chan_sol_topology is equivalent to \
                 # conductor.dict_topology["ch_sol"][fluid_comp_r.identifier][s_comp.identifier] \
@@ -965,40 +976,48 @@ def step(conductor, environment, qsource, num_step):
             # END K MATRIX: solid components equation (cdp, 07/2020)
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-            for mm, s_comp_m in enumerate(conductor.inventory["SolidComponent"].collection):
-                if mm != ll:
-                    # s_comp_topology is equivalent to \
-                    # conductor.dict_topology["sol_sol"][s_comp_m.identifier][s_comp_l.identifier] \
-                    # but it is shorter so I decide to use it here (cdp, 09/2020)
-                    s_comp_topology = natural_sort(s_comp_l, s_comp_m)
-                    flag_sol_sol_contact = conductor.dict_interf_peri["sol_sol"].get(
-                        s_comp_topology, str_check
+            s_comp_filter = filter_component(
+                conductor.inventory["SolidComponent"].collection,
+                s_comp_l
+            )
+            for s_comp_m in s_comp_filter:
+                # s_comp_topology is equivalent to 
+                # conductor.dict_topology["sol_sol"][s_comp_m.identifier]
+                # [s_comp_l.identifier] but it is shorter so I decide to 
+                # use it here.
+                s_comp_topology = natural_sort(s_comp_l, s_comp_m.obj)
+                flag_sol_sol_contact = conductor.dict_interf_peri["sol_sol"].get(
+                    s_comp_topology, str_check
+                )
+                if flag_sol_sol_contact != str_check:
+                    # Perform calculation only if there is an interface, 
+                    # this will reduce the computational time.
+
+                    # SOLID COMPONENTS CONDUCTION EQUATION: main diagonal 
+                    # element construction:
+                    # (l + dict_N_equation["FluidComponent"],l 
+                    # + dict_N_equation["FluidComponent"]) [Temp_l] II 
+                    # + III
+                    SMAT[neq, neq] = (
+                        SMAT[neq, neq]
+                        + conductor.dict_interf_peri["sol_sol"][s_comp_topology]
+                        * conductor.dict_Gauss_pt["HTC"]["sol_sol"]["cond"][
+                            s_comp_topology
+                        ][ii]
                     )
-                    if flag_sol_sol_contact != str_check:
-                        # Perform calculation only if there is an interface, this \
-                        # will reduce the computational time (cdp, 09/2020)
-                        # solid components conduction equation: main diagonal element \
-                        # construction (cdp, 07/2020)
-                        # (l + dict_N_equation["FluidComponent"],l + dict_N_equation["FluidComponent"]) [Temp_l] II + III # (cdp, 07/2020)
-                        SMAT[neq, neq] = (
-                            SMAT[neq, neq]
-                            + conductor.dict_interf_peri["sol_sol"][s_comp_topology]
-                            * conductor.dict_Gauss_pt["HTC"]["sol_sol"]["cond"][
-                                s_comp_topology
-                            ][ii]
-                        )
-                        # solid components conduction equation: above/below main diagonal \
-                        # elements construction (cdp, 07/2020)
-                        # (l + dict_N_equation["FluidComponent"],m + dict_N_equation["FluidComponent"]) [Temp_m] (cdp, 07/2020)
-                        SMAT[neq, mm + conductor.dict_N_equation["FluidComponent"]] = (
-                            -conductor.dict_interf_peri["sol_sol"][s_comp_topology]
-                            * conductor.dict_Gauss_pt["HTC"]["sol_sol"]["cond"][
-                                s_comp_topology
-                            ][ii]
-                        )
-                    # end if flag_sol_sol_contact (cdp, 09/2020)
-                # end if mm != ll (cdp, 07/2020)
-            # end for mm (cdp, 07/2020)
+                    
+                    # SOLID COMPONENTS CONDUCTION EQUATION: above/below 
+                    # main diagonal elements construction:
+                    # (l + dict_N_equation["FluidComponent"],m 
+                    # + dict_N_equation["FluidComponent"]) [Temp_m]
+                    SMAT[neq, s_comp_m.idx + conductor.dict_N_equation["FluidComponent"]] = (
+                        -conductor.dict_interf_peri["sol_sol"][s_comp_topology]
+                        * conductor.dict_Gauss_pt["HTC"]["sol_sol"]["cond"][
+                            s_comp_topology
+                        ][ii]
+                    )
+                # end if flag_sol_sol_contact (cdp, 09/2020)
+            # end for s_comp_m (cdp, 07/2020)
             for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponent"].collection):
                 chan_sol_topology = f"{fluid_comp_j.identifier}_{s_comp_l.identifier}"
                 flag_chan_sol_contact = conductor.dict_interf_peri["ch_sol"].get(
@@ -1007,7 +1026,7 @@ def step(conductor, environment, qsource, num_step):
                 if flag_chan_sol_contact != str_check:
                     # Perform calculation only if there is an interface, this \
                     # will reduce the computational time (cdp, 09/2020)
-                    # solid components conduction equation: main diagonal element \
+                    # SOLID COMPONENTS CONDUCTION EQUATION: main diagonal element \
                     # construction (cdp, 07/2020)
                     # (l + dict_N_equation["FluidComponent"],l + dict_N_equation["FluidComponent"]) [Temp_l] I (cdp, 07/2020)
                     SMAT[neq, neq] = (
@@ -1017,7 +1036,7 @@ def step(conductor, environment, qsource, num_step):
                             ii
                         ]
                     )
-                    # solid components conduction equation: below main diagonal elements
+                    # SOLID COMPONENTS CONDUCTION EQUATION: below main diagonal elements
                     # construction (cdp, 07/2020)
                     # (l + dict_N_equation["FluidComponent"],l + 2*num_fluid_components) [Temp_j] (cdp, 07/2020)
                     SMAT[
