@@ -16,7 +16,10 @@ def save_properties(conductor, f_path):
             conductor.inventory["FluidComponent"].collection[0].coolant.dict_node_pt.keys()
         )
         list_prop_chan.append("friction_factor")
-        list_units = [
+        list_prop_chan.insert(0,"zcoord")
+        list_prop_chan = tuple(list_prop_chan)
+        list_units = (
+            "(m)",
             "(Pa)",
             "(K)",
             "(kg/m^3)",
@@ -34,10 +37,15 @@ def save_properties(conductor, f_path):
             "(~)",
             "(kg/s)",
             "(~)",
-        ]
-        header_chan = "zcoord (m)"
-        for jj in range(len(list_prop_chan)):
-            header_chan = f"{header_chan}\t{list_prop_chan[jj]} {list_units[jj]}"
+        )
+
+        # Build a tuple of string with property name and property units 
+        # exploiting generator expression; used to build header_chan.
+        prop_unit_chan = tuple(f"{prop_name} {list_units[prop_idx]}\t" for prop_idx, prop_name in enumerate(list_prop_chan))
+        # Build header_chan concatenating strings in prop_unit_chan; the 
+        # trailing \t caracter is removed with rstrip.
+        header_chan = "".join(prop for prop in prop_unit_chan).rstrip("\t")
+
     header_st = "zcoord (m)\ttemperature (K)\tB_field (T)\tT_cur_sharing (K)"
     header_stab = "zcoord (m)\ttemperature (K)\tB_field (T)"
     header_jk = "zcoord (m)\ttemperature (K)"
