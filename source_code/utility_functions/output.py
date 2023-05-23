@@ -108,31 +108,30 @@ def save_simulation_space(conductor, f_path, n_digit_time):
     time = round(conductor.Space_save[conductor.i_save], n_digit_time)
     conductor.num_step_save[conductor.i_save] = conductor.cond_num_step
     # end if len(tt[0]) (cdp, 12/2020)
-    prop_chan = [
+    prop_chan = (
         "zcoord",
         "velocity",
         "pressure",
         "temperature",
         "total_density",
         "friction_factor",
-    ]
+    )
     header_chan = "zcoord (m)\tvelocity (m/s)\tpressure (Pa)\ttemperature (K)\ttotal_density (kg/m^3)\tfriction_factor (~)"
     for fluid_comp in conductor.inventory["FluidComponent"].collection:
         file_path = os.path.join(
             f_path, f"{fluid_comp.identifier}_({conductor.cond_num_step})_sd.tsv"
         )
         A_chan = np.zeros((conductor.grid_features["N_nod"], len(prop_chan)))
-        for ii in range(len(prop_chan)):
-            if prop_chan[ii] == "zcoord":
-                A_chan[:, ii] = conductor.grid_features[prop_chan[ii]]
-            elif prop_chan[ii] != "friction_factor":
-                A_chan[:, ii] = fluid_comp.coolant.dict_node_pt[prop_chan[ii]]
+        for prop_idx, prop_name in enumerate(prop_chan):
+            if prop_name == "zcoord":
+                A_chan[:, prop_idx] = conductor.grid_features[prop_name]
+            elif prop_name != "friction_factor":
+                A_chan[:, prop_idx] = fluid_comp.coolant.dict_node_pt[prop_name]
             else:
                 # Save friction factor
-                A_chan[:, ii] = fluid_comp.channel.dict_friction_factor[True]["total"]
-
-            # end if prop_chan[ii] (cdp, 01/2021)
-        # end for ii (cdp, 01/2021)
+                A_chan[:, prop_idx] = fluid_comp.channel.dict_friction_factor[True]["total"]
+            # end if prop_name
+        # end for ii
         with open(file_path, "w") as writer:
             np.savetxt(writer, A_chan, delimiter="\t", header=header_chan, comments="")
     # end for fluid_comp (cdp, 10/2020)
@@ -190,49 +189,49 @@ def save_simulation_space(conductor, f_path, n_digit_time):
             )
 
     headers_jk = "zcoord (m)\ttemperature (K)"
-    prop_jk = ["zcoord", "temperature"]
+    prop_jk = ("zcoord", "temperature")
     # Loop to save jacket properties spatial distribution.
     for jk in conductor.inventory["JacketComponent"].collection:
         file_path = os.path.join(
             f_path, f"{jk.identifier}_({conductor.cond_num_step})_sd.tsv"
         )
         A_jk = np.zeros((conductor.grid_features["N_nod"], len(prop_jk)))
-        for ii in range(len(prop_jk)):
-            if prop_jk[ii] == "zcoord":
-                A_jk[:, ii] = conductor.grid_features[prop_jk[ii]]
+        for prop_idx, prop_name in enumerate(prop_jk):
+            if prop_name == "zcoord":
+                A_jk[:, prop_idx] = conductor.grid_features[prop_name]
             else:
-                A_jk[:, ii] = jk.dict_node_pt[prop_jk[ii]]
-            # end if prop_s_comp[ii] (cdp, 01/2021)
-        # end for ii (cdp, 01/2021)
+                A_jk[:, prop_idx] = jk.dict_node_pt[prop_name]
+            # end if prop_name
+        # end for ii
         with open(file_path, "w") as writer:
             np.savetxt(writer, A_jk, delimiter="\t", header=headers_jk, comments="")
-    # end for s_comp (cdp, 10/2020)
+    # end for s_comp
     # Save linear power due to electric resistance along the SOs (available in
     # gauss nodal points).
     headers_s_comp = (
         "zcoord_gauss (m)\tcurrent_along (A)\tdelta_voltage_along (V)\tP_along (W/m)"
     )
-    prop_s_comp = [
+    prop_s_comp = (
         "zcoord_gauss",
         "current_along",
         "delta_voltage_along",
         "linear_power_el_resistance",
-    ]
+    )
     for s_comp in conductor.inventory["SolidComponent"].collection:
         file_path = os.path.join(
             f_path, f"{s_comp.identifier}_({conductor.cond_num_step})_gauss_sd.tsv"
         )
         A_s_comp = np.zeros((conductor.grid_input["NELEMS"], len(prop_s_comp)))
-        for ii in range(len(prop_s_comp)):
-            if prop_s_comp[ii] == "zcoord_gauss":
-                A_s_comp[:, ii] = conductor.grid_features[prop_s_comp[ii]]
+        for prop_idx, prop_name in enumerate(prop_s_comp):
+            if prop_name == "zcoord_gauss":
+                A_s_comp[:, prop_idx] = conductor.grid_features[prop_name]
             else:
-                if prop_s_comp[ii] == "linear_power_el_resistance":
-                    A_s_comp[:, ii] = s_comp.dict_Gauss_pt[prop_s_comp[ii]][:, 0]
+                if prop_name == "linear_power_el_resistance":
+                    A_s_comp[:, prop_idx] = s_comp.dict_Gauss_pt[prop_name][:, 0]
                 else:
-                    A_s_comp[:, ii] = s_comp.dict_Gauss_pt[prop_s_comp[ii]]
-            # end if prop_s_comp[ii] (cdp, 01/2021)
-        # end for ii (cdp, 01/2021)
+                    A_s_comp[:, prop_idx] = s_comp.dict_Gauss_pt[prop_name]
+            # end if prop_name
+        # end for ii
         with open(file_path, "w") as writer:
             np.savetxt(
                 writer, A_s_comp, delimiter="\t", header=headers_s_comp, comments=""
