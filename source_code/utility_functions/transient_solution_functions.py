@@ -489,33 +489,12 @@ def step(conductor, environment, qsource, num_step):
         ] = np.eye(conductor.dict_N_equation["FluidComponent"])
         # END M MATRIX: fluid components equations (cdp, 07/2020)
         for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponent"].collection):
+
+            # Build equations index for fluid component object j.
+            fluid_j_eq_idx = __build_fluid_eq_idx(jj,conductor.inventory["FluidComponent"].number)
+
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
-            # coefficients coming from velocity equation (cdp, 07/2020)
-            AMAT[jj, jj] = fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-            AMAT[jj, jj + conductor.inventory["FluidComponent"].number] = (
-                1 / fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
-            )
-            # cefficients coming from pressure equation (cdp, 07/2020)
-            AMAT[jj + conductor.inventory["FluidComponent"].number, jj] = (
-                fluid_comp_j.coolant.dict_Gauss_pt["total_speed_of_sound"][ii] ** 2
-                * fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
-            )
-            AMAT[
-                jj + conductor.inventory["FluidComponent"].number,
-                jj + conductor.inventory["FluidComponent"].number,
-            ] = fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-            # cefficients coming from temperature equation (cdp, 07/2020)
-            AMAT[
-                jj + 2 * conductor.inventory["FluidComponent"].number, jj
-            ] = (
-                fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                * fluid_comp_j.coolant.dict_Gauss_pt["temperature"][ii]
-            )
-            AMAT[
-                jj + 2 * conductor.inventory["FluidComponent"].number,
-                jj + 2 * conductor.inventory["FluidComponent"].number,
-            ] = fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-            # END A MATRIX: fluid components equations (cdp, 07/2020)
+            AMAT = __build_amat(AMAT, fluid_comp_j, ii, fluid_j_eq_idx)
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
             # UPWIND differencing contribution a' la finite-difference
