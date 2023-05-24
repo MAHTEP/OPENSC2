@@ -321,12 +321,12 @@ def step(conductor, environment, qsource, num_step):
 
     # CLUCA ADDNOD = MAXNOD*(ICOND-1)
 
-    # Matrices initialization (cdp, 07/2020)
-    MASMAT = np.zeros((conductor.dict_band["Full"], conductor.dict_N_equation["Total"]))
-    FLXMAT = np.zeros((conductor.dict_band["Full"], conductor.dict_N_equation["Total"]))
-    SORMAT = np.zeros((conductor.dict_band["Full"], conductor.dict_N_equation["Total"]))
-    DIFMAT = np.zeros((conductor.dict_band["Full"], conductor.dict_N_equation["Total"]))
-    SYSMAT = np.zeros((conductor.dict_band["Full"], conductor.dict_N_equation["Total"]))
+    # Matrices initialization.
+    MASMAT,FLXMAT,SORMAT,DIFMAT,SYSMAT = matrix_initialization(
+        conductor.dict_band["Full"],
+        conductor.dict_N_equation["Total"]
+    )
+    
     if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
         # Backward Euler or Crank-Nicolson (cdp, 10/2020)
         if conductor.cond_num_step > 1:
@@ -341,7 +341,7 @@ def step(conductor, environment, qsource, num_step):
     ASCALING = np.zeros(conductor.dict_N_equation["Total"])
     UPWEQT = np.zeros(conductor.dict_N_equation["NODOFS"])
     # Known terms vector (cdp, 10/2020)
-    Known = np.zeros(conductor.dict_N_equation["Total"])
+    Known = np.zeros_like(ASCALING)
 
     # qsource initialization to zeros (cdp, 07/2020)
     # questa inizializzazione è provvisoria, da capire cosa succede quando ci \
@@ -482,66 +482,17 @@ def step(conductor, environment, qsource, num_step):
     # riscrivere in forma array smart una volta risolti tutti i dubbi, se possibile (cdp, 07/2020)
     for ii in range(conductor.grid_input["NELEMS"]):
 
-        # Auxiliary matrices initialization to zeros at each Gauss point \
-        # (cdp, 08/2020)
-        MMAT = np.zeros(
-            (conductor.dict_N_equation["NODOFS"], conductor.dict_N_equation["NODOFS"])
+        # Auxiliary matrices initialization to zeros at each Gauss point.
+        MMAT,AMAT,KMAT,SMAT,SVEC = ndarray_initialization(
+            conductor.dict_N_equation["NODOFS"],
+            conductor.cond_num_step
         )
-        AMAT = np.zeros(
-            (conductor.dict_N_equation["NODOFS"], conductor.dict_N_equation["NODOFS"])
+        
+        ELMMAT,ELAMAT,ELKMAT,ELSMAT,ELSLOD = ndarray_initialization(
+            2 * conductor.dict_N_equation["NODOFS"],
+            conductor.cond_num_step
         )
-        KMAT = np.zeros(
-            (conductor.dict_N_equation["NODOFS"], conductor.dict_N_equation["NODOFS"])
-        )
-        SMAT = np.zeros(
-            (conductor.dict_N_equation["NODOFS"], conductor.dict_N_equation["NODOFS"])
-        )
-        if conductor.cond_num_step == 1:
-            # To correctly apply the theta method (cdp, 10/2020)
-            # key 0 is for the initialization (time step number is 0);
-            # key 1 is for the first time step after the initialization \
-            # (cdp, 10/2020)
-            SVEC = {
-                0: np.zeros((conductor.dict_N_equation["NODOFS"], 2)),
-                1: np.zeros((conductor.dict_N_equation["NODOFS"], 2)),
-            }
-        else:
-            SVEC = np.zeros((conductor.dict_N_equation["NODOFS"], 2))
-        ELMMAT = np.zeros(
-            (
-                2 * conductor.dict_N_equation["NODOFS"],
-                2 * conductor.dict_N_equation["NODOFS"],
-            )
-        )
-        ELAMAT = np.zeros(
-            (
-                2 * conductor.dict_N_equation["NODOFS"],
-                2 * conductor.dict_N_equation["NODOFS"],
-            )
-        )
-        ELSMAT = np.zeros(
-            (
-                2 * conductor.dict_N_equation["NODOFS"],
-                2 * conductor.dict_N_equation["NODOFS"],
-            )
-        )
-        ELKMAT = np.zeros(
-            (
-                2 * conductor.dict_N_equation["NODOFS"],
-                2 * conductor.dict_N_equation["NODOFS"],
-            )
-        )
-        # To correctly apply the theta method (cdp, 10/2020)
-        # key 0 is for the initialization (time step number is 0);
-        # key 1 is for the first time step after the initialization \
-        # (cdp, 10/2020)
-        if conductor.cond_num_step == 1:
-            ELSLOD = {
-                0: np.zeros(2 * conductor.dict_N_equation["NODOFS"]),
-                1: np.zeros(2 * conductor.dict_N_equation["NODOFS"]),
-            }
-        else:
-            ELSLOD = np.zeros(2 * conductor.dict_N_equation["NODOFS"])
+        
         jump = conductor.dict_N_equation["NODOFS"] * ii
 
         # (cdp, 07/2020)
