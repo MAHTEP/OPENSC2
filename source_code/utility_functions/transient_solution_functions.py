@@ -202,13 +202,14 @@ def ndarray_initialization(dimension:int,num_step:int)->tuple:
         array_initialization(dimension, num_step)
     )
 
-def array_initialization(dimension:int, num_step:int)-> Union[NamedTuple,np.ndarray]:
-    """Wrapper of function np.zeros that initializes array of given dimension according to the time step number.
+def array_initialization(dimension:int, num_step:int, col:int=0)-> Union[NamedTuple,np.ndarray]:
+    """Wrapper of function np.zeros that initializes array of shape (dimension, col) according to the time step number.
     N.B. the application of the theta method should be completely rivisited in the whole code.
 
     Args:
         dimension (int): number of elements (rows) of the array to be initialized.
         num_step (int): time step number.
+        col (int, optional): number of columns to be assigned to the array. If col is 0, the array shape is (dimension,), else array shape is (dimension,col). Defaults to 0.
 
     Returns:
         Union[NamedTuple,np.ndarray]: namedtuple with array if num_step is 1; np.ndarray in all other cases.
@@ -218,14 +219,26 @@ def array_initialization(dimension:int, num_step:int)-> Union[NamedTuple,np.ndar
         Array = namedtuple("Array",["previous","present"])
         # To correctly apply the theta method (to be rivisited in the whole 
         # code!).
-        # key 0 is for the initialization (time step number is 0);
-        # key 1 is for the first time step after the initialization
-        return Array(
-            previous=np.zeros((dimension, 2)),
-            present=np.zeros((dimension, 2)),
-        )
+        # previous is for the initialization (time step number is 0);
+        # present is for the first time step after the initialization
+        
+        # Check on col to assign the correct shape to the array.
+        if col: # used to define SVEC.
+            return Array(
+                previous=np.zeros((dimension, col)),
+                present=np.zeros((dimension, col)),
+            )
+        else: # used to define ELSLOD.
+            return Array(
+                previous=np.zeros(dimension),
+                present=np.zeros(dimension),
+            )
     else:
-        return np.zeros((dimension, 2))
+        # Check on col to assign the correct shape to the array.
+        if col: # used to define SVEC.
+            return np.zeros((dimension, col))
+        else: # used to define ELSLOD.
+            return np.zeros(dimension)
 
 def __build_fluid_eq_idx(fluid_idx:int,n_fluid:int)->NamedTuple:
     """Function that evaluates the index of the velocity, pressure and temperarture equation of the i-th fluid component object, collecting them in a namedtuple.
