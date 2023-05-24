@@ -1165,11 +1165,11 @@ def step(conductor, environment, qsource, num_step):
                 # initialization (cdp, 10/2020)
                 if conductor.cond_num_step == 1:
                     # Current time step (cdp, 10/2020)
-                    SVEC[1][neq, 0] = s_comp_l.dict_Gauss_pt["Q1"][ii, 0]
-                    SVEC[1][neq, 1] = s_comp_l.dict_Gauss_pt["Q2"][ii, 0]
+                    SVEC.present[neq, 0] = s_comp_l.dict_Gauss_pt["Q1"][ii, 0]
+                    SVEC.present[neq, 1] = s_comp_l.dict_Gauss_pt["Q2"][ii, 0]
                     # Previous time step (cdp, 10/2020)
-                    SVEC[0][neq, 0] = s_comp_l.dict_Gauss_pt["Q1"][ii, 1]
-                    SVEC[0][neq, 1] = s_comp_l.dict_Gauss_pt["Q2"][ii, 1]
+                    SVEC.previous[neq, 0] = s_comp_l.dict_Gauss_pt["Q1"][ii, 1]
+                    SVEC.previous[neq, 1] = s_comp_l.dict_Gauss_pt["Q2"][ii, 1]
                 else:
                     # Compute only at the current time step (cdp, 10/2020)
                     SVEC[neq, 0] = s_comp_l.dict_Gauss_pt["Q1"][ii, 0]
@@ -1181,20 +1181,20 @@ def step(conductor, environment, qsource, num_step):
                 # initialization (cdp, 10/2020)
                 if conductor.cond_num_step == 1:
                     # Current time step (cdp, 10/2020)
-                    SVEC[1][neq, 0] = (
+                    SVEC.present[neq, 0] = (
                         s_comp_l.dict_Gauss_pt["Q1"][ii, 0]
                         - qsource[ii, ll - conductor.dict_N_equation["StrandComponent"] - 1]
                     )
-                    SVEC[1][neq, 1] = (
+                    SVEC.present[neq, 1] = (
                         s_comp_l.dict_Gauss_pt["Q2"][ii, 0]
                         - qsource[ii + 1, ll - conductor.dict_N_equation["StrandComponent"] - 1]
                     )
                     # Previous time step (cdp, 10/2020)
-                    SVEC[0][neq, 0] = (
+                    SVEC.previous[neq, 0] = (
                         s_comp_l.dict_Gauss_pt["Q1"][ii, 1]
                         - qsource[ii, ll - conductor.dict_N_equation["StrandComponent"] - 1]
                     )
-                    SVEC[0][neq, 1] = (
+                    SVEC.previous[neq, 1] = (
                         s_comp_l.dict_Gauss_pt["Q2"][ii, 1]
                         - qsource[ii + 1, ll - conductor.dict_N_equation["StrandComponent"] - 1]
                     )
@@ -1244,20 +1244,20 @@ def step(conductor, environment, qsource, num_step):
                             )
                         # End if conductor.inputs["Is_rectangular"]
 
-                        SVEC[1][neq, 0] = (
-                            SVEC[1][neq, 0]
+                        SVEC.present[neq, 0] = (
+                            SVEC.present[neq, 0]
                             + coef * environment.inputs["Temperature"]
                         )  # W/m
-                        SVEC[1][neq, 1] = (
-                            SVEC[1][neq, 1]
+                        SVEC.present[neq, 1] = (
+                            SVEC.present[neq, 1]
                             + coef * environment.inputs["Temperature"]
                         )  # W/m
-                        SVEC[0][neq, 0] = (
-                            SVEC[0][neq, 0]
+                        SVEC.previous[neq, 0] = (
+                            SVEC.previous[neq, 0]
                             + coef * environment.inputs["Temperature"]
                         )  # W/m
-                        SVEC[0][neq, 1] = (
-                            SVEC[0][neq, 1]
+                        SVEC.previous[neq, 1] = (
+                            SVEC.previous[neq, 1]
                             + coef * environment.inputs["Temperature"]
                         )  # W/m
                     # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.identifier] == 1
@@ -1426,32 +1426,32 @@ def step(conductor, environment, qsource, num_step):
         # the dummy steady state corresponding to the initialization (cdp, 10/2020)
         if conductor.cond_num_step == 1:
             # Current time step (cdp, 10/2020)
-            ELSLOD[1][0 : conductor.dict_N_equation["NODOFS"]] = (
+            ELSLOD.present[0 : conductor.dict_N_equation["NODOFS"]] = (
                 conductor.grid_features["delta_z"][ii]
                 / 6.0
-                * (2.0 * SVEC[1][:, 0] + SVEC[1][:, 1])
+                * (2.0 * SVEC.present[:, 0] + SVEC.present[:, 1])
             )
-            ELSLOD[1][
+            ELSLOD.present[
                 conductor.dict_N_equation["NODOFS"] : 2
                 * conductor.dict_N_equation["NODOFS"]
             ] = (
                 conductor.grid_features["delta_z"][ii]
                 / 6.0
-                * (SVEC[1][:, 0] + 2.0 * SVEC[1][:, 1])
+                * (SVEC.present[:, 0] + 2.0 * SVEC.present[:, 1])
             )
             # Previous time step (cdp, 10/2020)
-            ELSLOD[0][0 : conductor.dict_N_equation["NODOFS"]] = (
+            ELSLOD.previous[0 : conductor.dict_N_equation["NODOFS"]] = (
                 conductor.grid_features["delta_z"][ii]
                 / 6.0
-                * (2.0 * SVEC[0][:, 0] + SVEC[0][:, 1])
+                * (2.0 * SVEC.previous[:, 0] + SVEC.previous[:, 1])
             )
-            ELSLOD[0][
+            ELSLOD.previous[
                 conductor.dict_N_equation["NODOFS"] : 2
                 * conductor.dict_N_equation["NODOFS"]
             ] = (
                 conductor.grid_features["delta_z"][ii]
                 / 6.0
-                * (SVEC[0][:, 0] + 2.0 * SVEC[0][:, 1])
+                * (SVEC.previous[:, 0] + 2.0 * SVEC.previous[:, 1])
             )
         else:
             # Compute only at the current time step (cdp, 10/2020)
@@ -1546,7 +1546,7 @@ def step(conductor, environment, qsource, num_step):
                 conductor.dict_Step["SYSLOD"][
                     jump : jump + conductor.dict_band["Half"], 0
                 ] = (
-                    ELSLOD[1]
+                    ELSLOD.present
                     + conductor.dict_Step["SYSLOD"][
                         jump : jump + conductor.dict_band["Half"], 0
                     ]
@@ -1555,7 +1555,7 @@ def step(conductor, environment, qsource, num_step):
                 conductor.dict_Step["SYSLOD"][
                     jump : jump + conductor.dict_band["Half"], 1
                 ] = (
-                    ELSLOD[0]
+                    ELSLOD.previous
                     + conductor.dict_Step["SYSLOD"][
                         jump : jump + conductor.dict_band["Half"], 1
                     ]
@@ -1579,7 +1579,7 @@ def step(conductor, environment, qsource, num_step):
                 conductor.dict_Step["SYSLOD"][
                     jump : jump + conductor.dict_band["Half"], 0
                 ] = (
-                    ELSLOD[1]
+                    ELSLOD.present
                     + conductor.dict_Step["SYSLOD"][
                         jump : jump + conductor.dict_band["Half"], 0
                     ]
@@ -1589,7 +1589,7 @@ def step(conductor, environment, qsource, num_step):
                     conductor.dict_Step["SYSLOD"][
                         jump : jump + conductor.dict_band["Half"], cc
                     ] = (
-                        ELSLOD[0]
+                        ELSLOD.previous
                         + conductor.dict_Step["SYSLOD"][
                             jump : jump + conductor.dict_band["Half"], cc
                         ]
