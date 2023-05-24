@@ -8,6 +8,7 @@ from utility_functions.auxiliary_functions import (
     get_from_xlsx,
     filter_component,
 )
+from collections import namedtuple
 
 
 def get_time_step(conductor, transient_input, num_step):
@@ -158,6 +159,32 @@ def get_time_step(conductor, transient_input, num_step):
         # C --------------
         # caf end *********************************************** June 26, 2015
 
+
+def __build_fluid_eq_idx(fluid_idx:int,n_fluid:int)->NamedTuple:
+    """Function that evaluates the index of the velocity, pressure and temperarture equation of the i-th fluid component object, collecting them in a namedtuple.
+
+    Args:
+        fluid_idx (int): index of the i-th fluid component object.
+        n_fluid (int): total number of fluid component objects.
+
+    Returns:
+        NamedTuple: collection the index of velocity, pressure and temperaure equation for the i-th fluid component object.
+    """
+    
+    # Constructor of the namedtuple to store the index of the equations for 
+    # fluid component objects.
+    Fluid_eq_idx = namedtuple(
+        "Fluid_eq_idx",
+        ["velocity","pressure","temperature"]
+    )
+
+    # Build the namedtuple with the index of the equations for fluid 
+    # component objects.
+    return Fluid_eq_idx(
+        velocity=fluid_idx, # velocity equation index
+        pressure=fluid_idx + n_fluid, # pressure equation index
+        temperaure=fluid_idx + 2 * n_fluid # temperature equation index
+    )
 
 def step(conductor, environment, qsource, num_step):
 
