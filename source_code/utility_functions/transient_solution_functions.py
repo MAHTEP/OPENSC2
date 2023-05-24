@@ -160,6 +160,26 @@ def get_time_step(conductor, transient_input, num_step):
         # C --------------
         # caf end *********************************************** June 26, 2015
 
+def matrix_initialization(row:int,col:int)->tuple(np.ndarray):
+    """Wrapper of function np.zeros that inizializes five identical rectangular matrices.
+
+    Args:
+        row (int): number of rows of the matrix.
+        col (int): number of columns of the matrix.
+
+
+    Returns:
+        tuple(np.ndarray): collection of initialized matrices.
+    """
+    
+    matrix = np.zeros((row,col))
+    return (
+        matrix,
+        matrix.copy(), # Use method copy to get hard copy of the matrix.
+        matrix.copy(),
+        matrix.copy(),
+        matrix.copy(),
+    )
 
 def ndarray_initialization(dimension:int,num_step:int)->tuple(np.ndarray):
     """Wrapper of function np.zeros that inizializes four identical square matrices and an additional variable that can be a column vector or a tuple with matrix of shape (dimension,2) according to the value of num_step (this is necessary to correctly apply the theta method).
