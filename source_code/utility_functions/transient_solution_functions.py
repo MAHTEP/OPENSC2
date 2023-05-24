@@ -250,7 +250,7 @@ def __build_fluid_eq_idx(fluid_idx:int,n_fluid:int)->NamedTuple:
     return Fluid_eq_idx(
         velocity=fluid_idx, # velocity equation index
         pressure=fluid_idx + n_fluid, # pressure equation index
-        temperaure=fluid_idx + 2 * n_fluid # temperature equation index
+        temperature=fluid_idx + 2 * n_fluid # temperature equation index
     )
 
 def __build_amat(
