@@ -181,13 +181,14 @@ def matrix_initialization(row:int,col:int)->tuple:
         matrix.copy(),
     )
 
-def ndarray_initialization(dimension:int,num_step:int)->tuple:
-    """Wrapper of function np.zeros that inizializes four identical square matrices and an additional variable that can be a column vector or a tuple with matrix of shape (dimension,2) according to the value of num_step (this is necessary to correctly apply the theta method).
+def ndarray_initialization(dimension:int,num_step:int,col:int=0)->tuple:
+    """Wrapper of function np.zeros that inizializes four identical square matrices and an additional variable that can be a column vector or a tuple with matrix of shape (dimension,col) according to the value of num_step (this is necessary to correctly apply the theta method).
     N.B. the application of the theta method should be completely rivisited in the whole code.
 
     Args:
         dimension (int): number of rows/columns of the matrices to be initialized and number of rows in the additional variable.
         num_step (int): time step number.
+        col (int, optional): number of columns to be assigned to the additional variable. If col is 0, the array shape is (dimension,), else array shape is (dimension,col). Defaults to 0.
 
     Returns:
         tuple: collection of initialized ndarrays.
@@ -199,7 +200,7 @@ def ndarray_initialization(dimension:int,num_step:int)->tuple:
         matrix.copy(), # Use method copy to get hard copy of the matrix.
         matrix.copy(),
         matrix.copy(),
-        array_initialization(dimension, num_step)
+        array_initialization(dimension, num_step,col)
     )
 
 def array_initialization(dimension:int, num_step:int, col:int=0)-> Union[NamedTuple,np.ndarray]:
