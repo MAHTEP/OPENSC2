@@ -499,7 +499,8 @@ def step(conductor, environment, qsource, num_step):
         # Auxiliary matrices initialization to zeros at each Gauss point.
         MMAT,AMAT,KMAT,SMAT,SVEC = ndarray_initialization(
             conductor.dict_N_equation["NODOFS"],
-            conductor.cond_num_step
+            conductor.cond_num_step,
+            col=2
         )
         
         ELMMAT,ELAMAT,ELKMAT,ELSMAT,ELSLOD = ndarray_initialization(
