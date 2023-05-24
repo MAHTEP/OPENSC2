@@ -175,6 +175,31 @@ def matrix_initialization(dimension:int)->tuple(np.ndarray):
     # Use method copy to get hard copy of the matrix.
     return (matrix,matrix.copy(),matrix.copy(),matrix.copy())
 
+def array_initialization(dimension:int, num_step:int)-> Union[NamedTuple,np.ndarray]:
+    """Wrapper of function np.zeros that initializes array of given dimension according to the time step number.
+    N.B. the application of the theta method should be completely rivisited in the whole code.
+
+    Args:
+        dimension (int): number of elements (rows) of the array to be initialized.
+        num_step (int): time step number.
+
+    Returns:
+        Union[NamedTuple,np.ndarray]: namedtuple with array if num_step is 1; np.ndarray in all other cases.
+    """
+
+    if num_step == 1:
+        Array = namedtuple("Array",["previous","present"])
+        # To correctly apply the theta method (to be rivisited in the whole 
+        # code!).
+        # key 0 is for the initialization (time step number is 0);
+        # key 1 is for the first time step after the initialization
+        return Array(
+            previous=np.zeros((dimension, 2)),
+            present=np.zeros((dimension, 2)),
+        )
+    else:
+        return np.zeros((dimension, 2))
+
 def __build_fluid_eq_idx(fluid_idx:int,n_fluid:int)->NamedTuple:
     """Function that evaluates the index of the velocity, pressure and temperarture equation of the i-th fluid component object, collecting them in a namedtuple.
 
