@@ -161,6 +161,20 @@ def get_time_step(conductor, transient_input, num_step):
         # caf end *********************************************** June 26, 2015
 
 
+def matrix_initialization(dimension:int)->tuple(np.ndarray):
+    """Wrapper of function np.zeros that inizializes four identical square matrices.
+
+    Args:
+        dimension (int): number of rows/columns of the matrices to be initialized.
+
+    Returns:
+        tuple(np.ndarray): collection of initialized matrices.
+    """
+
+    matrix = np.zeros((dimension,dimension))
+    # Use method copy to get hard copy of the matrix.
+    return (matrix,matrix.copy(),matrix.copy(),matrix.copy())
+
 def __build_fluid_eq_idx(fluid_idx:int,n_fluid:int)->NamedTuple:
     """Function that evaluates the index of the velocity, pressure and temperarture equation of the i-th fluid component object, collecting them in a namedtuple.
 
