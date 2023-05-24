@@ -9,6 +9,7 @@ from utility_functions.auxiliary_functions import (
     filter_component,
 )
 from collections import namedtuple
+from typing import Union, NamedTuple
 
 
 def get_time_step(conductor, transient_input, num_step):
@@ -185,6 +186,48 @@ def __build_fluid_eq_idx(fluid_idx:int,n_fluid:int)->NamedTuple:
         pressure=fluid_idx + n_fluid, # pressure equation index
         temperaure=fluid_idx + 2 * n_fluid # temperature equation index
     )
+
+def __build_amat(
+    matrix:np.ndarray,
+    f_comp:object,
+    elem_idx:int,
+    eq_idx:NamedTuple,
+    )->np.ndarray:
+    """Function that builds the A matrix (AMAT) at the Gauss point (flux Jacobian).
+
+    Args:
+        matrix (np.ndarray): initialized A matrix (np.zeros)
+        f_comp (object): fluid component object from which get all info to buld the coefficients.
+        elem_idx (int): index of the i-th element of the spatial discretization.
+        eq_idx (NamedTuple): collection of fluid equation index (velocity, pressure and temperaure equations).
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+    
+    # Build array to assign diagonal coefficients.
+    diag_idx = np.array(eq_idx)
+    
+    # Set diagonal elements (exploit broadcasting).
+    matrix[diag_idx,diag_idx] = f_comp.coolant.dict_Gauss_pt["velocity"][elem_idx]
+
+    # Set off diagonal coefficients.
+    # from velocity equation.
+    matrix[eq_idx.velocity, eq_idx.pressure] = (
+        1 / f_comp.coolant.dict_Gauss_pt["total_density"][elem_idx]
+    )
+    # from pressure equation.
+    matrix[eq_idx.pressure, eq_idx.velocity] = (
+        f_comp.coolant.dict_Gauss_pt["total_speed_of_sound"][elem_idx] ** 2
+        * f_comp.coolant.dict_Gauss_pt["total_density"][elem_idx]
+    )
+    # from temperature equation.
+    matrix[eq_idx.temperature, eq_idx.velocity] = (
+        f_comp.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
+        * f_comp.coolant.dict_Gauss_pt["temperature"][elem_idx]
+    )
+
+    return matrix
 
 def step(conductor, environment, qsource, num_step):
 
