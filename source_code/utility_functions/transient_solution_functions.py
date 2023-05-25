@@ -479,7 +479,7 @@ def step(conductor, environment, qsource, num_step):
     # if numObj == 1:
     # 	qsource = dict_qsource["single_conductor"]
 
-    UPWEQT[0 : conductor.dict_N_equation["FluidComponent"]] = 1.0
+    UPWEQT[:conductor.dict_N_equation["FluidComponent"]] = 1.0
     # if conductor.inputs["METHOD"] == "CN":
     # 		UPWEQT[2*conductor.inventory["FluidComponent"].number:conductor.dict_N_equation["FluidComponent"]] = 0.0
     # else it is 1.0 by initialization; as far as SolidComponent are \
@@ -531,8 +531,8 @@ def step(conductor, environment, qsource, num_step):
         # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
         # FluidComponent equation: array smart (cdp, 07/2020)
         MMAT[
-            0 : conductor.dict_N_equation["FluidComponent"],
-            0 : conductor.dict_N_equation["FluidComponent"],
+            :conductor.dict_N_equation["FluidComponent"],
+            :conductor.dict_N_equation["FluidComponent"],
         ] = np.eye(conductor.dict_N_equation["FluidComponent"])
         # END M MATRIX: fluid components equations (cdp, 07/2020)
         for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponent"].collection):
@@ -1361,18 +1361,18 @@ def step(conductor, environment, qsource, num_step):
         # COMPUTE THE MASS AND CAPACITY MATRIX
         # array smart (cdp, 07/2020)
         ELMMAT[
-            0 : conductor.dict_N_equation["NODOFS"],
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
         ] = (conductor.grid_features["delta_z"][ii] * (1.0 / 3.0 + ALFA) * MMAT)
         ELMMAT[
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
         ] = (conductor.grid_features["delta_z"][ii] * (1.0 / 6.0 - ALFA) * MMAT)
         ELMMAT[
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
         ] = (conductor.grid_features["delta_z"][ii] * (1.0 / 6.0 - ALFA) * MMAT)
         ELMMAT[
             conductor.dict_N_equation["NODOFS"] : 2
@@ -1384,18 +1384,18 @@ def step(conductor, environment, qsource, num_step):
         # COMPUTE THE CONVECTION MATRIX
         # array smart (cdp, 07/2020)
         ELAMAT[
-            0 : conductor.dict_N_equation["NODOFS"],
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
         ] = (-AMAT / 2.0)
         ELAMAT[
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
         ] = (AMAT / 2.0)
         ELAMAT[
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
         ] = (-AMAT / 2.0)
         ELAMAT[
             conductor.dict_N_equation["NODOFS"] : 2
@@ -1407,18 +1407,18 @@ def step(conductor, environment, qsource, num_step):
         # COMPUTE THE DIFFUSION MATRIX
         # array smart (cdp, 07/2020)
         ELKMAT[
-            0 : conductor.dict_N_equation["NODOFS"],
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
         ] = (KMAT / conductor.grid_features["delta_z"][ii])
         ELKMAT[
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
         ] = (-KMAT / conductor.grid_features["delta_z"][ii])
         ELKMAT[
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
         ] = (-KMAT / conductor.grid_features["delta_z"][ii])
         ELKMAT[
             conductor.dict_N_equation["NODOFS"] : 2
@@ -1430,18 +1430,18 @@ def step(conductor, environment, qsource, num_step):
         # COMPUTE THE SOURCE MATRIX
         # array smart (cdp, 07/2020)
         ELSMAT[
-            0 : conductor.dict_N_equation["NODOFS"],
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
         ] = (SMAT * conductor.grid_features["delta_z"][ii] / 3.0)
         ELSMAT[
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
         ] = (SMAT * conductor.grid_features["delta_z"][ii] / 6.0)
         ELSMAT[
             conductor.dict_N_equation["NODOFS"] : 2
             * conductor.dict_N_equation["NODOFS"],
-            0 : conductor.dict_N_equation["NODOFS"],
+            :conductor.dict_N_equation["NODOFS"],
         ] = (SMAT * conductor.grid_features["delta_z"][ii] / 6.0)
         ELSMAT[
             conductor.dict_N_equation["NODOFS"] : 2
@@ -1456,7 +1456,7 @@ def step(conductor, environment, qsource, num_step):
         # the dummy steady state corresponding to the initialization (cdp, 10/2020)
         if conductor.cond_num_step == 1:
             # Current time step (cdp, 10/2020)
-            ELSLOD.present[0 : conductor.dict_N_equation["NODOFS"]] = (
+            ELSLOD.present[:conductor.dict_N_equation["NODOFS"]] = (
                 conductor.grid_features["delta_z"][ii]
                 / 6.0
                 * (2.0 * SVEC.present[:, 0] + SVEC.present[:, 1])
@@ -1470,7 +1470,7 @@ def step(conductor, environment, qsource, num_step):
                 * (SVEC.present[:, 0] + 2.0 * SVEC.present[:, 1])
             )
             # Previous time step (cdp, 10/2020)
-            ELSLOD.previous[0 : conductor.dict_N_equation["NODOFS"]] = (
+            ELSLOD.previous[:conductor.dict_N_equation["NODOFS"]] = (
                 conductor.grid_features["delta_z"][ii]
                 / 6.0
                 * (2.0 * SVEC.previous[:, 0] + SVEC.previous[:, 1])
@@ -1485,7 +1485,7 @@ def step(conductor, environment, qsource, num_step):
             )
         else:
             # Compute only at the current time step (cdp, 10/2020)
-            ELSLOD[0 : conductor.dict_N_equation["NODOFS"]] = (
+            ELSLOD[:conductor.dict_N_equation["NODOFS"]] = (
                 conductor.grid_features["delta_z"][ii]
                 / 6.0
                 * (2.0 * SVEC[:, 0] + SVEC[:, 1])
@@ -1879,7 +1879,7 @@ def step(conductor, environment, qsource, num_step):
             # Assign BC: (cdp, 08/2020)
             # p_inl
             SYSMAT[
-                0 : conductor.dict_band["Full"],
+                :conductor.dict_band["Full"],
                 Iip_inl[fluid_comp_j.channel.flow_dir[0]],
             ] = 0.0
             # main diagonal (cdp, 08/2020)
@@ -1890,7 +1890,7 @@ def step(conductor, environment, qsource, num_step):
             Known[Iip_inl[fluid_comp_j.channel.flow_dir[0]]] = p_inl
             # p_out
             SYSMAT[
-                0 : conductor.dict_band["Full"],
+                :conductor.dict_band["Full"],
                 Iip_out[fluid_comp_j.channel.flow_dir[0]],
             ] = 0.0
             # main diagonal (cdp, 08/2020)
@@ -1903,7 +1903,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_inl
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_inl[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -1915,7 +1915,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_out
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_out[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -1928,7 +1928,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_inl
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_inl[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -1940,7 +1940,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_out
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_out[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -1983,7 +1983,7 @@ def step(conductor, environment, qsource, num_step):
             # Assign BC: (cdp, 08/2020)
             # v_inl
             SYSMAT[
-                0 : conductor.dict_band["Full"],
+                :conductor.dict_band["Full"],
                 Iiv_inl[fluid_comp_j.channel.flow_dir[0]],
             ] = 0.0
             # main diagonal (cdp, 08/2020)
@@ -2012,7 +2012,7 @@ def step(conductor, environment, qsource, num_step):
 
             # p_out
             SYSMAT[
-                0 : conductor.dict_band["Full"],
+                :conductor.dict_band["Full"],
                 Iip_out[fluid_comp_j.channel.flow_dir[0]],
             ] = 0.0
             # main diagonal (cdp, 08/2020)
@@ -2026,7 +2026,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_inl
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_inl[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -2038,7 +2038,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_out (T_inl if MDTIN < 0)
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_out[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -2051,7 +2051,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_inl
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_inl[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -2063,7 +2063,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_out
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_out[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -2077,7 +2077,7 @@ def step(conductor, environment, qsource, num_step):
             # INLET RESERVOIR AND CLOSED OUTLET (SYMMETRY)
             # p_inl
             SYSMAT[
-                0 : conductor.dict_band["Full"],
+                :conductor.dict_band["Full"],
                 Iip_inl[fluid_comp_j.channel.flow_dir[0]],
             ] = 0.0
             # main diagonal (cdp, 08/2020)
@@ -2091,7 +2091,7 @@ def step(conductor, environment, qsource, num_step):
             # T_inl
             if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
                 SYSMAT[
-                    0 : conductor.dict_band["Full"],
+                    :conductor.dict_band["Full"],
                     Iit_inl[fluid_comp_j.channel.flow_dir[0]],
                 ] = 0.0
                 # main diagonal (cdp, 08/2020)
@@ -2104,7 +2104,7 @@ def step(conductor, environment, qsource, num_step):
                 ] = fluid_comp_j.coolant.operations["TEMINL"]
             # v_out
             SYSMAT[
-                0 : conductor.dict_band["Full"],
+                :conductor.dict_band["Full"],
                 Iiv_out[fluid_comp_j.channel.flow_dir[0]],
             ] = 0.0
             SYSMAT[
@@ -2117,7 +2117,7 @@ def step(conductor, environment, qsource, num_step):
             # T_out
             if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
                 SYSMAT[
-                    0 : conductor.dict_band["Full"],
+                    :conductor.dict_band["Full"],
                     Iit_out[fluid_comp_j.channel.flow_dir[0]],
                 ] = 0.0
                 # main diagonal (cdp, 08/2020)
@@ -2131,7 +2131,7 @@ def step(conductor, environment, qsource, num_step):
         elif INTIAL == 4:
             # v_inl
             SYSMAT[
-                0 : conductor.dict_band["Full"],
+                :conductor.dict_band["Full"],
                 Iiv_inl[fluid_comp_j.channel.flow_dir[0]],
             ] = 0.0
             # main diagonal (cdp, 08/2020)
@@ -2144,7 +2144,7 @@ def step(conductor, environment, qsource, num_step):
             ] = 0.0  # closed inlet (cdp, 08/2020)
             # v_out
             SYSMAT[
-                0 : conductor.dict_band["Full"],
+                :conductor.dict_band["Full"],
                 Iiv_out[fluid_comp_j.channel.flow_dir[0]],
             ] = 0.0
             # main diagonal (cdp, 08/2020)
@@ -2184,7 +2184,7 @@ def step(conductor, environment, qsource, num_step):
             # Assign BC: (cdp, 08/2020)
             # v_inl
             SYSMAT[
-                0 : conductor.dict_band["Full"],
+                :conductor.dict_band["Full"],
                 Iiv_inl[fluid_comp_j.channel.flow_dir[0]],
             ] = 0.0
             # main diagonal (cdp, 08/2020)
@@ -2209,7 +2209,7 @@ def step(conductor, environment, qsource, num_step):
 
             # p_out
             SYSMAT[
-                0 : conductor.dict_band["Full"],
+                :conductor.dict_band["Full"],
                 Iip_out[fluid_comp_j.channel.flow_dir[0]],
             ] = 0.0
             # main diagonal (cdp, 08/2020)
@@ -2223,7 +2223,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_inl
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_inl[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -2235,7 +2235,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_out (T_inl if MDTIN < 0)
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_out[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -2248,7 +2248,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_inl
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_inl[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
@@ -2260,7 +2260,7 @@ def step(conductor, environment, qsource, num_step):
                 # T_out
                 if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
                     SYSMAT[
-                        0 : conductor.dict_band["Full"],
+                        :conductor.dict_band["Full"],
                         Iit_out[fluid_comp_j.channel.flow_dir[0]],
                     ] = 0.0
                     # main diagonal (cdp, 08/2020)
