@@ -425,6 +425,40 @@ def eval_transport_coefficients(conductor:Conductor,
 
     return conductor
 
+def build_kmat_fluid(
+    matrix:np.ndarray,
+    upweqt:np.ndarray,
+    velocity:float,
+    delta_z:float,
+    eq_idx:NamedTuple,
+    )->np.ndarray:
+
+    """Function that builds the K matrix (KMAT) at the Gauss point, UPWIND is included.
+    UPWIND: differencing contribution a' la finite-difference, necessary to guarantee numarical stability that does not came from KMAT algebraic construction.
+
+    Args:
+        matrix (np.ndarray): initialized K matrix (np.zeros)
+        upweqt (np.ndarray): array with the upwind numerical scheme.
+        velocity (float): fluid velocity at present gauss point index.
+        delta_z (float): length of the interval that includes the present gauss points.
+        eq_idx (NamedTuple): collection of fluid equation index (velocity, pressure and temperaure equations).
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+
+    velocity = np.abs(velocity)
+    # Build array to assign diagonal coefficients.
+    diag_idx = np.array(eq_idx)
+
+    # For the fluid equation this matrix has only the diagonal elements in the 
+    # velocity, pressure and temperature equations.
+    # Diagonal therms definition: dz * upweqt * v / 2
+    # Set diagonal elements (exploit broadcasting).
+    matrix[diag_idx,diag_idx] = delta_z * upweqt[diag_idx] * velocity / 2.0
+
+    return matrix
+
 def step(conductor, environment, qsource, num_step):
 
     """
