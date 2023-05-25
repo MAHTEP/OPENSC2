@@ -11,8 +11,8 @@ from utility_functions.auxiliary_functions import (
 from collections import namedtuple
 from typing import Union, NamedTuple
 
-from ..fluid_component import FluidComponent
-from ..conductor import Conductor
+from fluid_component import FluidComponent
+from conductor import Conductor
 
 def get_time_step(conductor, transient_input, num_step):
 
@@ -496,110 +496,6 @@ def step(conductor, environment, qsource, num_step):
     ALFA = 0.0
 
     # COMPUTE AND ASSEMBLE THE ELEMENT NON-LINEAR MATRICES AND LOADS
-
-    # dictionaties declaration (cdp, 07/2020)
-    conductor.dict_Gauss_pt["K1"] = {}
-    conductor.dict_Gauss_pt["K2"] = {}
-    conductor.dict_Gauss_pt["K3"] = {}
-
-    for rr, fluid_comp_r in enumerate(conductor.inventory["FluidComponent"].collection):
-        for _, fluid_comp_c in enumerate(conductor.inventory["FluidComponent"].collection[rr+1:]
-        ):
-            if (
-                conductor.dict_df_coupling["contact_perimeter_flag"].at[
-                    fluid_comp_r.identifier, fluid_comp_c.identifier
-                ]
-                == 1
-            ):
-                # Construct interface name: it can be found also in \
-                # dict_topology["ch_ch"] but a search in dictionaties \
-                # "Hydraulic_parallel" and "Thermal_contact" should be performed, \
-                # which makes thinks not easy to do; it is simpler to construct \
-                # interface names combining channels identifier (cdp, 09/2020)
-                interface_name = f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
-                # K', K'' and K''' initialization to zeros only if there is an \
-                # interface between fluid_comp_r and fluid_comp_c; parameters usefull to \
-                # constuct recurrent coefficients of matrix S elements (cdp, 09/2020)
-                conductor.dict_Gauss_pt["K1"][interface_name] = np.zeros(conductor.grid_features["zcoord_gauss"].shape)
-                conductor.dict_Gauss_pt["K2"][interface_name] = np.zeros(conductor.grid_features["zcoord_gauss"].shape)
-                conductor.dict_Gauss_pt["K3"][interface_name] = np.zeros(conductor.grid_features["zcoord_gauss"].shape)
-                # COMPUTE K', K'' AND K'''
-                Delta_p = np.abs(
-                    fluid_comp_r.coolant.dict_Gauss_pt["pressure"]
-                    - fluid_comp_c.coolant.dict_Gauss_pt["pressure"]
-                )
-                # array smart (cdp, 07/2020)
-                Delta_p[Delta_p < conductor.Delta_p_min] = conductor.Delta_p_min
-
-                # find index such that P_chan_c >= P_chan_r (cdp, 07/2020)
-                ind_a = np.nonzero(
-                    fluid_comp_c.coolant.dict_Gauss_pt["pressure"]
-                    >= fluid_comp_r.coolant.dict_Gauss_pt["pressure"]
-                )[0]
-                # find index such that P_chan_c < P_chan_r (cdp, 07/2020)
-                ind_b = np.nonzero(
-                    fluid_comp_c.coolant.dict_Gauss_pt["pressure"]
-                    < fluid_comp_r.coolant.dict_Gauss_pt["pressure"]
-                )[0]
-                # K' evaluation (cdp, 07/2020)
-                # K' = A_othogonal*sqrt(2*density/k_loc*abs(Delta_p))
-                conductor.dict_Gauss_pt["K1"][interface_name][
-                    ind_a
-                ] = conductor.dict_interf_peri["ch_ch"]["Open"][
-                    interface_name
-                ] * np.sqrt(
-                    2.0
-                    * fluid_comp_c.coolant.dict_Gauss_pt["total_density"][ind_a]
-                    / (conductor.k_loc * Delta_p[ind_a])
-                )
-                conductor.dict_Gauss_pt["K1"][interface_name][
-                    ind_b
-                ] = conductor.dict_interf_peri["ch_ch"]["Open"][
-                    interface_name
-                ] * np.sqrt(
-                    2.0
-                    * fluid_comp_r.coolant.dict_Gauss_pt["total_density"][ind_b]
-                    / (conductor.k_loc * Delta_p[ind_b])
-                )
-                # K'' evaluation (cdp, 07/2020)
-                # K'' = K'*lambda_v*velocity
-                conductor.dict_Gauss_pt["K2"][interface_name][ind_a] = (
-                    conductor.dict_Gauss_pt["K1"][interface_name][ind_a]
-                    * fluid_comp_c.coolant.dict_Gauss_pt["velocity"][ind_a]
-                    * conductor.lambda_v
-                )
-                conductor.dict_Gauss_pt["K2"][interface_name][ind_b] = (
-                    conductor.dict_Gauss_pt["K1"][interface_name][ind_b]
-                    * fluid_comp_r.coolant.dict_Gauss_pt["velocity"][ind_b]
-                    * conductor.lambda_v
-                )
-                # K''' evaluation (cdp, 07/2020)
-                # K''' = K'*(enthalpy + (velocity*lambda_v)^2/2)
-                conductor.dict_Gauss_pt["K3"][interface_name][
-                    ind_a
-                ] = conductor.dict_Gauss_pt["K1"][interface_name][ind_a] * (
-                    fluid_comp_c.coolant.dict_Gauss_pt["total_enthalpy"][ind_a]
-                    + (
-                        fluid_comp_c.coolant.dict_Gauss_pt["velocity"][ind_a]
-                        * conductor.lambda_v
-                    )
-                    ** 2
-                    / 2.0
-                )
-                conductor.dict_Gauss_pt["K3"][interface_name][
-                    ind_b
-                ] = conductor.dict_Gauss_pt["K1"][interface_name][ind_b] * (
-                    fluid_comp_r.coolant.dict_Gauss_pt["total_enthalpy"][ind_b]
-                    + (
-                        fluid_comp_r.coolant.dict_Gauss_pt["velocity"][ind_b]
-                        * conductor.lambda_v
-                    )
-                    ** 2
-                    / 2.0
-                )
-            # end if conductor.ict_df_coupling["contact_perimeter_flag"].iat[rr, cc] (cdp, 07/2020)
-        # end for cc (cdp, 07/2020)
-    # end for rr (cdp, 07/2020)
 
     # cl* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
     # cl* add the turn-to-turn coupling
