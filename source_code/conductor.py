@@ -641,6 +641,12 @@ class Conductor:
         # interfaces between channels, channels and solid components and between \
         # solid components(cdp, 09/2020)
         self.get_conductor_topology(simulation.environment)
+        
+        # Call private method __get_conductor_interfaces to get the interfaces 
+        # between conductor components. This method could replace 
+        # get_conductor_topology but this change must carefully discusse with 
+        # both prof Savoldi and prof Savino.
+        self.__get_conductor_interfaces(simulation.environment)
 
         self.dict_node_pt = dict()
         self.dict_Gauss_pt = dict()
