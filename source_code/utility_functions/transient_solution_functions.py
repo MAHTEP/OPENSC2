@@ -371,6 +371,60 @@ def build_transport_coefficients(conductor:Conductor)->Conductor:
 
     return conductor
 
+def eval_transport_coefficients(conductor:Conductor,
+    interf_name:str,
+    comp:FluidComponent,
+    index:np.ndarray,
+    delta_p:np.ndarray
+    )->Conductor:
+    """Function that evaluates the transport coefficients K', K'' and K''' that appears in the source terms of the fluid components equations.
+
+    Args:
+        conductor (Conductor): object with all the information of the conductor.
+        interf_name (str): name of the interface between fluid component objects.
+        comp (FluidComponent): fluid component object of the interface with the dominant pressure (index of the gauss points where this is true are passed in inupt argument index.)
+        index (np.ndarray): array with the index of the Gauss points where comp pressure is the dominant one (with respect to the pressure of the other fluid component in the interface)
+        delta_p (np.ndarray): array with the pressure differece between the component of the interface).
+
+    Returns:
+        Conductor: conductor with updated values of K', K'' and K'''.
+    """
+    
+    # K' evaluation [ms]:
+    # K' = A_othogonal*sqrt(2*density/k_loc*abs(Delta_p))
+    conductor.dict_Gauss_pt["K1"][interf_name][index] = (
+        conductor.dict_interf_peri["ch_ch"]["Open"][interf_name]
+        * np.sqrt(
+            2.0
+            * comp.coolant.dict_Gauss_pt["total_density"][index]
+            / (conductor.k_loc * delta_p[index])
+        )
+    )
+    # K'' evaluation [m^2]:
+    # K'' = K'*lambda_v*velocity
+    conductor.dict_Gauss_pt["K2"][interf_name][index] = (
+        conductor.dict_Gauss_pt["K1"][interf_name][index]
+        * comp.coolant.dict_Gauss_pt["velocity"][index]
+        * conductor.lambda_v
+    )
+    # K''' evaluation [m^3/s]:
+    # K''' = K'*(enthalpy + (velocity*lambda_v)^2/2)
+    conductor.dict_Gauss_pt["K3"][interf_name][index] = (
+        conductor.dict_Gauss_pt["K1"][interf_name][index]
+        * (
+            comp.coolant.dict_Gauss_pt["total_enthalpy"][index]
+            + 
+            0.5
+            * (
+                comp.coolant.dict_Gauss_pt["velocity"][index]
+                * conductor.lambda_v
+            )
+            ** 2
+        )
+    )
+
+    return conductor
+
 def step(conductor, environment, qsource, num_step):
 
     """
