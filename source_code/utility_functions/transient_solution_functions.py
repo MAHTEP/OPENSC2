@@ -578,37 +578,12 @@ def step(conductor, environment, qsource, num_step):
             AMAT = __build_amat(AMAT, fluid_comp_j, ii, fluid_j_eq_idx)
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
-            # UPWIND differencing contribution a' la finite-difference
-            # This is necessary to guarantee numarical stability, do not came from \
-            # KMAT algebraic construction (cdp, 07/2020)
-            # velocity equation (cdp, 07/2020)
-            KMAT[jj, jj] = (
-                conductor.grid_features["delta_z"][ii]
-                * UPWEQT[jj]
-                * np.abs(fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii])
-                / 2.0
-            )
-            # pressure equation (cdp, 07/2020)
-            KMAT[
-                jj + conductor.inventory["FluidComponent"].number,
-                jj + conductor.inventory["FluidComponent"].number,
-            ] = (
-                conductor.grid_features["delta_z"][ii]
-                * UPWEQT[jj + conductor.inventory["FluidComponent"].number]
-                * np.abs(fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii])
-                / 2.0
-            )
-            # temperature equation (cdp, 07/2020)
-            KMAT[
-                jj + 2 * conductor.inventory["FluidComponent"].number,
-                jj + 2 * conductor.inventory["FluidComponent"].number,
-            ] = (
-                conductor.grid_features["delta_z"][ii]
-                * UPWEQT[
-                    jj + 2 * conductor.inventory["FluidComponent"].number
-                ]
-                * np.abs(fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii])
-                / 2.0
+            KMAT = build_kmat_fluid(
+                KMAT,
+                UPWEQT,
+                fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii],
+                conductor.grid_features["delta_z"][ii],
+                fluid_j_eq_idx
             )
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
