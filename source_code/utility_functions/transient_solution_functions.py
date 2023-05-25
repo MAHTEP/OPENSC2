@@ -497,6 +497,9 @@ def step(conductor, environment, qsource, num_step):
 
     # COMPUTE AND ASSEMBLE THE ELEMENT NON-LINEAR MATRICES AND LOADS
 
+    # Build transport coefficients K', K'' and K'''.
+    conductor = build_transport_coefficients(conductor)
+
     # cl* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
     # cl* add the turn-to-turn coupling
     # qturn1 = interturn(nod1,zcoord,TMPTJK,nnodes(icond),icond)
