@@ -11,6 +11,8 @@ from utility_functions.auxiliary_functions import (
 from collections import namedtuple
 from typing import Union, NamedTuple
 
+from ..fluid_component import FluidComponent
+from ..conductor import Conductor
 
 def get_time_step(conductor, transient_input, num_step):
 
@@ -308,6 +310,66 @@ def __build_amat(
     )
 
     return matrix
+
+def build_transport_coefficients(conductor:Conductor)->Conductor:
+    """Function that builds the transport coefficients K', K'' and K''' that appears in the source terms of the fluid components equations.
+
+    Args:
+        conductor (Conductor): object with all the information of the conductor.
+
+    Returns:
+        Conductor: updated version of the conductor object.
+    """
+
+    key_names = {"K1","K2","K3"}
+    for key in key_names:
+        # Dictionaties declaration.
+        conductor.dict_Gauss_pt[key] = dict()
+
+    # Loop in fluid-fluid interfaces.
+    for interface in conductor.interface.fluid_fluid:
+        # constuct recurrent coefficients of matrix S elements.
+        for key in key_names:
+            # Initialization.
+            conductor.dict_Gauss_pt[key][interface.interf_name] = np.zeros_like(
+                conductor.grid_features["zcoord_gauss"]
+            )
+        # Evaluate pressure difference bethween comp_1 and comp_2
+        delta_p = np.abs(
+            interface.comp_1.coolant.dict_Gauss_pt["pressure"]
+            - interface.comp_2.coolant.dict_Gauss_pt["pressure"]
+        )
+        # Array smart
+        delta_p[delta_p < conductor.Delta_p_min] = conductor.Delta_p_min
+
+        # Find index such that # P_comp_2 < P_comp_1.
+        ind_1 = np.nonzero(
+            interface.comp_2.coolant.dict_Gauss_pt["pressure"]
+            < interface.comp_1.coolant.dict_Gauss_pt["pressure"]
+        )[0]
+        # Find index such that P_comp_2 >= P_comp_1.
+        ind_2 = np.nonzero(
+            interface.comp_2.coolant.dict_Gauss_pt["pressure"]
+            >= interface.comp_1.coolant.dict_Gauss_pt["pressure"]
+        )[0]
+        
+        # Compute transport coefficients K', K'' and K'''
+        conductor = eval_transport_coefficients(
+            conductor,
+            interface.interf_name,
+            interface.comp_1,
+            ind_1, # P_comp_2 < P_comp_1
+            delta_p
+        )
+        conductor = eval_transport_coefficients(
+            conductor,
+            interface.interf_name,
+            interface.comp_2,
+            ind_2, # P_comp_2 >= P_comp_1
+            delta_p
+        )
+
+    return conductor
 
 def step(conductor, environment, qsource, num_step):
 
