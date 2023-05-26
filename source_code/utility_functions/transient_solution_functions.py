@@ -271,7 +271,7 @@ def __build_fluid_eq_idx(fluid_idx:int,n_fluid:int)->NamedTuple:
 
 def __build_amat(
     matrix:np.ndarray,
-    f_comp:object,
+    f_comp:FluidComponent,
     elem_idx:int,
     eq_idx:NamedTuple,
     )->np.ndarray:
@@ -279,7 +279,7 @@ def __build_amat(
 
     Args:
         matrix (np.ndarray): initialized A matrix (np.zeros)
-        f_comp (object): fluid component object from which get all info to buld the coefficients.
+        f_comp (FluidComponent): fluid component object from which get all info to buld the coefficients.
         elem_idx (int): index of the i-th element of the spatial discretization.
         eq_idx (NamedTuple): collection of fluid equation index (velocity, pressure and temperaure equations).
 
