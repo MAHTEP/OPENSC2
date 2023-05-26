@@ -747,6 +747,8 @@ def build_smat_fluid_interface(
             eq_idx[interface.comp_1.identifier].temperature,
             eq_idx[interface.comp_2.identifier].temperature,
         ] = - s_tj_tj
+    
+    return matrix
 
 def build_smat_fluid_solid_interface(
     matrix:np.ndarray,
@@ -841,6 +843,8 @@ def build_smat_fluid_solid_interface(
             eq_idx[interface.comp_1.identifier].temperature,
             eq_idx[interface.comp_2.identifier],
         ] = - s_tj_tj
+
+    return matrix
 
 def step(conductor, environment, qsource, num_step):
 
