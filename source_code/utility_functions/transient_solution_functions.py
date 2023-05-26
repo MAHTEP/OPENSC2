@@ -815,6 +815,9 @@ def step(conductor, environment, qsource, num_step):
 
     # ** MATRICES CONSTRUCTION (cdp, 07/2020) **
 
+    # Build equations index for all FluidComponent objects
+    fluid_eq_idx = __build_fluid_eq_idx(conductor)
+
     # riscrivere in forma array smart una volta risolti tutti i dubbi, se possibile (cdp, 07/2020)
     for ii in range(conductor.grid_input["NELEMS"]):
 
@@ -844,11 +847,13 @@ def step(conductor, environment, qsource, num_step):
         # END M MATRIX: fluid components equations (cdp, 07/2020)
         for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponent"].collection):
 
-            # Build equations index for fluid component object j.
-            fluid_j_eq_idx = __build_fluid_eq_idx(jj,conductor.inventory["FluidComponent"].number)
-
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
-            AMAT = __build_amat(AMAT, fluid_comp_j, ii, fluid_j_eq_idx)
+            AMAT = __build_amat(
+                AMAT,
+                fluid_comp_j,
+                ii,
+                fluid_eq_idx[fluid_comp_j.identifier]
+            )
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
             KMAT = build_kmat_fluid(
@@ -856,11 +861,16 @@ def step(conductor, environment, qsource, num_step):
                 UPWEQT,
                 fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii],
                 conductor.grid_features["delta_z"][ii],
-                fluid_j_eq_idx
+                fluid_eq_idx[fluid_comp_j.identifier]
             )
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-            SMAT = build_smat_fluid(SMAT,fluid_comp_j,ii,fluid_j_eq_idx)
+            SMAT = build_smat_fluid(
+                SMAT,
+                fluid_comp_j,
+                ii,
+                fluid_eq_idx[fluid_comp_j.identifier]
+            )
 
             f_comp_filter = filter_component(
                 conductor.inventory["FluidComponent"].collection,
