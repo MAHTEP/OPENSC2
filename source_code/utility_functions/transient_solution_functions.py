@@ -775,7 +775,7 @@ def build_smat_fluid_solid_interface(
     # A: cross section
     # c_v: isochoric specific heat
 
-    for interface in enumerate(conductor.interface.fluid_solid):
+    for interface in conductor.interface.fluid_solid:
         # pressure equation: above main diagonal elements construction.
         # (j+num_fluid_components,j+2*num_fluid_components) [Temp_j] II + III
 
