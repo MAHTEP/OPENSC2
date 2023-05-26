@@ -243,26 +243,26 @@ def array_initialization(dimension:int, num_step:int, col:int=0)-> Union[NamedTu
         else: # used to define ELSLOD.
             return np.zeros(dimension)
 
-def __build_fluid_eq_idx(conductor:Conductor)->dict:
-    """Function that evaluates the index of the velocity, pressure and temperature equation of the FludiComponent objects, collecting them in a dictionary of a namedtuple.
+def __build_equation_idx(conductor:Conductor)->dict:
+    """Function that evaluates the index of the velocity, pressure and temperature equation of the FluidComponent objects, collecting them in a dictionary of NamedTuple, together with the index of the temperature equation of the SolidComponent objects stored as integer in the same dictionary.
 
     Args:
         conductor (Conductor): object with all the information of the conductor.
 
     Returns:
-        dict: collection of namedtuple with the index of velocity, pressure and temperaure equation for FludiComponent objects.
+        dict: collection of NamedTuple with the index of velocity, pressure and temperaure equation for FluidComponent objects and of integer for the index of the temperature equation of SolidComponent.
     """
     
     # Constructor of the namedtuple to store the index of the equations for 
-    # FludiComponent objects.
+    # FluidComponent objects.
     Fluid_eq_idx = namedtuple(
         "Fluid_eq_idx",
         ["velocity","pressure","temperature"]
     )
 
     # Build dictionary of NamedTuple with the index of the equations for 
-    # FludiComponent objects exploiting dictionary comprehension.
-    return {
+    # FluidComponent objects exploiting dictionary comprehension.
+    equation_index = {
         fcomp.identifier:Fluid_eq_idx(
             # velocity equation index
             velocity=fcomp_idx,
@@ -275,6 +275,22 @@ def __build_fluid_eq_idx(conductor:Conductor)->dict:
             conductor.inventory["FluidComponent"].collection
         )
     }
+    
+    # Update dictionary equation_index with integer corresponding to the index 
+    # of the equations for SolidComponent objects exploiting dictionary 
+    # comprehension and dictionary method update.
+    equation_index.update(
+        {
+            scomp.identifier: scomp_idx + conductor.dict_N_equation[
+                "FluidComponent"
+            ]
+            for scomp_idx,scomp in enumerate(
+                conductor.inventory["SolidComponent"].collection
+            )
+        }
+    )
+
+    return equation_index
 
 
 def __build_amat(
