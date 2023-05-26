@@ -243,31 +243,39 @@ def array_initialization(dimension:int, num_step:int, col:int=0)-> Union[NamedTu
         else: # used to define ELSLOD.
             return np.zeros(dimension)
 
-def __build_fluid_eq_idx(fluid_idx:int,n_fluid:int)->NamedTuple:
-    """Function that evaluates the index of the velocity, pressure and temperarture equation of the i-th fluid component object, collecting them in a namedtuple.
+def __build_fluid_eq_idx(conductor:Conductor)->dict:
+    """Function that evaluates the index of the velocity, pressure and temperature equation of the FludiComponent objects, collecting them in a dictionary of a namedtuple.
 
     Args:
-        fluid_idx (int): index of the i-th fluid component object.
-        n_fluid (int): total number of fluid component objects.
+        conductor (Conductor): object with all the information of the conductor.
 
     Returns:
-        NamedTuple: collection the index of velocity, pressure and temperaure equation for the i-th fluid component object.
+        dict: collection of namedtuple with the index of velocity, pressure and temperaure equation for FludiComponent objects.
     """
     
     # Constructor of the namedtuple to store the index of the equations for 
-    # fluid component objects.
+    # FludiComponent objects.
     Fluid_eq_idx = namedtuple(
         "Fluid_eq_idx",
         ["velocity","pressure","temperature"]
     )
 
-    # Build the namedtuple with the index of the equations for fluid 
-    # component objects.
-    return Fluid_eq_idx(
-        velocity=fluid_idx, # velocity equation index
-        pressure=fluid_idx + n_fluid, # pressure equation index
-        temperature=fluid_idx + 2 * n_fluid # temperature equation index
-    )
+    # Build dictionary of NamedTuple with the index of the equations for 
+    # FludiComponent objects exploiting dictionary comprehension.
+    return {
+        fcomp.identifier:Fluid_eq_idx(
+            # velocity equation index
+            velocity=fcomp_idx,
+            # pressure equation index
+            pressure=fcomp_idx + conductor.inventory["FluidComponent"].number,
+            # temperature equation index
+            temperature=fcomp_idx + 2 * conductor.inventory["FluidComponent"].number
+        )
+        for fcomp_idx,fcomp in enumerate(
+            conductor.inventory["FluidComponent"].collection
+        )
+    }
+
 
 def __build_amat(
     matrix:np.ndarray,
@@ -1143,43 +1151,7 @@ def step(conductor, environment, qsource, num_step):
                         ][ii]
                     )
                     
-                    # TEMPERATURE EQUATION: above/below main diagonal elements 
-                    # construction:
-                    # (j+2*num_fluid_components,k + 2*num_fluid_components) 
-                    # [Temp_k]
-                    SMAT[
-                        jj
-                        + 2
-                        * conductor.inventory["FluidComponent"].number,
-                        fluid_comp_k.idx
-                        + 2
-                        * conductor.inventory["FluidComponent"].number,
-                    ] = (
-                        -1.0
-                        / (
-                            fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
-                            * fluid_comp_j.coolant.dict_Gauss_pt[
-                                "total_isochoric_specific_heat"
-                            ][ii]
-                            * fluid_comp_j.channel.inputs["CROSSECTION"]
-                        )
-                        * (
-                            conductor.dict_interf_peri["ch_ch"]["Open"][
-                                interface_name
-                            ]
-                            * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
-                                interface_name
-                            ][ii]
-                            + conductor.dict_interf_peri["ch_ch"]["Close"][
-                                interface_name
-                            ]
-                            * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Close"][
-                                interface_name
-                            ][ii]
-                        )
-                    )
-                # end if flag_ch_ch_contact (cdp, 09/2020)
-
+            
             for ll, s_comp in enumerate(conductor.inventory["SolidComponent"].collection):
                 # chan_sol_topology is equivalent to \
                 # conductor.dict_topology["ch_sol"][fluid_comp_r.identifier][s_comp.identifier] \
