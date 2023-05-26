@@ -761,7 +761,7 @@ def build_smat_fluid_solid_interface(
         matrix (np.ndarray): S matrix after call to function buld_smat_fluid_interface.
         conductor (Conductor): object with all the information of the conductor.
         elem_idx (int): index of the i-th element of the spatial discretization.
-        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of scalar for solid equation index.
+        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of integer for solid equation index.
 
     Returns:
         np.ndarray: matrix with updated elements.
@@ -925,8 +925,8 @@ def step(conductor, environment, qsource, num_step):
 
     # ** MATRICES CONSTRUCTION (cdp, 07/2020) **
 
-    # Build equations index for all FluidComponent objects
-    fluid_eq_idx = __build_fluid_eq_idx(conductor)
+    # Build equations index for all FluidComponent and SolidComponent objects.
+    eq_index = __build_equation_idx(conductor)
 
     # riscrivere in forma array smart una volta risolti tutti i dubbi, se possibile (cdp, 07/2020)
     for ii in range(conductor.grid_input["NELEMS"]):
@@ -945,9 +945,9 @@ def step(conductor, environment, qsource, num_step):
         
         jump = conductor.dict_N_equation["NODOFS"] * ii
 
-        # (cdp, 07/2020)
-        # ** FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, FLUID \
-        # COMPONENTS EQUATIONS **
+        # ** FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, 
+        # FLUID COMPONENTS EQUATIONS **
+
         # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
         # FluidComponent equation: array smart (cdp, 07/2020)
         MMAT[
@@ -955,6 +955,7 @@ def step(conductor, environment, qsource, num_step):
             :conductor.dict_N_equation["FluidComponent"],
         ] = np.eye(conductor.dict_N_equation["FluidComponent"])
         # END M MATRIX: fluid components equations (cdp, 07/2020)
+        
         for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponent"].collection):
 
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
@@ -962,7 +963,7 @@ def step(conductor, environment, qsource, num_step):
                 AMAT,
                 fluid_comp_j,
                 ii,
-                fluid_eq_idx[fluid_comp_j.identifier]
+                eq_index[fluid_comp_j.identifier]
             )
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
@@ -971,7 +972,7 @@ def step(conductor, environment, qsource, num_step):
                 UPWEQT,
                 fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii],
                 conductor.grid_features["delta_z"][ii],
-                fluid_eq_idx[fluid_comp_j.identifier]
+                eq_index[fluid_comp_j.identifier]
             )
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
@@ -979,7 +980,7 @@ def step(conductor, environment, qsource, num_step):
                 SMAT,
                 fluid_comp_j,
                 ii,
-                fluid_eq_idx[fluid_comp_j.identifier]
+                eq_index[fluid_comp_j.identifier]
             )
 
         # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
@@ -988,14 +989,14 @@ def step(conductor, environment, qsource, num_step):
             SMAT,
             conductor,
             ii,
-            fluid_eq_idx
+            eq_index
         )
         # Therms associated to fluid-solid interfaces.
         SMAT = build_smat_fluid_solid_interface(
             SMAT,
             conductor,
             ii,
-            fluid_eq_idx,
+            eq_index,
         )
         # END S MATRIX: fluid components equations
 
