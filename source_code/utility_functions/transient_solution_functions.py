@@ -974,107 +974,14 @@ def step(conductor, environment, qsource, num_step):
             ii,
             fluid_eq_idx
         )
-
-            for ll, s_comp in enumerate(conductor.inventory["SolidComponent"].collection):
-                # chan_sol_topology is equivalent to \
-                # conductor.dict_topology["ch_sol"][fluid_comp_r.identifier][s_comp.identifier] \
-                # but it is shorter so I decide to use it here (cdp, 09/2020)
-                chan_sol_topology = f"{fluid_comp_j.identifier}_{s_comp.identifier}"
-                # Check for valid interface.
-                if chan_sol_topology in conductor.dict_interf_peri["ch_sol"]:
-                    # Perform calculation only if there is an interface, this \
-                    # will reduce the computational time (cdp, 09/2020)
-                    # pressure equation: above main diagonal elements
-                    # construction (cdp, 07/2020)
-                    # (j+num_fluid_components,j+2*num_fluid_components) [Temp_j] \
-                    # II + III (cdp, 07/2020)
-                    SMAT[
-                        jj + conductor.inventory["FluidComponent"].number,
-                        jj
-                        + 2 * conductor.inventory["FluidComponent"].number,
-                    ] = SMAT[
-                        jj + conductor.inventory["FluidComponent"].number,
-                        jj
-                        + 2 * conductor.inventory["FluidComponent"].number,
-                    ] + (
-                        fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                        / fluid_comp_j.channel.inputs["CROSSECTION"]
-                    ) * (
-                        conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
-                        * conductor.dict_Gauss_pt["HTC"]["ch_sol"][chan_sol_topology][
-                            ii
-                        ]
-                    )
-                    # (j+num_fluid_components,l + dict_N_equation["FluidComponent"]) [Temp_l] (cdp, 07/2020)
-                    SMAT[
-                        jj + conductor.inventory["FluidComponent"].number,
-                        ll + conductor.dict_N_equation["FluidComponent"],
-                    ] = -(
-                        fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                        / fluid_comp_j.channel.inputs["CROSSECTION"]
-                    ) * (
-                        conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
-                        * conductor.dict_Gauss_pt["HTC"]["ch_sol"][chan_sol_topology][
-                            ii
-                        ]
-                    )
-                    # temperature equation: main diagonal element construction \
-                    # (cdp, 07/2020)
-                    # (j+2*num_fluid_components,j+2*num_fluid_components) [Temp_j] \
-                    # II + III (cdp, 07/2020)
-                    SMAT[
-                        jj
-                        + 2 * conductor.inventory["FluidComponent"].number,
-                        jj
-                        + 2 * conductor.inventory["FluidComponent"].number,
-                    ] = SMAT[
-                        jj
-                        + 2 * conductor.inventory["FluidComponent"].number,
-                        jj
-                        + 2 * conductor.inventory["FluidComponent"].number,
-                    ] + 1.0 / (
-                        fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
-                        * fluid_comp_j.coolant.dict_Gauss_pt[
-                            "total_isochoric_specific_heat"
-                        ][ii]
-                        * fluid_comp_j.channel.inputs["CROSSECTION"]
-                    ) * (
-                        conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
-                        * conductor.dict_Gauss_pt["HTC"]["ch_sol"][chan_sol_topology][
-                            ii
-                        ]
-                    )
-                    # temperature equation: above main diagonal elements
-                    # construction (cdp, 07/2020)
-                    # (j+2*num_fluid_components,l + dict_N_equation["FluidComponent"]) [Temp_l] (cdp, 07/2020)
-                    SMAT[
-                        jj
-                        + 2 * conductor.inventory["FluidComponent"].number,
-                        ll + conductor.dict_N_equation["FluidComponent"],
-                    ] = (
-                        -1.0
-                        / (
-                            fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
-                            * fluid_comp_j.coolant.dict_Gauss_pt[
-                                "total_isochoric_specific_heat"
-                            ][ii]
-                            * fluid_comp_j.channel.inputs["CROSSECTION"]
-                        )
-                        * (
-                            conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
-                            * conductor.dict_Gauss_pt["HTC"]["ch_sol"][
-                                chan_sol_topology
-                            ][ii]
-                        )
-                    )
-                # end if flag_chan_sol_contact (cdp, 09/2020)
-            # end for ll (cdp, 07/2020)
-            # END S MATRIX: fluid components equations (cdp, 07/2020)
-
-            # FORM THE S VECTOR AT THE NODAL POINTS (SOURCE)
-            # Set to zeros in initialization (cdp, 08/2020)
-            # END S VECTOR: fluid components equations (cdp, 07/2020)
-        # end for jj (cdp, 07/2020)
+        # Therms associated to fluid-solid interfaces.
+        SMAT = build_smat_fluid_solid_interface(
+            SMAT,
+            conductor,
+            ii,
+            fluid_eq_idx,
+        )
+        # END S MATRIX: fluid components equations
 
         # (cdp, 07/2020)
         # * FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, SOLID \
