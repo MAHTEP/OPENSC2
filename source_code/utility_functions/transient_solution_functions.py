@@ -459,6 +459,55 @@ def build_kmat_fluid(
 
     return matrix
 
+def build_smat_fluid(
+    matrix:np.ndarray,
+    f_comp:FluidComponent,
+    elem_idx:int,
+    eq_idx:NamedTuple,
+    )->np.ndarray:
+
+    """Function that builds the S matrix (SMAT) therms of the fluid at the Gauss point (SOURCE JACOBIAN).
+
+    Args:
+        matrix (np.ndarray): initialized S matrix (np.zeros)
+        f_comp (FluidComponent): fluid component object from which get all info to build the coefficients.
+        elem_idx (int): index of the i-th element of the spatial discretization.
+        eq_idx (NamedTuple): collection of fluid equation index (velocity, pressure and temperaure equations).
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+
+    # velocity equation: main diagonal elements construction
+    # (j,j) [vel_j]
+    matrix[eq_idx.velocity,eq_idx.velocity] = (
+        2.0
+        # dict_friction_factor[False]["total"]: total friction factor in Gauss 
+        # points (see __init__ of class Channel for details).
+        * f_comp.channel.dict_friction_factor[False]["total"][elem_idx]
+        * np.abs(f_comp.coolant.dict_Gauss_pt["velocity"][elem_idx])
+        / f_comp.channel.inputs["HYDIAMETER"]
+    )
+    
+    # pressure equation: elements below main diagonal construction
+    # (j+num_fluid_components,0:num_fluid_components) [Pres]
+    matrix[eq_idx.pressure,eq_idx.velocity] = (
+        - matrix[eq_idx.velocity,eq_idx.velocity]
+        * f_comp.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
+        * f_comp.coolant.dict_Gauss_pt["total_density"][elem_idx]
+        * f_comp.coolant.dict_Gauss_pt["velocity"][elem_idx]
+    )
+    
+    # temperature equation: elements below main diagonal construction
+    # (j+2*num_fluid_components,0:num_fluid_components) [Temp]
+    matrix[eq_idx.temperature,eq_idx.velocity] = (
+        - matrix[eq_idx.velocity,eq_idx.velocity]
+        / f_comp.coolant.dict_Gauss_pt["total_isochoric_specific_heat"][elem_idx]
+        * f_comp.coolant.dict_Gauss_pt["velocity"][elem_idx]
+    )
+
+    return matrix
+
 def step(conductor, environment, qsource, num_step):
 
     """
