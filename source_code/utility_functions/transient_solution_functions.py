@@ -636,37 +636,7 @@ def step(conductor, environment, qsource, num_step):
             )
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-            # velocity equation: main diagonal elements construction (cdp, 07/2020)
-            # (j,j) [vel_j] (cdp, 07/2020)
-            # dict_friction_factor[False]["total"]: total friction factor in Gauss points (see __init__ of class Channel for details)
-            SMAT[jj, jj] = (
-                2.0
-                * fluid_comp_j.channel.dict_friction_factor[False]["total"][ii]
-                * np.abs(fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii])
-                / fluid_comp_j.channel.inputs["HYDIAMETER"]
-            )
-            # pressure equation: elements below main diagonal \
-            # construction (cdp, 07/2020)
-            # (j+num_fluid_components,0:num_fluid_components) [Pres] (cdp, 07/2020)
-            SMAT[jj + conductor.inventory["FluidComponent"].number, jj] = (
-                -SMAT[jj, jj]
-                * fluid_comp_j.coolant.dict_Gauss_pt["Gruneisen"][ii]
-                * fluid_comp_j.coolant.dict_Gauss_pt["total_density"][ii]
-                * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-            )
-            # temperature equation: elements below main diagonal \
-            # construction (cdp, 07/2020)
-            # (j+2*num_fluid_components,0:num_fluid_components) [Temp] \
-            # (cdp, 07/2020)
-            SMAT[
-                jj + 2 * conductor.inventory["FluidComponent"].number, jj
-            ] = (
-                -SMAT[jj, jj]
-                / fluid_comp_j.coolant.dict_Gauss_pt["total_isochoric_specific_heat"][
-                    ii
-                ]
-                * fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii]
-            )
+            SMAT = build_smat_fluid(SMAT,fluid_comp_j,ii,fluid_j_eq_idx)
 
             f_comp_filter = filter_component(
                 conductor.inventory["FluidComponent"].collection,
