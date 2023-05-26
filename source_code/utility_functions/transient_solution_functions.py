@@ -732,6 +732,100 @@ def build_smat_fluid_interface(
             eq_idx[interface.comp_2.identifier].temperature,
         ] = - s_tj_tj
 
+def build_smat_fluid_solid_interface(
+    matrix:np.ndarray,
+    conductor:Conductor,
+    elem_idx:int,
+    eq_idx:dict,
+    )->np.ndarray:
+
+    """Function that builds the S matrix (SMAT) therms due to fluid-solid component interfaces at the Gauss point (SOURCE JACOBIAN).
+
+    Args:
+        matrix (np.ndarray): S matrix after call to function buld_smat_fluid_interface.
+        conductor (Conductor): object with all the information of the conductor.
+        elem_idx (int): index of the i-th element of the spatial discretization.
+        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of scalar for solid equation index.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+    
+    # NOMENCLATURE
+    # phi: Gruneisen
+    # rho: density
+    # h: heat transfer coefficient (_o: open; _c:close)
+    # P: contact perimeter (_o: open; _c:close)
+    # A: cross section
+    # c_v: isochoric specific heat
+
+    for interface in enumerate(conductor.interface.fluid_solid):
+        # pressure equation: above main diagonal elements construction.
+        # (j+num_fluid_components,j+2*num_fluid_components) [Temp_j] II + III
+
+        # coef_grun_area = phi / A
+        coef_grun_area = (
+            interface.comp_1.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
+            / interface.comp_1.channel.inputs["CROSSECTION"]
+        )
+
+        # coef_htc = P * h
+        coef_htc = (
+            conductor.dict_interf_peri["ch_sol"][interface.interf_name]
+            * conductor.dict_Gauss_pt["HTC"]["ch_sol"][interface.interf_name][
+                elem_idx
+            ]
+        )
+        
+        # s_pj_tj = phi / A * P * h
+        #         = coef_grun_area * coef_htc
+        s_pj_tj = coef_grun_area * coef_htc
+
+        matrix[
+            eq_idx[interface.comp_1.identifier].pressure,
+            eq_idx[interface.comp_1.identifier].temperature
+        ] = matrix[
+            eq_idx[interface.comp_1.identifier].pressure,
+            eq_idx[interface.comp_1.identifier].temperature,
+        ] + s_pj_tj
+        
+        # (j+num_fluid_components,l + dict_N_equation["FluidComponent"]) [Temp_l]
+        matrix[
+            eq_idx[interface.comp_1.identifier].pressure,
+            eq_idx[interface.comp_2.identifier],
+        ] = - s_pj_tj
+
+        # temperature equation: main diagonal element construction
+        # (j+2*num_fluid_components,j+2*num_fluid_components) [Temp_j] II + III 
+        
+        # coef_rho_cv_area = 1/(rho * c_v * A)
+        coef_rho_cv_area = 1.0 / (
+            interface.comp_1.coolant.dict_Gauss_pt["total_density"][elem_idx]
+            * interface.comp_1.coolant.dict_Gauss_pt[
+                "total_isochoric_specific_heat"
+            ][elem_idx]
+            * interface.comp_1.channel.inputs["CROSSECTION"]
+        )
+
+        # s_tj_tj = 1/(rho * c_v * A) * P * h
+        #         = coef_rho_cv_area * coef_htc
+        s_tj_tj = coef_rho_cv_area * coef_htc
+        
+        matrix[
+            eq_idx[interface.comp_1.identifier].temperature,
+            eq_idx[interface.comp_1.identifier].temperature,
+        ] = matrix[
+            eq_idx[interface.comp_1.identifier].temperature,
+            eq_idx[interface.comp_1.identifier].temperature,
+        ] + s_tj_tj
+        
+        # temperature equation: above main diagonal elements construction
+        # (j+2*num_fluid_components,l + dict_N_equation["FluidComponent"]) [Temp_l]
+        matrix[
+            eq_idx[interface.comp_1.identifier].temperature,
+            eq_idx[interface.comp_2.identifier],
+        ] = - s_tj_tj
+
 def step(conductor, environment, qsource, num_step):
 
     """
