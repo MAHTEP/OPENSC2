@@ -219,7 +219,7 @@ def array_initialization(dimension:int, num_step:int, col:int=0)-> Union[NamedTu
     """
 
     if num_step == 1:
-        Array = namedtuple("Array",["previous","present"])
+        Array = namedtuple("Array",("previous","present"))
         # To correctly apply the theta method (to be rivisited in the whole 
         # code!).
         # previous is for the initialization (time step number is 0);
@@ -257,7 +257,7 @@ def __build_equation_idx(conductor:Conductor)->dict:
     # FluidComponent objects.
     Fluid_eq_idx = namedtuple(
         "Fluid_eq_idx",
-        ["velocity","pressure","temperature"]
+        ("velocity","pressure","temperature")
     )
 
     # Build dictionary of NamedTuple with the index of the equations for 
