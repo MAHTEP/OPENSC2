@@ -960,7 +960,7 @@ def step(conductor, environment, qsource, num_step):
         ] = np.eye(conductor.dict_N_equation["FluidComponent"])
         # END M MATRIX: fluid components equations (cdp, 07/2020)
         
-        for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponent"].collection):
+        for fluid_comp_j in conductor.inventory["FluidComponent"].collection:
 
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
             AMAT = __build_amat(
