@@ -402,37 +402,7 @@ def step(conductor, environment, qsource, num_step):
                     )
                 # end if flag_sol_sol_contact (cdp, 09/2020)
             # end for s_comp_m (cdp, 07/2020)
-            for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponent"].collection):
-                chan_sol_topology = f"{fluid_comp_j.identifier}_{s_comp_l.identifier}"
-                # Check for valid interface.
-                if chan_sol_topology in conductor.dict_interf_peri["ch_sol"]:
-                    # Perform calculation only if there is an interface, this \
-                    # will reduce the computational time (cdp, 09/2020)
-                    # SOLID COMPONENTS CONDUCTION EQUATION: main diagonal element \
-                    # construction (cdp, 07/2020)
-                    # (l + dict_N_equation["FluidComponent"],l + dict_N_equation["FluidComponent"]) [Temp_l] I (cdp, 07/2020)
-                    SMAT[neq, neq] = (
-                        SMAT[neq, neq]
-                        + conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
-                        * conductor.dict_Gauss_pt["HTC"]["ch_sol"][chan_sol_topology][
-                            ii
-                        ]
-                    )
-                    # SOLID COMPONENTS CONDUCTION EQUATION: below main diagonal elements
-                    # construction (cdp, 07/2020)
-                    # (l + dict_N_equation["FluidComponent"],l + 2*num_fluid_components) [Temp_j] (cdp, 07/2020)
-                    SMAT[
-                        neq,
-                        jj
-                        + 2 * conductor.inventory["FluidComponent"].number,
-                    ] = (
-                        -conductor.dict_interf_peri["ch_sol"][chan_sol_topology]
-                        * conductor.dict_Gauss_pt["HTC"]["ch_sol"][chan_sol_topology][
-                            ii
-                        ]
-                    )
-                # end if flag_chan_sol_contact (cdp, 09/2020)
-            # end for jj (cdp, 07/2020)
+
             # Convective heating with the external environment (implicit treatment).
             if s_comp_l.name == conductor.inventory["JacketComponent"].name:
                 if (
