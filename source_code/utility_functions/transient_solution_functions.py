@@ -26,6 +26,7 @@ from step_matrix_construction import (
     build_mmat_solid,
     build_kmat_solid,
     build_smat_solid_interface,
+    build_smat_env_solid_interface
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -370,52 +371,15 @@ def step(conductor, environment, qsource, num_step):
             eq_index,
         )
 
-            # Convective heating with the external environment (implicit treatment).
-            if s_comp_l.name == conductor.inventory["JacketComponent"].name:
-                if (
-                    conductor.dict_df_coupling["contact_perimeter_flag"].at[
-                        environment.KIND, s_comp_l.identifier
-                    ]
-                    == 1
-                ):
-                    if (
-                        conductor.dict_df_coupling["HTC_choice"].at[
-                            environment.KIND, s_comp_l.identifier
-                        ]
-                        == 2
-                        and conductor.inputs["Is_rectangular"]
-                    ):
-                        # Rectangular duct.
-                        SMAT[neq, neq] = (
-                            SMAT[neq, neq]
-                            + 2
-                            * conductor.inputs["Height"]
-                            * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                f"{environment.KIND}_{s_comp_l.identifier}"
-                            ]["conv"]["side"][ii]
-                            + conductor.inputs["width"]
-                            * (
-                                conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.identifier}"
-                                ]["conv"]["bottom"][ii]
-                                + conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.identifier}"
-                                ]["conv"]["top"][ii]
-                            )
-                        )
-                    else:
-                        SMAT[neq, neq] = (
-                            SMAT[neq, neq]
-                            + conductor.dict_interf_peri["env_sol"][
-                                f"{environment.KIND}_{s_comp_l.identifier}"
-                            ]
-                            * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                f"{environment.KIND}_{s_comp_l.identifier}"
-                            ]["conv"][ii]
-                        )
-            # End s_comp_l.name
+        # Convective heating with the external environment (implicit treatment).
+        SMAT = build_smat_env_solid_interface(
+            SMAT,
+            conductor,
+            ii,
+            eq_index,
+        )
 
-            # END S MATRIX: solid components equation (cdp, 07/2020)
+        # END S MATRIX: solid components equation.
 
             # FORM THE S VECTOR AT THE NODAL POINTS (SOURCE)
             # cl modify august 24 2019
