@@ -676,3 +676,32 @@ def build_mmat_solid(
     )
 
     return matrix
+
+def build_kmat_solid(
+    matrix:np.ndarray,
+    s_comp:SolidComponent,
+    elem_idx:int,
+    eq_idx:int,
+    )->np.ndarray:
+
+    """Function that updates the K matrix (KMAT) at the Gauss point, for the SolidComponent equation.
+
+    Args:
+        matrix (np.ndarray): K matrix after call to build_kmat_fluid.
+        s_comp (SolidComponent): solid component object from which get all info to build the coefficients.
+        elem_idx (int): index of the i-th element of the spatial discretization.
+        eq_idx (int): solid component equation index.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+
+    # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
+    # A_{s_comp}*k_{s_comp,homo}; homo = homogenized (cdp, 07/2020)
+    matrix[eq_idx,eq_idx] = (
+        s_comp.inputs["CROSSECTION"]
+        * s_comp.dict_Gauss_pt["total_thermal_conductivity"][elem_idx]
+        / s_comp.inputs["COSTETA"]
+    )
+
+    return matrix
