@@ -705,3 +705,54 @@ def build_kmat_solid(
     )
 
     return matrix
+
+def build_smat_solid_interface(
+    matrix:np.ndarray,
+    conductor:Conductor,
+    elem_idx:int,
+    eq_idx:dict,
+    )->np.ndarray:
+
+    """Function that builds the S matrix (SMAT) therms due to solid component interfaces at the Gauss point (SOURCE JACOBIAN).
+
+    Args:
+        matrix (np.ndarray): S matrix after call to function build_smat_fluid_solid_interface.
+        conductor (Conductor): object with all the information of the conductor.
+        elem_idx (int): index of the i-th element of the spatial discretization.
+        eq_idx (dict): collection of integer solid equation index.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+    
+    # NOMENCLATURE
+    # P: contact perimeter
+    # h_conv: convective heat transfer coefficient.
+
+    for interface in conductor.interface.solid_solid:
+
+        # coef_htc = P * h_conv W / m / K
+        coef_htc = (
+            conductor.dict_interf_peri["sol_sol"][interface.interf_name]
+            * conductor.dict_Gauss_pt["HTC"]["sol_sol"]["cond"][
+                interface.interf_name
+            ][elem_idx]
+        )
+
+        # SOLID COMPONENTS CONDUCTION EQUATION: main diagonal element 
+        # construction:
+        # (l + dict_N_equation["FluidComponent"],l 
+        # + dict_N_equation["FluidComponent"]) [Temp_l] II + III
+        matrix[
+            eq_idx[interface.comp_1.identifier],
+            eq_idx[interface.comp_1.identifier],
+         ] += coef_htc
+        
+        # SOLID COMPONENTS CONDUCTION EQUATION: above/below main diagonal 
+        # elements construction:
+        # (l + dict_N_equation["FluidComponent"],m 
+        # + dict_N_equation["FluidComponent"]) [Temp_m]
+        matrix[
+            eq_idx[interface.comp_1.identifier],
+            eq_idx[interface.comp_2.identifier],
+        ] = - coef_htc
