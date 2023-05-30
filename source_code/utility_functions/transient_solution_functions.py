@@ -482,6 +482,9 @@ def build_smat_fluid(
         np.ndarray: matrix with updated elements.
     """
 
+    # Reference value for f_comp.coolant.dict_Gauss_pt["velocity"][elem_idx] 
+    # (shallow copy).
+    velocity = f_comp.coolant.dict_Gauss_pt["velocity"][elem_idx]
     # velocity equation: main diagonal elements construction
     # (j,j) [vel_j]
     matrix[eq_idx.velocity,eq_idx.velocity] = (
@@ -489,8 +492,7 @@ def build_smat_fluid(
         # dict_friction_factor[False]["total"]: total friction factor in Gauss 
         # points (see __init__ of class Channel for details).
         * f_comp.channel.dict_friction_factor[False]["total"][elem_idx]
-        * np.abs(f_comp.coolant.dict_Gauss_pt["velocity"][elem_idx])
-        / f_comp.channel.inputs["HYDIAMETER"]
+        * np.abs(velocity) / f_comp.channel.inputs["HYDIAMETER"]
     )
     
     # pressure equation: elements below main diagonal construction
@@ -499,7 +501,7 @@ def build_smat_fluid(
         - matrix[eq_idx.velocity,eq_idx.velocity]
         * f_comp.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
         * f_comp.coolant.dict_Gauss_pt["total_density"][elem_idx]
-        * f_comp.coolant.dict_Gauss_pt["velocity"][elem_idx]
+        * velocity
     )
     
     # temperature equation: elements below main diagonal construction
@@ -507,7 +509,7 @@ def build_smat_fluid(
     matrix[eq_idx.temperature,eq_idx.velocity] = (
         - matrix[eq_idx.velocity,eq_idx.velocity]
         / f_comp.coolant.dict_Gauss_pt["total_isochoric_specific_heat"][elem_idx]
-        * f_comp.coolant.dict_Gauss_pt["velocity"][elem_idx]
+        * velocity
     )
 
     return matrix
