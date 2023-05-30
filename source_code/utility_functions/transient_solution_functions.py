@@ -24,7 +24,8 @@ from step_matrix_construction import (
     build_smat_fluid_interface,
     build_smat_fluid_solid_interface,
     build_mmat_solid,
-    build_kmat_solid
+    build_kmat_solid,
+    build_smat_solid_interface,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -344,7 +345,8 @@ def step(conductor, environment, qsource, num_step):
                 MMAT,
                 s_comp_l,
                 ii,
-                eq_index[s_comp_l.identifier])
+                eq_index[s_comp_l.identifier]
+            )
             # END M MATRIX: SolidComponent equation.
 
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
@@ -356,50 +358,17 @@ def step(conductor, environment, qsource, num_step):
                 KMAT,
                 s_comp_l,
                 ii,
-                eq_index[s_comp_l.identifier])
+                eq_index[s_comp_l.identifier]
+            )
             # END K MATRIX: SolidComponent equation.
 
-            # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-            s_comp_filter = filter_component(
-                conductor.inventory["SolidComponent"].collection,
-                s_comp_l
-            )
-            for s_comp_m in s_comp_filter:
-                # s_comp_topology is equivalent to 
-                # conductor.dict_topology["sol_sol"][s_comp_m.identifier]
-                # [s_comp_l.identifier] but it is shorter so I decide to 
-                # use it here.
-                s_comp_topology = natural_sort(s_comp_l, s_comp_m.obj)
-                # Check for valid interface.
-                if s_comp_topology in conductor.dict_interf_peri["sol_sol"]:
-                    # Perform calculation only if there is an interface, 
-                    # this will reduce the computational time.
-
-                    # SOLID COMPONENTS CONDUCTION EQUATION: main diagonal 
-                    # element construction:
-                    # (l + dict_N_equation["FluidComponent"],l 
-                    # + dict_N_equation["FluidComponent"]) [Temp_l] II 
-                    # + III
-                    SMAT[neq, neq] = (
-                        SMAT[neq, neq]
-                        + conductor.dict_interf_peri["sol_sol"][s_comp_topology]
-                        * conductor.dict_Gauss_pt["HTC"]["sol_sol"]["cond"][
-                            s_comp_topology
-                        ][ii]
-                    )
-                    
-                    # SOLID COMPONENTS CONDUCTION EQUATION: above/below 
-                    # main diagonal elements construction:
-                    # (l + dict_N_equation["FluidComponent"],m 
-                    # + dict_N_equation["FluidComponent"]) [Temp_m]
-                    SMAT[neq, s_comp_m.idx + conductor.dict_N_equation["FluidComponent"]] = (
-                        -conductor.dict_interf_peri["sol_sol"][s_comp_topology]
-                        * conductor.dict_Gauss_pt["HTC"]["sol_sol"]["cond"][
-                            s_comp_topology
-                        ][ii]
-                    )
-                # end if flag_sol_sol_contact (cdp, 09/2020)
-            # end for s_comp_m (cdp, 07/2020)
+        # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
+        SMAT = build_smat_solid_interface(
+            SMAT,
+            conductor,
+            ii,
+            eq_index,
+        )
 
             # Convective heating with the external environment (implicit treatment).
             if s_comp_l.name == conductor.inventory["JacketComponent"].name:
