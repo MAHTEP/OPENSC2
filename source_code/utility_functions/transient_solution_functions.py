@@ -22,7 +22,9 @@ from step_matrix_construction import (
     build_kmat_fluid,
     build_smat_fluid,
     build_smat_fluid_interface,
-    build_smat_fluid_solid_interface
+    build_smat_fluid_solid_interface,
+    build_mmat_solid,
+    build_kmat_solid
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -337,29 +339,25 @@ def step(conductor, environment, qsource, num_step):
         for ll, s_comp_l in enumerate(conductor.inventory["SolidComponent"].collection):
             neq = conductor.dict_N_equation["FluidComponent"] + ll
             # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
-            # SolidComponent equation (cdp, 07/2020)
-            # A_{s_comp}*rho_{s_comp,homo}*cp_{s_comp,homo}/cos(theta); \
-            # homo = homogenized (cdp, 07/2020)
-            MMAT[neq, neq] = (
-                s_comp_l.inputs["CROSSECTION"]
-                * s_comp_l.dict_Gauss_pt["total_density"][ii]
-                * s_comp_l.dict_Gauss_pt["total_isobaric_specific_heat"][ii]
-                / s_comp_l.inputs["COSTETA"]
-            )
-            # END M MATRIX: solid components equation (cdp, 07/2020)
+            # SolidComponent equation.
+            MMAT = build_mmat_solid(
+                MMAT,
+                s_comp_l,
+                ii,
+                eq_index[s_comp_l.identifier])
+            # END M MATRIX: SolidComponent equation.
 
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
-            # No elements here (cdp, 07/2020)
-            # END A MATRIX: solid components equation (cdp, 07/2020)
+            # No elements here.
+            # END A MATRIX: SolidComponent equation.
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
-            # A_{s_comp}*k_{s_comp,homo}; homo = homogenized (cdp, 07/2020)
-            KMAT[neq, neq] = (
-                s_comp_l.inputs["CROSSECTION"]
-                * s_comp_l.dict_Gauss_pt["total_thermal_conductivity"][ii]
-                / s_comp_l.inputs["COSTETA"]
-            )
-            # END K MATRIX: solid components equation (cdp, 07/2020)
+            KMAT = build_kmat_solid(
+                KMAT,
+                s_comp_l,
+                ii,
+                eq_index[s_comp_l.identifier])
+            # END K MATRIX: SolidComponent equation.
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
             s_comp_filter = filter_component(
