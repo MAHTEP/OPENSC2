@@ -627,4 +627,20 @@ def build_smat_fluid_solid_interface(
             eq_idx[interface.comp_2.identifier],
         ] = - s_tj_tj
 
+        # SOLID COMPONENTS CONDUCTION EQUATION: main diagonal element
+        # construction.
+        # (l + dict_N_equation["FluidComponent"],l + dict_N_equation["FluidComponent"]) [Temp_l] I
+        matrix[
+            eq_idx[interface.comp_2.identifier],
+            eq_idx[interface.comp_2.identifier],
+        ] += coef_htc
+        
+        # SOLID COMPONENTS CONDUCTION EQUATION: below main diagonal elements
+        # construction.
+        # (l + dict_N_equation["FluidComponent"],l + 2*num_fluid_components) [Temp_j]
+        matrix[
+            eq_idx[interface.comp_2.identifier],
+            eq_idx[interface.comp_1.identifier].temperature,
+        ] = -coef_htc
+
     return matrix
