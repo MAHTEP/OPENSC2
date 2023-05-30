@@ -395,39 +395,37 @@ def eval_transport_coefficients(conductor:Conductor,
     Returns:
         Conductor: conductor with updated values of K', K'' and K'''.
     """
-    
+    velocity = comp.coolant.dict_Gauss_pt["velocity"][index]
+
     # K' evaluation [ms]:
     # K' = A_othogonal*sqrt(2*density/k_loc*abs(Delta_p))
-    conductor.dict_Gauss_pt["K1"][interf_name][index] = (
+    K1 = (
         conductor.dict_interf_peri["ch_ch"]["Open"][interf_name]
         * np.sqrt(
-            2.0
+            2.
             * comp.coolant.dict_Gauss_pt["total_density"][index]
             / (conductor.k_loc * delta_p[index])
         )
     )
+    
     # K'' evaluation [m^2]:
     # K'' = K'*lambda_v*velocity
-    conductor.dict_Gauss_pt["K2"][interf_name][index] = (
-        conductor.dict_Gauss_pt["K1"][interf_name][index]
-        * comp.coolant.dict_Gauss_pt["velocity"][index]
-        * conductor.lambda_v
-    )
+    K2 = K1 * conductor.lambda_v * velocity
+
     # K''' evaluation [m^3/s]:
     # K''' = K'*(enthalpy + (velocity*lambda_v)^2/2)
-    conductor.dict_Gauss_pt["K3"][interf_name][index] = (
-        conductor.dict_Gauss_pt["K1"][interf_name][index]
+    K3 = (
+        K1
         * (
             comp.coolant.dict_Gauss_pt["total_enthalpy"][index]
-            + 
-            0.5
-            * (
-                comp.coolant.dict_Gauss_pt["velocity"][index]
-                * conductor.lambda_v
-            )
-            ** 2
+            + .5 * (velocity * conductor.lambda_v) ** 2.
         )
     )
+
+    # Assing evaluated K1, K2 and K3 to correspondig key in conductor attribute 
+    # dict_Gauss_pt.
+    for key, value in zip(("K1","K2","K3"),(K1,K2,K3)):
+        conductor.dict_Gauss_pt[key][interf_name][index] = value
 
     return conductor
 
