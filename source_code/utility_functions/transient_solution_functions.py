@@ -299,6 +299,7 @@ def __build_amat(
     Returns:
         np.ndarray: matrix with updated elements.
     """
+    density = f_comp.coolant.dict_Gauss_pt["total_density"][elem_idx]
     
     # Build array to assign diagonal coefficients.
     diag_idx = np.array(eq_idx)
@@ -308,13 +309,11 @@ def __build_amat(
 
     # Set off diagonal coefficients.
     # from velocity equation.
-    matrix[eq_idx.velocity, eq_idx.pressure] = (
-        1 / f_comp.coolant.dict_Gauss_pt["total_density"][elem_idx]
-    )
+    matrix[eq_idx.velocity, eq_idx.pressure] = 1. / density
     # from pressure equation.
     matrix[eq_idx.pressure, eq_idx.velocity] = (
-        f_comp.coolant.dict_Gauss_pt["total_speed_of_sound"][elem_idx] ** 2
-        * f_comp.coolant.dict_Gauss_pt["total_density"][elem_idx]
+        density
+        * f_comp.coolant.dict_Gauss_pt["total_speed_of_sound"][elem_idx] ** 2.
     )
     # from temperature equation.
     matrix[eq_idx.temperature, eq_idx.velocity] = (
