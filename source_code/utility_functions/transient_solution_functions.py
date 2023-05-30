@@ -256,7 +256,9 @@ def __build_equation_idx(conductor:Conductor)->dict:
             # pressure equation index
             pressure=fcomp_idx + conductor.inventory["FluidComponent"].number,
             # temperature equation index
-            temperature=fcomp_idx + 2 * conductor.inventory["FluidComponent"].number
+            # Exploit left binary shift, equivalent to:
+            # fcomp_idx + 2 * conductor.inventory["FluidComponent"].number
+            temperature=fcomp_idx + (conductor.inventory["FluidComponent"].number << 1)
         )
         for fcomp_idx,fcomp in enumerate(
             conductor.inventory["FluidComponent"].collection
