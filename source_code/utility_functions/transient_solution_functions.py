@@ -547,27 +547,28 @@ def build_smat_fluid_interface(
 
     for interface in conductor.interface.fluid_fluid:
         
+        K1 = conductor.dict_Gauss_pt["K1"][interface.interf_name][elem_idx]
+        K2 = conductor.dict_Gauss_pt["K2"][interface.interf_name][elem_idx]
+        K3 = conductor.dict_Gauss_pt["K3"][interface.interf_name][elem_idx]
+
+        comp_1_v = interface.comp_1.coolant.dict_Gauss_pt["velocity"][elem_idx]
+        comp_1_rho = interface.comp_1.coolant.dict_Gauss_pt["total_density"][elem_idx]
+        comp_1_A = interface.comp_1.channel.inputs["CROSSECTION"]
+        comp_1_phi = interface.comp_1.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
+        comp_1_enthalpy = interface.comp_1.coolant.dict_Gauss_pt["total_enthalpy"][elem_idx]
+        comp_1_cv = interface.comp_1.coolant.dict_Gauss_pt["total_isochoric_specific_heat"][elem_idx]
+
         # VELOCITY EQUATION: above/below main diagonal elements construction:
         # (j,j+num_fluid_components) [Pres_j]
 
         # s_vj_pj = K1 * v - K2 / (A * rho)
 
-        s_vj_pj = (
-            conductor.dict_Gauss_pt["K1"][interface.interf_name][elem_idx]
-            * interface.comp_1.coolant.dict_Gauss_pt["velocity"][elem_idx]
-            - conductor.dict_Gauss_pt["K2"][interface.interf_name][elem_idx]
-        ) / (
-            interface.comp_1.channel.inputs["CROSSECTION"]
-            * interface.comp_1.coolant.dict_Gauss_pt["total_density"][elem_idx]
-        )
+        s_vj_pj = K1 * comp_1_v - K2 / (comp_1_A * comp_1_rho)
 
         matrix[
             eq_idx[interface.comp_1.identifier].velocity,
             eq_idx[interface.comp_1.identifier].pressure,
-        ] = matrix[
-            eq_idx[interface.comp_1.identifier].velocity,
-            eq_idx[interface.comp_1.identifier].pressure,
-        ] - s_vj_pj
+        ] -= s_vj_pj
 
         # (j,k + num_fluid_components:2*num_fluid_components) 
         # [Pres_k]
@@ -580,39 +581,21 @@ def build_smat_fluid_interface(
         # (j+num_fluid_components,j+num_fluid_components) [Pres_j]
 
         # coef_grun_area = phi / A
-        coef_grun_area = (
-            interface.comp_1.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
-            / interface.comp_1.channel.inputs["CROSSECTION"]
-        )
+        coef_grun_area = comp_1_phi / comp_1_A
 
         # s_pj_pj = phi/A * [K3 - vK2 - (w - v^2/2 - c0^2/phi)K1]
         #         = coef_grun_area * [K3 - vK2 - (w - v^2/2 - c0^2/phi)K1]
         s_pj_pj = (
             coef_grun_area
-            * (
-                conductor.dict_Gauss_pt["K3"][interface.interf_name][elem_idx]
-                - interface.comp_1.coolant.dict_Gauss_pt["velocity"][elem_idx]
-                * conductor.dict_Gauss_pt["K2"][interface.interf_name][elem_idx]
-                - (
-                    interface.comp_1.coolant.dict_Gauss_pt["total_enthalpy"][elem_idx]
-                    - interface.comp_1.coolant.dict_Gauss_pt["velocity"][elem_idx]
-                    ** 2
-                    / 2.0
-                    - interface.comp_1.coolant.dict_Gauss_pt["total_speed_of_sound"][elem_idx]
-                    ** 2
-                    / interface.comp_1.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
-                )
-                * conductor.dict_Gauss_pt["K1"][interface.interf_name][elem_idx]
+            * (K3 - comp_1_v * K2 - (comp_1_enthalpy - comp_1_v ** 2. / 2.
+            - interface.comp_1.coolant.dict_Gauss_pt["total_speed_of_sound"][elem_idx] ** 2. / comp_1_phi) * K1
             )
         )
 
         matrix[
             eq_idx[interface.comp_1.identifier].pressure,
             eq_idx[interface.comp_1.identifier].pressure,
-        ] = matrix[
-            eq_idx[interface.comp_1.identifier].pressure,
-            eq_idx[interface.comp_1.identifier].pressure,
-        ] + s_pj_pj
+        ] += s_pj_pj
 
         # PRESSURE EQUATION: above/below main diagonal elements construction:
         # (j+num_fluid_components,\
@@ -644,10 +627,7 @@ def build_smat_fluid_interface(
         matrix[
             eq_idx[interface.comp_1.identifier].pressure,
             eq_idx[interface.comp_1.identifier].temperature,
-        ] = matrix[
-            eq_idx[interface.comp_1.identifier].pressure,
-            eq_idx[interface.comp_1.identifier].temperature,
-        ] + s_pj_tj
+        ] += s_pj_tj
 
         # (j+num_fluid_components, 
         # k + 2*num_fluid_components:dict_N_equation
@@ -662,41 +642,25 @@ def build_smat_fluid_interface(
         # (j+2*num_fluid_components,j+num_fluid_components) [Pres_j]
 
         # coef_rho_cv_area = 1/(rho * c_v * A)
-        coef_rho_cv_area = 1.0 / (
-            interface.comp_1.coolant.dict_Gauss_pt["total_density"][elem_idx]
-            * interface.comp_1.coolant.dict_Gauss_pt[
-                "total_isochoric_specific_heat"
-            ][elem_idx]
-            * interface.comp_1.channel.inputs["CROSSECTION"]
-        )
+        coef_rho_cv_area = 1. / (comp_1_rho * comp_1_cv * comp_1_A)
         # s_tj_pj = 1/(rho * c_v * A) * [K3 - vK2 - (w - v^2/2 - phi*c_v*T)K1]
         #         = coef_rho_cv_area * [K3 - vK2 - (w - v^2/2 - phi*c_v*T)K1]
         s_tj_pj = (
             coef_rho_cv_area
             * (
-                conductor.dict_Gauss_pt["K3"][interface.interf_name][elem_idx]
-                - interface.comp_1.coolant.dict_Gauss_pt["velocity"][elem_idx]
-                * conductor.dict_Gauss_pt["K2"][interface.interf_name][elem_idx]
-                - (
-                    interface.comp_1.coolant.dict_Gauss_pt["total_enthalpy"][elem_idx]
-                    - interface.comp_1.coolant.dict_Gauss_pt["velocity"][elem_idx]
-                    ** 2
-                    / 2.0
-                    - interface.comp_1.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
-                    * interface.comp_1.coolant.dict_Gauss_pt["total_isochoric_specific_heat"][elem_idx]
+                K3 - comp_1_v * K2
+                - (comp_1_enthalpy - comp_1_v ** 2. / 2.
+                    - comp_1_phi * comp_1_cv
                     * interface.comp_1.coolant.dict_Gauss_pt["temperature"][elem_idx]
                 )
-                * conductor.dict_Gauss_pt["K1"][interface.interf_name][elem_idx]
+                * K1
             )
         )
 
         matrix[
             eq_idx[interface.comp_1.identifier].temperature,
             eq_idx[interface.comp_1.identifier].pressure,
-        ] = matrix[
-            eq_idx[interface.comp_1.identifier].temperature,
-            eq_idx[interface.comp_1.identifier].pressure,
-        ] + s_tj_pj
+        ] += s_tj_pj
 
         # (j+2*num_fluid_components,\
         # k + num_fluid_components:2*num_fluid_components) [Pres_k]
@@ -716,10 +680,7 @@ def build_smat_fluid_interface(
         matrix[
             eq_idx[interface.comp_1.identifier].temperature,
             eq_idx[interface.comp_1.identifier].temperature,
-        ] = matrix[
-            eq_idx[interface.comp_1.identifier].temperature,
-            eq_idx[interface.comp_1.identifier].temperature,
-        ] + s_tj_tj
+        ] += s_tj_tj
 
         # TEMPERATURE EQUATION: above/below main diagonal elements 
         # construction:
@@ -800,7 +761,7 @@ def build_smat_fluid_solid_interface(
         
         # coef_rho_cv_area = 1/(rho * c_v * A)
         coef_rho_cv_area = 1.0 / (
-            interface.comp_1.coolant.dict_Gauss_pt["total_density"][elem_idx]
+            comp_1_rho
             * interface.comp_1.coolant.dict_Gauss_pt[
                 "total_isochoric_specific_heat"
             ][elem_idx]
