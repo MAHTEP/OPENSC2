@@ -340,6 +340,9 @@ def build_transport_coefficients(conductor:Conductor)->Conductor:
 
     # Loop in fluid-fluid interfaces.
     for interface in conductor.interface.fluid_fluid:
+        comp_1_pressure = interface.comp_1.coolant.dict_Gauss_pt["pressure"]
+        comp_2_pressure = interface.comp_2.coolant.dict_Gauss_pt["pressure"]
+
         # constuct recurrent coefficients of matrix S elements.
         for key in key_names:
             # Initialization.
@@ -347,23 +350,14 @@ def build_transport_coefficients(conductor:Conductor)->Conductor:
                 conductor.grid_features["zcoord_gauss"]
             )
         # Evaluate pressure difference bethween comp_1 and comp_2
-        delta_p = np.abs(
-            interface.comp_1.coolant.dict_Gauss_pt["pressure"]
-            - interface.comp_2.coolant.dict_Gauss_pt["pressure"]
-        )
+        delta_p = np.abs(comp_1_pressure - comp_2_pressure)
         # Array smart
         delta_p[delta_p < conductor.Delta_p_min] = conductor.Delta_p_min
 
         # Find index such that # P_comp_2 < P_comp_1.
-        ind_1 = np.nonzero(
-            interface.comp_2.coolant.dict_Gauss_pt["pressure"]
-            < interface.comp_1.coolant.dict_Gauss_pt["pressure"]
-        )[0]
+        ind_1 = np.nonzero(comp_2_pressure < comp_1_pressure)[0]
         # Find index such that P_comp_2 >= P_comp_1.
-        ind_2 = np.nonzero(
-            interface.comp_2.coolant.dict_Gauss_pt["pressure"]
-            >= interface.comp_1.coolant.dict_Gauss_pt["pressure"]
-        )[0]
+        ind_2 = np.nonzero(comp_2_pressure >= comp_1_pressure)[0]
         
         # Compute transport coefficients K', K'' and K'''
         conductor = eval_transport_coefficients(
