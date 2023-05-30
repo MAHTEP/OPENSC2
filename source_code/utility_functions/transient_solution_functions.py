@@ -721,13 +721,15 @@ def build_smat_fluid_solid_interface(
     # c_v: isochoric specific heat
 
     for interface in conductor.interface.fluid_solid:
+
+        comp_1_A = interface.comp_1.channel.inputs["CROSSECTION"]
         # pressure equation: above main diagonal elements construction.
         # (j+num_fluid_components,j+2*num_fluid_components) [Temp_j] II + III
 
         # coef_grun_area = phi / A
         coef_grun_area = (
             interface.comp_1.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
-            / interface.comp_1.channel.inputs["CROSSECTION"]
+            / comp_1_A
         )
 
         # coef_htc = P * h
@@ -745,10 +747,7 @@ def build_smat_fluid_solid_interface(
         matrix[
             eq_idx[interface.comp_1.identifier].pressure,
             eq_idx[interface.comp_1.identifier].temperature
-        ] = matrix[
-            eq_idx[interface.comp_1.identifier].pressure,
-            eq_idx[interface.comp_1.identifier].temperature,
-        ] + s_pj_tj
+        ] += s_pj_tj
         
         # (j+num_fluid_components,l + dict_N_equation["FluidComponent"]) [Temp_l]
         matrix[
@@ -760,12 +759,12 @@ def build_smat_fluid_solid_interface(
         # (j+2*num_fluid_components,j+2*num_fluid_components) [Temp_j] II + III 
         
         # coef_rho_cv_area = 1/(rho * c_v * A)
-        coef_rho_cv_area = 1.0 / (
-            comp_1_rho
+        coef_rho_cv_area = 1. / (
+            interface.comp_1.coolant.dict_Gauss_pt["total_density"][elem_idx]
             * interface.comp_1.coolant.dict_Gauss_pt[
                 "total_isochoric_specific_heat"
             ][elem_idx]
-            * interface.comp_1.channel.inputs["CROSSECTION"]
+            * comp_1_A
         )
 
         # s_tj_tj = 1/(rho * c_v * A) * P * h
@@ -775,10 +774,7 @@ def build_smat_fluid_solid_interface(
         matrix[
             eq_idx[interface.comp_1.identifier].temperature,
             eq_idx[interface.comp_1.identifier].temperature,
-        ] = matrix[
-            eq_idx[interface.comp_1.identifier].temperature,
-            eq_idx[interface.comp_1.identifier].temperature,
-        ] + s_tj_tj
+        ] += s_tj_tj
         
         # temperature equation: above main diagonal elements construction
         # (j+2*num_fluid_components,l + dict_N_equation["FluidComponent"]) [Temp_l]
