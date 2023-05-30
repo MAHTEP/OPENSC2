@@ -4,6 +4,7 @@ from collections import namedtuple
 from typing import Union, NamedTuple
 
 from fluid_component import FluidComponent
+from solid_component import SolidComponent
 from conductor import Conductor
 
 def matrix_initialization(row:int,col:int)->tuple:
@@ -642,5 +643,36 @@ def build_smat_fluid_solid_interface(
             eq_idx[interface.comp_2.identifier],
             eq_idx[interface.comp_1.identifier].temperature,
         ] = -coef_htc
+
+    return matrix
+
+def build_mmat_solid(
+    matrix:np.ndarray,
+    s_comp:SolidComponent,
+    elem_idx:int,
+    eq_idx:int,
+    )->np.ndarray:
+
+    """Function that updates the M matrix (MMAT) at the Gauss point, for the SolidComponent equation.
+
+    Args:
+        matrix (np.ndarray): M matrix with the element from the fluid equations.
+        s_comp (SolidComponent): solid component object from which get all info to build the coefficients.
+        elem_idx (int): index of the i-th element of the spatial discretization.
+        eq_idx (int): solid component equation index.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+
+    # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
+    # SolidComponent (homogenized) equation.
+    # A * rho *cp / cos(theta)
+    matrix[eq_idx, eq_idx] = (
+        s_comp.inputs["CROSSECTION"]
+        * s_comp.dict_Gauss_pt["total_density"][elem_idx]
+        * s_comp.dict_Gauss_pt["total_isobaric_specific_heat"][elem_idx]
+        / s_comp.inputs["COSTETA"]
+    )
 
     return matrix
