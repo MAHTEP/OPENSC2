@@ -169,19 +169,11 @@ def matrix_initialization(row:int,col:int)->tuple:
         row (int): number of rows of the matrix.
         col (int): number of columns of the matrix.
 
-
     Returns:
         tuple: collection of initialized matrices.
     """
     
-    matrix = np.zeros((row,col))
-    return (
-        matrix,
-        matrix.copy(), # Use method copy to get hard copy of the matrix.
-        matrix.copy(),
-        matrix.copy(),
-        matrix.copy(),
-    )
+    return tuple(np.zeros((row,col)) for _ in range(5))
 
 def ndarray_initialization(dimension:int,num_step:int,col:int=0)->tuple:
     """Wrapper of function np.zeros that inizializes four identical square matrices and an additional variable that can be a column vector or a tuple with matrix of shape (dimension,col) according to the value of num_step (this is necessary to correctly apply the theta method).
@@ -195,13 +187,8 @@ def ndarray_initialization(dimension:int,num_step:int,col:int=0)->tuple:
     Returns:
         tuple: collection of initialized ndarrays.
     """
-
-    matrix = np.zeros((dimension,dimension))
     return (
-        matrix,
-        matrix.copy(), # Use method copy to get hard copy of the matrix.
-        matrix.copy(),
-        matrix.copy(),
+        *tuple(np.zeros((dimension,dimension)) for _ in range(4)),
         array_initialization(dimension, num_step,col)
     )
 
