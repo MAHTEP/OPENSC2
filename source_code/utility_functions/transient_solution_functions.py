@@ -28,6 +28,7 @@ from step_matrix_construction import (
     build_smat_solid_interface,
     build_smat_env_solid_interface,
     build_svec,
+    build_svec_env_jacket_interface,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -382,187 +383,26 @@ def step(conductor, environment, qsource, num_step):
             eq_index,
         )
 
-        # Convective heating with the external environment (implicit treatment).
-        SMAT = build_smat_env_solid_interface(
-            SMAT,
-            conductor,
-            ii,
-            eq_index,
-        )
+        for interface in conductor.interface.env_solid:
+            # Convective heating with the external environment (implicit 
+            # treatment).
+            SMAT = build_smat_env_solid_interface(
+                SMAT,
+                conductor,
+                interface,
+                ii,
+                eq_index,
+            )
+            # END S MATRIX: solid components equation.
 
-        # END S MATRIX: solid components equation.
-
-            # FORM THE S VECTOR AT THE NODAL POINTS (SOURCE)
-            # cl modify august 24 2019
-            if s_comp_l.name != conductor.inventory["JacketComponent"].name:
-                # StrandComponent objects (cdp, 08/2020)
-                # This is independent from the solution method thanks to the \
-                # escamotage of the dummy steady state corresponding to the \
-                # initialization (cdp, 10/2020)
-                if conductor.cond_num_step == 1:
-                    # Current time step (cdp, 10/2020)
-                    SVEC.present[neq, 0] = s_comp_l.dict_Gauss_pt["Q1"][ii, 0]
-                    SVEC.present[neq, 1] = s_comp_l.dict_Gauss_pt["Q2"][ii, 0]
-                    # Previous time step (cdp, 10/2020)
-                    SVEC.previous[neq, 0] = s_comp_l.dict_Gauss_pt["Q1"][ii, 1]
-                    SVEC.previous[neq, 1] = s_comp_l.dict_Gauss_pt["Q2"][ii, 1]
-                else:
-                    # Compute only at the current time step (cdp, 10/2020)
-                    SVEC[neq, 0] = s_comp_l.dict_Gauss_pt["Q1"][ii, 0]
-                    SVEC[neq, 1] = s_comp_l.dict_Gauss_pt["Q2"][ii, 0]
-            else:
-                # JacketComponents objects (cdp, 08/2020)
-                # This is independent from the solution method thanks to the \
-                # escamotage of the dummy steady state corresponding to the \
-                # initialization (cdp, 10/2020)
-                if conductor.cond_num_step == 1:
-                    # Current time step (cdp, 10/2020)
-                    SVEC.present[neq, 0] = (
-                        s_comp_l.dict_Gauss_pt["Q1"][ii, 0]
-                        - qsource[ii, ll - conductor.dict_N_equation["StrandComponent"] - 1]
-                    )
-                    SVEC.present[neq, 1] = (
-                        s_comp_l.dict_Gauss_pt["Q2"][ii, 0]
-                        - qsource[ii + 1, ll - conductor.dict_N_equation["StrandComponent"] - 1]
-                    )
-                    # Previous time step (cdp, 10/2020)
-                    SVEC.previous[neq, 0] = (
-                        s_comp_l.dict_Gauss_pt["Q1"][ii, 1]
-                        - qsource[ii, ll - conductor.dict_N_equation["StrandComponent"] - 1]
-                    )
-                    SVEC.previous[neq, 1] = (
-                        s_comp_l.dict_Gauss_pt["Q2"][ii, 1]
-                        - qsource[ii + 1, ll - conductor.dict_N_equation["StrandComponent"] - 1]
-                    )
-                    if (
-                        conductor.dict_df_coupling["contact_perimeter_flag"].at[
-                            environment.KIND, s_comp_l.identifier
-                        ]
-                        == 1
-                    ):
-                        # Add the contribution of the external heating by convection to the known term vector.
-                        if (
-                            conductor.dict_df_coupling["HTC_choice"].at[
-                                environment.KIND, s_comp_l.identifier
-                            ]
-                            == 2
-                            and conductor.inputs["Is_rectangular"]
-                        ):
-                            # Rectangular duct.
-                            coef = 2 * conductor.inputs[
-                                "Height"
-                            ] * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                f"{environment.KIND}_{s_comp_l.identifier}"
-                            ][
-                                "conv"
-                            ][
-                                "side"
-                            ][
-                                ii
-                            ] + conductor.inputs[
-                                "width"
-                            ] * (
-                                conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.identifier}"
-                                ]["conv"]["bottom"][ii]
-                                + conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.identifier}"
-                                ]["conv"]["top"][ii]
-                            )
-                        else:
-                            coef = (
-                                conductor.dict_interf_peri["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.identifier}"
-                                ]
-                                * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.identifier}"
-                                ]["conv"][ii]
-                            )
-                        # End if conductor.inputs["Is_rectangular"]
-
-                        SVEC.present[neq, 0] = (
-                            SVEC.present[neq, 0]
-                            + coef * environment.inputs["Temperature"]
-                        )  # W/m
-                        SVEC.present[neq, 1] = (
-                            SVEC.present[neq, 1]
-                            + coef * environment.inputs["Temperature"]
-                        )  # W/m
-                        SVEC.previous[neq, 0] = (
-                            SVEC.previous[neq, 0]
-                            + coef * environment.inputs["Temperature"]
-                        )  # W/m
-                        SVEC.previous[neq, 1] = (
-                            SVEC.previous[neq, 1]
-                            + coef * environment.inputs["Temperature"]
-                        )  # W/m
-                    # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.identifier] == 1
-                else:
-                    # Compute only at the current time step (cdp, 10/2020)
-                    SVEC[neq, 0] = (
-                        s_comp_l.dict_Gauss_pt["Q1"][ii, 0]
-                        - qsource[ii, ll - conductor.dict_N_equation["StrandComponent"] - 1]
-                    )
-                    SVEC[neq, 1] = (
-                        s_comp_l.dict_Gauss_pt["Q2"][ii, 0]
-                        - qsource[ii + 1, ll - conductor.dict_N_equation["StrandComponent"] - 1]
-                    )
-                    if (
-                        conductor.dict_df_coupling["contact_perimeter_flag"].at[
-                            environment.KIND, s_comp_l.identifier
-                        ]
-                        == 1
-                    ):
-                        # Add the contribution of the external heating by convection to the known term vector.
-                        if (
-                            conductor.dict_df_coupling["HTC_choice"].at[
-                                environment.KIND, s_comp_l.identifier
-                            ]
-                            == 2
-                            and conductor.inputs["Is_rectangular"]
-                        ):
-                            # Rectangular duct.
-                            coef = 2 * conductor.inputs[
-                                "Height"
-                            ] * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                f"{environment.KIND}_{s_comp_l.identifier}"
-                            ][
-                                "conv"
-                            ][
-                                "side"
-                            ][
-                                ii
-                            ] + conductor.inputs[
-                                "width"
-                            ] * (
-                                conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.identifier}"
-                                ]["conv"]["bottom"][ii]
-                                + conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.identifier}"
-                                ]["conv"]["top"][ii]
-                            )
-                        else:
-                            coef = (
-                                conductor.dict_interf_peri["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.identifier}"
-                                ]
-                                * conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                                    f"{environment.KIND}_{s_comp_l.identifier}"
-                                ]["conv"][ii]
-                            )
-                        # End if conductor.inputs["Is_rectangular"]
-
-                        SVEC[neq, 0] = (
-                            SVEC[neq, 0] + coef * environment.inputs["Temperature"]
-                        )  # W/m
-                        SVEC[neq, 1] = (
-                            SVEC[neq, 1] + coef * environment.inputs["Temperature"]
-                        )  # W/m
-                    # End if conductor.dict_df_coupling["contact_perimeter_flag"].at[environment.KIND, s_comp_l.identifier] == 1
-            # cl end august 24 2019
-            # END S VECTOR: solid components equation (cdp, 07/2020)
-        # end for ll (cdp, 07/2020)
+            SVEC = build_svec_env_jacket_interface(
+                SVEC,
+                conductor,
+                interface,
+                ii,
+                eq_index,
+            )
+            # END S VECTOR: solid components equation.
 
         # COMPUTE THE MASS AND CAPACITY MATRIX
         # array smart (cdp, 07/2020)
