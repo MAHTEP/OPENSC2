@@ -786,8 +786,8 @@ def build_smat_env_solid_interface(
     # Convective heating with the external environment (implicit treatment).
     if (
         conductor.dict_df_coupling["HTC_choice"].at[
-            interface.comp1.KIND,
-            interface.comp2.identifier,
+            interface.comp_1.KIND,
+            interface.comp_2.identifier,
         ]
         == 2
         and conductor.inputs["Is_rectangular"]
@@ -809,8 +809,8 @@ def build_smat_env_solid_interface(
         )
     # Update matrix coefficients.
     matrix[
-            eq_idx[interface.comp2.identifier],
-            eq_idx[interface.comp2.identifier],
+            eq_idx[interface.comp_2.identifier],
+            eq_idx[interface.comp_2.identifier],
         ] += coef_htc
 
     return matrix
@@ -902,8 +902,8 @@ def build_svec_env_jacket_interface(
             ]["conv"]
     height = conductor.inputs["Height"]
     width = conductor.inputs["width"]
-    env = interface.comp1
-    s_comp = interface.comp2
+    env = interface.comp_1
+    s_comp = interface.comp_2
     
     # Add the contribution of the external heating by convection to the 
     # known term vector.
