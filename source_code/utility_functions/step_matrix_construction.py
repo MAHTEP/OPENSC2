@@ -879,3 +879,68 @@ def build_svec(
         )
     
     return array
+
+def build_svec_env_jacket_interface(
+    array:np.ndarray,
+    conductor: Conductor,
+    interface:NamedTuple,
+    elem_idx:int,
+    eq_idx:dict,
+    )->np.ndarray:
+    """Function that builds the source vector (SVEC) terms at the Gauss point due to heat transfer by convection and/or radiation between environment and jacket component objects.
+
+    Args:
+        array (np.ndarray): SVEC array after call to function build_svec.
+        interface (NamedTuple): collection of interface information like interface name and components that constitute the interface.
+        elem_idx (int): index of the i-th element of the spatial discretization.
+        eq_idx (dict): collection of NamedTuple with solid equation index (temperature,i.e. heat transfer equation, component index, i.e., source term due to thermal contact between objects of a different conductor.)
+
+    Returns:
+        np.ndarray: array with updated elements.
+    """
+
+    # Alias.
+    h_conv = conductor.dict_Gauss_pt["HTC"]["env_sol"][
+                interface.interf_name
+            ]["conv"]
+    height = conductor.inputs["Height"]
+    width = conductor.inputs["width"]
+    env = interface.comp1
+    s_comp = interface.comp2
+    
+    # Add the contribution of the external heating by convection to the 
+    # known term vector.
+    if (
+        conductor.dict_df_coupling["HTC_choice"].at[
+            env.KIND, s_comp.identifier
+        ]
+        == 2
+        and conductor.inputs["Is_rectangular"]
+    ):
+        # Rectangular duct.
+        coef = 2. * height * h_conv["side"][elem_idx]
+        + width* (h_conv["bottom"][elem_idx] + h_conv["top"][elem_idx])
+    else:
+        coef = (
+            conductor.dict_interf_peri["env_sol"][
+                interface.interf_name
+            ]
+            * h_conv[elem_idx]
+        )
+    
+        # Linear heat flux from environment W/m
+        env_heat = coef * env.inputs["Temperature"]
+
+        if conductor.cond_num_step == 1:
+            # Present time step.
+            array.present[eq_idx[s_comp.identifier].temperature,0] += env_heat
+            array.present[eq_idx[s_comp.identifier].temperature,1] += env_heat
+            # Previous time step.
+            array.previous[eq_idx[s_comp.identifier].temperature,0] += env_heat
+            array.previous[eq_idx[s_comp.identifier].temperature,1] += env_heat
+        else:
+            # Present time step.
+            array[eq_idx[s_comp.identifier].temperature,0] += env_heat
+            array[eq_idx[s_comp.identifier].temperature,1] += env_heat
+
+    return array
