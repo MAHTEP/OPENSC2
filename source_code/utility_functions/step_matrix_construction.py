@@ -760,6 +760,7 @@ def build_smat_solid_interface(
 def build_smat_env_solid_interface(
     matrix:np.ndarray,
     conductor:Conductor,
+    interface:NamedTuple,
     elem_idx:int,
     eq_idx:dict,
     )->np.ndarray:
@@ -769,6 +770,7 @@ def build_smat_env_solid_interface(
     Args:
         matrix (np.ndarray): S matrix after call to function build_smat_solid_interface.
         conductor (Conductor): object with all the information of the conductor.
+        interface (NamedTuple): collection of interface information like interface name and components that constitute the interface.
         elem_idx (int): index of the i-th element of the spatial discretization.
         eq_idx (dict): collection of integer solid equation index.
 
@@ -776,41 +778,40 @@ def build_smat_env_solid_interface(
         np.ndarray: matrix with updated elements.
     """
 
-    for interface in conductor.interface.solid_solid:
-        # Alias.
-        h_conv = conductor.dict_Gauss_pt["HTC"]["env_sol"][
-                    interface.interf_name
-                ]["conv"]
-    
-        # Convective heating with the external environment (implicit treatment).
-        if (
-            conductor.dict_df_coupling["HTC_choice"].at[
-                interface.comp1.KIND,
-                interface.comp2.identifier,
+    # Alias.
+    h_conv = conductor.dict_Gauss_pt["HTC"]["env_sol"][
+                interface.interf_name
+            ]["conv"]
+
+    # Convective heating with the external environment (implicit treatment).
+    if (
+        conductor.dict_df_coupling["HTC_choice"].at[
+            interface.comp1.KIND,
+            interface.comp2.identifier,
+        ]
+        == 2
+        and conductor.inputs["Is_rectangular"]
+    ):
+        # Rectangular duct.
+        coef_htc = (
+            + 2. * conductor.inputs["Height"] * h_conv["side"][elem_idx]
+            + conductor.inputs["width"]
+            * (
+                h_conv["bottom"][elem_idx] + h_conv["top"][elem_idx]
+            )
+        )
+    else:
+        coef_htc = (
+            h_conv[elem_idx]
+            * conductor.dict_interf_peri["env_sol"][
+                interface.interf_name
             ]
-            == 2
-            and conductor.inputs["Is_rectangular"]
-        ):
-            # Rectangular duct.
-            coef_htc = (
-                + 2. * conductor.inputs["Height"] * h_conv["side"][elem_idx]
-                + conductor.inputs["width"]
-                * (
-                    h_conv["bottom"][elem_idx] + h_conv["top"][elem_idx]
-                )
-            )
-        else:
-            coef_htc = (
-                h_conv[elem_idx]
-                * conductor.dict_interf_peri["env_sol"][
-                    interface.interf_name
-                ]
-            )
-        # Update matrix coefficients.
-        matrix[
-                eq_idx[interface.comp2.identifier],
-                eq_idx[interface.comp2.identifier],
-            ] += coef_htc
+        )
+    # Update matrix coefficients.
+    matrix[
+            eq_idx[interface.comp2.identifier],
+            eq_idx[interface.comp2.identifier],
+        ] += coef_htc
 
     return matrix
 
