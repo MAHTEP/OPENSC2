@@ -813,3 +813,69 @@ def build_smat_env_solid_interface(
             ] += coef_htc
 
     return matrix
+
+def build_svec(
+    array:np.ndarray,
+    s_comp: SolidComponent,
+    elem_idx:int,
+    eq_idx:NamedTuple,
+    **kwargs,
+    )->np.ndarray:
+    """Function that builds the source vector (SVEC) elements at the Gauss point due to heat generation in strand and or jacket component objects and to thermal contact beween jacket compoments belonging to different conductors (qsource). For strand component objects the latter contribution is always zero.
+    N.B. This function is a merge of the if statement if isinstance(scomp,StrandComponent) is true do not account for qsource else, account for qsource. Since, as mentioned qsourse = 0 for StrandComponent, the check chan be avoided. This should improve readability and maintainability of the function.
+
+    Args:
+        array (np.ndarray): initialized SVEC array.
+        s_comp (SolidComponent): solid component object from which get all info to build the coefficients.
+        elem_idx (int): index of the i-th element of the spatial discretization.
+        eq_idx (NamedTuple): collection of solid equation index (temperature,i.e. heat transfer equation, component index, i.e., source term due to thermal contact between objects of a different conductor.).
+
+    Kwargs:
+        num_step (int): present time step counter value.
+        qsource (np.ndarray): matrix with heat due to thermal contact between jacket components of different conductors.
+
+    Returns:
+        np.ndarray: array with updated elements.
+    """
+    
+    # Alias.
+    qsource = kwargs["qsource"]
+    Q1 = s_comp.dict_Gauss_pt["Q1"]
+    Q2 = s_comp.dict_Gauss_pt["Q2"]
+
+    # N.B. qsource has non zero values only in nodes and columns that represent 
+    # the contact between jacket components of different conductors.
+
+    # This is independent from the solution method thanks to the escamotage of 
+    # the dummy steady state corresponding to the initialization.
+    if kwargs["num_step"] == 1:
+        # Present time step.
+        array.present[eq_idx[s_comp.identifier].temperature,0] = (
+            Q1[elem_idx,0]
+            - qsource[elem_idx,eq_idx[s_comp.identifier].comp_idx]
+        )
+        array.present[eq_idx[s_comp.identifier].temperature,1] = (
+            Q2[elem_idx,0]
+            - qsource[elem_idx + 1, eq_idx[s_comp.identifier].comp_idx]
+        )
+        # Previous time step.
+        array.previous[eq_idx[s_comp.identifier].temperature,0] = (
+            Q1[elem_idx,1]
+            - qsource[elem_idx,eq_idx[s_comp.identifier].comp_idx]
+        )
+        array.previous[eq_idx[s_comp.identifier].temperature,1] = (
+            Q2[elem_idx,1]
+            - qsource[elem_idx + 1, eq_idx[s_comp.identifier].comp_idx]
+        )
+    else:
+        # Compute only at the current time step.
+        array[eq_idx[s_comp.identifier].temperature,0] = (
+            Q1[elem_idx,0]
+            - qsource[elem_idx, eq_idx[s_comp.identifier].comp_idx]
+        )
+        array[eq_idx[s_comp.identifier].temperature,1] = (
+            Q2[elem_idx,0]
+            - qsource[elem_idx + 1, eq_idx[s_comp.identifier].comp_idx]
+        )
+    
+    return array
