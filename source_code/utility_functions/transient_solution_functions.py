@@ -26,7 +26,8 @@ from step_matrix_construction import (
     build_mmat_solid,
     build_kmat_solid,
     build_smat_solid_interface,
-    build_smat_env_solid_interface
+    build_smat_env_solid_interface,
+    build_svec,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -362,6 +363,16 @@ def step(conductor, environment, qsource, num_step):
                 eq_index[s_comp_l.identifier]
             )
             # END K MATRIX: SolidComponent equation.
+
+            # FORM THE S VECTOR AT THE NODAL POINTS (SOURCE)
+            SVEC = build_svec(
+                SVEC,
+                s_comp_l,
+                ii,
+                eq_index[s_comp_l.identifier],
+                num_step=conductor.cond_num_step,
+                qsource=qsource
+            )
 
         # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
         SMAT = build_smat_solid_interface(
