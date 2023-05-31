@@ -340,15 +340,16 @@ def step(conductor, environment, qsource, num_step):
         # (cdp, 07/2020)
         # * FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, SOLID \
         # COMPONENTS EQUATIONS *
-        for ll, s_comp_l in enumerate(conductor.inventory["SolidComponent"].collection):
-            neq = conductor.dict_N_equation["FluidComponent"] + ll
+        for s_comp_idx, s_comp in enumerate(
+            conductor.inventory["SolidComponent"].collection
+        ):
             # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
             # SolidComponent equation.
             MMAT = build_mmat_solid(
                 MMAT,
-                s_comp_l,
+                s_comp,
                 ii,
-                eq_index[s_comp_l.identifier]
+                eq_index[s_comp.identifier]
             )
             # END M MATRIX: SolidComponent equation.
 
@@ -359,20 +360,21 @@ def step(conductor, environment, qsource, num_step):
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
             KMAT = build_kmat_solid(
                 KMAT,
-                s_comp_l,
+                s_comp,
                 ii,
-                eq_index[s_comp_l.identifier]
+                eq_index[s_comp.identifier]
             )
             # END K MATRIX: SolidComponent equation.
 
             # FORM THE S VECTOR AT THE NODAL POINTS (SOURCE)
             SVEC = build_svec(
                 SVEC,
-                s_comp_l,
+                s_comp,
                 ii,
-                eq_index[s_comp_l.identifier],
+                eq_index[s_comp.identifier],
                 num_step=conductor.cond_num_step,
-                qsource=qsource
+                qsource=qsource,
+                comp_idx=s_comp_idx,
             )
 
         # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
