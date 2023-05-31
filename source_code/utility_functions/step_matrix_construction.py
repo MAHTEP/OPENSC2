@@ -797,7 +797,7 @@ def build_smat_env_solid_interface(
         # Rectangular duct.
         coef_htc = (
             + 2. * conductor.inputs["Height"] * h_conv["side"][elem_idx]
-            + conductor.inputs["width"]
+            + conductor.inputs["Width"]
             * (
                 h_conv["bottom"][elem_idx] + h_conv["top"][elem_idx]
             )
@@ -903,7 +903,7 @@ def build_svec_env_jacket_interface(
                 interface.interf_name
             ]["conv"]
     height = conductor.inputs["Height"]
-    width = conductor.inputs["width"]
+    width = conductor.inputs["Width"]
     env = interface.comp_1
     s_comp = interface.comp_2
     
