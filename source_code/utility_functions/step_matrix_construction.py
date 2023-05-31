@@ -819,7 +819,7 @@ def build_svec(
     array:np.ndarray,
     s_comp: SolidComponent,
     elem_idx:int,
-    eq_idx:NamedTuple,
+    eq_idx:dict,
     **kwargs,
     )->np.ndarray:
     """Function that builds the source vector (SVEC) elements at the Gauss point due to heat generation in strand and or jacket component objects and to thermal contact beween jacket compoments belonging to different conductors (qsource). For strand component objects the latter contribution is always zero.
@@ -829,11 +829,12 @@ def build_svec(
         array (np.ndarray): initialized SVEC array.
         s_comp (SolidComponent): solid component object from which get all info to build the coefficients.
         elem_idx (int): index of the i-th element of the spatial discretization.
-        eq_idx (NamedTuple): collection of solid equation index (temperature,i.e. heat transfer equation, component index, i.e., source term due to thermal contact between objects of a different conductor.).
+        eq_idx (dict): collection of integer solid equation index.
 
     Kwargs:
         num_step (int): present time step counter value.
         qsource (np.ndarray): matrix with heat due to thermal contact between jacket components of different conductors.
+        comp_idx (int): component index, used to correctly assign the heat source term due to thermal contact between solid components of different conductors.
 
     Returns:
         np.ndarray: array with updated elements.
@@ -841,6 +842,7 @@ def build_svec(
     
     # Alias.
     qsource = kwargs["qsource"]
+    comp_idx = kwargs["comp_idx"]
     Q1 = s_comp.dict_Gauss_pt["Q1"]
     Q2 = s_comp.dict_Gauss_pt["Q2"]
 
@@ -851,32 +853,26 @@ def build_svec(
     # the dummy steady state corresponding to the initialization.
     if kwargs["num_step"] == 1:
         # Present time step.
-        array.present[eq_idx[s_comp.identifier].temperature,0] = (
-            Q1[elem_idx,0]
-            - qsource[elem_idx,eq_idx[s_comp.identifier].comp_idx]
+        array.present[eq_idx[s_comp.identifier],0] = (
+            Q1[elem_idx,0] - qsource[elem_idx,comp_idx]
         )
-        array.present[eq_idx[s_comp.identifier].temperature,1] = (
-            Q2[elem_idx,0]
-            - qsource[elem_idx + 1, eq_idx[s_comp.identifier].comp_idx]
+        array.present[eq_idx[s_comp.identifier],1] = (
+            Q2[elem_idx,0] - qsource[elem_idx + 1, comp_idx]
         )
         # Previous time step.
-        array.previous[eq_idx[s_comp.identifier].temperature,0] = (
-            Q1[elem_idx,1]
-            - qsource[elem_idx,eq_idx[s_comp.identifier].comp_idx]
+        array.previous[eq_idx[s_comp.identifier],0] = (
+            Q1[elem_idx,1] - qsource[elem_idx,comp_idx]
         )
-        array.previous[eq_idx[s_comp.identifier].temperature,1] = (
-            Q2[elem_idx,1]
-            - qsource[elem_idx + 1, eq_idx[s_comp.identifier].comp_idx]
+        array.previous[eq_idx[s_comp.identifier],1] = (
+            Q2[elem_idx,1] - qsource[elem_idx + 1, comp_idx]
         )
     else:
         # Compute only at the current time step.
-        array[eq_idx[s_comp.identifier].temperature,0] = (
-            Q1[elem_idx,0]
-            - qsource[elem_idx, eq_idx[s_comp.identifier].comp_idx]
+        array[eq_idx[s_comp.identifier],0] = (
+            Q1[elem_idx,0] - qsource[elem_idx, comp_idx]
         )
-        array[eq_idx[s_comp.identifier].temperature,1] = (
-            Q2[elem_idx,0]
-            - qsource[elem_idx + 1, eq_idx[s_comp.identifier].comp_idx]
+        array[eq_idx[s_comp.identifier].temperatur,1] = (
+            Q2[elem_idx,0] - qsource[elem_idx + 1, comp_idx]
         )
     
     return array
@@ -894,7 +890,7 @@ def build_svec_env_jacket_interface(
         array (np.ndarray): SVEC array after call to function build_svec.
         interface (NamedTuple): collection of interface information like interface name and components that constitute the interface.
         elem_idx (int): index of the i-th element of the spatial discretization.
-        eq_idx (dict): collection of NamedTuple with solid equation index (temperature,i.e. heat transfer equation, component index, i.e., source term due to thermal contact between objects of a different conductor.)
+        eq_idx (dict): collection of integer solid equation index.
 
     Returns:
         np.ndarray: array with updated elements.
@@ -934,14 +930,14 @@ def build_svec_env_jacket_interface(
 
         if conductor.cond_num_step == 1:
             # Present time step.
-            array.present[eq_idx[s_comp.identifier].temperature,0] += env_heat
-            array.present[eq_idx[s_comp.identifier].temperature,1] += env_heat
+            array.present[eq_idx[s_comp.identifier],0] += env_heat
+            array.present[eq_idx[s_comp.identifier],1] += env_heat
             # Previous time step.
-            array.previous[eq_idx[s_comp.identifier].temperature,0] += env_heat
-            array.previous[eq_idx[s_comp.identifier].temperature,1] += env_heat
+            array.previous[eq_idx[s_comp.identifier],0] += env_heat
+            array.previous[eq_idx[s_comp.identifier],1] += env_heat
         else:
             # Present time step.
-            array[eq_idx[s_comp.identifier].temperature,0] += env_heat
-            array[eq_idx[s_comp.identifier].temperature,1] += env_heat
+            array[eq_idx[s_comp.identifier],0] += env_heat
+            array[eq_idx[s_comp.identifier],1] += env_heat
 
     return array
