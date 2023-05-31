@@ -756,6 +756,8 @@ def build_smat_solid_interface(
             eq_idx[interface.comp_1.identifier],
             eq_idx[interface.comp_2.identifier],
         ] = - coef_htc
+    
+    return matrix
 
 def build_smat_env_solid_interface(
     matrix:np.ndarray,
