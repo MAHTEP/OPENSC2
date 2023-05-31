@@ -275,8 +275,10 @@ def step(conductor, environment, qsource, num_step):
             col=2
         )
         
+        # Exploit left binary shift, equivalent to:
+        # 2 * conductor.dict_N_equation["NODOFS"]
         ELMMAT,ELAMAT,ELKMAT,ELSMAT,ELSLOD = ndarray_initialization(
-            2 * conductor.dict_N_equation["NODOFS"],
+            conductor.dict_N_equation["NODOFS"] << 1, # left binary shift
             conductor.cond_num_step
         )
         
@@ -337,8 +339,7 @@ def step(conductor, environment, qsource, num_step):
         )
         # END S MATRIX: fluid components equations
 
-        # (cdp, 07/2020)
-        # * FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, SOLID \
+        # * FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, SOLID
         # COMPONENTS EQUATIONS *
         for s_comp_idx, s_comp in enumerate(
             conductor.inventory["SolidComponent"].collection
