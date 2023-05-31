@@ -219,11 +219,15 @@ class Simulation:
         # dictionary declaration (cdp,07/2020)
         self.dict_qsource = dict()
         if self.numObj == 1:
-            # There is only 1 Conductor object, exploit cond instantiated above (cdp,07/2020)
+            # There is only 1 Conductor object, exploit cond instantiated above.
+            # The number of columns is equal to the number of SolidComponent 
+            # equations to exploit the new function build_svec in 
+            # utility_functions/step_matrix_construction.py. Read the docstring 
+            # for further details.
             self.dict_qsource[cond.identifier] = np.zeros(
                 (
                     cond.grid_features["N_nod"],
-                    cond.dict_N_equation["JacketComponent"],
+                    cond.dict_N_equation["SolidComponent"],
                 )
             )
         else:
@@ -232,11 +236,18 @@ class Simulation:
                 cond_r = self.list_of_Conductors[rr]
                 if all(self.contactBetweenConductors.iloc[rr, :]) == 0:
                     # There is not contact between cond_r and all the others.
-                    # Consider all the columns in order to not miss the info on last raw (otherwise the last conductor will not be added as key of the dictionary).
+                    # Consider all the columns in order to not miss the info on 
+                    # last raw (otherwise the last conductor will not be added 
+                    # as key of the dictionary).
+                    # The number of columns is equal to the number of 
+                    # SolidComponent equations to exploit the new function 
+                    # build_svec in 
+                    # utility_functions/step_matrix_construction.py. Read the 
+                    # docstring for further details.
                     self.dict_qsource[cond_r.identifier] = np.zeros(
                         (
                             cond_r.grid_features["N_nod"],
-                            cond_r.dict_N_equation["JacketComponent"],
+                            cond_r.dict_N_equation["SolidComponent"],
                         )
                     )
                 else:
@@ -257,12 +268,17 @@ class Simulation:
                             # There is not contact between cond_r and cond_c (cdp,07/2020)
                             # Proposta di soluzione ma va studiata decisamente meglio!
                             # N.B. controllare anche nella chiamata a step come passare self.dict_qsource.
+                            # The number of columns is equal to the number of 
+                            # SolidComponent equations to exploit the new 
+                            # function build_svec in 
+                            # utility_functions/step_matrix_construction.py. 
+                            # Read the docstring for further details.
                             self.dict_qsource[
                                 f"{cond_r.identifier}_{cond_c.identifier}"
                             ] = np.zeros(
                                 (
                                     cond_r.grid_features["N_nod"],
-                                    cond_r.dict_N_equation["JacketComponent"],
+                                    cond_r.dict_N_equation["SolidComponent"],
                                 )
                             )
                             raise ValueError(
