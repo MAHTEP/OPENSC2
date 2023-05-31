@@ -13,7 +13,7 @@ from typing import Union, NamedTuple
 
 from fluid_component import FluidComponent
 from conductor import Conductor
-from step_matrix_construction import (
+from utility_functions.step_matrix_construction import (
     matrix_initialization,
     ndarray_initialization,
     build_equation_idx,
