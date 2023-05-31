@@ -819,7 +819,7 @@ def build_svec(
     array:np.ndarray,
     s_comp: SolidComponent,
     elem_idx:int,
-    eq_idx:dict,
+    eq_idx:int,
     **kwargs,
     )->np.ndarray:
     """Function that builds the source vector (SVEC) elements at the Gauss point due to heat generation in strand and or jacket component objects and to thermal contact beween jacket compoments belonging to different conductors (qsource). For strand component objects the latter contribution is always zero.
@@ -829,7 +829,7 @@ def build_svec(
         array (np.ndarray): initialized SVEC array.
         s_comp (SolidComponent): solid component object from which get all info to build the coefficients.
         elem_idx (int): index of the i-th element of the spatial discretization.
-        eq_idx (dict): collection of integer solid equation index.
+        eq_idx (int): solid equation index.
 
     Kwargs:
         num_step (int): present time step counter value.
@@ -853,25 +853,25 @@ def build_svec(
     # the dummy steady state corresponding to the initialization.
     if kwargs["num_step"] == 1:
         # Present time step.
-        array.present[eq_idx[s_comp.identifier],0] = (
+        array.present[eq_idx,0] = (
             Q1[elem_idx,0] - qsource[elem_idx,comp_idx]
         )
-        array.present[eq_idx[s_comp.identifier],1] = (
+        array.present[eq_idx,1] = (
             Q2[elem_idx,0] - qsource[elem_idx + 1, comp_idx]
         )
         # Previous time step.
-        array.previous[eq_idx[s_comp.identifier],0] = (
+        array.previous[eq_idx,0] = (
             Q1[elem_idx,1] - qsource[elem_idx,comp_idx]
         )
-        array.previous[eq_idx[s_comp.identifier],1] = (
+        array.previous[eq_idx,1] = (
             Q2[elem_idx,1] - qsource[elem_idx + 1, comp_idx]
         )
     else:
         # Compute only at the current time step.
-        array[eq_idx[s_comp.identifier],0] = (
+        array[eq_idx,0] = (
             Q1[elem_idx,0] - qsource[elem_idx, comp_idx]
         )
-        array[eq_idx[s_comp.identifier].temperatur,1] = (
+        array[eq_idx,1] = (
             Q2[elem_idx,0] - qsource[elem_idx + 1, comp_idx]
         )
     
