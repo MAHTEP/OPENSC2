@@ -509,8 +509,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                         columns={header[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
                     )
                 header_gauss = list(dict_df[file_name_gauss].columns.values.tolist())
-                for jj, _ in enumerate(list_sol_key_gauss):
-                    prop = list_sol_key_gauss[jj]
+                for jj, prop in enumerate(list_sol_key_gauss):
                     # decompose the data frame in four dataframes (cdp, 11/2020)
                     dict_df_new[prop] = dict_df[file_name].filter(
                         items=[header_gauss[jj + 1]]
@@ -533,22 +532,21 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                     dict_df_new[prop].rename(
                         columns={header[jj + 1]: f"time = {time[ii]} (s)"}, inplace=True
                     )
-                    for jj, prop in enumerate(list_sol_key_gauss):
-                        prop = list_sol_key_gauss[jj]
-                        # construct the new data frames with concat method (cdp, 11/2020)
-                        dict_df_new[prop] = pd.concat(
-                            [
-                                dict_df_new[prop],
-                                dict_df[file_name_gauss].filter(
-                                    items=[header_gauss[jj + 1]]
-                                ),
-                            ],
-                            axis=1,
-                        )
-                        dict_df_new[prop].rename(
-                            columns={header_gauss[jj + 1]: f"time = {time[ii]} (s)"},
-                            inplace=True,
-                        )
+                for jj, prop in enumerate(list_sol_key_gauss):
+                    # construct the new data frames with concat method (cdp, 11/2020)
+                    dict_df_new[prop] = pd.concat(
+                        [
+                            dict_df_new[prop],
+                            dict_df[file_name_gauss].filter(
+                                items=[header_gauss[jj + 1]]
+                            ),
+                        ],
+                        axis=1,
+                    )
+                    dict_df_new[prop].rename(
+                        columns={header_gauss[jj + 1]: f"time = {time[ii]} (s)"},
+                        inplace=True,
+                    )
             # end if ii (cdp, 11/2020)
         # end for ii (cdp, 11/2020)
         # for loop to save the new data frame (cdp, 11/2020)
