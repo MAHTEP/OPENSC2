@@ -511,7 +511,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
                 header_gauss = list(dict_df[file_name_gauss].columns.values.tolist())
                 for jj, prop in enumerate(list_sol_key_gauss):
                     # decompose the data frame in four dataframes (cdp, 11/2020)
-                    dict_df_new[prop] = dict_df[file_name].filter(
+                    dict_df_new[prop] = dict_df[file_name_gauss].filter(
                         items=[header_gauss[jj + 1]]
                     )
                     # rename data frames columns (cdp, 11/2020)
