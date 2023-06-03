@@ -184,6 +184,12 @@ def build_transport_coefficients(conductor:Conductor)->Conductor:
         conductor.dict_Gauss_pt[key] = dict()
 
     # Loop in fluid-fluid interfaces.
+    # The loop is done on all the type of interfaces between fluids since in 
+    # the evaluation of K', K'' and K''' the relevant parameter is the open 
+    # cross section per unit length (open contact perimeter): K', K'' and K''' 
+    # are not 0 only if the open contact perimeter is not 0. In this way, a 
+    # check on the interface kind between fluids is avoided for each interface 
+    # and for each time step.
     for interface in conductor.interface.fluid_fluid:
         comp_1_pressure = interface.comp_1.coolant.dict_Gauss_pt["pressure"]
         comp_2_pressure = interface.comp_2.coolant.dict_Gauss_pt["pressure"]
