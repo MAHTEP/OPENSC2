@@ -974,16 +974,16 @@ def build_elmmat(
     # ndf2 = 2 * ndf
     ndf2 = ndf << 1
     # Build diagonal block of the matrix.
-    diag_bloc = dz * (1. / 3. + alpha) * mmat
+    diag_block = dz * (1. / 3. + alpha) * mmat
     # Build off diagonal block of the matrix.
-    off_diag_bloc = dz * (1. / 6. - alpha) * mmat
+    off_diag_block = dz * (1. / 6. - alpha) * mmat
     
     # COMPUTE THE MASS AND CAPACITY MATRIX
     # array smart
-    matrix[:ndf,:ndf] = diag_bloc
-    matrix[:ndf,ndf:ndf2] = off_diag_bloc
-    matrix[ndf:ndf2,:ndf] = off_diag_bloc
-    matrix[ndf:ndf2,ndf:ndf2] = diag_bloc
+    matrix[:ndf,:ndf] = diag_block
+    matrix[:ndf,ndf:ndf2] = off_diag_block
+    matrix[ndf:ndf2,:ndf] = off_diag_block
+    matrix[ndf:ndf2,ndf:ndf2] = diag_block
 
     return matrix
 
