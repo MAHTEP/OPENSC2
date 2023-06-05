@@ -1014,3 +1014,36 @@ def build_elamat(
     matrix[ndf:ndf2,ndf:ndf2] = block
 
     return matrix
+
+def build_elkmat(
+    matrix:np.ndarray,
+    kmat:np.ndarray,
+    ndf:int,
+    dz:float,
+    )->np.ndarray:
+    """
+    Function that builds the diffusion matrix (ELKMAT) at the Gauss point exploiting slicing.
+
+    Args:
+        matrix (np.ndarray): Initialized ELK matrix.
+        kmat (np.ndarray): mass and capaciyt matrix KMAT after call to function build_kmat_solid.
+        ndf (int): number of degrees of freedom, used to slice ELKMAT matrix.
+        dz (float): length of the present element of the spatial discretization.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+
+    # Exploit left binary shift, equivalent to:
+    # ndf2 = 2 * ndf
+    ndf2 = ndf << 1
+    block = kmat / dz
+    
+    # COMPUTE THE DIFFUSION MATRIX
+    # array smart
+    matrix[:ndf,:ndf] = block
+    matrix[:ndf,ndf:ndf2] = - block
+    matrix[ndf:ndf2,:ndf] = - block
+    matrix[ndf:ndf2,ndf:ndf2] = block
+
+    return matrix
