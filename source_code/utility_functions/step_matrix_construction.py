@@ -1055,7 +1055,7 @@ def build_elsmat(
     dz:float,
     )->np.ndarray:
     """
-    Function that builds the sorce matrix (ELSMAT) at the Gauss point exploiting slicing.
+    Function that builds the source matrix (ELSMAT) at the Gauss point exploiting slicing.
 
     Args:
         matrix (np.ndarray): Initialized ELS matrix.
@@ -1083,3 +1083,51 @@ def build_elsmat(
     matrix[ndf:ndf2,ndf:ndf2] = diag_block
 
     return matrix
+
+def build_elslod(array:np.ndarray,
+    svec:np.ndarray,
+    ndf:int,
+    dz:float,
+    num_step:int,
+    )->np.ndarray:
+    """
+    Function that builds the source matrix (ELSLOD) at the Gauss point exploiting slicing.
+
+    Args:
+        array (np.ndarray): Initialized ELSLOD array.
+        svec (np.ndarray): source array SVEC after call to function build_svec_env_jacket_interface.
+        ndf (int): number of degrees of freedom, used to slice ELSMAT matrix.
+        dz (float): length of the present element of the spatial discretization.
+        num_step (int): present time step counter value.
+
+    Returns:
+        np.ndarray: array with updated elements.
+    """
+
+    # Exploit left binary shift, equivalent to:
+    # ndf2 = 2 * ndf
+    ndf2 = ndf << 1
+    dz_6 = dz / 6.
+
+    # COMPUTE THE SOURCE VECTOR (ANALYTIC INTEGRATION)
+    # array smart
+    # This is independent from the solution method thanks to the escamotage of
+    # the dummy steady state corresponding to the initialization.
+    if num_step == 1:
+        # To correctly apply the theta method (to be rivisited in the whole 
+        # code!).
+        # Current time step
+        array.present[:ndf] = 2. * svec.present[:,0] + svec.present[:,1]
+        array.present[ndf:ndf2] = svec.present[:,0] + 2. * svec.present[:,1]
+        array.present *= dz_6
+        # Previous time step
+        array.previous[:ndf] = 2. * svec.previous[:,0] + svec.previous[:,1]
+        array.previous[ndf:ndf2] = svec.previous[:,0] + 2. * svec.previous[:,1]
+        array.previous *= dz_6
+    else:
+        # Compute only at the current time step
+        array[:ndf] = 2. * svec[:,0] + svec[:,1]
+        array[ndf:ndf2] = svec[:,0] + 2. * svec[:,1]
+        array *= dz_6
+    
+    return array
