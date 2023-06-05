@@ -953,26 +953,31 @@ def build_svec_env_jacket_interface(
 def build_elmmat(
     matrix:np.ndarray,
     mmat:np.ndarray,
-    ndf:int,
-    dz:float,
+    conductor:Conductor,
+    elem_idx:int,
     alpha:float=0,
     )->np.ndarray:
     """Function that builds the mass and capacity matrix (ELMMAT) at the Gauss point exploiting slicing.
 
     Args:
         matrix (np.ndarray): Initialized ELM matrix
-        mmat (np.ndarray): mass and capaciyt matrix MMAT after call to function build_mmat_solid.
-        ndf (int): number of degrees of freedom, used to slice ELMMAT matrix.
-        dz (float): length of the present element of the spatial discretization.
+        mmat (np.ndarray): mass and capacity matrix MMAT after call to function build_mmat_solid.
+        conductor (Conductor): object with all the information of the conductor.
+        elem_idx (int): index of the i-th element of the spatial discretization.
         alpha (float, optional): Lumped/consistent mass parameter. Defaults to 0.
 
     Returns:
         np.ndarray: matrix with updated elements.
     """
     
-    # Exploit left binary shift, equivalent to:
-    # ndf2 = 2 * ndf
-    ndf2 = ndf << 1
+    # Alias
+    # Length of the present element of the spatial discretization.
+    dz = conductor.grid_features["delta_z"][elem_idx]
+    # Number of degrees of freedom, used to slice ELMMAT matrix.
+    ndf = conductor.dict_N_equation["NODOFS"]
+    # Twice the number of degrees of freedom, used to slice ELMMAT matrix.
+    ndf2 = conductor.dict_N_equation["NODOFS2"]
+
     # Build diagonal block of the matrix.
     diag_block = dz * (1. / 3. + alpha) * mmat
     # Build off diagonal block of the matrix.
@@ -990,22 +995,25 @@ def build_elmmat(
 def build_elamat(
     matrix:np.ndarray,
     amat:np.ndarray,
-    ndf:int,
+    conductor:Conductor,
     )->np.ndarray:
     """Function that builds the convection matrix (ELAMAT) at the Gauss point exploiting slicing.
 
     Args:
         matrix (np.ndarray): Initialized ELA matrix.
         amat (np.ndarray): matrix AMAT after call to function build_amat.
-        ndf (int): number of degrees of freedom, used to slice ELAMAT matrix.
+        conductor (Conductor): object with all the information of the conductor.
 
     Returns:
         np.ndarray: matrix with updated elements.
     """
-    
-    # Exploit left binary shift, equivalent to:
-    # ndf2 = 2 * ndf
-    ndf2 = ndf << 1
+
+    # Alias
+    # Number of degrees of freedom, used to slice ELAMAT matrix.
+    ndf = conductor.dict_N_equation["NODOFS"]
+    # Twice the number of degrees of freedom, used to slice ELAMAT matrix.
+    ndf2 = conductor.dict_N_equation["NODOFS2"]
+
     block = amat / 2.
 
     matrix[:ndf,:ndf] = -block
@@ -1018,25 +1026,30 @@ def build_elamat(
 def build_elkmat(
     matrix:np.ndarray,
     kmat:np.ndarray,
-    ndf:int,
-    dz:float,
+    conductor:Conductor,
+    elem_idx:int,
     )->np.ndarray:
     """
     Function that builds the diffusion matrix (ELKMAT) at the Gauss point exploiting slicing.
 
     Args:
         matrix (np.ndarray): Initialized ELK matrix.
-        kmat (np.ndarray): mass and capaciyt matrix KMAT after call to function build_kmat_solid.
-        ndf (int): number of degrees of freedom, used to slice ELKMAT matrix.
-        dz (float): length of the present element of the spatial discretization.
+        kmat (np.ndarray): mass and capacity matrix KMAT after call to function build_kmat_solid.
+        conductor (Conductor): object with all the information of the conductor.
+        elem_idx (int): index of the i-th element of the spatial discretization.
 
     Returns:
         np.ndarray: matrix with updated elements.
     """
 
-    # Exploit left binary shift, equivalent to:
-    # ndf2 = 2 * ndf
-    ndf2 = ndf << 1
+    # Alias
+    # Length of the present element of the spatial discretization.
+    dz = conductor.grid_features["delta_z"][elem_idx]
+    # Number of degrees of freedom, used to slice ELKMAT matrix.
+    ndf = conductor.dict_N_equation["NODOFS"]
+    # Twice the number of degrees of freedom, used to slice ELKMAT matrix.
+    ndf2 = conductor.dict_N_equation["NODOFS2"]
+
     block = kmat / dz
     
     # COMPUTE THE DIFFUSION MATRIX
@@ -1051,26 +1064,29 @@ def build_elkmat(
 def build_elsmat(
     matrix:np.ndarray,
     smat:np.ndarray,
-    ndf:int,
-    dz:float,
+    conductor:Conductor,
+    elem_idx:int,
     )->np.ndarray:
     """
     Function that builds the source matrix (ELSMAT) at the Gauss point exploiting slicing.
 
     Args:
         matrix (np.ndarray): Initialized ELS matrix.
-        kmat (np.ndarray): source matrix SMAT after call to function build_smat_env_solid_interface.
-        ndf (int): number of degrees of freedom, used to slice ELSMAT matrix.
-        dz (float): length of the present element of the spatial discretization.
+        smat (np.ndarray): source matrix SMAT after call to function build_smat_env_solid_interface.
+        conductor (Conductor): object with all the information of the conductor.
+        elem_idx (int): index of the i-th element of the spatial discretization.
 
     Returns:
         np.ndarray: matrix with updated elements.
     """
 
-
-    # Exploit left binary shift, equivalent to:
-    # ndf2 = 2 * ndf
-    ndf2 = ndf << 1
+    # Alias
+    # Length of the present element of the spatial discretization.
+    dz = conductor.grid_features["delta_z"][elem_idx]
+    # Number of degrees of freedom, used to slice ELSMAT matrix.
+    ndf = conductor.dict_N_equation["NODOFS"]
+    # Twice the number of degrees of freedom, used to slice ELSMAT matrix.
+    ndf2 = conductor.dict_N_equation["NODOFS2"]
 
     diag_block = smat * dz / 3.
     off_diag_block = diag_block / 2.
@@ -1086,9 +1102,8 @@ def build_elsmat(
 
 def build_elslod(array:np.ndarray,
     svec:np.ndarray,
-    ndf:int,
-    dz:float,
-    num_step:int,
+    conductor:Conductor,
+    elem_idx:int,
     )->np.ndarray:
     """
     Function that builds the source matrix (ELSLOD) at the Gauss point exploiting slicing.
@@ -1096,24 +1111,28 @@ def build_elslod(array:np.ndarray,
     Args:
         array (np.ndarray): Initialized ELSLOD array.
         svec (np.ndarray): source array SVEC after call to function build_svec_env_jacket_interface.
-        ndf (int): number of degrees of freedom, used to slice ELSMAT matrix.
-        dz (float): length of the present element of the spatial discretization.
-        num_step (int): present time step counter value.
+        conductor (Conductor): object with all the information of the conductor.
+        elem_idx (int): index of the i-th element of the spatial discretization.
 
     Returns:
         np.ndarray: array with updated elements.
     """
 
-    # Exploit left binary shift, equivalent to:
-    # ndf2 = 2 * ndf
-    ndf2 = ndf << 1
+    # Alias
+    # Length of the present element of the spatial discretization.
+    dz = conductor.grid_features["delta_z"][elem_idx]
+    # Number of degrees of freedom, used to slice ELSMAT matrix.
+    ndf = conductor.dict_N_equation["NODOFS"]
+    # Twice the number of degrees of freedom, used to slice ELSMAT matrix.
+    ndf2 = conductor.dict_N_equation["NODOFS2"]
+
     dz_6 = dz / 6.
 
     # COMPUTE THE SOURCE VECTOR (ANALYTIC INTEGRATION)
     # array smart
     # This is independent from the solution method thanks to the escamotage of
     # the dummy steady state corresponding to the initialization.
-    if num_step == 1:
+    if conductor.cond_num_step == 1:
         # To correctly apply the theta method (to be rivisited in the whole 
         # code!).
         # Current time step
