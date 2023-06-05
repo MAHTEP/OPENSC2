@@ -417,8 +417,8 @@ def step(conductor, environment, qsource, num_step):
         ELMMAT = build_elmmat(
             ELMMAT,
             MMAT,
-            conductor.dict_N_equation["NODOFS"],
-            conductor.grid_features["delta_z"][ii],
+            conductor,
+            ii,
             ALFA,
         )
 
@@ -427,7 +427,7 @@ def step(conductor, environment, qsource, num_step):
         ELAMAT = build_elamat(
             ELAMAT,
             AMAT,
-            conductor.dict_N_equation["NODOFS"],
+            conductor,
         )
 
         # COMPUTE THE DIFFUSION MATRIX
@@ -435,8 +435,8 @@ def step(conductor, environment, qsource, num_step):
         ELKMAT = build_elkmat(
             ELKMAT,
             KMAT,
-            conductor.dict_N_equation["NODOFS"],
-            conductor.grid_features["delta_z"][ii],
+            conductor,
+            ii,
         )
 
         # COMPUTE THE SOURCE MATRIX
@@ -444,8 +444,8 @@ def step(conductor, environment, qsource, num_step):
         ELSMAT = build_elsmat(
             ELSMAT,
             SMAT,
-            conductor.dict_N_equation["NODOFS"],
-            conductor.grid_features["delta_z"][ii],
+            conductor,
+            ii,
         )
 
         # COMPUTE THE SOURCE VECTOR (ANALYTIC INTEGRATION)
@@ -453,9 +453,8 @@ def step(conductor, environment, qsource, num_step):
         ELSLOD = build_elslod(
             ELSLOD,
             SVEC,
-            conductor.dict_N_equation["NODOFS"],
-            conductor.grid_features["delta_z"][ii],
-            conductor.cond_num_step,
+            conductor,
+            ii,
         )
         
         # ASSEMBLE THE MATRICES AND THE LOAD VECTOR
