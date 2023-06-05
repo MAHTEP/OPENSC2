@@ -1198,3 +1198,59 @@ def assemble_matrix(
             big_matrix[row_lb:row_ub,col] +=small_matrix[hbw_idx,:]
     
     return big_matrices
+
+def assemble_syslod(
+    array:np.ndarray,
+    conductor:Conductor,
+    jump_idx:int,
+)->np.ndarray:
+    """Function that assembles the source term vector syslod exploiting the information stored in array ELSLOD.
+
+    Args:
+        array (np.ndarray): ELSLOD array after call to funciton build_elslod.
+        conductor (Conductor): object with all the information of the conductor.
+        jump_idx (int): index to jump over NODOFS * elem_idx position in syslod array, used to slice syslod.
+
+    Returns:
+        np.ndarray: array with updated elements (the sliced updated part f syslod).
+    """
+
+    # Alias
+    method = conductor.inputs["METHOD"]
+    num_step = conductor.cond_num_step
+    half = conductor.dict_band["Half"]
+    syslod = conductor.dict_Step["SYSLOD"][jump_idx:jump_idx + half,:]
+    
+    if method == "BE" or method == "CN":
+        # Backward Euler or Crank-Nicolson
+        if num_step == 1:
+            # Construct key SYSLOD of dictionary dict_Step
+            # Current time step
+            syslod[:,0] += array.present
+            # Previous time step
+            syslod[:,1] += array.previous
+        else:
+            # Update only the first column, that correspond to the current time
+            # step
+            syslod[:,0] += array
+    elif method == "AM4":
+        # Adams-Moulton order 4
+        # The implementation of higher order numerical schemes for time 
+        # integration should be completely reviewed!
+        if num_step == 1:
+            # Construct key SYSLOD of dictionary dict_Step
+            # Current time step
+            syslod[:,0] += array.present
+            # This loop should be checked carefully!
+            for cc in range(syslod.shape[1]):
+                # Dummy initial steady state
+                syslod[:,cc] += array.previous
+        else:
+            # Shift the colums by one towards right and compute the new first 
+            # column at the current time step
+            syslod[:,1:] = syslod[:,:3].copy()
+            syslod[:,0] += array
+        # end if conductor.cond_num_step
+    # end conductor.inputs["METHOD"]
+
+    return syslod
