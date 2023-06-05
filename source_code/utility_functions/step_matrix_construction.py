@@ -1047,3 +1047,39 @@ def build_elkmat(
     matrix[ndf:ndf2,ndf:ndf2] = block
 
     return matrix
+
+def build_elsmat(
+    matrix:np.ndarray,
+    smat:np.ndarray,
+    ndf:int,
+    dz:float,
+    )->np.ndarray:
+    """
+    Function that builds the sorce matrix (ELSMAT) at the Gauss point exploiting slicing.
+
+    Args:
+        matrix (np.ndarray): Initialized ELS matrix.
+        kmat (np.ndarray): source matrix SMAT after call to function build_smat_env_solid_interface.
+        ndf (int): number of degrees of freedom, used to slice ELSMAT matrix.
+        dz (float): length of the present element of the spatial discretization.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+
+
+    # Exploit left binary shift, equivalent to:
+    # ndf2 = 2 * ndf
+    ndf2 = ndf << 1
+
+    diag_block = smat * dz / 3.
+    off_diag_block = diag_block / 2.
+
+    # COMPUTE THE SOURCE MATRIX
+    # array smart
+    matrix[:ndf,:ndf] = diag_block
+    matrix[:ndf,ndf:ndf2] = off_diag_block
+    matrix[ndf:ndf2,:ndf] = off_diag_block
+    matrix[ndf:ndf2,ndf:ndf2] = diag_block
+
+    return matrix
