@@ -32,6 +32,7 @@ from utility_functions.step_matrix_construction import (
     build_elmmat,
     build_elamat,
     build_elkmat,
+    build_elsmat,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -438,27 +439,13 @@ def step(conductor, environment, qsource, num_step):
         )
 
         # COMPUTE THE SOURCE MATRIX
-        # array smart (cdp, 07/2020)
-        ELSMAT[
-            :conductor.dict_N_equation["NODOFS"],
-            :conductor.dict_N_equation["NODOFS"],
-        ] = (SMAT * conductor.grid_features["delta_z"][ii] / 3.0)
-        ELSMAT[
-            :conductor.dict_N_equation["NODOFS"],
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-        ] = (SMAT * conductor.grid_features["delta_z"][ii] / 6.0)
-        ELSMAT[
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-            :conductor.dict_N_equation["NODOFS"],
-        ] = (SMAT * conductor.grid_features["delta_z"][ii] / 6.0)
-        ELSMAT[
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-        ] = (SMAT * conductor.grid_features["delta_z"][ii] / 3.0)
+        # array smart
+        ELSMAT = build_elsmat(
+            ELSMAT,
+            SMAT,
+            conductor.dict_N_equation["NODOFS"],
+            conductor.grid_features["delta_z"][ii],
+        )
 
         # COMPUTE THE SOURCE VECTOR (ANALYTIC INTEGRATION)
         # array smart (cdp, 07/2020)
