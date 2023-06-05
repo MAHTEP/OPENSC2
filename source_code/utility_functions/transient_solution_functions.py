@@ -29,6 +29,7 @@ from utility_functions.step_matrix_construction import (
     build_smat_env_solid_interface,
     build_svec,
     build_svec_env_jacket_interface,
+    build_elmmat,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -408,27 +409,14 @@ def step(conductor, environment, qsource, num_step):
             # END S VECTOR: solid components equation.
 
         # COMPUTE THE MASS AND CAPACITY MATRIX
-        # array smart (cdp, 07/2020)
-        ELMMAT[
-            :conductor.dict_N_equation["NODOFS"],
-            :conductor.dict_N_equation["NODOFS"],
-        ] = (conductor.grid_features["delta_z"][ii] * (1.0 / 3.0 + ALFA) * MMAT)
-        ELMMAT[
-            :conductor.dict_N_equation["NODOFS"],
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-        ] = (conductor.grid_features["delta_z"][ii] * (1.0 / 6.0 - ALFA) * MMAT)
-        ELMMAT[
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-            :conductor.dict_N_equation["NODOFS"],
-        ] = (conductor.grid_features["delta_z"][ii] * (1.0 / 6.0 - ALFA) * MMAT)
-        ELMMAT[
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-        ] = (conductor.grid_features["delta_z"][ii] * (1.0 / 3.0 + ALFA) * MMAT)
+        # array smart
+        ELMMAT = build_elmmat(
+            ELMMAT,
+            MMAT,
+            conductor.dict_N_equation["NODOFS"],
+            conductor.grid_features["delta_z"][ii],
+            ALFA,
+        )
 
         # COMPUTE THE CONVECTION MATRIX
         # array smart (cdp, 07/2020)
