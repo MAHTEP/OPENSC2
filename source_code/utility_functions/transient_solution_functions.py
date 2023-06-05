@@ -30,6 +30,7 @@ from utility_functions.step_matrix_construction import (
     build_svec,
     build_svec_env_jacket_interface,
     build_elmmat,
+    build_elamat,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -419,27 +420,12 @@ def step(conductor, environment, qsource, num_step):
         )
 
         # COMPUTE THE CONVECTION MATRIX
-        # array smart (cdp, 07/2020)
-        ELAMAT[
-            :conductor.dict_N_equation["NODOFS"],
-            :conductor.dict_N_equation["NODOFS"],
-        ] = (-AMAT / 2.0)
-        ELAMAT[
-            :conductor.dict_N_equation["NODOFS"],
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-        ] = (AMAT / 2.0)
-        ELAMAT[
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-            :conductor.dict_N_equation["NODOFS"],
-        ] = (-AMAT / 2.0)
-        ELAMAT[
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-        ] = (AMAT / 2.0)
+        # array smart
+        ELAMAT = build_elamat(
+            ELAMAT,
+            AMAT,
+            conductor.dict_N_equation["NODOFS"],
+        )
 
         # COMPUTE THE DIFFUSION MATRIX
         # array smart (cdp, 07/2020)
