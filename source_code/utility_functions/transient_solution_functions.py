@@ -35,6 +35,7 @@ from utility_functions.step_matrix_construction import (
     build_elsmat,
     build_elslod,
     assemble_matrix,
+    assemble_syslod,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -466,81 +467,10 @@ def step(conductor, environment, qsource, num_step):
             conductor,
             jump,
         )
-        if (
-            conductor.inputs["METHOD"] == "BE"
-            or conductor.inputs["METHOD"] == "CN"
-        ):
-            # Backward Euler or Crank-Nicolson (cdp, 10, 2020)
-            if conductor.cond_num_step == 1:
-                # Construct key SYSLOD of dictionary dict_Step (cdp, 10/2020)
-                # Current time step (cdp, 10/2020)
-                conductor.dict_Step["SYSLOD"][
-                    jump : jump + conductor.dict_band["Half"], 0
-                ] = (
-                    ELSLOD.present
-                    + conductor.dict_Step["SYSLOD"][
-                        jump : jump + conductor.dict_band["Half"], 0
-                    ]
-                )
-                # Previous time step (cdp, 10/2020)
-                conductor.dict_Step["SYSLOD"][
-                    jump : jump + conductor.dict_band["Half"], 1
-                ] = (
-                    ELSLOD.previous
-                    + conductor.dict_Step["SYSLOD"][
-                        jump : jump + conductor.dict_band["Half"], 1
-                    ]
-                )
-            else:
-                # Update only the first column, that correspond to the current time \
-                # step (cdp, 10/2020)
-                conductor.dict_Step["SYSLOD"][
-                    jump : jump + conductor.dict_band["Half"], 0
-                ] = (
-                    ELSLOD
-                    + conductor.dict_Step["SYSLOD"][
-                        jump : jump + conductor.dict_band["Half"], 0
-                    ]
-                )
-        elif conductor.inputs["METHOD"] == "AM4":
-            # Adams-Moulton order 4 (cdp, 10/2020)
-            if conductor.cond_num_step == 1:
-                # Construct key SYSLOD of dictionary dict_Step (cdp, 10/2020)
-                # Current time step (cdp, 10/2020)
-                conductor.dict_Step["SYSLOD"][
-                    jump : jump + conductor.dict_band["Half"], 0
-                ] = (
-                    ELSLOD.present
-                    + conductor.dict_Step["SYSLOD"][
-                        jump : jump + conductor.dict_band["Half"], 0
-                    ]
-                )
-                for cc in range(conductor.dict_Step["SYSLOD"].shape[1]):
-                    # Dummy initial steady state (cdp, 10/2020)
-                    conductor.dict_Step["SYSLOD"][
-                        jump : jump + conductor.dict_band["Half"], cc
-                    ] = (
-                        ELSLOD.previous
-                        + conductor.dict_Step["SYSLOD"][
-                            jump : jump + conductor.dict_band["Half"], cc
-                        ]
-                    )
-            else:
-                # Shift the colums by one towards right and compute the new first \
-                # column at the current time step (cdp, 10/2020)
-                conductor.dict_Step["SYSLOD"][:, 1:4] = conductor.dict_Step["SYSLOD"][
-                    :, 0:3
-                ].copy()
-                conductor.dict_Step["SYSLOD"][
-                    jump : jump + conductor.dict_band["Half"], 0
-                ] = (
-                    ELSLOD
-                    + conductor.dict_Step["SYSLOD"][
-                        jump : jump + conductor.dict_band["Half"], 0
-                    ]
-                )
-            # end if conductor.cond_num_step (cdp, 10/2020)
-        # end conductor.inputs["METHOD"] (cdp, 10/2020)
+
+        conductor.dict_Step["SYSLOD"][
+            jump:jump + conductor.dict_band["Half"],:
+        ] = assemble_syslod(ELSLOD,conductor,jump)
 
     # end for ii (cdp, 07/2020)
     # ** END MATRICES CONSTRUCTION (cdp, 07/2020) **
