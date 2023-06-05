@@ -986,3 +986,31 @@ def build_elmmat(
     matrix[ndf:ndf2,ndf:ndf2] = diag_bloc
 
     return matrix
+
+def build_elamat(
+    matrix:np.ndarray,
+    amat:np.ndarray,
+    ndf:int,
+    )->np.ndarray:
+    """Function that builds the convection matrix (ELAMAT) at the Gauss point exploiting slicing.
+
+    Args:
+        matrix (np.ndarray): Initialized ELA matrix.
+        amat (np.ndarray): matrix AMAT after call to function build_amat.
+        ndf (int): number of degrees of freedom, used to slice ELAMAT matrix.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+    
+    # Exploit left binary shift, equivalent to:
+    # ndf2 = 2 * ndf
+    ndf2 = ndf << 1
+    block = amat / 2.
+
+    matrix[:ndf,:ndf] = -block
+    matrix[:ndf,ndf:ndf2] = block
+    matrix[ndf:ndf2,:ndf] = -block
+    matrix[ndf:ndf2,ndf:ndf2] = block
+
+    return matrix
