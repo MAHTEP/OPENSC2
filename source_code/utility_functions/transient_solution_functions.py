@@ -34,6 +34,7 @@ from utility_functions.step_matrix_construction import (
     build_elkmat,
     build_elsmat,
     build_elslod,
+    assemble_matrix,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -458,72 +459,13 @@ def step(conductor, environment, qsource, num_step):
         )
         
         # ASSEMBLE THE MATRICES AND THE LOAD VECTOR
-        # array smart (cdp, 07/2020) check ok
-        for iii in range(conductor.dict_band["Half"]):
-            MASMAT[
-                conductor.dict_band["Half"]
-                - iii
-                - 1 : conductor.dict_band["Full"]
-                - iii,
-                jump + iii,
-            ] = (
-                MASMAT[
-                    conductor.dict_band["Half"]
-                    - iii
-                    - 1 : conductor.dict_band["Full"]
-                    - iii,
-                    jump + iii,
-                ]
-                + ELMMAT[iii, :]
-            )
-            FLXMAT[
-                conductor.dict_band["Half"]
-                - iii
-                - 1 : conductor.dict_band["Full"]
-                - iii,
-                jump + iii,
-            ] = (
-                FLXMAT[
-                    conductor.dict_band["Half"]
-                    - iii
-                    - 1 : conductor.dict_band["Full"]
-                    - iii,
-                    jump + iii,
-                ]
-                + ELAMAT[iii, :]
-            )
-            DIFMAT[
-                conductor.dict_band["Half"]
-                - iii
-                - 1 : conductor.dict_band["Full"]
-                - iii,
-                jump + iii,
-            ] = (
-                DIFMAT[
-                    conductor.dict_band["Half"]
-                    - iii
-                    - 1 : conductor.dict_band["Full"]
-                    - iii,
-                    jump + iii,
-                ]
-                + ELKMAT[iii, :]
-            )
-            SORMAT[
-                conductor.dict_band["Half"]
-                - iii
-                - 1 : conductor.dict_band["Full"]
-                - iii,
-                jump + iii,
-            ] = (
-                SORMAT[
-                    conductor.dict_band["Half"]
-                    - iii
-                    - 1 : conductor.dict_band["Full"]
-                    - iii,
-                    jump + iii,
-                ]
-                + ELSMAT[iii, :]
-            )
+        # array smart
+        MASMAT,FLXMAT,DIFMAT,SORMAT = assemble_matrix(
+            (MASMAT,FLXMAT,DIFMAT,SORMAT),
+            (ELMMAT,ELAMAT,ELKMAT,ELSMAT),
+            conductor,
+            jump,
+        )
         if (
             conductor.inputs["METHOD"] == "BE"
             or conductor.inputs["METHOD"] == "CN"
