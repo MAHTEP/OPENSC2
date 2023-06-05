@@ -686,6 +686,9 @@ class Conductor:
             NODOFS=self.dict_N_equation["FluidComponent"]
             + self.dict_N_equation["SolidComponent"]
         )
+        # Exploit left binary shift, equivalent to:
+        # self.dict_N_equation["NODOFS2"] = 2 * self.dict_N_equation["NODOFS"]
+        self.dict_N_equation["NODOFS2"] = self.dict_N_equation["NODOFS"] << 1
         # dict_band keys meaning:
         # ["Half"]: half band width, including main diagonal (IEDOFS) (cdp, 09/2020)
         # ["Main_diag"]: main diagonal index within the band (IHBAND) (cdp, 09/2020)
