@@ -1152,3 +1152,49 @@ def build_elslod(array:np.ndarray,
         array *= dz_6
     
     return array
+
+def assemble_matrix(
+    big_matrices:tuple,
+    small_matrices:tuple,
+    conductor:Conductor,
+    jump_idx:int,
+    )->tuple:
+    """Function that assembles matrices MASMAT, FLXMAT, DIFMAT and SORMAT starting from the values of matrices ELMMAT, ELAMAT, ELKMAT and ELSMAT respectively. The matrices match is as follows:
+        * ELMMAT builds MATMAT
+        * ELAMAT builds FLXMAT
+        * ELKMAT builds DIFMAT
+        * ELSMAT builds SORMAT
+
+    Args:
+        big_matrices (tuple): collection of matrices MASMAT, FLXMAT, DIFMAT and SORMAT.
+        small_matrices (tuple): collection of matrices ELMMAT, ELAMAT, ELKMAT and ELSMAT.
+        conductor (Conductor): object with all the information of the conductor.
+        jump_idx (int): index to jump over NODOFS * elem_idx position in the big matrices.
+
+    Returns:
+        tuple: collection of matrices MASMAT, FLXMAT, DIFMAT and SORMAT with updated elements.
+    """
+    
+    # Alias
+    half = conductor.dict_band["Half"]
+    full = conductor.dict_band["Full"]
+
+    # ASSEMBLE THE MATRICES AND THE LOAD VECTOR
+    # array smart
+    for hbw_idx in range(half):
+        # hbw_idx: half band widht index.
+        # Lower bound for row slicing.
+        row_lb = half - hbw_idx - 1
+        # Upper bound for row slicing.
+        row_ub = full - hbw_idx
+        # Column index.
+        col = jump_idx + hbw_idx
+        # Loop to update matrices masmat, flxmat, difmat and sormat stored in 
+        # tuple big_matrices exploiting matrices elmmat, elamat, elkmat and 
+        # elsmat respectively, stored in tuple small_matrices.
+        for big_matrix, small_matrix in zip(big_matrices,small_matrices):
+            # Sum elements from row_lb to row_ub of column col in big_matrix 
+            # with all the elements in the row hbw_idx of small_matrix.
+            big_matrix[row_lb:row_ub,col] +=small_matrix[hbw_idx,:]
+    
+    return big_matrices
