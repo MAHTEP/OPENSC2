@@ -1138,11 +1138,13 @@ def build_elslod(array:np.ndarray,
         # Current time step
         array.present[:ndf] = 2. * svec.present[:,0] + svec.present[:,1]
         array.present[ndf:ndf2] = svec.present[:,0] + 2. * svec.present[:,1]
-        array.present *= dz_6
+        # Not use simply array.present: raises AttributeError
+        array.present[:] *= dz_6
         # Previous time step
         array.previous[:ndf] = 2. * svec.previous[:,0] + svec.previous[:,1]
         array.previous[ndf:ndf2] = svec.previous[:,0] + 2. * svec.previous[:,1]
-        array.previous *= dz_6
+        # Not use simply array.previous: raises AttributeError
+        array.previous[:] *= dz_6
     else:
         # Compute only at the current time step
         array[:ndf] = 2. * svec[:,0] + svec[:,1]
