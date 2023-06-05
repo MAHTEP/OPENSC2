@@ -949,3 +949,40 @@ def build_svec_env_jacket_interface(
             array[eq_idx[s_comp.identifier],1] += env_heat
 
     return array
+
+def build_elmmat(
+    matrix:np.ndarray,
+    mmat:np.ndarray,
+    ndf:int,
+    dz:float,
+    alpha:float=0,
+    )->np.ndarray:
+    """Function that builds the mass and capacity matrix (ELMMAT) at the Gauss point exploiting slicing.
+
+    Args:
+        matrix (np.ndarray): Initialized ELM matrix
+        mmat (np.ndarray): mass and capaciyt matrix MMAT after call to function build_mmat_solid.
+        ndf (int): number of degrees of freedom, used to slice ELMMAT matrix.
+        dz (float): length of the present element of the spatial discretization.
+        alpha (float, optional): Lumped/consistent mass parameter. Defaults to 0.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+    
+    # Exploit left binary shift, equivalent to:
+    # ndf2 = 2 * ndf
+    ndf2 = ndf << 1
+    # Build diagonal block of the matrix.
+    diag_bloc = dz * (1. / 3. + alpha) * mmat
+    # Build off diagonal block of the matrix.
+    off_diag_bloc = dz * (1. / 6. - alpha) * mmat
+    
+    # COMPUTE THE MASS AND CAPACITY MATRIX
+    # array smart
+    matrix[:ndf,:ndf] = diag_bloc
+    matrix[:ndf,ndf:ndf2] = off_diag_bloc
+    matrix[ndf:ndf2,:ndf] = off_diag_bloc
+    matrix[ndf:ndf2,ndf:ndf2] = diag_bloc
+
+    return matrix
