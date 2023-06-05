@@ -33,6 +33,7 @@ from utility_functions.step_matrix_construction import (
     build_elamat,
     build_elkmat,
     build_elsmat,
+    build_elslod,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -448,53 +449,15 @@ def step(conductor, environment, qsource, num_step):
         )
 
         # COMPUTE THE SOURCE VECTOR (ANALYTIC INTEGRATION)
-        # array smart (cdp, 07/2020)
-        # This is independent from the solution method thanks to the escamotage of \
-        # the dummy steady state corresponding to the initialization (cdp, 10/2020)
-        if conductor.cond_num_step == 1:
-            # Current time step (cdp, 10/2020)
-            ELSLOD.present[:conductor.dict_N_equation["NODOFS"]] = (
-                conductor.grid_features["delta_z"][ii]
-                / 6.0
-                * (2.0 * SVEC.present[:, 0] + SVEC.present[:, 1])
-            )
-            ELSLOD.present[
-                conductor.dict_N_equation["NODOFS"] : 2
-                * conductor.dict_N_equation["NODOFS"]
-            ] = (
-                conductor.grid_features["delta_z"][ii]
-                / 6.0
-                * (SVEC.present[:, 0] + 2.0 * SVEC.present[:, 1])
-            )
-            # Previous time step (cdp, 10/2020)
-            ELSLOD.previous[:conductor.dict_N_equation["NODOFS"]] = (
-                conductor.grid_features["delta_z"][ii]
-                / 6.0
-                * (2.0 * SVEC.previous[:, 0] + SVEC.previous[:, 1])
-            )
-            ELSLOD.previous[
-                conductor.dict_N_equation["NODOFS"] : 2
-                * conductor.dict_N_equation["NODOFS"]
-            ] = (
-                conductor.grid_features["delta_z"][ii]
-                / 6.0
-                * (SVEC.previous[:, 0] + 2.0 * SVEC.previous[:, 1])
-            )
-        else:
-            # Compute only at the current time step (cdp, 10/2020)
-            ELSLOD[:conductor.dict_N_equation["NODOFS"]] = (
-                conductor.grid_features["delta_z"][ii]
-                / 6.0
-                * (2.0 * SVEC[:, 0] + SVEC[:, 1])
-            )
-            ELSLOD[
-                conductor.dict_N_equation["NODOFS"] : 2
-                * conductor.dict_N_equation["NODOFS"]
-            ] = (
-                conductor.grid_features["delta_z"][ii]
-                / 6.0
-                * (SVEC[:, 0] + 2.0 * SVEC[:, 1])
-            )
+        # array smart
+        ELSLOD = build_elslod(
+            ELSLOD,
+            SVEC,
+            conductor.dict_N_equation["NODOFS"],
+            conductor.grid_features["delta_z"][ii],
+            conductor.cond_num_step,
+        )
+        
         # ASSEMBLE THE MATRICES AND THE LOAD VECTOR
         # array smart (cdp, 07/2020) check ok
         for iii in range(conductor.dict_band["Half"]):
