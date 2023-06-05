@@ -31,6 +31,7 @@ from utility_functions.step_matrix_construction import (
     build_svec_env_jacket_interface,
     build_elmmat,
     build_elamat,
+    build_elkmat,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -428,27 +429,13 @@ def step(conductor, environment, qsource, num_step):
         )
 
         # COMPUTE THE DIFFUSION MATRIX
-        # array smart (cdp, 07/2020)
-        ELKMAT[
-            :conductor.dict_N_equation["NODOFS"],
-            :conductor.dict_N_equation["NODOFS"],
-        ] = (KMAT / conductor.grid_features["delta_z"][ii])
-        ELKMAT[
-            :conductor.dict_N_equation["NODOFS"],
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-        ] = (-KMAT / conductor.grid_features["delta_z"][ii])
-        ELKMAT[
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-            :conductor.dict_N_equation["NODOFS"],
-        ] = (-KMAT / conductor.grid_features["delta_z"][ii])
-        ELKMAT[
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-            conductor.dict_N_equation["NODOFS"] : 2
-            * conductor.dict_N_equation["NODOFS"],
-        ] = (KMAT / conductor.grid_features["delta_z"][ii])
+        # array smart
+        ELKMAT = build_elkmat(
+            ELKMAT,
+            KMAT,
+            conductor.dict_N_equation["NODOFS"],
+            conductor.grid_features["delta_z"][ii],
+        )
 
         # COMPUTE THE SOURCE MATRIX
         # array smart (cdp, 07/2020)
