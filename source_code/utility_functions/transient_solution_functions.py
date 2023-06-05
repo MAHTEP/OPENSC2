@@ -273,7 +273,7 @@ def step(conductor, environment, qsource, num_step):
     eq_index = build_equation_idx(conductor)
 
     # riscrivere in forma array smart una volta risolti tutti i dubbi, se possibile (cdp, 07/2020)
-    for ii in range(conductor.grid_input["NELEMS"]):
+    for elem_index in range(conductor.grid_input["NELEMS"]):
 
         # Auxiliary matrices initialization to zeros at each Gauss point.
         MMAT,AMAT,KMAT,SMAT,SVEC = ndarray_initialization(
@@ -282,25 +282,21 @@ def step(conductor, environment, qsource, num_step):
             col=2
         )
         
-        # Exploit left binary shift, equivalent to:
-        # 2 * conductor.dict_N_equation["NODOFS"]
         ELMMAT,ELAMAT,ELKMAT,ELSMAT,ELSLOD = ndarray_initialization(
-            conductor.dict_N_equation["NODOFS"] << 1, # left binary shift
+            conductor.dict_N_equation["NODOFS2"],
             conductor.cond_num_step
         )
         
-        jump = conductor.dict_N_equation["NODOFS"] * ii
-
         # ** FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, 
         # FLUID COMPONENTS EQUATIONS **
 
         # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
-        # FluidComponent equation: array smart (cdp, 07/2020)
+        # FluidComponent equation: array smart
         MMAT[
             :conductor.dict_N_equation["FluidComponent"],
             :conductor.dict_N_equation["FluidComponent"],
         ] = np.eye(conductor.dict_N_equation["FluidComponent"])
-        # END M MATRIX: fluid components equations (cdp, 07/2020)
+        # END M MATRIX: fluid components equations
         
         for fluid_comp_j in conductor.inventory["FluidComponent"].collection:
 
@@ -308,7 +304,7 @@ def step(conductor, environment, qsource, num_step):
             AMAT = build_amat(
                 AMAT,
                 fluid_comp_j,
-                ii,
+                elem_index,
                 eq_index[fluid_comp_j.identifier]
             )
 
@@ -316,8 +312,8 @@ def step(conductor, environment, qsource, num_step):
             KMAT = build_kmat_fluid(
                 KMAT,
                 UPWEQT,
-                fluid_comp_j.coolant.dict_Gauss_pt["velocity"][ii],
-                conductor.grid_features["delta_z"][ii],
+                fluid_comp_j.coolant.dict_Gauss_pt["velocity"][elem_index],
+                conductor.grid_features["delta_z"][elem_index],
                 eq_index[fluid_comp_j.identifier]
             )
 
@@ -325,7 +321,7 @@ def step(conductor, environment, qsource, num_step):
             SMAT = build_smat_fluid(
                 SMAT,
                 fluid_comp_j,
-                ii,
+                elem_index,
                 eq_index[fluid_comp_j.identifier]
             )
 
@@ -334,14 +330,14 @@ def step(conductor, environment, qsource, num_step):
         SMAT = build_smat_fluid_interface(
             SMAT,
             conductor,
-            ii,
+            elem_index,
             eq_index
         )
         # Therms associated to fluid-solid interfaces.
         SMAT = build_smat_fluid_solid_interface(
             SMAT,
             conductor,
-            ii,
+            elem_index,
             eq_index,
         )
         # END S MATRIX: fluid components equations
@@ -356,7 +352,7 @@ def step(conductor, environment, qsource, num_step):
             MMAT = build_mmat_solid(
                 MMAT,
                 s_comp,
-                ii,
+                elem_index,
                 eq_index[s_comp.identifier]
             )
             # END M MATRIX: SolidComponent equation.
@@ -369,7 +365,7 @@ def step(conductor, environment, qsource, num_step):
             KMAT = build_kmat_solid(
                 KMAT,
                 s_comp,
-                ii,
+                elem_index,
                 eq_index[s_comp.identifier]
             )
             # END K MATRIX: SolidComponent equation.
@@ -378,7 +374,7 @@ def step(conductor, environment, qsource, num_step):
             SVEC = build_svec(
                 SVEC,
                 s_comp,
-                ii,
+                elem_index,
                 eq_index[s_comp.identifier],
                 num_step=conductor.cond_num_step,
                 qsource=qsource,
@@ -389,7 +385,7 @@ def step(conductor, environment, qsource, num_step):
         SMAT = build_smat_solid_interface(
             SMAT,
             conductor,
-            ii,
+            elem_index,
             eq_index,
         )
 
@@ -400,7 +396,7 @@ def step(conductor, environment, qsource, num_step):
                 SMAT,
                 conductor,
                 interface,
-                ii,
+                elem_index,
                 eq_index,
             )
             # END S MATRIX: solid components equation.
@@ -409,7 +405,7 @@ def step(conductor, environment, qsource, num_step):
                 SVEC,
                 conductor,
                 interface,
-                ii,
+                elem_index,
                 eq_index,
             )
             # END S VECTOR: solid components equation.
@@ -420,7 +416,7 @@ def step(conductor, environment, qsource, num_step):
             ELMMAT,
             MMAT,
             conductor,
-            ii,
+            elem_index,
             ALFA,
         )
 
@@ -438,7 +434,7 @@ def step(conductor, environment, qsource, num_step):
             ELKMAT,
             KMAT,
             conductor,
-            ii,
+            elem_index,
         )
 
         # COMPUTE THE SOURCE MATRIX
@@ -447,7 +443,7 @@ def step(conductor, environment, qsource, num_step):
             ELSMAT,
             SMAT,
             conductor,
-            ii,
+            elem_index,
         )
 
         # COMPUTE THE SOURCE VECTOR (ANALYTIC INTEGRATION)
@@ -456,10 +452,13 @@ def step(conductor, environment, qsource, num_step):
             ELSLOD,
             SVEC,
             conductor,
-            ii,
+            elem_index,
         )
         
         # ASSEMBLE THE MATRICES AND THE LOAD VECTOR
+        
+        jump = conductor.dict_N_equation["NODOFS"] * elem_index
+        
         # array smart
         MASMAT,FLXMAT,DIFMAT,SORMAT = assemble_matrix(
             (MASMAT,FLXMAT,DIFMAT,SORMAT),
@@ -472,8 +471,8 @@ def step(conductor, environment, qsource, num_step):
             jump:jump + conductor.dict_band["Half"],:
         ] = assemble_syslod(ELSLOD,conductor,jump)
 
-    # end for ii (cdp, 07/2020)
-    # ** END MATRICES CONSTRUCTION (cdp, 07/2020) **
+    # end for elem_index
+    # ** END MATRICES CONSTRUCTION **
 
     # SCRIPT TO SAVE MATRICES MASMAT, FLXMAT, DIFMAT, SORMAT, SYSVAR, SYSLOD.
 
