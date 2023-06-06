@@ -1045,15 +1045,14 @@ def step(conductor, environment, qsource, num_step):
 
     SYSMAT = gredub(conductor, SYSMAT)
     # Compute the solution at current time stepand overwrite key SYSVAR of \
-    # dict_Step (cdp, 10/2020)
+    # dict_Step
     conductor.dict_Step["SYSVAR"][:, 0] = gbacsb(conductor, SYSMAT, Known)
 
     # SYSVAR = solve_banded((15, 15), SYSMAT, Known)
 
     # COMPUTE THE NORM OF THE SOLUTION AND OF THE SOLUTION CHANGE (START)
-    # array smart optimization (cdp, 08/2020)
+    # array smart optimization
 
-    SOL = np.zeros(conductor.dict_N_equation["Total"])
     CHG = np.zeros(conductor.dict_N_equation["Total"])
     EIG = np.zeros(conductor.dict_N_equation["Total"])
 
@@ -1071,7 +1070,7 @@ def step(conductor, environment, qsource, num_step):
     # Solution change
     CHG = Known - conductor.dict_Step["SYSVAR"][:, 0]
     # Eigenvalues (sort of??)
-    EIG = abs(CHG / conductor.time_step) / (abs(SOL) + TINY)
+    EIG = abs(CHG / conductor.time_step) / (abs(Known) + TINY)
     # Evaluate the norm of the solution change.
     conductor.dict_norm["Change"] = eval_sub_array_norm(
         CHG,
@@ -1082,140 +1081,7 @@ def step(conductor, environment, qsource, num_step):
     eval_eigenvalues(EIG,conductor,eq_index)
     # Reorganize thermal hydraulic solution
     reorganize_th_solution(conductor,eq_index,old_temperature_gauss)
-
-    for jj, fluid_comp in enumerate(conductor.inventory["FluidComponent"].collection):
-        # velocity (cdp, 08/2020)
-        conductor.dict_norm["Change"][jj] = np.sqrt(
-            np.sum(
-                CHG[
-                    jj : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                        "NODOFS"
-                    ]
-                ]
-                ** 2
-            )
-        )
-        conductor.EQTEIG[jj] = max(
-            EIG[
-                jj : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                    "NODOFS"
-                ]
-            ]
-        )
-        fluid_comp.coolant.dict_node_pt["velocity"] = conductor.dict_Step["SYSVAR"][
-            jj : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                "NODOFS"
-            ],
-            0,
-        ].copy()
-        # pressure (cdp, 08/2020)
-        conductor.dict_norm["Change"][
-            jj + conductor.inventory["FluidComponent"].number
-        ] = np.sqrt(
-            np.sum(
-                CHG[
-                    jj
-                    + conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                        "NODOFS"
-                    ]
-                ]
-                ** 2
-            )
-        )
-        conductor.EQTEIG[
-            jj + conductor.inventory["FluidComponent"].number
-        ] = max(
-            EIG[
-                jj
-                + conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                    "NODOFS"
-                ]
-            ]
-        )
-        fluid_comp.coolant.dict_node_pt["pressure"] = conductor.dict_Step["SYSVAR"][
-            jj
-            + conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                "NODOFS"
-            ],
-            0,
-        ].copy()
-        # temperature (cdp, 08/2020)
-        conductor.dict_norm["Change"][
-            jj + 2 * conductor.inventory["FluidComponent"].number
-        ] = np.sqrt(
-            np.sum(
-                CHG[
-                    jj
-                    + 2
-                    * conductor.inventory["FluidComponent"].number: conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                        "NODOFS"
-                    ]
-                ]
-                ** 2
-            )
-        )
-        conductor.EQTEIG[
-            jj + 2 * conductor.inventory["FluidComponent"].number
-        ] = max(
-            EIG[
-                jj
-                + 2
-                * conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                    "NODOFS"
-                ]
-            ]
-        )
-        fluid_comp.coolant.dict_node_pt["temperature"] = conductor.dict_Step["SYSVAR"][
-            jj
-            + 2
-            * conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                "NODOFS"
-            ],
-            0,
-        ].copy()
-        fluid_comp.coolant.dict_Gauss_pt["temperature_change"] = (
-            fluid_comp.coolant.dict_node_pt["temperature"][:-1]
-            + fluid_comp.coolant.dict_node_pt["temperature"][1:]
-        ) / 2.0 - old_temperature_gauss[fluid_comp.identifier]
-    for ll, comp in enumerate(conductor.inventory["SolidComponent"].collection):
-        # temperature (cdp, 08/2020)
-        conductor.dict_norm["Change"][
-            ll + conductor.dict_N_equation["FluidComponent"]
-        ] = np.sqrt(
-            np.sum(
-                CHG[
-                    ll
-                    + conductor.dict_N_equation[
-                        "FluidComponent"
-                    ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                        "NODOFS"
-                    ]
-                ]
-                ** 2
-            )
-        )
-        conductor.EQTEIG[ll + conductor.dict_N_equation["FluidComponent"]] = max(
-            EIG[
-                ll
-                + conductor.dict_N_equation[
-                    "FluidComponent"
-                ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                    "NODOFS"
-                ]
-            ]
-        )
-        comp.dict_node_pt["temperature"] = conductor.dict_Step["SYSVAR"][
-            ll
-            + conductor.dict_N_equation["FluidComponent"] : conductor.dict_N_equation[
-                "Total"
-            ] : conductor.dict_N_equation["NODOFS"],
-            0,
-        ].copy()
-
-        comp.dict_Gauss_pt["temperature_change"] = (
-            comp.dict_node_pt["temperature"][:-1] + comp.dict_node_pt["temperature"][1:]
-        ) / 2.0 - old_temperature_gauss[comp.identifier]
-
+    
     # COMPUTE THE NORM OF THE SOLUTION CHANGE, THE EIGENVALUES AND RECOVER THE \
     # VARIABLES FROM THE SYSTEM SOLUTION (END)
 
