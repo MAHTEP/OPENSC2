@@ -1534,3 +1534,61 @@ def eval_eigenvalues(
         conductor.EQTEIG[eq_idx[s_comp.identifier]] = max(
             array[eq_idx[s_comp.identifier]::ndf]
         )
+
+def reorganize_th_solution(
+    conductor:Conductor,
+    eq_idx:dict,
+    old_temperature:dict,
+    ):
+    """
+    Function that reorganizes the thermal hydraulic solution into ndf arrays if ndf is the number of unknowns (number of degrees of freedom) according to the following rationale:
+        for each FluidComponent object
+            * velocity
+            * pressure
+            * temperature
+        for each SolidComponent object
+            * temperature
+    
+    Sub arrays (i.e. CHAN_1 temperature spatial distribution) are given by sub_arr = array[jj::ndf] if jj is the index of the j-th conductor component object (i.e. CHAN_1).
+
+    Attribute f_comp.coolant.dict_node_pt (that stores fluid properties in nodal points) and s_comp.dict_node_pt (that stores solid properties) are updated inplace.
+
+    Args:
+        conductor (Conductor): object with all the information of the conductor.
+        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of integer for solid equation index.
+        old_temperature (dict): collection of arrays of the temperature distribution at the previous time step for each conductor component.
+    """
+
+    # Alias
+    ndf = conductor.dict_N_equation["NODOFS"]
+    sysvar = conductor.dict_Step["SYSVAR"]
+    # Reorganize thermal hydraulic solution.
+    for f_comp in conductor.inventory["FluidComponent"].collection:
+        # velocity
+        f_comp.coolant.dict_node_pt["velocity"] = sysvar[
+            eq_idx[f_comp.identifier].velocity::ndf,0
+        ].copy()
+        # pressure
+        f_comp.coolant.dict_node_pt["pressure"] = sysvar[
+            eq_idx[f_comp.identifier].pressure::ndf,0
+        ].copy()
+        # temperature
+        f_comp.coolant.dict_node_pt["temperature"] = sysvar[
+            eq_idx[f_comp.identifier].temperature::ndf,0
+        ].copy()
+        # Get temperature change in Gauss points.
+        f_comp.coolant.dict_Gauss_pt["temperature_change"] = (
+            f_comp.coolant.dict_node_pt["temperature"][:-1]
+            + f_comp.coolant.dict_node_pt["temperature"][1:]
+        ) / 2. - old_temperature[f_comp.identifier]
+    # Loop on SolidComponent.
+    for s_comp in conductor.inventory["SolidComponent"].collection:
+        # temperature
+        s_comp.dict_node_pt["temperature"] = sysvar[
+            eq_idx[s_comp.identifier]::ndf,0
+        ].copy()
+        # Get temperature change in Gauss points.
+        s_comp.dict_Gauss_pt["temperature_change"] = (
+            s_comp.dict_node_pt["temperature"][:-1]
+            + s_comp.dict_node_pt["temperature"][1:]
+        ) / 2. - old_temperature[s_comp.identifier]
