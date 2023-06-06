@@ -1078,6 +1078,8 @@ def step(conductor, environment, qsource, num_step):
         conductor,
         eq_index,
     )
+    # Evaluate the eigenvalues of the solution.
+    eval_eigenvalues(EIG,conductor,eq_index)
 
     for jj, fluid_comp in enumerate(conductor.inventory["FluidComponent"].collection):
         # velocity (cdp, 08/2020)
