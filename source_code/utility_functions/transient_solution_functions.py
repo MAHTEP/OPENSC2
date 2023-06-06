@@ -36,6 +36,7 @@ from utility_functions.step_matrix_construction import (
     build_elslod,
     assemble_matrix,
     assemble_syslod,
+    eval_system_matrix,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -512,31 +513,11 @@ def step(conductor, environment, qsource, num_step):
             np.savetxt(writer, conductor.dict_Step["SYSLOD"], delimiter = "\t")
 
     # ** COMPUTE SYSTEM MATRIX **
-    if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
-        # Backward Euler or Crank-Nicolson (cdp, 10, 2020)
-        SYSMAT = MASMAT / conductor.time_step + conductor.theta_method * (
-            FLXMAT + DIFMAT + SORMAT
-        )
-    elif conductor.inputs["METHOD"] == "AM4":
-        # Adams-Moulton order 4 (cdp, 10, 2020)
-        if conductor.cond_num_step == 1:
-            # This is due to the dummy initial steady state (cdp, 10/2020)
-            for cc in range(conductor.dict_Step["AM4_AA"].shape[2]):
-                conductor.dict_Step["AM4_AA"][:, :, cc] = FLXMAT + DIFMAT + SORMAT
-        else:
-            # Shift the matrices by one towards right and compute the new first \
-            # matrix at the current time step (cdp, 10/2020)
-            conductor.dict_Step["AM4_AA"][:, :, 1:4] = conductor.dict_Step["AM4_AA"][
-                :, :, 0:3
-            ]
-            conductor.dict_Step["AM4_AA"][:, :, 0] = FLXMAT + DIFMAT + SORMAT
-        # end if conductor.cond_num_step (cdp, 10/2020)
-        # compute SYSMAT
-        SYSMAT = (
-            MASMAT / conductor.time_step
-            + 9 / 24 * conductor.dict_Step["AM4_AA"][:, :, 0]
-        )
-    # end conductor.inputs["METHOD"] (cdp, 10/2020)
+    SYSMAT = eval_system_matrix(
+        SYSMAT,
+        (MASMAT,FLXMAT,DIFMAT,SORMAT),
+        conductor,
+    )
     
     # lines of code to save SYSMAT and SYSLOD in .tsv files
     if conductor.cond_num_step == 1 or np.isclose(conductor.Space_save[conductor.i_save],conductor.cond_time[-1]):
