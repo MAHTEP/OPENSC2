@@ -1080,6 +1080,8 @@ def step(conductor, environment, qsource, num_step):
     )
     # Evaluate the eigenvalues of the solution.
     eval_eigenvalues(EIG,conductor,eq_index)
+    # Reorganize thermal hydraulic solution
+    reorganize_th_solution(conductor,eq_index,old_temperature_gauss)
 
     for jj, fluid_comp in enumerate(conductor.inventory["FluidComponent"].collection):
         # velocity (cdp, 08/2020)
