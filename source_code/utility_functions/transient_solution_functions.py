@@ -213,7 +213,7 @@ def step(conductor, environment, qsource, num_step):
     # CLUCA ADDNOD = MAXNOD*(ICOND-1)
 
     # Matrices initialization.
-    MASMAT,FLXMAT,SORMAT,DIFMAT,SYSMAT = matrix_initialization(
+    MASMAT,FLXMAT,DIFMAT,SORMAT,SYSMAT = matrix_initialization(
         conductor.dict_band["Full"],
         conductor.dict_N_equation["Total"]
     )
