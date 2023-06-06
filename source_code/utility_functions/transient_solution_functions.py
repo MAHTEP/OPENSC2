@@ -37,6 +37,7 @@ from utility_functions.step_matrix_construction import (
     assemble_matrix,
     assemble_syslod,
     eval_system_matrix,
+    build_known_therm_vector,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -527,83 +528,12 @@ def step(conductor, environment, qsource, num_step):
             np.savetxt(writer, SYSMAT, delimiter = "\t")
 
     # ADD THE LOAD CONTRIBUTION FROM PREVIOUS STEP
-    # array smart optimization (cdp, 07/2020)
-    # check optimization (cdp, 09/2020)
-    for I in range(conductor.dict_N_equation["Total"]):
-        if I <= conductor.dict_band["Half"] - 1:
-            # remember that arange stops before the stop value: \
-            # last value = stop - step (cdp, 07/2020)
-            J = np.arange(
-                start=0, stop=conductor.dict_band["Half"] + I, step=1, dtype=int
-            )
-        elif I >= conductor.dict_N_equation["Total"] - (
-            conductor.dict_band["Half"] - 1
-        ):
-            J = np.arange(
-                start=I - (conductor.dict_band["Half"] - 1),
-                stop=conductor.dict_N_equation["Total"],
-                step=1,
-                dtype=int,
-            )
-        else:
-            J = np.arange(
-                start=I - (conductor.dict_band["Half"] - 1),
-                stop=I + conductor.dict_band["Half"],
-                step=1,
-                dtype=int,
-            )
-        JJ = J - I + conductor.dict_band["Half"] - 1
-        if (
-            conductor.inputs["METHOD"] == "BE"
-            or conductor.inputs["METHOD"] == "CN"
-        ):
-            # Backward Euler or Crank-Nicolson (cdp, 10, 2020)
-            # Matrix vector product contribution (cdp, 10, 2020)
-            Known[I] = np.sum(
-                (
-                    MASMAT[JJ, I] / conductor.time_step
-                    - (1.0 - conductor.theta_method)
-                    * (FLXMAT[JJ, I] + DIFMAT[JJ, I] + SORMAT[JJ, I])
-                )
-                * conductor.dict_Step["SYSVAR"][J, 0]
-            )
-        elif conductor.inputs["METHOD"] == "AM4":
-            # Adams-Moulton order 4 (cdp, 10, 2020)
-            # Matrices vectors product contribution (cdp, 10, 2020)
-            Known[I] = np.sum(
-                (
-                    MASMAT[JJ, I] / conductor.time_step
-                    - 19 / 24 * conductor.dict_Step["AM4_AA"][JJ, I, 1]
-                )
-                * conductor.dict_Step["SYSVAR"][J, 0]
-                + 5
-                / 24
-                * conductor.dict_Step["AM4_AA"][JJ, I, 2]
-                * conductor.dict_Step["SYSVAR"][J, 1]
-                - 1
-                / 24
-                * conductor.dict_Step["AM4_AA"][JJ, I, 3]
-                * conductor.dict_Step["SYSVAR"][J, 2]
-            )
-    # end for I (cdp, 07/2020)
-    if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
-        # Backward Euler or Crank-Nicolson (cdp, 10, 2020)
-        # External sources (SYSLOD) contribution (cdp, 10, 2020)
-        Known = (
-            Known
-            + conductor.theta_method * conductor.dict_Step["SYSLOD"][:, 0]
-            + (1.0 - conductor.theta_method) * conductor.dict_Step["SYSLOD"][:, 1]
-        )
-    elif conductor.inputs["METHOD"] == "AM4":
-        # Adams-Moulton order 4 (cdp, 10, 2020)
-        # External sources (SYSLOD) contribution (cdp, 10, 2020)
-        Known = (
-            Known
-            + 9 / 24 * conductor.dict_Step["SYSLOD"][:, 0]
-            + 19 / 24 * conductor.dict_Step["SYSLOD"][:, 1]
-            - 5 / 24 * conductor.dict_Step["SYSLOD"][:, 2]
-            + 1 / 24 * conductor.dict_Step["SYSLOD"][:, 3]
-        )
+    # array smart
+    Known = build_known_therm_vector(
+        Known,
+        (MASMAT,FLXMAT,DIFMAT,SORMAT),
+        conductor
+    )
 
     # lines of code to save SYSLOD in .tsv files
     if conductor.cond_num_step == 1 or np.isclose(conductor.Space_save[conductor.i_save],conductor.cond_time[-1]):
