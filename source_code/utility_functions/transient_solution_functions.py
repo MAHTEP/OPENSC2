@@ -1067,9 +1067,17 @@ def step(conductor, environment, qsource, num_step):
     # COMPUTE THE NORM OF THE SOLUTION CHANGE, THE EIGENVALUES AND RECOVER THE \
     # VARIABLES FROM THE SYSTEM SOLUTION (START)
 
-    # Those are arrays (cdp, 08/2020)
+    # Those are arrays
+    # Solution change
     CHG = Known - conductor.dict_Step["SYSVAR"][:, 0]
+    # Eigenvalues (sort of??)
     EIG = abs(CHG / conductor.time_step) / (abs(SOL) + TINY)
+    # Evaluate the norm of the solution change.
+    conductor.dict_norm["Change"] = eval_sub_array_norm(
+        CHG,
+        conductor,
+        eq_index,
+    )
 
     for jj, fluid_comp in enumerate(conductor.inventory["FluidComponent"].collection):
         # velocity (cdp, 08/2020)
