@@ -1300,3 +1300,113 @@ def eval_system_matrix(
         matrix = masmat / conductor.time_step + 9. / 24. * am4_aa[0,:,:]
     
     return matrix
+
+def build_known_therm_vector(
+    array:np.ndarray,
+    aux_matrices:tuple,
+    conductor:Conductor
+)->np.ndarray:
+    """Function that builds the known therm vector for the thermal hydraulic problem according to the selected method for time integration.
+
+    Args:
+        array (np.ndarray): initialized array Known.
+        aaux_matrices (tuple): collection of matrix MASMAT, FLXMAT, DIFMAT and SORMAT after call to function assemble_matrix.
+        conductor (Conductor): object with all the information of the conductor.
+
+    Returns:
+        np.ndarray: array with updated elements.
+    """
+
+    # Alias
+    total = conductor.dict_N_equation["Total"]
+    half = conductor.dict_band["Half"]
+    half_1 = half - 1
+    method = conductor.inputs["METHOD"]
+    syslod = conductor.dict_Step["SYSLOD"] # shallow copy
+    sysvar = conductor.dict_Step["SYSVAR"] # shallow copy
+
+    if method == "AM4":
+        # Alias
+        am4_aa = conductor.dict_Step["AM4_AA"] # shallow copy
+        am4_coef = np.array((9.,19.,5.,- 1.)) / 24.
+    
+    # Unpack auxiliary matrices (MASMAT,FLXMAT,DIFMAT,SORMAT)
+    masmat,flxmat,difmat,sormat = aux_matrices
+    
+    # ADD THE LOAD CONTRIBUTION FROM PREVIOUS STEP
+    # c_mat_idx: column index of the auxiliary matrices (MASMAT,FLXMAT,DIFMAT,
+    # SORMAT); used also as row index of the known term vector.
+    for c_mat_idx in range(total):
+        if c_mat_idx <= half_1:
+            # remember that arange stops before the stop value:
+            # last value = stop - step
+            # r_arr_idx: row index of the sysvar array
+            r_arr_idx = np.arange(
+                start=0,
+                stop=half + c_mat_idx,
+                step=1,
+                dtype=int,
+            )
+        elif c_mat_idx >= total - half_1:
+            r_arr_idx = np.arange(
+                start=c_mat_idx - half_1,
+                stop=total,
+                step=1,
+                dtype=int,
+            )
+        else:
+            r_arr_idx = np.arange(
+                start=c_mat_idx - half_1,
+                stop=c_mat_idx + half,
+                step=1,
+                dtype=int,
+            )
+        # r_mat_idx: row index of the auxiliary matrices (MASMAT,FLXMAT,DIFMAT,
+        # SORMAT)
+        r_mat_idx = r_arr_idx - c_mat_idx + half_1
+        if method == "BE" or method == "CN":
+            # Backward Euler or Crank-Nicolson
+            # Matrix vector product contribution
+            array[c_mat_idx] = np.sum(
+                (
+                    masmat[r_mat_idx,c_mat_idx] / conductor.time_step
+                    - (1.0 - conductor.theta_method)
+                    * (
+                        flxmat[r_mat_idx, c_mat_idx]
+                        + difmat[r_mat_idx, c_mat_idx]
+                        + sormat[r_mat_idx, c_mat_idx]
+                    )
+                )
+                * sysvar[r_arr_idx,0]
+            )
+        elif method == "AM4":
+            # Adams-Moulton order 4
+            # Matrices vectors product contribution
+            # np.sum(am4_coef[2:] * am4_aa[2:,r_mat_idx,c_mat_idx].T * sysvar[r_arr_idx,1:3],1) should be equivalent to 5. / 24.* am4_aa[2,r_mat_idx,c_mat_idx] * sysvar[r_arr_idx, 1] - 1. / 24. * am4_aa[3,r_mat_idx,c_mat_idx] * sysvar[r_arr_idx, 2]
+            array[c_mat_idx] = np.sum(
+                (
+                    masmat[r_mat_idx, c_mat_idx] / conductor.time_step
+                    - am4_coef[1] * am4_aa[1,r_mat_idx,c_mat_idx]
+                ) * sysvar[r_arr_idx,0] # array of shape (r_arr_idx.shape[0],)
+                + np.sum(
+                    am4_coef[2:] * am4_aa[2:,r_mat_idx,c_mat_idx].T
+                    * sysvar[r_arr_idx,1:3],1
+                ) # array of shape (r_arr_idx.shape[0],)
+            ) # array of shape (1,)
+
+    if method == "BE" or method == "CN":
+        # Backward Euler or Crank-Nicolson
+        # External sources (SYSLOD) contribution
+        array += (
+            + conductor.theta_method * syslod[:,0]
+            + (1.0 - conductor.theta_method) * syslod[:,1]
+        )
+    elif method == "AM4":
+        # Adams-Moulton order 4
+
+        # Chance coefficient sign to exploit sum (array smart).
+        am4_coef[2:] = - am4_coef[2:]
+        # External sources (SYSLOD) contribution
+        array += np.sum(am4_coef * syslod,1)
+
+    return array
