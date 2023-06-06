@@ -2311,8 +2311,9 @@ class Conductor:
             self.dict_Step = dict(
                 SYSLOD=np.zeros((self.dict_N_equation["Total"], 4)),
                 SYSVAR=np.zeros((self.dict_N_equation["Total"], 3)),
+                # AM4_AA: four matrices of size Full * Total
                 AM4_AA=np.zeros(
-                    (self.dict_band["Full"], self.dict_N_equation["Total"], 4)
+                    (4,self.dict_band["Full"],self.dict_N_equation["Total"])
                 ),
             )
         # end if self.inputs
