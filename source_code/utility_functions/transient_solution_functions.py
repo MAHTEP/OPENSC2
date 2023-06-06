@@ -1531,3 +1531,48 @@ def natural_sort(comp_a, comp_b):
             return f"{comp_b.identifier}_{comp_a.identifier}"
         # end if
     # end if
+
+def eval_sub_array_norm(
+    array:np.ndarray,
+    conductor:Conductor,
+    eq_idx:dict,
+    )->np.ndarray:
+    """Function that evaluates the euclidean norm of as many sub arrays as the number of unknowns of the thermal hydraulic problem stored insde input argument array. Being jj the j-th unknown (i.e. CHAN_1 temperature), the sub array is given by sub_arr = array[jj::ndf] if ndf is the number of unknowns (number of degrees of freedom). The euclidean norm is applied to this sub array. The final outcome is an array of eucliean norms with ndf elements.
+    This function is used both to evaluate the norm of the solution and the norm of the solution change.
+
+    Args:
+        array (np.ndarray): array containing ndf sub arrays (each being the current thermal hydraulic solution or its change wrt the previous solution).
+        conductor (Conductor): object with all the information of the conductor.
+        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of integer for solid equation index.
+
+    Returns:
+        np.ndarray: array of eucliean norms with ndf elements.
+    """
+
+    # Alias
+    ndf = conductor.dict_N_equation["NODOFS"]
+    sub_array_norm = np.zeros(conductor.dict_N_equation["Total"])
+
+    # Evaluate the sub arrays euclidean norm.
+    # Loop on FluidComponent.
+    for f_comp in conductor.inventory["FluidComponent"].collection:
+        # velocity
+        sub_array_norm[eq_idx[f_comp.identifier].velocity] = np.sum(
+            array[eq_idx[f_comp.identifier].velocity::ndf] ** 2.
+        )
+        # pressure
+        sub_array_norm[eq_idx[f_comp.identifier].pressure] = np.sum(
+            array[eq_idx[f_comp.identifier].pressure::ndf] ** 2.
+        )
+        # temperature
+        sub_array_norm[eq_idx[f_comp.identifier].temperature] = np.sum(
+            array[eq_idx[f_comp.identifier].temperature::ndf] ** 2.
+        )
+    # Loop on SolidComponent.
+    for s_comp in conductor.inventory["SolidComponent"].collection:
+        # temperature
+        sub_array_norm[eq_idx[s_comp.identifier]] = np.sum(
+            array[eq_idx[s_comp.identifier]::ndf] ** 2.
+        )
+    
+    return np.sqrt(sub_array_norm)
