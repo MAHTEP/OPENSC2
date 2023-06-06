@@ -1057,102 +1057,12 @@ def step(conductor, environment, qsource, num_step):
     CHG = np.zeros(conductor.dict_N_equation["Total"])
     EIG = np.zeros(conductor.dict_N_equation["Total"])
 
-    for jj in range(conductor.inventory["FluidComponent"].number):
-        # velocity (cdp, 08/2020)
-        SOL[
-            jj : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                "NODOFS"
-            ]
-        ] = Known[
-            jj : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                "NODOFS"
-            ]
-        ]
-        conductor.dict_norm["Solution"][jj] = np.sqrt(
-            np.sum(
-                SOL[
-                    jj : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                        "NODOFS"
-                    ]
-                ]
-                ** 2
-            )
-        )
-        # pressure (cdp, 08/2020)
-        SOL[
-            jj
-            + conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
-        ] = Known[
-            jj
-            + conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
-        ]
-        conductor.dict_norm["Solution"][
-            jj + conductor.inventory["FluidComponent"].number
-        ] = np.sqrt(
-            np.sum(
-                SOL[
-                    jj
-                    + conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                        "NODOFS"
-                    ]
-                ]
-                ** 2
-            )
-        )
-        # temperature (cdp, 08/2020)
-        SOL[
-            jj
-            + 2
-            * conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
-        ] = Known[
-            jj
-            + 2
-            * conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation["NODOFS"]
-        ]
-        conductor.dict_norm["Solution"][
-            jj + 2 * conductor.inventory["FluidComponent"].number
-        ] = np.sqrt(
-            np.sum(
-                SOL[
-                    jj
-                    + 2
-                    * conductor.inventory["FluidComponent"].number : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                        "NODOFS"
-                    ]
-                ]
-                ** 2
-            )
-        )
-    for ll in range(conductor.inventory["SolidComponent"].number):
-        # temperature (cdp, 08/2020)
-        SOL[
-            ll
-            + conductor.dict_N_equation["FluidComponent"] : conductor.dict_N_equation[
-                "Total"
-            ] : conductor.dict_N_equation["NODOFS"]
-        ] = Known[
-            ll
-            + conductor.dict_N_equation["FluidComponent"] : conductor.dict_N_equation[
-                "Total"
-            ] : conductor.dict_N_equation["NODOFS"]
-        ]
-        conductor.dict_norm["Solution"][
-            ll + conductor.dict_N_equation["FluidComponent"]
-        ] = np.sqrt(
-            np.sum(
-                SOL[
-                    ll
-                    + conductor.dict_N_equation[
-                        "FluidComponent"
-                    ] : conductor.dict_N_equation["Total"] : conductor.dict_N_equation[
-                        "NODOFS"
-                    ]
-                ]
-                ** 2
-            )
-        )
-
-    # COMPUTE THE NORM OF THE SOLUTION (END)
+    # Evaluate the norm of the solution.
+    conductor.dict_norm["Solution"] = eval_sub_array_norm(
+        Known,
+        conductor,
+        eq_index,
+    )
 
     # COMPUTE THE NORM OF THE SOLUTION CHANGE, THE EIGENVALUES AND RECOVER THE \
     # VARIABLES FROM THE SYSTEM SOLUTION (START)
