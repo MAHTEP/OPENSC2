@@ -3516,6 +3516,12 @@ class Conductor:
                 ii :: self.inventory["StrandComponent"].number
             ]
 
+            # Compute voltage difference due to electric resistance.
+            obj.dict_Gauss_pt["delta_voltag_along_R"] = (
+                obj.dict_Gauss_pt["current_along"]
+                * obj.dict_Gauss_pt["electric_resistance"]
+                    )
+
     def __get_total_joule_power_electric_conductance(self):
         """Private method that evaluates total Joule power in each node of the spatial discretization associated to the electric conductance between StrandComponent objects. The method re-distribues computed values to each defined StrandComponent object."""
 
