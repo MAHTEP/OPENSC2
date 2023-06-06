@@ -703,7 +703,7 @@ def build_kmat_solid(
     """
 
     # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
-    # A_{s_comp}*k_{s_comp,homo}; homo = homogenized (cdp, 07/2020)
+    # A_{s_comp}*k_{s_comp,homo}; homo = homogenized
     matrix[eq_idx,eq_idx] = (
         s_comp.inputs["CROSSECTION"]
         * s_comp.dict_Gauss_pt["total_thermal_conductivity"][elem_idx]
@@ -1254,3 +1254,49 @@ def assemble_syslod(
     # end conductor.inputs["METHOD"]
 
     return syslod
+
+def eval_system_matrix(
+    matrix:np.ndarray,
+    aux_matrices:tuple,
+    conductor:Conductor,
+    )->np.ndarray:
+    """Function that evaluates the system matrix using the values of the matrix MASMAT, FLXMAT, DIFMAT and SORMAT, according to the selected method for time integration.
+
+    Args:
+        matrix (np.ndarray): initialized SYSMAT matrix
+        aux_matrices (tuple): collection of matrix MASMAT, FLXMAT, DIFMAT and SORMAT after call to function assemble_matrix.
+        conductor (Conductor): object with all the information of the conductor.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+    
+    # Alias
+    method = conductor.inputs["METHOD"]
+    # Unpack auxiliary matrices (MASMAT,FLXMAT,DIFMAT,SORMAT)
+    masmat,flxmat,difmat,sormat = aux_matrices
+    # ** COMPUTE SYSTEM MATRIX **
+    if method == "BE" or method == "CN":
+        # Backward Euler or Crank-Nicolson
+        matrix = (
+            masmat / conductor.time_step
+            + conductor.theta_method * (flxmat + difmat + sormat)
+        )
+        
+    elif method == "AM4":
+        # Adams-Moulton order 4
+        # Alias
+        am4_aa = conductor.dict_Step["AM4_AA"] # shallow copy
+        if conductor.cond_num_step == 1:
+            # This is due to the dummy initial steady state
+            for cc in range(am4_aa.shape[2]):
+                am4_aa[cc,:,:] = flxmat + difmat + sormat
+        else:
+            # Shift the matrices by one towards right and compute the new first
+            # matrix at the current time step.
+            am4_aa[1:4,:,:] = am4_aa[0:3,:,:]
+            am4_aa[0,:,:] = flxmat + difmat + sormat
+        # compute SYSMAT
+        matrix = masmat / conductor.time_step + 9. / 24. * am4_aa[0,:,:]
+    
+    return matrix
