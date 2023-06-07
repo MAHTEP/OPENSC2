@@ -543,66 +543,61 @@ def step(conductor, environment, qsource, num_step):
             np.savetxt(writer, conductor.dict_Step["SYSLOD"], delimiter = "\t")
 
     # IMPOSE BOUNDARY CONDITIONS AT INLET/OUTLET
-    for jj, fluid_comp_j in enumerate(conductor.inventory["FluidComponent"].collection):
-        INTIAL = fluid_comp_j.coolant.operations["INTIAL"]
+    total = conductor.dict_N_equation["Total"]
+    ndf = conductor.dict_N_equation["NODOFS"]
+    main_d_idx = conductor.dict_band["Main_diag"]
+    for f_comp in conductor.inventory["FluidComponent"].collection:
+        INTIAL = f_comp.coolant.operations["INTIAL"]
         # index for inlet BC (cdp, 08/2020)
-        Iiv_inl = dict(
-            forward=jj,
-            backward=conductor.dict_N_equation["Total"]
-            - conductor.dict_N_equation["NODOFS"]
-            + jj,
+        # Inlet velocity index.
+        inl_v_idx = dict(
+            forward=eq_index[f_comp.identifier].velocity,
+            backward=total - ndf + eq_index[f_comp.identifier].velocity,
         )
-        Iip_inl = dict(
-            forward=jj + conductor.inventory["FluidComponent"].number,
-            backward=conductor.dict_N_equation["Total"]
-            - conductor.dict_N_equation["NODOFS"]
-            + jj
-            + conductor.inventory["FluidComponent"].number,
+        # Inlet pressure index.
+        inl_p_idx = dict(
+            forward=eq_index[f_comp.identifier].pressure,
+            backward=total - ndf + eq_index[f_comp.identifier].pressure,
         )
-        Iit_inl = dict(
-            forward=jj + 2 * conductor.inventory["FluidComponent"].number,
-            backward=conductor.dict_N_equation["Total"]
-            - conductor.dict_N_equation["NODOFS"]
-            + jj
-            + 2 * conductor.inventory["FluidComponent"].number,
+        # Inlet temperature index.
+        inl_t_idx = dict(
+            forward=eq_index[f_comp.identifier].temperature,
+            backward=total - ndf + eq_index[f_comp.identifier].temperature,
         )
 
         # index for outlet BC (cdp, 08/2020)
-        Iiv_out = dict(
-            forward=jj
-            + conductor.dict_N_equation["Total"]
-            - conductor.dict_N_equation["NODOFS"],
-            backward=jj,
+        # Outlet velocity index.
+        out_v_idx = dict(
+            forward=total - ndf + eq_index[f_comp.identifier].velocity,
+            backward=eq_index[f_comp.identifier].velocity,
         )
-        Iip_out = dict(
-            forward=jj
-            + conductor.dict_N_equation["Total"]
-            - conductor.dict_N_equation["NODOFS"]
-            + conductor.inventory["FluidComponent"].number,
-            backward=jj + conductor.inventory["FluidComponent"].number,
+        # Outlet pressure index.
+        out_p_idx = dict(
+            forward=total - ndf + eq_index[f_comp.identifier].pressure,
+            backward=eq_index[f_comp.identifier].pressure,
         )
-        Iit_out = dict(
-            forward=jj
-            + conductor.dict_N_equation["Total"]
-            - conductor.dict_N_equation["NODOFS"]
-            + 2 * conductor.inventory["FluidComponent"].number,
-            backward=jj + 2 * conductor.inventory["FluidComponent"].number,
+        # Outlet temperature index.
+        out_t_idx = dict(
+            forward=total - ndf + eq_index[f_comp.identifier].temperature,
+            backward=eq_index[f_comp.identifier].temperature,
         )
+
+        flow_dir = f_comp.channel.flow_dir[0]
         if abs(INTIAL) == 1:
             if INTIAL == 1:
                 # inlet pressure (cdp, 07/2020)
-                p_inl = fluid_comp_j.coolant.operations["PREINL"]
+                p_inl = f_comp.coolant.operations["PREINL"]
                 # inlet temperature (cdp, 07/2020)
-                T_inl = fluid_comp_j.coolant.operations["TEMINL"]
+                T_inl = f_comp.coolant.operations["TEMINL"]
                 # outlet pressure (cdp, 07/2020)
-                p_out = fluid_comp_j.coolant.operations["PREOUT"]
+                p_out = f_comp.coolant.operations["PREOUT"]
                 # outlet temperature: to be assigned if outlet velocity is negative \
                 # (cdp, 08/2020)
-                T_out = fluid_comp_j.coolant.operations["TEMOUT"]
+                T_out = f_comp.coolant.operations["TEMOUT"]
             else:
                 # get from file with interpolation in time (cdp,07/2020)
                 [flow_par, flagSpecfield] = get_from_xlsx(
-                    conductor, path, fluid_comp_j, "INTIAL", INTIAL
+                    conductor, path, f_comp, "INTIAL", INTIAL
                 )
                 print(
                     f"""flagSpecfield == {flagSpecfield}: still to be decided if 
@@ -619,97 +614,61 @@ def step(conductor, environment, qsource, num_step):
                 T_out = flow_par[1]
             # Assign BC: (cdp, 08/2020)
             # p_inl
-            SYSMAT[
-                :conductor.dict_band["Full"],
-                Iip_inl[fluid_comp_j.channel.flow_dir[0]],
-            ] = 0.0
+            SYSMAT[:,inl_p_idx[flow_dir]] = 0.0
             # main diagonal (cdp, 08/2020)
-            SYSMAT[
-                conductor.dict_band["Half"] - 1,
-                Iip_inl[fluid_comp_j.channel.flow_dir[0]],
-            ] = 1.0
-            Known[Iip_inl[fluid_comp_j.channel.flow_dir[0]]] = p_inl
+            SYSMAT[main_d_idx,inl_p_idx[flow_dir]] = 1.0
+            Known[inl_p_idx[flow_dir]] = p_inl
             # p_out
-            SYSMAT[
-                :conductor.dict_band["Full"],
-                Iip_out[fluid_comp_j.channel.flow_dir[0]],
-            ] = 0.0
+            SYSMAT[:,out_p_idx[flow_dir]] = 0.0
             # main diagonal (cdp, 08/2020)
-            SYSMAT[
-                conductor.dict_band["Half"] - 1,
-                Iip_out[fluid_comp_j.channel.flow_dir[0]],
-            ] = 1.0
-            Known[Iip_out[fluid_comp_j.channel.flow_dir[0]]] = p_out
-            if fluid_comp_j.channel.flow_dir[0] == "forward":
+            SYSMAT[main_d_idx,out_p_idx[flow_dir]] = 1.0
+            Known[out_p_idx[flow_dir]] = p_out
+            if flow_dir == "forward":
                 # T_inl
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][0] > 0:
+                    SYSMAT[:,inl_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = T_inl
+                    SYSMAT[main_d_idx,inl_t_idx[flow_dir]] = 1.0
+                    Known[inl_t_idx[flow_dir]] = T_inl
                 # T_out
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][-1] < 0:
+                    SYSMAT[:,out_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_out[fluid_comp_j.channel.flow_dir[0]]] = T_out
-            elif fluid_comp_j.channel.flow_dir[0] == "backward":
+                    SYSMAT[main_d_idx,out_t_idx[flow_dir]] = 1.0
+                    Known[out_t_idx[flow_dir]] = T_out
+            elif flow_dir == "backward":
                 # T_inl
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][-1] < 0:
+                    SYSMAT[:,inl_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = T_inl
+                    SYSMAT[main_d_idx,inl_t_idx[flow_dir]] = 1.0
+                    Known[inl_t_idx[flow_dir]] = T_inl
                 # T_out
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][0] > 0:
+                    SYSMAT[:,out_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_out[fluid_comp_j.channel.flow_dir[0]]] = T_out
-            # End if fluid_comp_j.channel.flow_dir[0] == "forward"
+                    SYSMAT[main_d_idx,out_t_idx[flow_dir]] = 1.0
+                    Known[out_t_idx[flow_dir]] = T_out
+            # End if flow_dir == "forward"
         elif abs(INTIAL) == 2:
             # INLET AND OUTLET RESERVOIRS, INLET CONDITIONS AND FLOW SPECIFIED
             if INTIAL == 2:
                 # inlet mass flow rate (cdp, 07/2020)
-                MDTIN = fluid_comp_j.coolant.operations["MDTIN"]
+                MDTIN = f_comp.coolant.operations["MDTIN"]
                 # inlet pressure (cdp, 07/2020)
-                # p_inl = fluid_comp_j.coolant.operations["PREINL"]
+                # p_inl = f_comp.coolant.operations["PREINL"]
                 # inlet temperature (cdp, 07/2020)
-                T_inl = fluid_comp_j.coolant.operations["TEMINL"]
+                T_inl = f_comp.coolant.operations["TEMINL"]
                 # outlet pressure (cdp, 10/2020)
-                p_out = fluid_comp_j.coolant.operations["PREOUT"]
+                p_out = f_comp.coolant.operations["PREOUT"]
                 # outlet temperature: to be assigned if outlet velocity is negative \
                 # (cdp, 08/2020)
-                T_out = fluid_comp_j.coolant.operations["TEMOUT"]
+                T_out = f_comp.coolant.operations["TEMOUT"]
             else:  # N.B va aggiustato per renderlo conforme caso positivo! \
                 # (cdp, 10/2020)
                 # all values from flow_dummy.xlsx: call get_from_xlsx (cdp, 07/2020)
                 [flow_par, flagSpecfield] = get_from_xlsx(
-                    conductor, path, fluid_comp_j, "INTIAL", INTIAL
+                    conductor, path, f_comp, "INTIAL", INTIAL
                 )
                 print(
                     f"""flagSpecfield == {flagSpecfield}: still to be decided if it 
@@ -723,194 +682,110 @@ def step(conductor, environment, qsource, num_step):
                 T_out = flow_par[1]
             # Assign BC: (cdp, 08/2020)
             # v_inl
-            SYSMAT[
-                :conductor.dict_band["Full"],
-                Iiv_inl[fluid_comp_j.channel.flow_dir[0]],
-            ] = 0.0
+            SYSMAT[:,inl_v_idx[flow_dir]] = 0.0
             # main diagonal (cdp, 08/2020)
-            SYSMAT[
-                conductor.dict_band["Half"] - 1,
-                Iiv_inl[fluid_comp_j.channel.flow_dir[0]],
-            ] = 1.0
-            if fluid_comp_j.channel.flow_dir[0] == "forward":
+            SYSMAT[main_d_idx,inl_v_idx[flow_dir]] = 1.0
+            if flow_dir == "forward":
                 # Flow direction from x = 0 to x = L.
-                Known[Iiv_inl[fluid_comp_j.channel.flow_dir[0]]] = (
+                Known[inl_v_idx[flow_dir]] = (
                     MDTIN
-                    / fluid_comp_j.coolant.dict_node_pt["total_density"][0]
-                    / fluid_comp_j.channel.inputs["CROSSECTION"]
+                    / f_comp.coolant.dict_node_pt["total_density"][0]
+                    / f_comp.channel.inputs["CROSSECTION"]
                 )
-            elif fluid_comp_j.channel.flow_dir[0] == "backward":
+            elif flow_dir == "backward":
                 # Flow direction from x = L to x = 0.
-                Known[Iiv_inl[fluid_comp_j.channel.flow_dir[0]]] = (
+                Known[inl_v_idx[flow_dir]] = (
                     MDTIN
-                    / fluid_comp_j.coolant.dict_node_pt["total_density"][-1]
-                    / fluid_comp_j.channel.inputs["CROSSECTION"]
+                    / f_comp.coolant.dict_node_pt["total_density"][-1]
+                    / f_comp.channel.inputs["CROSSECTION"]
                 )
             ## p_inl
-            # SYSMAT[0:conductor.dict_band["Full"], Iip_inl] = 0.0
+            # SYSMAT[0:, inl_p_idx] = 0.0
             ## main diagonal (cdp, 08/2020)
-            # SYSMAT[conductor.dict_band["Half"] - 1, Iip_inl] = 1.0
+            # SYSMAT[main_d_idx, inl_p_idx] = 1.0
 
             # p_out
-            SYSMAT[
-                :conductor.dict_band["Full"],
-                Iip_out[fluid_comp_j.channel.flow_dir[0]],
-            ] = 0.0
+            SYSMAT[:,out_p_idx[flow_dir]] = 0.0
             # main diagonal (cdp, 08/2020)
-            SYSMAT[
-                conductor.dict_band["Half"] - 1,
-                Iip_out[fluid_comp_j.channel.flow_dir[0]],
-            ] = 1.0
-            Known[Iip_out[fluid_comp_j.channel.flow_dir[0]]] = p_out
-            # Known[Iip_inl] = p_inl
-            if fluid_comp_j.channel.flow_dir[0] == "forward":
+            SYSMAT[main_d_idx,out_p_idx[flow_dir]] = 1.0
+            Known[out_p_idx[flow_dir]] = p_out
+            # Known[inl_p_idx] = p_inl
+            if flow_dir == "forward":
                 # T_inl
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][0] > 0:
+                    SYSMAT[:,inl_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = T_inl
+                    SYSMAT[main_d_idx,inl_t_idx[flow_dir]] = 1.0
+                    Known[inl_t_idx[flow_dir]] = T_inl
                 # T_out (T_inl if MDTIN < 0)
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][-1] < 0:
+                    SYSMAT[:,out_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_out[fluid_comp_j.channel.flow_dir[0]]] = T_out
-            elif fluid_comp_j.channel.flow_dir[0] == "backward":
+                    SYSMAT[main_d_idx,out_t_idx[flow_dir]] = 1.0
+                    Known[out_t_idx[flow_dir]] = T_out
+            elif flow_dir == "backward":
                 # T_inl
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][-1] < 0:
+                    SYSMAT[:,inl_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = T_inl
+                    SYSMAT[main_d_idx,inl_t_idx[flow_dir]] = 1.0
+                    Known[inl_t_idx[flow_dir]] = T_inl
                 # T_out
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][0] > 0:
+                    SYSMAT[:,out_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_out[fluid_comp_j.channel.flow_dir[0]]] = T_out
-            # End if fluid_comp_j.channel.flow_dir[0] == "forward"
+                    SYSMAT[main_d_idx,out_t_idx[flow_dir]] = 1.0
+                    Known[out_t_idx[flow_dir]] = T_out
+            # End if flow_dir == "forward"
         elif INTIAL == 3:
             # INLET RESERVOIR AND CLOSED OUTLET (SYMMETRY)
             # p_inl
-            SYSMAT[
-                :conductor.dict_band["Full"],
-                Iip_inl[fluid_comp_j.channel.flow_dir[0]],
-            ] = 0.0
+            SYSMAT[:,inl_p_idx[flow_dir]] = 0.0
             # main diagonal (cdp, 08/2020)
-            SYSMAT[
-                conductor.dict_band["Half"] - 1,
-                Iip_inl[fluid_comp_j.channel.flow_dir[0]],
-            ] = 1.0
-            Known[
-                Iip_inl[fluid_comp_j.channel.flow_dir[0]]
-            ] = fluid_comp_j.coolant.operations["PREINL"]
+            SYSMAT[main_d_idx,inl_p_idx[flow_dir]] = 1.0
+            Known[inl_p_idx[flow_dir]] = f_comp.coolant.operations["PREINL"]
             # T_inl
-            if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
-                SYSMAT[
-                    :conductor.dict_band["Full"],
-                    Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                ] = 0.0
+            if f_comp.coolant.dict_node_pt["velocity"][0] > 0:
+                SYSMAT[:,inl_t_idx[flow_dir]] = 0.0
                 # main diagonal (cdp, 08/2020)
-                SYSMAT[
-                    conductor.dict_band["Half"] - 1,
-                    Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                ] = 1.0
-                Known[
-                    Iit_inl[fluid_comp_j.channel.flow_dir[0]]
-                ] = fluid_comp_j.coolant.operations["TEMINL"]
+                SYSMAT[main_d_idx,inl_t_idx[flow_dir]] = 1.0
+                Known[inl_t_idx[flow_dir]] = f_comp.coolant.operations["TEMINL"]
             # v_out
-            SYSMAT[
-                :conductor.dict_band["Full"],
-                Iiv_out[fluid_comp_j.channel.flow_dir[0]],
-            ] = 0.0
-            SYSMAT[
-                conductor.dict_band["Half"] - 1,
-                Iiv_out[fluid_comp_j.channel.flow_dir[0]],
-            ] = 1.0
-            Known[
-                Iiv_out[fluid_comp_j.channel.flow_dir[0]]
-            ] = 0.0  # closed outlet (cdp, 08/2020)
+            SYSMAT[:,out_v_idx[flow_dir]] = 0.0
+            SYSMAT[main_d_idx,out_v_idx[flow_dir]] = 1.0
+            Known[out_v_idx[flow_dir]] = 0.0  # closed outlet (cdp, 08/2020)
             # T_out
-            if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
-                SYSMAT[
-                    :conductor.dict_band["Full"],
-                    Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                ] = 0.0
+            if f_comp.coolant.dict_node_pt["velocity"][-1] < 0:
+                SYSMAT[:,out_t_idx[flow_dir]] = 0.0
                 # main diagonal (cdp, 08/2020)
-                SYSMAT[
-                    conductor.dict_band["Half"] - 1,
-                    Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                ] = 1.0
-                Known[
-                    Iit_out[fluid_comp_j.channel.flow_dir[0]]
-                ] = fluid_comp_j.coolant.operations["TEMOUT"]
+                SYSMAT[main_d_idx,out_t_idx[flow_dir]] = 1.0
+                Known[out_t_idx[flow_dir]] = f_comp.coolant.operations["TEMOUT"]
         elif INTIAL == 4:
             # v_inl
-            SYSMAT[
-                :conductor.dict_band["Full"],
-                Iiv_inl[fluid_comp_j.channel.flow_dir[0]],
-            ] = 0.0
+            SYSMAT[:,inl_v_idx[flow_dir]] = 0.0
             # main diagonal (cdp, 08/2020)
-            SYSMAT[
-                conductor.dict_band["Half"] - 1,
-                Iiv_inl[fluid_comp_j.channel.flow_dir[0]],
-            ] = 1.0
-            Known[
-                Iiv_inl[fluid_comp_j.channel.flow_dir[0]]
-            ] = 0.0  # closed inlet (cdp, 08/2020)
+            SYSMAT[main_d_idx,inl_v_idx[flow_dir]] = 1.0
+            Known[inl_v_idx[flow_dir]] = 0.0  # closed inlet (cdp, 08/2020)
             # v_out
-            SYSMAT[
-                :conductor.dict_band["Full"],
-                Iiv_out[fluid_comp_j.channel.flow_dir[0]],
-            ] = 0.0
+            SYSMAT[:,out_v_idx[flow_dir]] = 0.0
             # main diagonal (cdp, 08/2020)
-            SYSMAT[
-                conductor.dict_band["Half"] - 1,
-                Iiv_out[fluid_comp_j.channel.flow_dir[0]],
-            ] = 1.0
-            Known[
-                Iiv_out[fluid_comp_j.channel.flow_dir[0]]
-            ] = 0.0  # closed outlet (cdp, 08/2020)
+            SYSMAT[main_d_idx,out_v_idx[flow_dir],] = 1.0
+            Known[out_v_idx[flow_dir]] = 0.0  # closed outlet (cdp, 08/2020)
         elif abs(INTIAL) == 5:
             if INTIAL == 5:
                 # inlet mass flow rate (cdp, 07/2020)
-                MDTIN = fluid_comp_j.coolant.operations["MDTIN"]
+                MDTIN = f_comp.coolant.operations["MDTIN"]
                 # inlet temperature (cdp, 07/2020)
-                T_inl = fluid_comp_j.coolant.operations["TEMINL"]
+                T_inl = f_comp.coolant.operations["TEMINL"]
                 # outlet pressure (cdp, 07/2020)
-                p_out = fluid_comp_j.coolant.operations["PREOUT"]
+                p_out = f_comp.coolant.operations["PREOUT"]
                 # outlet temperature: to be assigned if outlet velocity is negative \
                 # (cdp, 08/2020)
-                T_out = fluid_comp_j.coolant.operations["TEMOUT"]
+                T_out = f_comp.coolant.operations["TEMOUT"]
             else:
                 # all values from flow_dummy.xlsx: call get_from_xlsx (cdp, 07/2020)
                 [flow_par, flagSpecfield] = get_from_xlsx(
-                    conductor, path, fluid_comp_j, "INTIAL", INTIAL
+                    conductor, path, f_comp, "INTIAL", INTIAL
                 )
                 print(
                     f"""flagSpecfield == {flagSpecfield}: still to be decided if it
@@ -924,93 +799,57 @@ def step(conductor, environment, qsource, num_step):
                 T_out = flow_par[1]
             # Assign BC: (cdp, 08/2020)
             # v_inl
-            SYSMAT[
-                :conductor.dict_band["Full"],
-                Iiv_inl[fluid_comp_j.channel.flow_dir[0]],
-            ] = 0.0
+            SYSMAT[:,inl_v_idx[flow_dir]] = 0.0
             # main diagonal (cdp, 08/2020)
-            SYSMAT[
-                conductor.dict_band["Half"] - 1,
-                Iiv_inl[fluid_comp_j.channel.flow_dir[0]],
-            ] = 1.0
-            if fluid_comp_j.channel.flow_dir[0] == "forward":
+            SYSMAT[main_d_idx,inl_v_idx[flow_dir]] = 1.0
+            if flow_dir == "forward":
                 # Flow direction from x = 0 to x = L.
-                Known[Iiv_inl[fluid_comp_j.channel.flow_dir[0]]] = (
+                Known[inl_v_idx[flow_dir]] = (
                     MDTIN
-                    / fluid_comp_j.coolant.dict_node_pt["total_density"][0]
-                    / fluid_comp_j.channel.inputs["CROSSECTION"]
+                    / f_comp.coolant.dict_node_pt["total_density"][0]
+                    / f_comp.channel.inputs["CROSSECTION"]
                 )
-            elif fluid_comp_j.channel.flow_dir[0] == "backward":
+            elif flow_dir == "backward":
                 # Flow direction from x = L to x = 0.
-                Known[Iiv_inl[fluid_comp_j.channel.flow_dir[0]]] = (
+                Known[inl_v_idx[flow_dir]] = (
                     MDTIN
-                    / fluid_comp_j.coolant.dict_node_pt["total_density"][-1]
-                    / fluid_comp_j.channel.inputs["CROSSECTION"]
+                    / f_comp.coolant.dict_node_pt["total_density"][-1]
+                    / f_comp.channel.inputs["CROSSECTION"]
                 )
 
             # p_out
-            SYSMAT[
-                :conductor.dict_band["Full"],
-                Iip_out[fluid_comp_j.channel.flow_dir[0]],
-            ] = 0.0
+            SYSMAT[:,out_p_idx[flow_dir]] = 0.0
             # main diagonal (cdp, 08/2020)
-            SYSMAT[
-                conductor.dict_band["Half"] - 1,
-                Iip_out[fluid_comp_j.channel.flow_dir[0]],
-            ] = 1.0
-            Known[Iip_out[fluid_comp_j.channel.flow_dir[0]]] = p_out
-            # Known[Iip_inl] = p_inl
-            if fluid_comp_j.channel.flow_dir[0] == "forward":
+            SYSMAT[main_d_idx,out_p_idx[flow_dir]] = 1.0
+            Known[out_p_idx[flow_dir]] = p_out
+            # Known[inl_p_idx] = p_inl
+            if flow_dir == "forward":
                 # T_inl
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][0] > 0:
+                    SYSMAT[:,inl_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = T_inl
+                    SYSMAT[main_d_idx,inl_t_idx[flow_dir]] = 1.0
+                    Known[inl_t_idx[flow_dir]] = T_inl
                 # T_out (T_inl if MDTIN < 0)
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][-1] < 0:
+                    SYSMAT[:,out_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_out[fluid_comp_j.channel.flow_dir[0]]] = T_out
-            elif fluid_comp_j.channel.flow_dir[0] == "backward":
+                    SYSMAT[main_d_idx,out_t_idx[flow_dir]] = 1.0
+                    Known[out_t_idx[flow_dir]] = T_out
+            elif flow_dir == "backward":
                 # T_inl
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][-1] < 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][-1] < 0:
+                    SYSMAT[:,inl_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_inl[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_inl[fluid_comp_j.channel.flow_dir[0]]] = T_inl
+                    SYSMAT[main_d_idx,inl_t_idx[flow_dir]] = 1.0
+                    Known[inl_t_idx[flow_dir]] = T_inl
                 # T_out
-                if fluid_comp_j.coolant.dict_node_pt["velocity"][0] > 0:
-                    SYSMAT[
-                        :conductor.dict_band["Full"],
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 0.0
+                if f_comp.coolant.dict_node_pt["velocity"][0] > 0:
+                    SYSMAT[:,out_t_idx[flow_dir]] = 0.0
                     # main diagonal (cdp, 08/2020)
-                    SYSMAT[
-                        conductor.dict_band["Half"] - 1,
-                        Iit_out[fluid_comp_j.channel.flow_dir[0]],
-                    ] = 1.0
-                    Known[Iit_out[fluid_comp_j.channel.flow_dir[0]]] = T_out
-            # End if fluid_comp_j.channel.flow_dir[0] == "forward"
+                    SYSMAT[main_d_idx,out_t_idx[flow_dir]] = 1.0
+                    Known[out_t_idx[flow_dir]] = T_out
+            # End if flow_dir == "forward"
 
     # end for jj
 
