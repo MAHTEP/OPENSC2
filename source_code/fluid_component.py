@@ -88,6 +88,13 @@ class FluidComponent:
         # Instance of class Coolant (build a coolant object)
         self.coolant = Coolant(sheet, sheetOpar, dict_file_path, self.identifier)
         self.coordinate = dict()
+        # This is a switch to apply BC for the thermal hydraulic problem 
+        # according to the absolute value of flat INTIAL.
+        self.apply_th_bc = {
+            1:self.impose_pressure_drop,  # abs(INTIAL) = 1
+            2:self.impose_inl_p_out_v,  # abs(INTIAL) = 2
+            3:self.impose_inl_v_out_p,  # abs(INTIAL) = 2
+        }
 
     # End method __init__.
 
