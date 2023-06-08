@@ -543,44 +543,9 @@ def step(conductor, environment, qsource, num_step):
             np.savetxt(writer, conductor.dict_Step["SYSLOD"], delimiter = "\t")
 
     # IMPOSE BOUNDARY CONDITIONS AT INLET/OUTLET
-    total = conductor.dict_N_equation["Total"]
-    ndf = conductor.dict_N_equation["NODOFS"]
     main_d_idx = conductor.dict_band["Main_diag"]
     for f_comp in conductor.inventory["FluidComponent"].collection:
         INTIAL = f_comp.coolant.operations["INTIAL"]
-        # index for inlet BC (cdp, 08/2020)
-        # Inlet velocity index.
-        inl_v_idx = dict(
-            forward=eq_index[f_comp.identifier].velocity,
-            backward=total - ndf + eq_index[f_comp.identifier].velocity,
-        )
-        # Inlet pressure index.
-        inl_p_idx = dict(
-            forward=eq_index[f_comp.identifier].pressure,
-            backward=total - ndf + eq_index[f_comp.identifier].pressure,
-        )
-        # Inlet temperature index.
-        inl_t_idx = dict(
-            forward=eq_index[f_comp.identifier].temperature,
-            backward=total - ndf + eq_index[f_comp.identifier].temperature,
-        )
-
-        # index for outlet BC (cdp, 08/2020)
-        # Outlet velocity index.
-        out_v_idx = dict(
-            forward=total - ndf + eq_index[f_comp.identifier].velocity,
-            backward=eq_index[f_comp.identifier].velocity,
-        )
-        # Outlet pressure index.
-        out_p_idx = dict(
-            forward=total - ndf + eq_index[f_comp.identifier].pressure,
-            backward=eq_index[f_comp.identifier].pressure,
-        )
-        # Outlet temperature index.
-        out_t_idx = dict(
-            forward=total - ndf + eq_index[f_comp.identifier].temperature,
-            backward=eq_index[f_comp.identifier].temperature,
-        )
 
         flow_dir = f_comp.channel.flow_dir[0]
         if abs(INTIAL) == 1:
