@@ -661,18 +661,18 @@ def abs_intial_equal_1_hp(cond, chan_group, N_group, path, Max_iter, tol):
 # end function Abs_INTIAL_equal_1_hp (cdp, 09/2020)
 
 
-def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
+def abs_intial_equal_2_or_3_hp(cond, chan_group, N_group, path, tol, intial=2):
 
     """
-    Function that evaluate initial flow parameters for a channel group in hydraulic parallel characterized by the same fluid and the same value of flag INTIAL: asb(INTIAL) = 2 or asb(INTIAL) = 5 in this case. This two cases are treated with the same function since they are similar; it should be remembered however that all the channels of a group are characterized by the same INTIAL value. (cdp, 09/2020)
+    Function that evaluate initial flow parameters for a channel group in hydraulic parallel characterized by the same fluid and the same value of flag INTIAL: asb(INTIAL) = 2 or asb(INTIAL) = 3 in this case. This two cases are treated with the same function since they are similar; it should be remembered however that all the channels of a group are characterized by the same INTIAL value. (cdp, 09/2020)
     """
 
     list_words = ["inlet", "outlet"]
     list_symbols = ["p_inl", "p_out"]
-    list_keys = ["PREINL", "PREOUT"]
+    list_keys = ["PREINL","PREOUT","MDTIN","MDTOUT"]
 
     # flow parameters initialization (cdp, 09/2020)
-    mdot_inl = np.zeros(N_group)
+    mdot_known = np.zeros(N_group)
     p_known = np.zeros(N_group)
     T_inl = np.zeros(N_group)
     # Other usefull quantities initialization (cdp, 09/2020)
@@ -682,11 +682,13 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
         word = list_words[1]
         key_a = list_keys[0]
         key_b = list_keys[1]
+        key_mfr = list_keys[3]
         symbol = list_symbols[1]
-    elif abs(intial) == 5:
+    elif abs(intial) == 3:
         word = list_words[0]
         key_a = list_keys[1]
         key_b = list_keys[0]
+        key_mfr = list_keys[2]
         symbol = list_symbols[0]
 
     # Loop on the channels of the group (cdp, 09/2020)
@@ -694,13 +696,13 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
         fluid_comp = chan_group[ii]
         if fluid_comp.coolant.operations["INTIAL"] > 0:
             # Inlet mass flow rate (cdp, 08/2020)
-            mdot_inl[ii] = fluid_comp.coolant.operations["MDTIN"]
+            mdot_known[ii] = fluid_comp.coolant.operations[key_mfr]
             # Known pressure (cdp, 08/2020)
             p_known[ii] = fluid_comp.coolant.operations[key_a]
             # Inlet temperature (cdp, 08/2020)
             T_inl[ii] = fluid_comp.coolant.operations["TEMINL"]
             warnings.warn(
-                f"""Function {gen_flow}, {fluid_comp.identifier}, INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input parameters from Worksheet CHAN of file {cond.file_input["OPERATION"]}:\n{key_a} = {p_known[ii]} Pa;\nTEMINL = {T_inl[ii]} K;\nMDTIN = {mdot_inl[ii]} kg/s.\n"""
+                f"""Function {gen_flow}, {fluid_comp.identifier}, INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input parameters from Worksheet CHAN of file {cond.file_input["OPERATION"]}:\n{key_a} = {p_known[ii]} Pa;\nTEMINL = {T_inl[ii]} K;\n{key_mfr} = {mdot_known[ii]} kg/s.\n"""
             )
         elif fluid_comp.coolant.operations["INTIAL"] < 0:
             # All values form flow_dummy.xlsx (cdp, 07/2020)
@@ -715,13 +717,13 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
                 f"flagSpecfield == {flagSpecfield}: still to be decided if it useful and if yes still to be defined\n"
             )
             # Inlet mass flow rate (cdp, 08/2020)
-            mdot_inl[ii] = flow_par[3]
+            mdot_known[ii] = flow_par[3]
             # Known pressure (cdp, 08/2020)
             p_known[ii] = flow_par[2]
             # Inlet temperature (cdp, 08/2020)
             T_inl[ii] = flow_par[0]
             warnings.warn(
-                f"""Function {gen_flow}, {fluid_comp.identifier}, INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input parameters from Worksheet CHAN of file flow_dummy.xlsx parameters:\n{key_a} = {p_known[ii]} Pa;\nTEMINL = {T_inl[ii]} K;\nMDTIN = {mdot_inl[ii]} kg/s.\n"""
+                f"""Function {gen_flow}, {fluid_comp.identifier}, INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input parameters from Worksheet CHAN of file flow_dummy.xlsx parameters:\n{key_a} = {p_known[ii]} Pa;\nTEMINL = {T_inl[ii]} K;\n{key_mfr} = {mdot_known[ii]} kg/s.\n"""
             )
         # end if INTIAL (cdp, 09/2020)
         # Evaluate channels geometry parameters g0 to compute outlet \
@@ -737,21 +739,20 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
     # end for ii (cdp, 09/2020)
 
     # Algorithm description (cdp, 09/2020)
-    # To compute pressure drop, the hydraulic characteristic of each channel is \
-    # determined, approximated with a parable having vertex in the origin of the \
-    # Cartesian reference frame (delta_p-mfr) and thus described by the \
-    # equation: \
-    # delta_p_ch = alpha_ch*mdot_inl**2
-    # where alpha_ch is to be determined, exploiting the available information, \
-    # as: \
+    # To compute pressure drop, the hydraulic characteristic of each channel is
+    # determined, approximated with a parable having vertex in the origin of
+    # the Cartesian reference frame (delta_p-mfr) and thus described by the
+    # equation: delta_p_ch = alpha_ch*mdot_known**2
+    # where alpha_ch is to be determined, exploiting the available information,
+    # as: 
     # alpha_ch = g0*fric/rho
-    # with alpha_ch known, the estimated channels pressure drop is given by: \
-    # delta_p_group = mdot_inl_tot/sum(1/sqrt(alpha_ch))**2
-    # Finally the actual mass flow rate repartition is evaluated, and the check \
+    # with alpha_ch known, the estimated channels pressure drop is given by:
+    # delta_p_group = mdot_known_tot/sum(1/sqrt(alpha_ch))**2
+    # Finally the actual mass flow rate repartition is evaluated, and the check
     # on mass conservation is done.
-    # To evaluate delta_p properties are evaluated with the inlet temperature \
-    # and the average inlet or outlet pressure (respectively abs(INTIAL) == 2 \
-    # and abs(INTIAL) == 5) to take into account that channels may have \
+    # To evaluate delta_p properties are evaluated with the inlet temperature
+    # and the average inlet or outlet pressure (respectively abs(INTIAL) == 2
+    # and abs(INTIAL) == 3) to take into account that channels may have \
     # different values of these pressures and that it will equalize instantly.
 
     # Evaluate average known pressure (cdp, 09/2020)
@@ -774,7 +775,7 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
         )
         # Invoke method eval_reynolds_from_mass_flow_rate to evaluate Reynolds number at average known pressure and inlet temperature
         Re[ii] = fluid_comp.coolant.eval_reynolds_from_mass_flow_rate(
-            mdot_inl[ii], mu[ii]
+            mdot_known[ii], mu[ii]
         )
         # Friction factor at average known pressure and inlet temperature, nodal = None specities that total friction factor in Gen_Flow module is evaluated (cdp, 09/2020)
         fluid_comp.channel.eval_friction_factor(Re[ii], nodal=None)
@@ -785,9 +786,9 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
     # Evaluate coefficient of the therm of second degree (cdp, 09/2020)
     alpha = g0 * fric / rho
     # Compute total group mass flow rate (cdp, 09/2020)
-    mdot_inl_group = np.sum(mdot_inl)
+    mdot_known_group = np.sum(mdot_known)
     # Evaluate channel group pressure drop (cdp, 09/2020)
-    delta_p_group = (abs(mdot_inl_group) / np.sum(1 / np.sqrt(alpha))) ** 2
+    delta_p_group = (abs(mdot_known_group) / np.sum(1 / np.sqrt(alpha))) ** 2
     if flow_dir.count("forward") == len(flow_dir):
         print("Forward flow\n")
     elif flow_dir.count("backward") == len(flow_dir):
@@ -798,9 +799,9 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
         )
     # End if flow_dir.count("forward") != len(flow_dir)
     # Real mass flow rate distribution, absolute value
-    mdot_inl = np.sqrt(delta_p_group * rho / (g0 * fric))
+    mdot_known = np.sqrt(delta_p_group * rho / (g0 * fric))
     # Evaluate relative error on mass flow rate (cdp, 09/2020)
-    error_mfr = abs((np.sum(mdot_inl) - mdot_inl_group) / mdot_inl_group)
+    error_mfr = abs((np.sum(mdot_known) - mdot_known_group) / mdot_known_group)
     if error_mfr > tol:
         warnings.warn(
             f"""Channel in hydraulic parallel:\nabs(INTIAL) = {abs(intial)}\nerror_mfr = {error_mfr}\nis larger than specified tolerance ({tol}); this may have some effects in the solution.\n"""
@@ -809,7 +810,7 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
     if abs(intial) == 2:
         # Outlet pressure (cdp, 09/2020)
         p_missing = p_ave - delta_p_group
-    elif abs(intial) == 5:
+    elif abs(intial) == 3:
         # Inlet pressure (cdp, 09/2020)
         p_missing = p_ave + delta_p_group
     # Loop on channes (cdp, 09/2020)
@@ -827,19 +828,19 @@ def abs_intial_equal_2_or_5_hp(cond, chan_group, N_group, path, tol, intial=2):
             )
             # overwriting channel missing pressure (cdp, 09/2020)
             fluid_comp.coolant.operations[key_b] = p_missing
-        if mdot_inl[ii] != fluid_comp.coolant.operations["MDTIN"]:
+        if mdot_known[ii] != fluid_comp.coolant.operations[key_mfr]:
             warnings.warn(
                 f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, INTIAL == 
-        {fluid_comp.coolant.operations["INTIAL"]}. Evaluated inlet mass flow rate is 
+        {fluid_comp.coolant.operations["INTIAL"]}. Evaluated mass flow rate is 
         different from the one in Worksheet CHAN of input file 
         {cond.file_input["OPERATION"]}:
-        {mdot_inl[ii]} != {fluid_comp.coolant.operations["MDTIN"]}.\n
+        {mdot_known[ii]} != {fluid_comp.coolant.operations[key_mfr]}.\n
         This value is overwritten by the evaluated one:\n
-        mdot_inl = {mdot_inl[ii]} Pa\n"""
+        mdot_known = {mdot_known[ii]} Pa\n"""
             )
             # overwriting channel inlet mass flow rate and assign the correct sign according to the flow direction.
-            fluid_comp.coolant.operations["MDTIN"] = (
-                fluid_comp.channel.flow_dir[1] * mdot_inl[ii]
+            fluid_comp.coolant.operations[key_mfr] = (
+                fluid_comp.channel.flow_dir[1] * mdot_known[ii]
             )
 
 
