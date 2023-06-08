@@ -2187,6 +2187,9 @@ class Conductor:
             fluid_comp.coolant._eval_nodal_pressure_temperature_velocity_initialization(
                 self
             )
+            # Build namedtuples fluid_comp.inl_idx and fluid_comp.inl_idx with 
+            # the index used to assign the inlet and outlet BC.
+            fluid_comp.build_th_bc_index(self)
 
         ## For each solid component evaluate temperature (cdp, 07/2020)
         ## If needed read only the sub matrix describing channel - solid objects \
