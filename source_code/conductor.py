@@ -230,6 +230,14 @@ class Conductor:
         #     f"After call method {self.conductor_components_instance.__name__}"
         # )
 
+        # Call method __build_equation_idx to build attribute equation_index;
+        # self.equation_index -> dict: collection of NamedTuple with the index
+        # of velocity, pressure and temperaure equation for FluidComponent
+        # objects and of integer for the index of the temperature equation of
+        # SolidComponent. This is used in funcion step to solve the thermal 
+        # hydraulic problem.
+        self.__build_equation_idx
+
         self.__get_total_cross_section()
 
         # Call private method __coordinates to build grid coordinates.
