@@ -16,7 +16,6 @@ from conductor import Conductor
 from utility_functions.step_matrix_construction import (
     matrix_initialization,
     ndarray_initialization,
-    build_equation_idx,
     build_amat,
     build_transport_coefficients,
     build_kmat_fluid,
@@ -269,10 +268,7 @@ def step(conductor, environment, qsource, num_step):
     # qturn2 = interturn(nod2,zcoord,TMPTJK,nnodes(icond),icond)
     # cl* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-    # ** MATRICES CONSTRUCTION (cdp, 07/2020) **
-
-    # Build equations index for all FluidComponent and SolidComponent objects.
-    eq_index = build_equation_idx(conductor)
+    # ** MATRICES CONSTRUCTION **
 
     # riscrivere in forma array smart una volta risolti tutti i dubbi, se possibile (cdp, 07/2020)
     for elem_index in range(conductor.grid_input["NELEMS"]):
@@ -307,7 +303,7 @@ def step(conductor, environment, qsource, num_step):
                 AMAT,
                 fluid_comp_j,
                 elem_index,
-                eq_index[fluid_comp_j.identifier]
+                conductor.equation_index[fluid_comp_j.identifier]
             )
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
@@ -316,7 +312,7 @@ def step(conductor, environment, qsource, num_step):
                 UPWEQT,
                 fluid_comp_j.coolant.dict_Gauss_pt["velocity"][elem_index],
                 conductor.grid_features["delta_z"][elem_index],
-                eq_index[fluid_comp_j.identifier]
+                conductor.equation_index[fluid_comp_j.identifier]
             )
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
@@ -324,7 +320,7 @@ def step(conductor, environment, qsource, num_step):
                 SMAT,
                 fluid_comp_j,
                 elem_index,
-                eq_index[fluid_comp_j.identifier]
+                conductor.equation_index[fluid_comp_j.identifier]
             )
 
         # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
@@ -333,14 +329,14 @@ def step(conductor, environment, qsource, num_step):
             SMAT,
             conductor,
             elem_index,
-            eq_index
+            conductor.equation_index
         )
         # Therms associated to fluid-solid interfaces.
         SMAT = build_smat_fluid_solid_interface(
             SMAT,
             conductor,
             elem_index,
-            eq_index,
+            conductor.equation_index,
         )
         # END S MATRIX: fluid components equations
 
@@ -355,7 +351,7 @@ def step(conductor, environment, qsource, num_step):
                 MMAT,
                 s_comp,
                 elem_index,
-                eq_index[s_comp.identifier]
+                conductor.equation_index[s_comp.identifier]
             )
             # END M MATRIX: SolidComponent equation.
 
@@ -368,7 +364,7 @@ def step(conductor, environment, qsource, num_step):
                 KMAT,
                 s_comp,
                 elem_index,
-                eq_index[s_comp.identifier]
+                conductor.equation_index[s_comp.identifier]
             )
             # END K MATRIX: SolidComponent equation.
 
@@ -377,7 +373,7 @@ def step(conductor, environment, qsource, num_step):
                 SVEC,
                 s_comp,
                 elem_index,
-                eq_index[s_comp.identifier],
+                conductor.equation_index[s_comp.identifier],
                 num_step=conductor.cond_num_step,
                 qsource=qsource,
                 comp_idx=s_comp_idx,
@@ -388,7 +384,7 @@ def step(conductor, environment, qsource, num_step):
             SMAT,
             conductor,
             elem_index,
-            eq_index,
+            conductor.equation_index,
         )
 
         for interface in conductor.interface.env_solid:
@@ -399,7 +395,7 @@ def step(conductor, environment, qsource, num_step):
                 conductor,
                 interface,
                 elem_index,
-                eq_index,
+                conductor.equation_index,
             )
             # END S MATRIX: solid components equation.
 
@@ -408,7 +404,7 @@ def step(conductor, environment, qsource, num_step):
                 conductor,
                 interface,
                 elem_index,
-                eq_index,
+                conductor.equation_index,
             )
             # END S VECTOR: solid components equation.
 
@@ -601,7 +597,7 @@ def step(conductor, environment, qsource, num_step):
     conductor.dict_norm["Solution"] = eval_sub_array_norm(
         Known,
         conductor,
-        eq_index,
+        conductor.equation_index,
     )
 
     # COMPUTE THE NORM OF THE SOLUTION CHANGE, THE EIGENVALUES AND RECOVER THE \
@@ -616,12 +612,16 @@ def step(conductor, environment, qsource, num_step):
     conductor.dict_norm["Change"] = eval_sub_array_norm(
         CHG,
         conductor,
-        eq_index,
+        conductor.equation_index,
     )
     # Evaluate the eigenvalues of the solution.
-    eval_eigenvalues(EIG,conductor,eq_index)
+    eval_eigenvalues(EIG,conductor,conductor.equation_index)
     # Reorganize thermal hydraulic solution
-    reorganize_th_solution(conductor,eq_index,old_temperature_gauss)
+    reorganize_th_solution(
+        conductor,
+        conductor.equation_index,
+        old_temperature_gauss,
+    )
     
     # COMPUTE THE NORM OF THE SOLUTION CHANGE, THE EIGENVALUES AND RECOVER THE \
     # VARIABLES FROM THE SYSTEM SOLUTION (END)
