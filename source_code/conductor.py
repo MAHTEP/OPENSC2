@@ -552,6 +552,57 @@ class Conductor:
             # grid and then assinge the coordinates to the conductor components.
             user_defined_grid(self)
 
+    def __build_equation_idx(self):
+        """Private method that evaluates the index of the velocity, pressure and temperature equation of the FluidComponent objects, collecting them in a dictionary of NamedTuple, together with the index of the temperature equation of the SolidComponent objects stored as integer in the same dictionary.
+        """
+        
+        # Constructor of the namedtuple to store the index of the equations for 
+        # FluidComponent objects.
+        Fluid_eq_idx = namedtuple(
+            "Fluid_eq_idx",
+            ("velocity","pressure","temperature")
+        )
+
+        # self.equation_index -> dict: collection of NamedTuple with the index
+        # of velocity, pressure and temperaure equation for FluidComponent
+        # objects and of integer for the index of the temperature equation of
+        # SolidComponent.
+        
+        # Build dictionary of NamedTuple with the index of the equations for 
+        # FluidComponent objects exploiting dictionary comprehension.
+        self.equation_index = {
+            fcomp.identifier:Fluid_eq_idx(
+                # velocity equation index
+                velocity=fcomp_idx,
+                # pressure equation index
+                pressure=fcomp_idx + self.inventory["FluidComponent"].number,
+                # temperature equation index
+                # Exploit left binary shift, equivalent to:
+                # fcomp_idx + 2 * conductor.inventory["FluidComponent"].number
+                temperature=(
+                    fcomp_idx
+                    + (self.inventory["FluidComponent"].number << 1)
+                )
+            )
+            for fcomp_idx,fcomp in enumerate(
+                self.inventory["FluidComponent"].collection
+            )
+        }
+        
+        # Update dictionary equation_index with integer corresponding to the 
+        # index of the equations for SolidComponent objects exploiting 
+        # dictionary comprehension and dictionary method update.
+        self.equation_index.update(
+            {
+                scomp.identifier: scomp_idx + self.dict_N_equation[
+                    "FluidComponent"
+                ]
+                for scomp_idx,scomp in enumerate(
+                    self.inventory["SolidComponent"].collection
+                )
+            }
+        )
+
     def __build_multi_index(self) -> pd.MultiIndex:
         """Private method that builds multindex used in pandas dataframes used to store the nodal coordinates and the connectivity (matrix) of each conductor component.
 
