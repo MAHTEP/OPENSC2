@@ -210,8 +210,8 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             intial=fluid_comp.coolant.operations["INTIAL"],
         )
     # end abs(INTIAL == 2): output p_out
-    elif abs(fluid_comp.coolant.operations["INTIAL"]) == 5:
-        if fluid_comp.coolant.operations["INTIAL"] == 5:
+    elif abs(fluid_comp.coolant.operations["INTIAL"]) == 3:
+        if fluid_comp.coolant.operations["INTIAL"] == 3:
             # inlet temperature (cdp, 06/2020)
             T_inl = fluid_comp.coolant.operations["TEMINL"]
             # outlet pressure (cdp, 07/2020)
@@ -222,12 +222,9 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             T_out = fluid_comp.coolant.operations["TEMOUT"]
             warnings.warn(
                 f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, 
-      INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following 
-      flow input from Worksheet CHAN of file 
-      {cond.file_input["OPERATION"]} parameters:\nPREOUT = {p_out} Pa;
-      \nTEMINL = {T_inl} K;\nMDTIN = {mdot_inl}.\n"""
+                    INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input from Worksheet CHAN of file {cond.file_input["OPERATION"]} parameters:\nPREOUT = {p_out} Pa;\nTEMINL = {T_inl} K;\nMDTIN = {mdot_inl}.\n"""
             )
-        elif fluid_comp.coolant.operations["INTIAL"] == -5:
+        elif fluid_comp.coolant.operations["INTIAL"] == -3:
             # all values from flow_dummy.xlsx: call get_from_xlsx (cdp, 07/2020)
             [flow_par, flagSpecfield] = cond.Get_from_xlsx(
                 path,
@@ -249,10 +246,7 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             T_out = flow_par[1]
             warnings.warn(
                 f"""Function {gen_flow.__name__}, {fluid_comp.identifier}, 
-      INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following 
-      flow input parameters from Worksheet CHAN of file flow_dummy.xlsx 
-      parameters:\nPREOUT = {p_out} Pa;\nTEMINL = {T_inl} K;
-      \nMDTIN = {mdot_inl}.\n"""
+                    INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input parameters from Worksheet CHAN of file flow_dummy.xlsx parameters:\nPREOUT = {p_out} Pa;\nTEMINL = {T_inl} K;\nMDTIN = {mdot_inl}.\n"""
             )
         get_missing_pressure_no_hydraulic_parallel(
             cond,
