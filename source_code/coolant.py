@@ -86,8 +86,14 @@ class Coolant(FluidComponentInput):
 
     def _eval_nodal_pressure_temperature_velocity_initialization(self, conductor):
         # Pressure, temperaure and velocity form initial condition (numpy array since fx is a numpy array); if time is larger than zero, velocity, pressure and temperature came from problem solution after function STEP is invocked.
+
+        intial = abs(self.operations["INTIAL"])
+        if intial == 1 or intial == 3:
+            mfr = self.operations["MDTIN"]
+        elif intial == 2:
+            mfr = self.operations["MDTOUT"]
         # Compute pressure from inlet and outlet values by linear interpolation.
-        if self.operations["MDTIN"] >= 0.0:
+        if mfr >= 0.0:
             # Flow direction from x = 0 to x = L.
             self.dict_node_pt["pressure"] = np.interp(
                 conductor.grid_features["zcoord"],
@@ -118,7 +124,7 @@ class Coolant(FluidComponentInput):
             self.type,
         )
         # Compute velocity form mass flow rate, the sing is determined from mass flow rate.
-        self.dict_node_pt["velocity"] = self.operations["MDTIN"] / (
+        self.dict_node_pt["velocity"] = mfr / (
             np.maximum(self.inputs["CROSSECTION"], 1e-7)
             * self.dict_node_pt["total_density"]
         )
