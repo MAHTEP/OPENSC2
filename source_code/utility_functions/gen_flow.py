@@ -210,33 +210,6 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             intial=fluid_comp.coolant.operations["INTIAL"],
         )
     # end abs(INTIAL == 2): output p_out
-    elif abs(fluid_comp.coolant.operations["INTIAL"]) == 3:
-        if fluid_comp.coolant.operations["INTIAL"] == 3:
-            # INLET RESERVOIR AND CLOSED OUTLET (SYMMETRY)
-            fluid_comp.coolant.operations["PREOUT"] = fluid_comp.coolant.operations[
-                "PREINL"
-            ]
-            fluid_comp.coolant.operations["MDTIN"] = 0.0
-        elif fluid_comp.coolant.operations["INTIAL"] == -3:
-            # in this case call Get_from_xlsx (cdp, 09/2020)
-            print("Maybe this case is useless: INTIAL = -3.\n")
-    # end abs(INTIAL == 3)
-    elif abs(fluid_comp.coolant.operations["INTIAL"]) == 4:
-        if fluid_comp.coolant.operations["INTIAL"] == 4:
-            fluid_comp.coolant.operations["PREINL"] = fluid_comp.coolant.operations[
-                "PREINI"
-            ]
-            fluid_comp.coolant.operations["TEMINL"] = fluid_comp.coolant.operations[
-                "TEMINI"
-            ]
-            fluid_comp.coolant.operations["PREOUT"] = fluid_comp.coolant.operations[
-                "PREINL"
-            ]
-            fluid_comp.coolant.operations["MDTIN"] = 0.0
-        elif fluid_comp.coolant.operations["INTIAL"] == -4:
-            # in this case call Get_from_xlsx (cdp, 09/2020)
-            print("Maybe this case is useless: INTIAL = -4.\n")
-    # end abs(INTIAL == 4)
     elif abs(fluid_comp.coolant.operations["INTIAL"]) == 5:
         if fluid_comp.coolant.operations["INTIAL"] == 5:
             # inlet temperature (cdp, 06/2020)
