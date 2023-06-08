@@ -425,23 +425,15 @@ def get_flow_hydraulic_parallel_channels(cond, path, Max_iter, tol):
             # channel groups characterized by abs(INTIAL) = 1 (cdp, 09/2020)
             abs_intial_equal_1_hp(cond, chan_group, N_group, path, Max_iter, tol)
         elif INTIAL_ref == 2:
-            # Call function Abs_INTIAL_equal_2_or_5_hp to initialize flow parameters \
+            # Call function Abs_INTIAL_equal_2_or_3_hp to initialize flow parameters \
             # for channel groups characterized by abs(INTIAL) = 2 (cdp, 09/2020)
-            abs_intial_equal_2_or_5_hp(
+            abs_intial_equal_2_or_3_hp(
                 cond, chan_group, N_group, path, tol, intial=INTIAL_ref
             )
         elif INTIAL_ref == 3:
-            # Call function Abs_INTIAL_equal_3_hp to initialize flow parameters for \
-            # channel groups characterized by abs(INTIAL) = 3 (cdp, 09/2020)
-            abs_intial_equal_3_hp(cond, chan_group, N_group, path)
-        elif INTIAL_ref == 4:
-            # Call function Abs_INTIAL_equal_4_hp to initialize flow parameters for \
-            # channel groups characterized by abs(INTIAL) = 4 (cdp, 09/2020)
-            abs_intial_equal_4_hp(cond, chan_group, N_group, path)
-        elif INTIAL_ref == 5:
-            # Call function Abs_INTIAL_equal_2_or_5_hp to initialize flow parameters \
-            # for channel groups characterized by abs(INTIAL) = 5 (cdp, 09/2020)
-            abs_intial_equal_2_or_5_hp(
+            # Call function Abs_INTIAL_equal_2_or_3_hp to initialize flow parameters \
+            # for channel groups characterized by abs(INTIAL) = 3 (cdp, 09/2020)
+            abs_intial_equal_2_or_3_hp(
                 cond, chan_group, N_group, path, tol, intial=INTIAL_ref
             )
         else:
