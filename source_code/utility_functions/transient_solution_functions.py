@@ -546,7 +546,6 @@ def step(conductor, environment, qsource, num_step):
         # INTIAL.
         Known,SYSMAT = f_comp.apply_th_bc[intial](
             (Known,SYSMAT),
-            f_comp,
             conductor,
             path,
         )
