@@ -14,7 +14,8 @@ properties:
 """
 
 import pandas as pd
-
+from collections import namedtuple
+from typing import Union, NamedTuple
 
 class FluidComponentInput:
     """Interface class used to get the input data for fluid components objects. Attributes inputs and operations are inherited from this class by Coolant and Channel class. Being an interface, this class has only the constructror (__init__) method."""
@@ -104,5 +105,62 @@ class FluidComponent:
 
     # End method __str__.
 
+    def build_th_bc_index(
+        self,
+        conductor:object,
+    ):
+        """Method that builds and initialize the data structure to store the values of the index used to assign the boundary conditions at inlet and outlet for the thermal hydraulic problem. The data structure is a namedtuple with three keys (velocity pressure and temperature), each key has a namedtuple with two keys (forward and backward) to properly assing the boundary conditions in case of coolants in counter current flow.
+
+        Args:
+            conductor (Conductor): object with all the information of the conductor.
+        """
+
+        # ALIAS
+        ndf = conductor.dict_N_equation["NODOFS"]
+        # eq_idx (NamedTuple): collection of fluid equation index (velocity, 
+        # pressure and temperaure equations).
+        eq_idx = conductor.equation_index[self.identifier]
+
+        # Namedtuple constuctor
+        BC_idx = namedtuple("BC_idx",("velocity","pressure","temperature"))
+        Flow_dir = namedtuple("Flow_dir",("forward","backward"))
+        
+        # Build namedtuple with the index used to assign the inlet BC.
+        self.inl_idx = BC_idx(
+            # Inlet velocity index (forward and backward flow).
+            velocity=Flow_dir(
+                forward=eq_idx.velocity, # first node
+                backward=- ndf + eq_idx.velocity, # last node
+            ),
+            # Inlet pressure index (forward and backward flow).
+            pressure=Flow_dir(
+                forward=eq_idx.pressure, # first node
+                backward=- ndf + eq_idx.pressure, # last node
+            ),
+            # Inlet temperature index (forward and backward flow).
+            temperature=Flow_dir(
+                forward=eq_idx.temperature, # first node
+                backward=- ndf + eq_idx.temperature, # last node
+            ),
+        )
+
+        # Build namedtuple with the index used to assign the outlet BC.
+        self.out_idx = BC_idx(
+            # Outlet velocity index (forward and backward flow).
+            velocity=Flow_dir(
+                forward=- ndf + eq_idx.velocity, # last node
+                backward=eq_idx.velocity, # first node
+            ),
+            # Outlet pressure index (forward and backward flow).
+            pressure=Flow_dir(
+                forward=- ndf + eq_idx.pressure, # last node
+                backward=eq_idx.pressure, # first node
+            ),
+            # Outlet temperature index (forward and backward flow).
+            temperature=Flow_dir(
+                forward=- ndf + eq_idx.temperature, # last node
+                backward=eq_idx.temperature, # first node
+            ),
+        )
 
 # End class FluidComponent.
