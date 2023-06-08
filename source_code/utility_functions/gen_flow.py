@@ -265,14 +265,14 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
 
 
 def get_missing_pressure_no_hydraulic_parallel(
-    cond, fluid_comp, mdot_inl, p_known, T_inl, T_out, Max_iter, tol, intial=2
+    cond, fluid_comp, mdot_known, p_known, T_inl, T_out, Max_iter, tol, intial=2
 ):
 
     """
-    Function that evaluate outlet pressure if abs(INTIAL) = 2 or inlet pressure if abs(INTIAL) = 5 for stand alone channel(s). The algorithm is almost the same in this two cases and this is why this function is created. (cdp, 09/2020)
-    ------------------------------------------------------------------------------
+    Function that evaluate outlet pressure if abs(INTIAL) = 2 or inlet pressure if abs(INTIAL) = 3 for stand alone channel(s). The algorithm is almost the same in this two cases and this is why this function is created. (cdp, 09/2020)
+    ----------------------------------------------------------------------------
     ** RECIPE TO FIND OUTLET PRESSURE, CASE abs(INTIAL) == 2 **
-    1) guess initial pressure drop evaluated with inlet properties
+    1) guess initial pressure drop evaluated with inlet pressure and temperature and outlet mass flow rate
     2) evaluate p_out as p_inl - delta_p_old
     3) evaluate average pressure, (p_inl + p_out)/2
     4) evaluate average temperature, (T_inl + T_out)/2
@@ -284,9 +284,9 @@ def get_missing_pressure_no_hydraulic_parallel(
     9) evaluate relative error on pressure drop
     10) set delta_p_old equal to delta_p_new
     11) iterate starting from step 2) until error >= tol and iter < Max_iter.
-    ------------------------------------------------------------------------------
-    ** RECIPE TO FIND INLET PRESSURE, CASE abs(INTIAL) == 5 **
-    1) guess initial pressure drop evaluated with outlet properties
+    ----------------------------------------------------------------------------
+    ** RECIPE TO FIND INLET PRESSURE, CASE abs(INTIAL) == 3 **
+    1) guess initial pressure drop evaluated with outlet pressure and inlet mass flow rate and temperature
     2) evaluate p_inl as p_out + delta_p_old
     3) evaluate average pressure, (p_inl + p_out)/2
     4) evaluate average temperature, (T_inl + T_out)/2
@@ -298,7 +298,7 @@ def get_missing_pressure_no_hydraulic_parallel(
     9) evaluate relative error on pressure drop
     10) set delta_p_old equal to delta_p_new
     11) iterate starting from step 2) until error >= tol and iter < Max_iter.
-    ------------------------------------------------------------------------------
+    ----------------------------------------------------------------------------
     """
 
     list_words = ["inlet", "outlet"]
@@ -322,7 +322,7 @@ def get_missing_pressure_no_hydraulic_parallel(
         [p_known], [T_inl]
     )
     # Invoke method eval_reynolds_from_mass_flow_rate to evaluate Reynolds number at known pressure and inlet temperature
-    Re_known = fluid_comp.coolant.eval_reynolds_from_mass_flow_rate(mdot_inl, mu_known)
+    Re_known = fluid_comp.coolant.eval_reynolds_from_mass_flow_rate(mdot_known, mu_known)
     # Friction factor at inlet pressure and temperature, nodal = None specities that total friction factor in Gen_Flow module is evaluated (cdp, 09/2020)
     fluid_comp.channel.eval_friction_factor(np.array([Re_known]), nodal=None)
     # Pressure drop evaluated with properties at inlet, to be able to deal \
@@ -330,7 +330,7 @@ def get_missing_pressure_no_hydraulic_parallel(
     delta_p_old = float(
         g0
         * fluid_comp.channel.dict_friction_factor[None]["total"]
-        * mdot_inl ** 2
+        * mdot_known ** 2
         / rho_known
     )  # Pa
     T_ave = (T_inl + T_out) / 2  # average temperature (cdp, 09/2020)
@@ -341,7 +341,7 @@ def get_missing_pressure_no_hydraulic_parallel(
         if abs(intial) == 2:
             # Evaluate outlet pressure (cdp, 09/2020)
             p_missing = p_known - delta_p_old
-        elif abs(intial) == 5:
+        elif abs(intial) == 3:
             # Evaluate inlet pressure (cdp, 09/2020)
             p_missing = p_known + delta_p_old
         p_ave = (p_known + p_missing) / 2.0  # average pressure (cdp, 09/2020)
@@ -353,7 +353,7 @@ def get_missing_pressure_no_hydraulic_parallel(
             [p_ave], [T_ave]
         )
         # Invoke method eval_reynolds_from_mass_flow_rate to evaluate Reynolds number at average pressure and temperature
-        Re_ave = fluid_comp.coolant.eval_reynolds_from_mass_flow_rate(mdot_inl, mu_ave)
+        Re_ave = fluid_comp.coolant.eval_reynolds_from_mass_flow_rate(mdot_known, mu_ave)
         # Friction factor at average pressure and temperature, nodal = None specities that total friction factor in Gen_Flow module is evaluated (cdp, 09/2020)
         fluid_comp.channel.eval_friction_factor(Re_ave, nodal=None)
         # New pressure drop evaluation: conversion to float is necessary \
@@ -362,7 +362,7 @@ def get_missing_pressure_no_hydraulic_parallel(
         delta_p_new = float(
             g0
             * fluid_comp.channel.dict_friction_factor[None]["total"]
-            * mdot_inl ** 2
+            * mdot_known ** 2
             / rho_ave
         )  # Pa
         err_delta_p = abs(delta_p_old - delta_p_new) / delta_p_old
@@ -372,7 +372,7 @@ def get_missing_pressure_no_hydraulic_parallel(
         word = list_words[1]
         symbol = list_symbols[1]
         key = list_keys[1]
-    elif abs(intial) == 5:
+    elif abs(intial) == 3:
         word = list_words[0]
         symbol = list_symbols[0]
         key = list_keys[0]
