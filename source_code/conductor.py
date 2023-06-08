@@ -236,7 +236,7 @@ class Conductor:
         # objects and of integer for the index of the temperature equation of
         # SolidComponent. This is used in funcion step to solve the thermal 
         # hydraulic problem.
-        self.__build_equation_idx
+        self.__build_equation_idx()
 
         self.__get_total_cross_section()
 
