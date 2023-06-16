@@ -172,7 +172,7 @@ def initialize_flow_no_hydraulic_parallel(cond, fluid_comp, path, Max_iter, tol)
             T_out = fluid_comp.coolant.operations["TEMOUT"]
             warnings.warn(
                 f"""Function {gen_flow}, {fluid_comp.identifier}, 
-                INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input from Worksheet CHAN of file {cond.file_input["OPERATION"]} parameters:\nPREINL = {p_inl} Pa;\nTEMINL = {T_inl} K;\nMDTOUT = {mdot_inl}.\n"""
+                INTIAL == {fluid_comp.coolant.operations["INTIAL"]}: you are imposing following flow input from Worksheet CHAN of file {cond.file_input["OPERATION"]} parameters:\nPREINL = {p_inl} Pa;\nTEMINL = {T_inl} K;\nMDTOUT = {mdot_out}.\n"""
                 )
         elif fluid_comp.coolant.operations["INTIAL"] == -2:
             # All values form flow_dummy.xlsx (cdp, 07/2020)
