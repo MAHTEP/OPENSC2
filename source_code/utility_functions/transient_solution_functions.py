@@ -310,9 +310,8 @@ def step(conductor, environment, qsource, num_step):
             KMAT = build_kmat_fluid(
                 KMAT,
                 UPWEQT,
-                fluid_comp_j.coolant.dict_Gauss_pt["velocity"][elem_index],
-                conductor.grid_features["delta_z"][elem_index],
-                conductor.equation_index[fluid_comp_j.identifier]
+                fluid_comp_j,
+                conductor,
             )
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
@@ -328,15 +327,13 @@ def step(conductor, environment, qsource, num_step):
         SMAT = build_smat_fluid_interface(
             SMAT,
             conductor,
-            elem_index,
-            conductor.equation_index
+            elem_index
         )
         # Therms associated to fluid-solid interfaces.
         SMAT = build_smat_fluid_solid_interface(
             SMAT,
             conductor,
             elem_index,
-            conductor.equation_index,
         )
         # END S MATRIX: fluid components equations
 
@@ -384,7 +381,6 @@ def step(conductor, environment, qsource, num_step):
             SMAT,
             conductor,
             elem_index,
-            conductor.equation_index,
         )
 
         for interface in conductor.interface.env_solid:
@@ -395,7 +391,6 @@ def step(conductor, environment, qsource, num_step):
                 conductor,
                 interface,
                 elem_index,
-                conductor.equation_index,
             )
             # END S MATRIX: solid components equation.
 
@@ -404,7 +399,6 @@ def step(conductor, environment, qsource, num_step):
                 conductor,
                 interface,
                 elem_index,
-                conductor.equation_index,
             )
             # END S VECTOR: solid components equation.
 
