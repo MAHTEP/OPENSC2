@@ -879,7 +879,7 @@ def eval_sub_array_norm(
 
     # Alias
     ndf = conductor.dict_N_equation["NODOFS"]
-    sub_array_norm = np.zeros(conductor.dict_N_equation["Total"])
+    sub_array_norm = np.zeros(ndf)
 
     # Evaluate the sub arrays euclidean norm.
     # Loop on FluidComponent.
