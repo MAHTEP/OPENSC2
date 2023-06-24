@@ -912,36 +912,41 @@ def eval_eigenvalues(
     ):
     """
     Function that evaluate an approximation of the eigenvalues of the solution of as many sub arrays as the number of unknowns of the thermal hydraulic problem stored insde input argument array. Being jj the j-th unknown (i.e. CHAN_1 temperature), the sub array is given by sub_arr = array[jj::ndf] if ndf is the number of unknowns (number of degrees of freedom). The eigenvalue is the maximum value of this sub array. The final outcome is an array of eigenvalues with ndf elements.
-    Attribute conductor.EQTEIG (that stores the eigenvalues) is updated inplace.
 
     Args:
         array (np.ndarray): array containing ndf sub arrays (each being an approximation of the eigenvalues of the thermal hydraulic solution).
         conductor (Conductor): object with all the information of the conductor.
         eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of integer for solid equation index.
+    
+    Returns:
+        np.ndarray: array of eigenvalues with ndf elements.
     """
 
     # Alias
     ndf = conductor.dict_N_equation["NODOFS"]
+    sub_array = np.zeros(ndf)
     # COMPUTE THE EIGENVALUES
     for f_comp in conductor.inventory["FluidComponent"].collection:
         # velocity
-        conductor.EQTEIG[eq_idx[f_comp.identifier].velocity] = max(
+        sub_array[eq_idx[f_comp.identifier].velocity] = max(
             array[eq_idx[f_comp.identifier].velocity::ndf]
         )
         # pressure
-        conductor.EQTEIG[eq_idx[f_comp.identifier].pressure] = max(
+        sub_array[eq_idx[f_comp.identifier].pressure] = max(
             array[eq_idx[f_comp.identifier].velocity::ndf]
         )
         # temperature
-        conductor.EQTEIG[eq_idx[f_comp.identifier].temperature] = max(
+        sub_array[eq_idx[f_comp.identifier].temperature] = max(
             array[eq_idx[f_comp.identifier].temperature::ndf]
         )
     # Loop on SolidComponent.
     for s_comp in conductor.inventory["SolidComponent"].collection:
         # temperature
-        conductor.EQTEIG[eq_idx[s_comp.identifier]] = max(
+        sub_array[eq_idx[s_comp.identifier]] = max(
             array[eq_idx[s_comp.identifier]::ndf]
         )
+    
+    return sub_array
 
 
 def eval_array_by_fn(
