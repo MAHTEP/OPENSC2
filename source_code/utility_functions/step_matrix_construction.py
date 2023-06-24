@@ -231,9 +231,9 @@ def eval_transport_coefficients(conductor:Conductor,
 def build_kmat_fluid(
     matrix:np.ndarray,
     upweqt:np.ndarray,
-    velocity:float,
-    delta_z:float,
-    eq_idx:NamedTuple,
+    f_comp:FluidComponent,
+    conductor:Conductor,
+    elem_idx:int,
     )->np.ndarray:
 
     """Function that builds the K matrix (KMAT) at the Gauss point, UPWIND is included.
@@ -242,15 +242,23 @@ def build_kmat_fluid(
     Args:
         matrix (np.ndarray): initialized K matrix (np.zeros)
         upweqt (np.ndarray): array with the upwind numerical scheme.
-        velocity (float): fluid velocity at present gauss point index.
-        delta_z (float): length of the interval that includes the present gauss points.
-        eq_idx (NamedTuple): collection of fluid equation index (velocity, pressure and temperaure equations).
+        f_comp (FluidComponent): fluid component object from which get all info to buld the coefficients.
+        conductor (Conductor): object with all the information of the conductor.
+        elem_idx (int): index of the i-th element of the spatial discretization.
 
     Returns:
         np.ndarray: matrix with updated elements.
     """
 
-    velocity = np.abs(velocity)
+    # Alias
+    # Fluid velocity at present gauss point index.
+    velocity = np.abs(f_comp.coolant.dict_Gauss_pt["velocity"][elem_idx])
+    # Length of the interval that includes the present gauss points.
+    delta_z = conductor.grid_features["delta_z"][elem_idx]
+    # Collection of fluid equation index (velocity, pressure and temperaure 
+    # equations).
+    eq_idx = conductor.equation_index[f_comp.identifier]
+
     # Build array to assign diagonal coefficients.
     diag_idx = np.array(eq_idx)
 
@@ -317,7 +325,6 @@ def build_smat_fluid_interface(
     matrix:np.ndarray,
     conductor:Conductor,
     elem_idx:int,
-    eq_idx:dict,
     )->np.ndarray:
 
     """Function that builds the S matrix (SMAT) therms due to fluid component interfaces at the Gauss point (SOURCE JACOBIAN).
@@ -326,7 +333,6 @@ def build_smat_fluid_interface(
         matrix (np.ndarray): S matrix after call to function buld_smat_fluid.
         conductor (Conductor): object with all the information of the conductor.
         elem_idx (int): index of the i-th element of the spatial discretization.
-        eq_idx (dict): collection of NamedTyple with fluid equation index (velocity, pressure and temperaure equations).
 
     Returns:
         np.ndarray: matrix with updated elements.
@@ -343,6 +349,11 @@ def build_smat_fluid_interface(
     # v: velocity
     # T: temperature
     # c_v: isochoric specific heat
+
+    # Alias
+    # Collection of NamedTyple with fluid equation index (velocity, pressure 
+    # and temperaure equations).
+    eq_idx = conductor.equation_index
 
     for interface in conductor.interface.fluid_fluid:
         
@@ -496,7 +507,6 @@ def build_smat_fluid_solid_interface(
     matrix:np.ndarray,
     conductor:Conductor,
     elem_idx:int,
-    eq_idx:dict,
     )->np.ndarray:
 
     """Function that builds the S matrix (SMAT) therms due to fluid-solid component interfaces at the Gauss point (SOURCE JACOBIAN).
@@ -518,6 +528,11 @@ def build_smat_fluid_solid_interface(
     # P: contact perimeter (_o: open; _c:close)
     # A: cross section
     # c_v: isochoric specific heat
+
+    # Alias
+    # Collection of NamedTyple with fluid equation index (velocity, pressure 
+    # and temperaure equations).
+    eq_idx = conductor.equation_index
 
     for interface in conductor.interface.fluid_solid:
 
@@ -664,7 +679,6 @@ def build_smat_solid_interface(
     matrix:np.ndarray,
     conductor:Conductor,
     elem_idx:int,
-    eq_idx:dict,
     )->np.ndarray:
 
     """Function that builds the S matrix (SMAT) therms due to solid component interfaces at the Gauss point (SOURCE JACOBIAN).
@@ -673,7 +687,6 @@ def build_smat_solid_interface(
         matrix (np.ndarray): S matrix after call to function build_smat_fluid_solid_interface.
         conductor (Conductor): object with all the information of the conductor.
         elem_idx (int): index of the i-th element of the spatial discretization.
-        eq_idx (dict): collection of integer solid equation index.
 
     Returns:
         np.ndarray: matrix with updated elements.
@@ -682,6 +695,10 @@ def build_smat_solid_interface(
     # NOMENCLATURE
     # P: contact perimeter
     # h_conv: convective heat transfer coefficient.
+
+    # Alias
+    # Collection of integer solid equation index.
+    eq_idx = conductor.equation_index
 
     for interface in conductor.interface.solid_solid:
 
@@ -718,7 +735,6 @@ def build_smat_env_solid_interface(
     conductor:Conductor,
     interface:NamedTuple,
     elem_idx:int,
-    eq_idx:dict,
     )->np.ndarray:
 
     """Function that builds the S matrix (SMAT) therms due to environment and solid component interfaces at the Gauss point (SOURCE JACOBIAN).
@@ -728,7 +744,6 @@ def build_smat_env_solid_interface(
         conductor (Conductor): object with all the information of the conductor.
         interface (NamedTuple): collection of interface information like interface name and components that constitute the interface.
         elem_idx (int): index of the i-th element of the spatial discretization.
-        eq_idx (dict): collection of integer solid equation index.
 
     Returns:
         np.ndarray: matrix with updated elements.
@@ -738,6 +753,8 @@ def build_smat_env_solid_interface(
     h_conv = conductor.dict_Gauss_pt["HTC"]["env_sol"][
                 interface.interf_name
             ]["conv"]
+    # Collection of integer solid equation index.
+    eq_idx = conductor.equation_index
 
     # Convective heating with the external environment (implicit treatment).
     if (
@@ -838,7 +855,6 @@ def build_svec_env_jacket_interface(
     conductor: Conductor,
     interface:NamedTuple,
     elem_idx:int,
-    eq_idx:dict,
     )->np.ndarray:
     """Function that builds the source vector (SVEC) terms at the Gauss point due to heat transfer by convection and/or radiation between environment and jacket component objects.
 
@@ -846,7 +862,6 @@ def build_svec_env_jacket_interface(
         array (np.ndarray): SVEC array after call to function build_svec.
         interface (NamedTuple): collection of interface information like interface name and components that constitute the interface.
         elem_idx (int): index of the i-th element of the spatial discretization.
-        eq_idx (dict): collection of integer solid equation index.
 
     Returns:
         np.ndarray: array with updated elements.
@@ -860,6 +875,8 @@ def build_svec_env_jacket_interface(
     width = conductor.inputs["Width"]
     env = interface.comp_1
     s_comp = interface.comp_2
+    # Collection of integer solid equation index.
+    eq_idx = conductor.equation_index
     
     # Add the contribution of the external heating by convection to the 
     # known term vector.
