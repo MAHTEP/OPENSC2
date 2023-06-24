@@ -614,7 +614,7 @@ def step(conductor, environment, qsource, num_step):
         conductor.equation_index,
     )
     # Evaluate the eigenvalues of the solution.
-    eval_eigenvalues(EIG,conductor,conductor.equation_index)
+    conductor.EQTEIG = eval_eigenvalues(EIG,conductor,conductor.equation_index)
     # Reorganize thermal hydraulic solution
     reorganize_th_solution(
         conductor,
