@@ -587,11 +587,7 @@ def step(conductor, environment, qsource, num_step):
     EIG = np.zeros(conductor.dict_N_equation["Total"])
 
     # Evaluate the norm of the solution.
-    conductor.dict_norm["Solution"] = eval_sub_array_norm(
-        Known,
-        conductor,
-        conductor.equation_index,
-    )
+    conductor.dict_norm["Solution"] = eval_sub_array_norm(Known,conductor)
 
     # COMPUTE THE NORM OF THE SOLUTION CHANGE, THE EIGENVALUES AND RECOVER THE \
     # VARIABLES FROM THE SYSTEM SOLUTION (START)
@@ -602,17 +598,12 @@ def step(conductor, environment, qsource, num_step):
     # Eigenvalues (sort of??)
     EIG = abs(CHG / conductor.time_step) / (abs(Known) + TINY)
     # Evaluate the norm of the solution change.
-    conductor.dict_norm["Change"] = eval_sub_array_norm(
-        CHG,
-        conductor,
-        conductor.equation_index,
-    )
+    conductor.dict_norm["Change"] = eval_sub_array_norm(CHG,conductor)
     # Evaluate the eigenvalues of the solution.
-    conductor.EQTEIG = eval_eigenvalues(EIG,conductor,conductor.equation_index)
+    conductor.EQTEIG = eval_eigenvalues(EIG,conductor)
     # Reorganize thermal hydraulic solution
     reorganize_th_solution(
         conductor,
-        conductor.equation_index,
         old_temperature_gauss,
     )
     
