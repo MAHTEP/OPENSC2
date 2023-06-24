@@ -943,6 +943,76 @@ def eval_eigenvalues(
             array[eq_idx[s_comp.identifier]::ndf]
         )
 
+
+def eval_array_by_fn(
+    array:np.ndarray,
+    conductor:Conductor,
+    eq_idx:dict,
+    fn: Union[np.sum,np.max],
+    )->np.ndarray:
+    """Function that evaluates the euclidean norm of as many sub arrays as the number of unknowns of the thermal hydraulic problem stored insde input argument array -if fn is np.sum- or an approximation of the eigenvalues of the solution of as many sub arrays as the number of unknowns of the thermal hydraulic problem stored inside input argument array -if fn is np.sum-.
+
+    Being jj the j-th unknown (i.e. CHAN_1 temperature), the sub array is given by sub_arr = array[jj::ndf] if ndf is the number of unknowns (number of degrees of freedom).
+
+    If fn is np.sum, the euclidean norm is applied to this sub array. The final outcome is an array of eucliean norms with ndf elements. This can be used both to evaluate the norm of the solution and the norm of the solution change.
+
+    If fn is np.max, the eigenvalue is the maximum value of this sub array. The final outcome is an array of eigenvalues with ndf elements.
+
+    Args:
+        array (np.ndarray): array containing ndf sub arrays (each being the current thermal hydraulic solution or its change wrt the previous solution -if fn is np.sum- or an approximation of the eigenvalues of the thermal hydraulic solution -if fn is np.max-).
+        conductor (Conductor): object with all the information of the conductor.
+        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of integer for solid equation index.
+        fn (Union[np.sum,np.max]): aggregation function (namely np.sum if euclidean norm should be evaluated, np.max if eigenvalues should be evaluated).
+
+    Returns:
+        np.ndarray: array of eucliean norms with ndf elements if fn is np.sum; array of eigenvalues with ndf elements if fn is np.max.
+    """
+    # Alias
+    ndf = conductor.dict_N_equation["NODOFS"]
+    sub_array = np.zeros(ndf)
+
+    # Exponent 2 is to evaluate the euclidean norm, exponent 1 is to evaluate 
+    # the eigenvalue (the values does not change is powered to 1).
+    pow_exp = {
+        np.sum: 2.0,
+        np.max: 1.0,
+    }
+
+    # Evaluate the sub arrays euclidean norm.
+    # Loop on FluidComponent.
+    for f_comp in conductor.inventory["FluidComponent"].collection:
+        
+        # Power velocity to 2 to evaluate the euclidean norm, to 1 to evaluate 
+        # the eigenvalues.
+        vv = array[eq_idx[f_comp.identifier].velocity::ndf] ** pow_exp[fn]
+        # Power pressure to 2 to evaluate the euclidean norm, to 1 to evaluate 
+        # the eigenvalues.
+        pp = array[eq_idx[f_comp.identifier].pressure::ndf] ** pow_exp[fn]
+        # Power temperature to 2 to evaluate the euclidean norm, to 1 to 
+        # evaluate the eigenvalues.
+        tt = array[eq_idx[f_comp.identifier].temperature::ndf] ** pow_exp[fn]
+    
+        # velocity
+        sub_array[eq_idx[f_comp.identifier].velocity] = fn(vv)
+        # pressure
+        sub_array[eq_idx[f_comp.identifier].pressure] = fn(pp)
+        # temperature
+        sub_array[eq_idx[f_comp.identifier].temperature] = fn(tt)
+    # Loop on SolidComponent.
+    for s_comp in conductor.inventory["SolidComponent"].collection:
+        # Power temperature to 2 to evaluate the euclidean norm, to 1 to 
+        # evaluate the eigenvalues.
+        tt = array[eq_idx[s_comp.identifier]::ndf] ** pow_exp[fn]
+        # temperature
+        sub_array[eq_idx[s_comp.identifier]] = fn(tt)
+    
+    if fn is np.sum:
+        # Return the euclidean norm.
+        return np.sqrt(sub_array)
+    elif fn is np.max:
+        # Return the eigenvalues.
+        return sub_array
+
 def reorganize_th_solution(
     conductor:Conductor,
     eq_idx:dict,
