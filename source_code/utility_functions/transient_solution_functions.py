@@ -865,7 +865,6 @@ def eval_sub_array_norm(
     Args:
         array (np.ndarray): array containing ndf sub arrays (each being the current thermal hydraulic solution or its change wrt the previous solution).
         conductor (Conductor): object with all the information of the conductor.
-        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of integer for solid equation index.
 
     Returns:
         np.ndarray: array of eucliean norms with ndf elements.
@@ -874,6 +873,9 @@ def eval_sub_array_norm(
     # Alias
     ndf = conductor.dict_N_equation["NODOFS"]
     sub_array_norm = np.zeros(ndf)
+    # Collection of NamedTuple with fluid equation index (velocity, pressure 
+    # and temperaure equations) and of integer for solid equation index.
+    eq_idx = conductor.equation_index
 
     # Evaluate the sub arrays euclidean norm.
     # Loop on FluidComponent.
@@ -902,15 +904,13 @@ def eval_sub_array_norm(
 def eval_eigenvalues(
     array:np.ndarray,
     conductor:Conductor,
-    eq_idx:dict,
-    ):
+    )->np.ndarray:
     """
     Function that evaluate an approximation of the eigenvalues of the solution of as many sub arrays as the number of unknowns of the thermal hydraulic problem stored insde input argument array. Being jj the j-th unknown (i.e. CHAN_1 temperature), the sub array is given by sub_arr = array[jj::ndf] if ndf is the number of unknowns (number of degrees of freedom). The eigenvalue is the maximum value of this sub array. The final outcome is an array of eigenvalues with ndf elements.
 
     Args:
         array (np.ndarray): array containing ndf sub arrays (each being an approximation of the eigenvalues of the thermal hydraulic solution).
         conductor (Conductor): object with all the information of the conductor.
-        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of integer for solid equation index.
     
     Returns:
         np.ndarray: array of eigenvalues with ndf elements.
@@ -919,6 +919,9 @@ def eval_eigenvalues(
     # Alias
     ndf = conductor.dict_N_equation["NODOFS"]
     sub_array = np.zeros(ndf)
+    # Collection of NamedTuple with fluid equation index (velocity, pressure 
+    # and temperaure equations) and of integer for solid equation index.
+    eq_idx = conductor.equation_index
     # COMPUTE THE EIGENVALUES
     for f_comp in conductor.inventory["FluidComponent"].collection:
         # velocity
@@ -946,7 +949,6 @@ def eval_eigenvalues(
 def eval_array_by_fn(
     array:np.ndarray,
     conductor:Conductor,
-    eq_idx:dict,
     fn: Union[np.sum,np.max],
     )->np.ndarray:
     """Function that evaluates the euclidean norm of as many sub arrays as the number of unknowns of the thermal hydraulic problem stored insde input argument array -if fn is np.sum- or an approximation of the eigenvalues of the solution of as many sub arrays as the number of unknowns of the thermal hydraulic problem stored inside input argument array -if fn is np.sum-.
@@ -960,7 +962,6 @@ def eval_array_by_fn(
     Args:
         array (np.ndarray): array containing ndf sub arrays (each being the current thermal hydraulic solution or its change wrt the previous solution -if fn is np.sum- or an approximation of the eigenvalues of the thermal hydraulic solution -if fn is np.max-).
         conductor (Conductor): object with all the information of the conductor.
-        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of integer for solid equation index.
         fn (Union[np.sum,np.max]): aggregation function (namely np.sum if euclidean norm should be evaluated, np.max if eigenvalues should be evaluated).
 
     Returns:
@@ -969,6 +970,9 @@ def eval_array_by_fn(
     # Alias
     ndf = conductor.dict_N_equation["NODOFS"]
     sub_array = np.zeros(ndf)
+    # Collection of NamedTuple with fluid equation index (velocity, pressure 
+    # and temperaure equations) and of integer for solid equation index.
+    eq_idx = conductor.equation_index
 
     # Exponent 2 is to evaluate the euclidean norm, exponent 1 is to evaluate 
     # the eigenvalue (the values does not change is powered to 1).
@@ -1014,7 +1018,6 @@ def eval_array_by_fn(
 
 def reorganize_th_solution(
     conductor:Conductor,
-    eq_idx:dict,
     old_temperature:dict,
     ):
     """
@@ -1032,13 +1035,15 @@ def reorganize_th_solution(
 
     Args:
         conductor (Conductor): object with all the information of the conductor.
-        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations) and of integer for solid equation index.
         old_temperature (dict): collection of arrays of the temperature distribution at the previous time step for each conductor component.
     """
 
     # Alias
     ndf = conductor.dict_N_equation["NODOFS"]
     sysvar = conductor.dict_Step["SYSVAR"]
+    # Collection of NamedTuple with fluid equation index (velocity, pressure 
+    # and temperaure equations) and of integer for solid equation index.
+    eq_idx = conductor.equation_index
     # Reorganize thermal hydraulic solution.
     for f_comp in conductor.inventory["FluidComponent"].collection:
         # velocity
