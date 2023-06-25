@@ -1233,13 +1233,15 @@ def assemble_syslod(
     return syslod
 
 def eval_system_matrix(
-    ndas:NamedTuple,
+    matrix:np.ndarray,
+    aux_matrices:tuple,
     conductor:Conductor,
     )->np.ndarray:
-    """Function that evaluates the system matrix SYSMAT using the values of the matrix MASMAT, FLXMAT, DIFMAT and SORMAT, according to the selected method for time integration.
+    """Function that evaluates the system matrix using the values of the matrix MASMAT, FLXMAT, DIFMAT and SORMAT, according to the selected method for time integration.
 
     Args:
-        ndas (NamedTuple): collection of np.ndarrays. Field SYSMAT stores the initialized SYSMAT matrix; fields MASMAT, FLXMAT, DIFMAT and SORMAT stores the corresponding matrices after call to function assemble_matrix.
+        matrix (np.ndarray): initialized SYSMAT matrix
+        aux_matrices (tuple): collection of matrix MASMAT, FLXMAT, DIFMAT and SORMAT after call to function assemble_matrix.
         conductor (Conductor): object with all the information of the conductor.
 
     Returns:
@@ -1248,12 +1250,14 @@ def eval_system_matrix(
     
     # Alias
     method = conductor.inputs["METHOD"]
+    # Unpack auxiliary matrices (MASMAT,FLXMAT,DIFMAT,SORMAT)
+    masmat,flxmat,difmat,sormat = aux_matrices
     # ** COMPUTE SYSTEM MATRIX **
     if method == "BE" or method == "CN":
         # Backward Euler or Crank-Nicolson
-        ndas.SYSMAT = (
-            ndas.MASMAT / conductor.time_step
-            + conductor.theta_method * (ndas.FLXMAT + ndas.DIFMAT + ndas.SORMAT)
+        matrix = (
+            masmat / conductor.time_step
+            + conductor.theta_method * (flxmat + difmat + sormat)
         )
         
     elif method == "AM4":
@@ -1263,18 +1267,16 @@ def eval_system_matrix(
         if conductor.cond_num_step == 1:
             # This is due to the dummy initial steady state
             for cc in range(am4_aa.shape[2]):
-                am4_aa[cc,:,:] = ndas.FLXMAT + ndas.DIFMAT + ndas.SORMAT
+                am4_aa[cc,:,:] = flxmat + difmat + sormat
         else:
             # Shift the matrices by one towards right and compute the new first
             # matrix at the current time step.
             am4_aa[1:4,:,:] = am4_aa[0:3,:,:]
-            am4_aa[0,:,:] = ndas.FLXMAT + ndas.DIFMAT + ndas.SORMAT
+            am4_aa[0,:,:] = flxmat + difmat + sormat
         # compute SYSMAT
-        ndas.SYSMAT = (
-            ndas.MASMAT / conductor.time_step + 9.0 / 24.0 * am4_aa[0,:,:]
-        )
+        matrix = masmat / conductor.time_step + 9. / 24. * am4_aa[0,:,:]
     
-    return ndas.SYSMAT
+    return matrix
 
 def build_known_therm_vector(
     array:np.ndarray,
