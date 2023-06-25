@@ -36,7 +36,7 @@ from utility_functions.step_matrix_construction import (
     assemble_matrix,
     assemble_syslod,
     eval_system_matrix,
-    build_known_therm_vector,
+    build_known_term_vector,
 )
 
 def get_time_step(conductor, transient_input, num_step):
@@ -523,11 +523,7 @@ def step(conductor, environment, qsource, num_step):
 
     # ADD THE LOAD CONTRIBUTION FROM PREVIOUS STEP
     # array smart
-    Known = build_known_therm_vector(
-        Known,
-        (MASMAT,FLXMAT,DIFMAT,SORMAT),
-        conductor
-    )
+    final_nda.Known[:] = build_known_term_vector(final_nda,conductor)
 
     # lines of code to save SYSLOD in .tsv files
     if conductor.cond_num_step == 1 or np.isclose(conductor.Space_save[conductor.i_save],conductor.cond_time[-1]):
