@@ -41,7 +41,7 @@ def ndarray_initialization(
         num_step (int): time step number.
         collector_keys (tuple): keys to be used to generate the namedtuple.
         col2 (int, optional): number of columns to be assigned to the additional variable if ktv_flag is False. If col2 is 0, the array shape is (row,), else array shape is (row,col2). Defaults to 0.
-        ktv_flag (bool, optional). Flag to understand if the additional variable is the known term vector (whose initialization is independent from num_step value). If ktv_flag is True, the additional variable is np.zeros(col,) regardless of num_step; if ktv_flag is False, the additional variable is initialized according to the value of col2. - Probably this flag can be removed if a better implementation of the theta method is developed -. Defaults to True.
+        ktv_flag (bool, optional). Flag to understand if the additional variable is the known therm vector (whose initialization is independent from num_step value). If ktv_flag is True, the additional variable is np.zeros(col,) regardless of num_step; if ktv_flag is False, the additional variable is initialized according to the value of col2. - Probably this flag can be removed if a better implementation of the theta method is developed -. Defaults to True.
 
     Returns:
         namedtuple: collection of initialized ndarrays.
@@ -65,7 +65,7 @@ def array_initialization(
         row (int): number of elements (rows) of the array to be initialized.
         num_step (int): time step number.
         col (int, optional): number of columns to be assigned to the array if ktv_flag is False. If col is 0, the array shape is (row,), else array shape is (row,col). Defaults to 0.
-        ktv_flag (bool, optional). Flag to understand if the array is the known term vector (whose initialization is independent from num_step value). If ktv_flag is True, the function returns np.zeros(col,) regardless of num_step; if ktv_flag is False, the returned variable is initialized according to the value of col2. - Probably this flag can be removed if a better implementation of the theta method is developed -. Defaults to True.
+        ktv_flag (bool, optional). Flag to understand if the array is the known therm vector (whose initialization is independent from num_step value). If ktv_flag is True, the function returns np.zeros(col,) regardless of num_step; if ktv_flag is False, the returned variable is initialized according to the value of col2. - Probably this flag can be removed if a better implementation of the theta method is developed -. Defaults to True.
 
     Returns:
         Union[NamedTuple,np.ndarray]: namedtuple with array if num_step is 1; np.ndarray in all other cases.
@@ -1290,14 +1290,14 @@ def eval_system_matrix(
     
     return ndas.SYSMAT
 
-def build_known_term_vector(
+def build_known_therm_vector(
     ndas:NamedTuple,
     conductor:Conductor
 )->np.ndarray:
-    """Function that builds the known term vector for the thermal hydraulic problem according to the selected method for time integration.
+    """Function that builds the known therm vector for the thermal hydraulic problem according to the selected method for time integration.
 
     Args:
-        ndas (NamedTuple): collection of np.ndarrays. Field Known stores the initialized Known array - known term vector -; fields MASMAT, FLXMAT, DIFMAT and SORMAT stores the corresponding matrices after call to function assemble_matrix.
+        ndas (NamedTuple): collection of np.ndarrays. Field Known stores the initialized Known array - known therm vector -; fields MASMAT, FLXMAT, DIFMAT and SORMAT stores the corresponding matrices after call to function assemble_matrix.
         conductor (Conductor): object with all the information of the conductor.
 
     Returns:
