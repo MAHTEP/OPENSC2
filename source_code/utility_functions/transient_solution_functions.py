@@ -506,11 +506,7 @@ def step(conductor, environment, qsource, num_step):
             np.savetxt(writer, conductor.dict_Step["SYSLOD"], delimiter = "\t")
 
     # ** COMPUTE SYSTEM MATRIX **
-    SYSMAT = eval_system_matrix(
-        SYSMAT,
-        (MASMAT,FLXMAT,DIFMAT,SORMAT),
-        conductor,
-    )
+    band_matrix.SYSMAT[:,:] = eval_system_matrix(band_matrix,conductor)
     
     # lines of code to save SYSMAT and SYSLOD in .tsv files
     if conductor.cond_num_step == 1 or np.isclose(conductor.Space_save[conductor.i_save],conductor.cond_time[-1]):
