@@ -26,22 +26,18 @@ def matrix_initialization(row:int,col:int)->NamedTuple:
 
 
 def ndarray_initialization(
-    row:int,
-    col:int,
+    dimension:int,
     num_step:int,
     collector_keys:tuple,
-    col2:int=0,
-    ktv_flag:bool=True)->namedtuple:
-    """Wrapper of function np.zeros that inizializes N-1 identical matrices and an additional variable that can be a column vector or a tuple with matrix of shape (row,col2) according to the value of num_step (this is necessary to correctly apply the theta method) and ktv_flag. N is len(collector_keys). Those ndarray are collected into a namedtuple exploiting key passed with argumetn collector_keys.
+    col:int=0)->namedtuple:
+    """Wrapper of function np.zeros that inizializes four identical square matrices and an additional variable that can be a column vector or a tuple with matrix of shape (dimension,col) according to the value of num_step (this is necessary to correctly apply the theta method). Those ndarray are collected into a namedtuple exploiting key passed with argumetn collector_keys.
     N.B. the application of the theta method should be completely rivisited in the whole code.
 
     Args:
-        row (int): number of rows of the matrices to be initialized and number of rows in the additional variable.
-        col (int): number of columns of the matrices to be initialized.
+        dimension (int): number of rows/columns of the matrices to be initialized and number of rows in the additional variable.
         num_step (int): time step number.
         collector_keys (tuple): keys to be used to generate the namedtuple.
-        col2 (int, optional): number of columns to be assigned to the additional variable if ktv_flag is False. If col2 is 0, the array shape is (row,), else array shape is (row,col2). Defaults to 0.
-        ktv_flag (bool, optional). Flag to understand if the additional variable is the known therm vector (whose initialization is independent from num_step value). If ktv_flag is True, the additional variable is np.zeros(col,) regardless of num_step; if ktv_flag is False, the additional variable is initialized according to the value of col2. - Probably this flag can be removed if a better implementation of the theta method is developed -. Defaults to True.
+        col (int, optional): number of columns to be assigned to the additional variable. If col is 0, the array shape is (dimension,), else array shape is (dimension,col). Defaults to 0.
 
     Returns:
         namedtuple: collection of initialized ndarrays.
@@ -49,32 +45,22 @@ def ndarray_initialization(
     # Namedtuple constructor.
     Ndarray_collector = namedtuple("Ndarray_collector",collector_keys)
     return Ndarray_collector(
-        *tuple(np.zeros((row,col)) for _ in range(len(collector_keys)-1)),
-        array_initialization(col,num_step,col2,ktv_flag),
+        *tuple(np.zeros((dimension,dimension)) for _ in range(len(collector_keys)-1)),
+        array_initialization(dimension, num_step,col),
     )
 
-def array_initialization(
-    row:int,
-    num_step:int,
-    col:int=0,
-    ktv_flag:bool=True)->Union[NamedTuple,np.ndarray]:
-    """Wrapper of function np.zeros that initializes array of shape (row, col) according to the time step number and flag ktv_flag.
+def array_initialization(dimension:int, num_step:int, col:int=0)-> Union[NamedTuple,np.ndarray]:
+    """Wrapper of function np.zeros that initializes array of shape (dimension, col) according to the time step number.
     N.B. the application of the theta method should be completely rivisited in the whole code.
 
     Args:
-        row (int): number of elements (rows) of the array to be initialized.
+        dimension (int): number of elements (rows) of the array to be initialized.
         num_step (int): time step number.
-        col (int, optional): number of columns to be assigned to the array if ktv_flag is False. If col is 0, the array shape is (row,), else array shape is (row,col). Defaults to 0.
-        ktv_flag (bool, optional). Flag to understand if the array is the known therm vector (whose initialization is independent from num_step value). If ktv_flag is True, the function returns np.zeros(col,) regardless of num_step; if ktv_flag is False, the returned variable is initialized according to the value of col2. - Probably this flag can be removed if a better implementation of the theta method is developed -. Defaults to True.
+        col (int, optional): number of columns to be assigned to the array. If col is 0, the array shape is (dimension,), else array shape is (dimension,col). Defaults to 0.
 
     Returns:
         Union[NamedTuple,np.ndarray]: namedtuple with array if num_step is 1; np.ndarray in all other cases.
     """
-
-    # Check if the flag to initialize the known term vector is set to True.
-    if ktv_flag:
-        # ktv_flag is True: initialize the known term vector.
-        return np.zeros(row)
 
     if num_step == 1:
         Array = namedtuple("Array",("previous","present"))
@@ -86,20 +72,20 @@ def array_initialization(
         # Check on col to assign the correct shape to the array.
         if col: # used to define SVEC.
             return Array(
-                previous=np.zeros((row, col)),
-                present=np.zeros((row, col)),
+                previous=np.zeros((dimension, col)),
+                present=np.zeros((dimension, col)),
             )
         else: # used to define ELSLOD.
             return Array(
-                previous=np.zeros(row),
-                present=np.zeros(row),
+                previous=np.zeros(dimension),
+                present=np.zeros(dimension),
             )
     else:
         # Check on col to assign the correct shape to the array.
         if col: # used to define SVEC.
-            return np.zeros((row, col))
+            return np.zeros((dimension, col))
         else: # used to define ELSLOD.
-            return np.zeros(row)
+            return np.zeros(dimension)
 
 def build_amat(
     matrix:np.ndarray,
