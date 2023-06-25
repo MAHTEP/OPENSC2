@@ -213,16 +213,10 @@ def step(conductor, environment, qsource, num_step):
 
     # CLUCA ADDNOD = MAXNOD*(ICOND-1)
 
-    # Namedtuple keys initialization.
-    basic_nda_name = ("MMAT","AMAT","KMAT","SMAT","SVEC")
-    element_nda_names = ("ELMMAT","ELAMAT","ELKMAT","ELSMAT","ELSLOD")
-    band_matrix_names = ("MASMAT","FLXMAT","DIFMAT","SORMAT","SYSMAT","Known")
     # Matrices initialization.
-    band_matrix = ndarray_initialization(
+    band_matrix = matrix_initialization(
         conductor.dict_band["Full"],
-        conductor.dict_N_equation["Total"],
-        conductor.cond_num_step,
-        band_matrix_names,
+        conductor.dict_N_equation["Total"]
     )
     
     if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
@@ -238,6 +232,8 @@ def step(conductor, environment, qsource, num_step):
     # SYSVAR = np.zeros(conductor.dict_N_equation["Total"])
     ASCALING = np.zeros(conductor.dict_N_equation["Total"])
     UPWEQT = np.zeros(conductor.dict_N_equation["NODOFS"])
+    # Known terms vector (cdp, 10/2020)
+    Known = np.zeros_like(ASCALING)
 
     # qsource initialization to zeros (cdp, 07/2020)
     # questa inizializzazione è provvisoria, da capire cosa succede quando ci \
@@ -282,17 +278,15 @@ def step(conductor, environment, qsource, num_step):
             conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"],
             conductor.cond_num_step,
-            basic_nda_name,
-            col2=2,
-            ktv_flag=False,
+            ("MMAT","AMAT","KMAT","SMAT","SVEC"),
+            col=2
         )
         
         element_nda = ndarray_initialization(
             conductor.dict_N_equation["NODOFS2"],
             conductor.dict_N_equation["NODOFS2"],
             conductor.cond_num_step,
-            element_nda_names,
-            ktv_flag=False,
+            ("ELMMAT","ELAMAT","ELKMAT","ELSMAT","ELSLOD"),
         )
         
         # ** FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, 
