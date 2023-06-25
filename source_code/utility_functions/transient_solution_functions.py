@@ -214,7 +214,7 @@ def step(conductor, environment, qsource, num_step):
     # CLUCA ADDNOD = MAXNOD*(ICOND-1)
 
     # Matrices initialization.
-    band_matrix = matrix_initialization(
+    MASMAT,FLXMAT,DIFMAT,SORMAT,SYSMAT = matrix_initialization(
         conductor.dict_band["Full"],
         conductor.dict_N_equation["Total"]
     )
@@ -274,19 +274,16 @@ def step(conductor, environment, qsource, num_step):
     for elem_index in range(conductor.grid_input["NELEMS"]):
 
         # Auxiliary matrices initialization to zeros at each Gauss point.
-        basic_nda = ndarray_initialization(
+        MMAT,AMAT,KMAT,SMAT,SVEC = ndarray_initialization(
             conductor.dict_N_equation["NODOFS"],
             conductor.dict_N_equation["NODOFS"],
             conductor.cond_num_step,
-            ("MMAT","AMAT","KMAT","SMAT","SVEC"),
             col=2
         )
         
-        element_nda = ndarray_initialization(
+        ELMMAT,ELAMAT,ELKMAT,ELSMAT,ELSLOD = ndarray_initialization(
             conductor.dict_N_equation["NODOFS2"],
-            conductor.dict_N_equation["NODOFS2"],
-            conductor.cond_num_step,
-            ("ELMMAT","ELAMAT","ELKMAT","ELSMAT","ELSLOD"),
+            conductor.cond_num_step
         )
         
         # ** FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, 
@@ -294,7 +291,7 @@ def step(conductor, environment, qsource, num_step):
 
         # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
         # FluidComponent equation: array smart
-        basic_nda.MMAT[
+        MMAT[
             :conductor.dict_N_equation["FluidComponent"],
             :conductor.dict_N_equation["FluidComponent"],
         ] = np.eye(conductor.dict_N_equation["FluidComponent"])
@@ -303,16 +300,16 @@ def step(conductor, environment, qsource, num_step):
         for fluid_comp_j in conductor.inventory["FluidComponent"].collection:
 
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
-            basic_nda.AMAT = build_amat(
-                basic_nda.AMAT,
+            AMAT = build_amat(
+                AMAT,
                 fluid_comp_j,
                 elem_index,
                 conductor.equation_index[fluid_comp_j.identifier]
             )
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
-            basic_nda.KMAT = build_kmat_fluid(
-                basic_nda.KMAT,
+            KMAT = build_kmat_fluid(
+                KMAT,
                 UPWEQT,
                 fluid_comp_j,
                 conductor,
@@ -320,8 +317,8 @@ def step(conductor, environment, qsource, num_step):
             )
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-            basic_nda.SMAT = build_smat_fluid(
-                basic_nda.SMAT,
+            SMAT = build_smat_fluid(
+                SMAT,
                 fluid_comp_j,
                 elem_index,
                 conductor.equation_index[fluid_comp_j.identifier]
@@ -329,14 +326,14 @@ def step(conductor, environment, qsource, num_step):
 
         # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
         # Therms associated to fluid-fluid interfaces.
-        basic_nda.SMAT = build_smat_fluid_interface(
-            basic_nda.SMAT,
+        SMAT = build_smat_fluid_interface(
+            SMAT,
             conductor,
             elem_index
         )
         # Therms associated to fluid-solid interfaces.
-        basic_nda.SMAT = build_smat_fluid_solid_interface(
-            basic_nda.SMAT,
+        SMAT = build_smat_fluid_solid_interface(
+            SMAT,
             conductor,
             elem_index,
         )
@@ -349,8 +346,8 @@ def step(conductor, environment, qsource, num_step):
         ):
             # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
             # SolidComponent equation.
-            basic_nda.MMAT = build_mmat_solid(
-                basic_nda.MMAT,
+            MMAT = build_mmat_solid(
+                MMAT,
                 s_comp,
                 elem_index,
                 conductor.equation_index[s_comp.identifier]
@@ -362,8 +359,8 @@ def step(conductor, environment, qsource, num_step):
             # END A MATRIX: SolidComponent equation.
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
-            basic_nda.KMAT = build_kmat_solid(
-                basic_nda.KMAT,
+            KMAT = build_kmat_solid(
+                KMAT,
                 s_comp,
                 elem_index,
                 conductor.equation_index[s_comp.identifier]
@@ -371,8 +368,8 @@ def step(conductor, environment, qsource, num_step):
             # END K MATRIX: SolidComponent equation.
 
             # FORM THE S VECTOR AT THE NODAL POINTS (SOURCE)
-            basic_nda.SVEC = build_svec(
-                basic_nda.SVEC,
+            SVEC = build_svec(
+                SVEC,
                 s_comp,
                 elem_index,
                 conductor.equation_index[s_comp.identifier],
@@ -382,8 +379,8 @@ def step(conductor, environment, qsource, num_step):
             )
 
         # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-        basic_nda.SMAT = build_smat_solid_interface(
-            basic_nda.SMAT,
+        SMAT = build_smat_solid_interface(
+            SMAT,
             conductor,
             elem_index,
         )
@@ -391,16 +388,16 @@ def step(conductor, environment, qsource, num_step):
         for interface in conductor.interface.env_solid:
             # Convective heating with the external environment (implicit 
             # treatment).
-            basic_nda.SMAT = build_smat_env_solid_interface(
-                basic_nda.SMAT,
+            SMAT = build_smat_env_solid_interface(
+                SMAT,
                 conductor,
                 interface,
                 elem_index,
             )
             # END S MATRIX: solid components equation.
 
-            basic_nda.SVEC = build_svec_env_jacket_interface(
-                basic_nda.SVEC,
+            SVEC = build_svec_env_jacket_interface(
+                SVEC,
                 conductor,
                 interface,
                 elem_index,
@@ -409,9 +406,9 @@ def step(conductor, environment, qsource, num_step):
 
         # COMPUTE THE MASS AND CAPACITY MATRIX
         # array smart
-        element_nda.ELMMAT = build_elmmat(
-            element_nda.ELMMAT,
-            basic_nda.MMAT,
+        ELMMAT = build_elmmat(
+            ELMMAT,
+            MMAT,
             conductor,
             elem_index,
             ALFA,
@@ -419,35 +416,35 @@ def step(conductor, environment, qsource, num_step):
 
         # COMPUTE THE CONVECTION MATRIX
         # array smart
-        element_nda.ELAMAT = build_elamat(
-            element_nda.ELAMAT,
-            basic_nda.AMAT,
+        ELAMAT = build_elamat(
+            ELAMAT,
+            AMAT,
             conductor,
         )
 
         # COMPUTE THE DIFFUSION MATRIX
         # array smart
-        element_nda.ELKMAT = build_elkmat(
-            element_nda.ELKMAT,
-            basic_nda.KMAT,
+        ELKMAT = build_elkmat(
+            ELKMAT,
+            KMAT,
             conductor,
             elem_index,
         )
 
         # COMPUTE THE SOURCE MATRIX
         # array smart
-        element_nda.ELSMAT = build_elsmat(
-            element_nda.ELSMAT,
-            basic_nda.SMAT,
+        ELSMAT = build_elsmat(
+            ELSMAT,
+            SMAT,
             conductor,
             elem_index,
         )
 
         # COMPUTE THE SOURCE VECTOR (ANALYTIC INTEGRATION)
         # array smart
-        element_nda.ELSLOD = build_elslod(
-            element_nda.ELSLOD,
-            basic_nda.SVEC,
+        ELSLOD = build_elslod(
+            ELSLOD,
+            SVEC,
             conductor,
             elem_index,
         )
@@ -457,16 +454,16 @@ def step(conductor, environment, qsource, num_step):
         jump = conductor.dict_N_equation["NODOFS"] * elem_index
         
         # array smart
-        band_matrix = assemble_matrix(
-            band_matrix[:-1], # do not pass SYSMAT
-            element_nda[:-1], # do not pass ELSLOD
+        MASMAT,FLXMAT,DIFMAT,SORMAT = assemble_matrix(
+            (MASMAT,FLXMAT,DIFMAT,SORMAT),
+            (ELMMAT,ELAMAT,ELKMAT,ELSMAT),
             conductor,
             jump,
         )
 
         conductor.dict_Step["SYSLOD"][
             jump:jump + conductor.dict_band["Half"],:
-        ] = assemble_syslod(element_nda.ELSLOD,conductor,jump)
+        ] = assemble_syslod(ELSLOD,conductor,jump)
 
     # end for elem_index
     # ** END MATRICES CONSTRUCTION **
@@ -496,13 +493,13 @@ def step(conductor, environment, qsource, num_step):
         syslod_fname = os.path.join(
             path_matr, f"SYSLOD_{sfx}.tsv")
         with open(masmat_fname, "w") as writer:
-            np.savetxt(writer, band_matrix.MASMAT, delimiter = "\t")
+            np.savetxt(writer, MASMAT, delimiter = "\t")
         with open(flxmat_fname, "w") as writer:
-            np.savetxt(writer, band_matrix.FLXMAT, delimiter = "\t")
+            np.savetxt(writer, FLXMAT, delimiter = "\t")
         with open(difmat_fname, "w") as writer:
-            np.savetxt(writer, band_matrix.DIFMAT, delimiter = "\t")
+            np.savetxt(writer, DIFMAT, delimiter = "\t")
         with open(sormat_fname, "w") as writer:
-            np.savetxt(writer, band_matrix.SORMAT, delimiter = "\t")
+            np.savetxt(writer, SORMAT, delimiter = "\t")
         with open(sysvar_fname, "w") as writer:
             np.savetxt(writer, conductor.dict_Step["SYSVAR"], delimiter = "\t")
         with open(syslod_fname, "w") as writer:
