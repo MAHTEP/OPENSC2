@@ -7,46 +7,34 @@ from fluid_component import FluidComponent
 from solid_component import SolidComponent
 from conductor import Conductor
 
-def matrix_initialization(row:int,col:int)->NamedTuple:
-    """Wrapper of function np.zeros that inizializes five identical rectangular matrices, collected in a namedtuple.
+def matrix_initialization(row:int,col:int)->tuple:
+    """Wrapper of function np.zeros that inizializes five identical rectangular matrices.
 
     Args:
         row (int): number of rows of the matrix.
         col (int): number of columns of the matrix.
 
     Returns:
-        NamedTuple: collection of initialized matrices.
+        tuple: collection of initialized matrices.
     """
-    matrix_names = ("MASMAT","FLXMAT","DIFMAT","SORMAT","SYSMAT")
-    # Namedtuple constructor.
-    Matrix_collector = namedtuple("Matrix_collector",matrix_names)
-    return Matrix_collector(
-        *tuple(np.zeros((row,col)) for _ in range(len(matrix_names)))
-    )
+    
+    return tuple(np.zeros((row,col)) for _ in range(5))
 
-
-def ndarray_initialization(
-    dimension:int,
-    num_step:int,
-    collector_keys:tuple,
-    col:int=0)->namedtuple:
-    """Wrapper of function np.zeros that inizializes four identical square matrices and an additional variable that can be a column vector or a tuple with matrix of shape (dimension,col) according to the value of num_step (this is necessary to correctly apply the theta method). Those ndarray are collected into a namedtuple exploiting key passed with argumetn collector_keys.
+def ndarray_initialization(dimension:int,num_step:int,col:int=0)->tuple:
+    """Wrapper of function np.zeros that inizializes four identical square matrices and an additional variable that can be a column vector or a tuple with matrix of shape (dimension,col) according to the value of num_step (this is necessary to correctly apply the theta method).
     N.B. the application of the theta method should be completely rivisited in the whole code.
 
     Args:
         dimension (int): number of rows/columns of the matrices to be initialized and number of rows in the additional variable.
         num_step (int): time step number.
-        collector_keys (tuple): keys to be used to generate the namedtuple.
         col (int, optional): number of columns to be assigned to the additional variable. If col is 0, the array shape is (dimension,), else array shape is (dimension,col). Defaults to 0.
 
     Returns:
-        namedtuple: collection of initialized ndarrays.
+        tuple: collection of initialized ndarrays.
     """
-    # Namedtuple constructor.
-    Ndarray_collector = namedtuple("Ndarray_collector",collector_keys)
-    return Ndarray_collector(
-        *tuple(np.zeros((dimension,dimension)) for _ in range(len(collector_keys)-1)),
-        array_initialization(dimension, num_step,col),
+    return (
+        *tuple(np.zeros((dimension,dimension)) for _ in range(4)),
+        array_initialization(dimension, num_step,col)
     )
 
 def array_initialization(dimension:int, num_step:int, col:int=0)-> Union[NamedTuple,np.ndarray]:
