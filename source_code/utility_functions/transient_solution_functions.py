@@ -280,6 +280,7 @@ def step(conductor, environment, qsource, num_step):
         # Auxiliary matrices initialization to zeros at each Gauss point.
         basic_nda = ndarray_initialization(
             conductor.dict_N_equation["NODOFS"],
+            conductor.dict_N_equation["NODOFS"],
             conductor.cond_num_step,
             basic_nda_name,
             col2=2,
@@ -287,6 +288,7 @@ def step(conductor, environment, qsource, num_step):
         )
         
         element_nda = ndarray_initialization(
+            conductor.dict_N_equation["NODOFS2"],
             conductor.dict_N_equation["NODOFS2"],
             conductor.cond_num_step,
             element_nda_names,
