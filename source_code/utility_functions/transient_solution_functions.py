@@ -522,7 +522,7 @@ def step(conductor, environment, qsource, num_step):
         SYSMAT_f_name = os.path.join(
             path_matr, f"SYSMAT_{sfx}.tsv")
         with open(SYSMAT_f_name, "w") as writer:
-            np.savetxt(writer, final_nda.SYSMAT, delimiter = "\t")
+            np.savetxt(writer, SYSMAT, delimiter = "\t")
 
     # ADD THE LOAD CONTRIBUTION FROM PREVIOUS STEP
     # array smart
@@ -541,8 +541,8 @@ def step(conductor, environment, qsource, num_step):
         intial = abs(f_comp.coolant.operations["INTIAL"])
         # Apply boundary conditions according to the absloute value of flag
         # INTIAL.
-        final_nda.Known[:],final_nda.SYSMAT[:,:] = f_comp.apply_th_bc[intial](
-            (final_nda.Known,final_nda.SYSMAT),
+        Known,SYSMAT = f_comp.apply_th_bc[intial](
+            (Known,SYSMAT),
             conductor,
             path,
         )
@@ -550,7 +550,7 @@ def step(conductor, environment, qsource, num_step):
     # DIAGONAL ROW SCALING
 
     # SELECT THE MAX FOR EACH ROW
-    ASCALING = abs(final_nda.SYSMAT).max(0)
+    ASCALING = abs(SYSMAT).max(0)
     ind_ASCALING = np.nonzero(ASCALING == 0.0)
     # ind_ASCALING = np.nonzero(ASCALING <= 1e-6)
     if ind_ASCALING[0].shape == 0:
@@ -560,10 +560,10 @@ def step(conductor, environment, qsource, num_step):
         )
 
     # SCALE THE SYSTEM MATRIX
-    final_nda.SYSMAT[:,:] /= ASCALING
+    SYSMAT = SYSMAT / ASCALING
 
     # SCALE THE LOAD VECTOR
-    final_nda.Known[:] /= ASCALING
+    Known = Known / ASCALING
 
     old_temperature_gauss = {
         obj.identifier: obj.coolant.dict_Gauss_pt["temperature"]
@@ -576,14 +576,10 @@ def step(conductor, environment, qsource, num_step):
         }
     )
 
-    final_nda.SYSMAT[:,:] = gredub(conductor, final_nda.SYSMAT)
+    SYSMAT = gredub(conductor, SYSMAT)
     # Compute the solution at current time stepand overwrite key SYSVAR of \
     # dict_Step
-    conductor.dict_Step["SYSVAR"][:, 0] = gbacsb(
-        conductor,
-        final_nda.SYSMAT,
-        final_nda.Known,
-    )
+    conductor.dict_Step["SYSVAR"][:, 0] = gbacsb(conductor, SYSMAT, Known)
 
     # SYSVAR = solve_banded((15, 15), SYSMAT, Known)
 
@@ -594,19 +590,16 @@ def step(conductor, environment, qsource, num_step):
     EIG = np.zeros(conductor.dict_N_equation["Total"])
 
     # Evaluate the norm of the solution.
-    conductor.dict_norm["Solution"] = eval_sub_array_norm(
-        final_nda.Known,
-        conductor,
-    )
+    conductor.dict_norm["Solution"] = eval_sub_array_norm(Known,conductor)
 
     # COMPUTE THE NORM OF THE SOLUTION CHANGE, THE EIGENVALUES AND RECOVER THE \
     # VARIABLES FROM THE SYSTEM SOLUTION (START)
 
     # Those are arrays
     # Solution change
-    CHG = final_nda.Known - conductor.dict_Step["SYSVAR"][:, 0]
+    CHG = Known - conductor.dict_Step["SYSVAR"][:, 0]
     # Eigenvalues (sort of??)
-    EIG = abs(CHG / conductor.time_step) / (abs(final_nda.Known) + TINY)
+    EIG = abs(CHG / conductor.time_step) / (abs(Known) + TINY)
     # Evaluate the norm of the solution change.
     conductor.dict_norm["Change"] = eval_sub_array_norm(CHG,conductor)
     # Evaluate the eigenvalues of the solution.
