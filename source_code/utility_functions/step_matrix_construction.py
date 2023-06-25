@@ -1291,13 +1291,15 @@ def eval_system_matrix(
     return ndas.SYSMAT
 
 def build_known_therm_vector(
-    ndas:NamedTuple,
+    array:np.ndarray,
+    aux_matrices:tuple,
     conductor:Conductor
 )->np.ndarray:
     """Function that builds the known therm vector for the thermal hydraulic problem according to the selected method for time integration.
 
     Args:
-        ndas (NamedTuple): collection of np.ndarrays. Field Known stores the initialized Known array - known therm vector -; fields MASMAT, FLXMAT, DIFMAT and SORMAT stores the corresponding matrices after call to function assemble_matrix.
+        array (np.ndarray): initialized array Known.
+        aaux_matrices (tuple): collection of matrix MASMAT, FLXMAT, DIFMAT and SORMAT after call to function assemble_matrix.
         conductor (Conductor): object with all the information of the conductor.
 
     Returns:
@@ -1317,6 +1319,8 @@ def build_known_therm_vector(
         am4_aa = conductor.dict_Step["AM4_AA"] # shallow copy
         am4_coef = np.array((9.,19.,5.,- 1.)) / 24.
     
+    # Unpack auxiliary matrices (MASMAT,FLXMAT,DIFMAT,SORMAT)
+    masmat,flxmat,difmat,sormat = aux_matrices
     
     # ADD THE LOAD CONTRIBUTION FROM PREVIOUS STEP
     # c_mat_idx: column index of the auxiliary matrices (MASMAT,FLXMAT,DIFMAT,
@@ -1352,14 +1356,14 @@ def build_known_therm_vector(
         if method == "BE" or method == "CN":
             # Backward Euler or Crank-Nicolson
             # Matrix vector product contribution
-            ndas.Known[c_mat_idx] = np.sum(
+            array[c_mat_idx] = np.sum(
                 (
-                    ndas.MASMAT[r_mat_idx,c_mat_idx] / conductor.time_step
+                    masmat[r_mat_idx,c_mat_idx] / conductor.time_step
                     - (1.0 - conductor.theta_method)
                     * (
-                        ndas.FLXMAT[r_mat_idx, c_mat_idx]
-                        + ndas.DIFMAT[r_mat_idx, c_mat_idx]
-                        + ndas.SORMAT[r_mat_idx, c_mat_idx]
+                        flxmat[r_mat_idx, c_mat_idx]
+                        + difmat[r_mat_idx, c_mat_idx]
+                        + sormat[r_mat_idx, c_mat_idx]
                     )
                 )
                 * sysvar[r_arr_idx,0]
@@ -1368,9 +1372,9 @@ def build_known_therm_vector(
             # Adams-Moulton order 4
             # Matrices vectors product contribution
             # np.sum(am4_coef[2:] * am4_aa[2:,r_mat_idx,c_mat_idx].T * sysvar[r_arr_idx,1:3],1) should be equivalent to 5. / 24.* am4_aa[2,r_mat_idx,c_mat_idx] * sysvar[r_arr_idx, 1] - 1. / 24. * am4_aa[3,r_mat_idx,c_mat_idx] * sysvar[r_arr_idx, 2]
-            ndas.Known[c_mat_idx] = np.sum(
+            array[c_mat_idx] = np.sum(
                 (
-                    ndas.MASMAT[r_mat_idx, c_mat_idx] / conductor.time_step
+                    masmat[r_mat_idx, c_mat_idx] / conductor.time_step
                     - am4_coef[1] * am4_aa[1,r_mat_idx,c_mat_idx]
                 ) * sysvar[r_arr_idx,0] # array of shape (r_arr_idx.shape[0],)
                 + np.sum(
@@ -1382,7 +1386,7 @@ def build_known_therm_vector(
     if method == "BE" or method == "CN":
         # Backward Euler or Crank-Nicolson
         # External sources (SYSLOD) contribution
-        ndas.Known[:] += (
+        array += (
             + conductor.theta_method * syslod[:,0]
             + (1.0 - conductor.theta_method) * syslod[:,1]
         )
@@ -1392,6 +1396,6 @@ def build_known_therm_vector(
         # Chance coefficient sign to exploit sum (array smart).
         am4_coef[2:] = - am4_coef[2:]
         # External sources (SYSLOD) contribution
-        ndas.Known[:] += np.sum(am4_coef * syslod,1)
+        array += np.sum(am4_coef * syslod,1)
 
-    return ndas.Known
+    return array
