@@ -849,7 +849,6 @@ def natural_sort(comp_a, comp_b):
 def eval_sub_array_norm(
     array:np.ndarray,
     conductor:Conductor,
-    eq_idx:dict,
     )->np.ndarray:
     """Function that evaluates the euclidean norm of as many sub arrays as the number of unknowns of the thermal hydraulic problem stored insde input argument array. Being jj the j-th unknown (i.e. CHAN_1 temperature), the sub array is given by sub_arr = array[jj::ndf] if ndf is the number of unknowns (number of degrees of freedom). The euclidean norm is applied to this sub array. The final outcome is an array of eucliean norms with ndf elements.
     This function is used both to evaluate the norm of the solution and the norm of the solution change.
