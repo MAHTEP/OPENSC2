@@ -307,7 +307,7 @@ def step(conductor, environment, qsource, num_step):
         for fluid_comp_j in conductor.inventory["FluidComponent"].collection:
 
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
-            basic_nda.AMAT = build_amat(
+            basic_nda.AMAT[:,:] = build_amat(
                 basic_nda.AMAT,
                 fluid_comp_j,
                 elem_index,
@@ -315,7 +315,7 @@ def step(conductor, environment, qsource, num_step):
             )
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
-            basic_nda.KMAT = build_kmat_fluid(
+            basic_nda.KMAT[:,:] = build_kmat_fluid(
                 basic_nda.KMAT,
                 UPWEQT,
                 fluid_comp_j,
@@ -323,7 +323,7 @@ def step(conductor, environment, qsource, num_step):
             )
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-            basic_nda.SMAT = build_smat_fluid(
+            basic_nda.SMAT[:,:] = build_smat_fluid(
                 basic_nda.SMAT,
                 fluid_comp_j,
                 elem_index,
@@ -332,13 +332,13 @@ def step(conductor, environment, qsource, num_step):
 
         # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
         # Therms associated to fluid-fluid interfaces.
-        basic_nda.SMAT = build_smat_fluid_interface(
+        basic_nda.SMAT[:,:] = build_smat_fluid_interface(
             basic_nda.SMAT,
             conductor,
             elem_index
         )
         # Therms associated to fluid-solid interfaces.
-        basic_nda.SMAT = build_smat_fluid_solid_interface(
+        basic_nda.SMAT[:,:] = build_smat_fluid_solid_interface(
             basic_nda.SMAT,
             conductor,
             elem_index,
@@ -352,7 +352,7 @@ def step(conductor, environment, qsource, num_step):
         ):
             # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
             # SolidComponent equation.
-            basic_nda.MMAT = build_mmat_solid(
+            basic_nda.MMAT[:,:] = build_mmat_solid(
                 basic_nda.MMAT,
                 s_comp,
                 elem_index,
@@ -365,7 +365,7 @@ def step(conductor, environment, qsource, num_step):
             # END A MATRIX: SolidComponent equation.
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
-            basic_nda.KMAT = build_kmat_solid(
+            basic_nda.KMAT[:,:] = build_kmat_solid(
                 basic_nda.KMAT,
                 s_comp,
                 elem_index,
@@ -374,7 +374,7 @@ def step(conductor, environment, qsource, num_step):
             # END K MATRIX: SolidComponent equation.
 
             # FORM THE S VECTOR AT THE NODAL POINTS (SOURCE)
-            basic_nda.SVEC = build_svec(
+            basic_nda.SVEC[:] = build_svec(
                 basic_nda.SVEC,
                 s_comp,
                 elem_index,
@@ -385,7 +385,7 @@ def step(conductor, environment, qsource, num_step):
             )
 
         # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-        basic_nda.SMAT = build_smat_solid_interface(
+        basic_nda.SMAT[:,:] = build_smat_solid_interface(
             basic_nda.SMAT,
             conductor,
             elem_index,
@@ -394,7 +394,7 @@ def step(conductor, environment, qsource, num_step):
         for interface in conductor.interface.env_solid:
             # Convective heating with the external environment (implicit 
             # treatment).
-            basic_nda.SMAT = build_smat_env_solid_interface(
+            basic_nda.SMAT[:,:] = build_smat_env_solid_interface(
                 basic_nda.SMAT,
                 conductor,
                 interface,
@@ -402,7 +402,7 @@ def step(conductor, environment, qsource, num_step):
             )
             # END S MATRIX: solid components equation.
 
-            basic_nda.SVEC = build_svec_env_jacket_interface(
+            basic_nda.SVEC[:] = build_svec_env_jacket_interface(
                 basic_nda.SVEC,
                 conductor,
                 interface,
@@ -412,7 +412,7 @@ def step(conductor, environment, qsource, num_step):
 
         # COMPUTE THE MASS AND CAPACITY MATRIX
         # array smart
-        element_nda.ELMMAT = build_elmmat(
+        element_nda.ELMMAT[:,:] = build_elmmat(
             element_nda.ELMMAT,
             basic_nda.MMAT,
             conductor,
@@ -422,7 +422,7 @@ def step(conductor, environment, qsource, num_step):
 
         # COMPUTE THE CONVECTION MATRIX
         # array smart
-        element_nda.ELAMAT = build_elamat(
+        element_nda.ELAMAT[:,:] = build_elamat(
             element_nda.ELAMAT,
             basic_nda.AMAT,
             conductor,
@@ -430,7 +430,7 @@ def step(conductor, environment, qsource, num_step):
 
         # COMPUTE THE DIFFUSION MATRIX
         # array smart
-        element_nda.ELKMAT = build_elkmat(
+        element_nda.ELKMAT[:,:] = build_elkmat(
             element_nda.ELKMAT,
             basic_nda.KMAT,
             conductor,
@@ -439,7 +439,7 @@ def step(conductor, environment, qsource, num_step):
 
         # COMPUTE THE SOURCE MATRIX
         # array smart
-        element_nda.ELSMAT = build_elsmat(
+        element_nda.ELSMAT[:,:] = build_elsmat(
             element_nda.ELSMAT,
             basic_nda.SMAT,
             conductor,
@@ -448,7 +448,7 @@ def step(conductor, environment, qsource, num_step):
 
         # COMPUTE THE SOURCE VECTOR (ANALYTIC INTEGRATION)
         # array smart
-        element_nda.ELSLOD = build_elslod(
+        element_nda.ELSLOD[:] = build_elslod(
             element_nda.ELSLOD,
             basic_nda.SVEC,
             conductor,
@@ -460,8 +460,12 @@ def step(conductor, environment, qsource, num_step):
         jump = conductor.dict_N_equation["NODOFS"] * elem_index
         
         # array smart
-        final_nda = assemble_matrix(
-            final_nda[:-1], # do not pass SYSMAT
+        (final_nda.MASMAT[:,:],
+        final_nda.FLXMAT[:,:],
+        final_nda.DIFMAT[:,:],
+        final_nda.SORMAT[:,:],
+        ) = assemble_matrix(
+            final_nda[:-2], # do not pass SYSMAT and Known
             element_nda[:-1], # do not pass ELSLOD
             conductor,
             jump,
