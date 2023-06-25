@@ -216,13 +216,13 @@ def step(conductor, environment, qsource, num_step):
     # Namedtuple keys initialization.
     basic_nda_name = ("MMAT","AMAT","KMAT","SMAT","SVEC")
     element_nda_names = ("ELMMAT","ELAMAT","ELKMAT","ELSMAT","ELSLOD")
-    band_matrix_names = ("MASMAT","FLXMAT","DIFMAT","SORMAT","SYSMAT","Known")
+    final_nda_names = ("MASMAT","FLXMAT","DIFMAT","SORMAT","SYSMAT","Known")
     # Matrices initialization.
-    band_matrix = ndarray_initialization(
+    final_nda = ndarray_initialization(
         conductor.dict_band["Full"],
         conductor.dict_N_equation["Total"],
         conductor.cond_num_step,
-        band_matrix_names,
+        final_nda_names,
     )
     
     if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
@@ -460,8 +460,8 @@ def step(conductor, environment, qsource, num_step):
         jump = conductor.dict_N_equation["NODOFS"] * elem_index
         
         # array smart
-        band_matrix = assemble_matrix(
-            band_matrix[:-1], # do not pass SYSMAT
+        final_nda = assemble_matrix(
+            final_nda[:-1], # do not pass SYSMAT
             element_nda[:-1], # do not pass ELSLOD
             conductor,
             jump,
@@ -499,20 +499,20 @@ def step(conductor, environment, qsource, num_step):
         syslod_fname = os.path.join(
             path_matr, f"SYSLOD_{sfx}.tsv")
         with open(masmat_fname, "w") as writer:
-            np.savetxt(writer, band_matrix.MASMAT, delimiter = "\t")
+            np.savetxt(writer, final_nda.MASMAT, delimiter = "\t")
         with open(flxmat_fname, "w") as writer:
-            np.savetxt(writer, band_matrix.FLXMAT, delimiter = "\t")
+            np.savetxt(writer, final_nda.FLXMAT, delimiter = "\t")
         with open(difmat_fname, "w") as writer:
-            np.savetxt(writer, band_matrix.DIFMAT, delimiter = "\t")
+            np.savetxt(writer, final_nda.DIFMAT, delimiter = "\t")
         with open(sormat_fname, "w") as writer:
-            np.savetxt(writer, band_matrix.SORMAT, delimiter = "\t")
+            np.savetxt(writer, final_nda.SORMAT, delimiter = "\t")
         with open(sysvar_fname, "w") as writer:
             np.savetxt(writer, conductor.dict_Step["SYSVAR"], delimiter = "\t")
         with open(syslod_fname, "w") as writer:
             np.savetxt(writer, conductor.dict_Step["SYSLOD"], delimiter = "\t")
 
     # ** COMPUTE SYSTEM MATRIX **
-    band_matrix.SYSMAT[:,:] = eval_system_matrix(band_matrix,conductor)
+    final_nda.SYSMAT[:,:] = eval_system_matrix(final_nda,conductor)
     
     # lines of code to save SYSMAT and SYSLOD in .tsv files
     if conductor.cond_num_step == 1 or np.isclose(conductor.Space_save[conductor.i_save],conductor.cond_time[-1]):
