@@ -322,6 +322,7 @@ def step(conductor, environment, qsource, num_step):
                 UPWEQT,
                 fluid_comp_j,
                 conductor,
+                elem_index,
             )
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
