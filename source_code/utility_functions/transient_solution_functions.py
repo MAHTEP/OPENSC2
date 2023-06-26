@@ -482,6 +482,17 @@ def step(conductor, environment, qsource, num_step):
         conductor
     )
 
+    # Call function to save ndarrays before the application of BC; this can be 
+    # useful to create and make tests according to TDD approach.
+    #   ** Decomment the following lines to save ndarrays **
+    # save_ndarray(
+    #     conductor,
+    #     (
+    #         MASMAT,FLXMAT,DIFMAT,SORMAT,SYSMAT,
+    #         conductor.dict_Step["SYSVAR"],conductor.dict_Step["SYSLOD"]
+    #     )
+    # )
+
     # IMPOSE BOUNDARY CONDITIONS AT INLET/OUTLET
     for f_comp in conductor.inventory["FluidComponent"].collection:
 
