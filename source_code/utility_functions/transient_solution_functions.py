@@ -467,56 +467,12 @@ def step(conductor, environment, qsource, num_step):
     # end for elem_index
     # ** END MATRICES CONSTRUCTION **
 
-    # SCRIPT TO SAVE MATRICES MASMAT, FLXMAT, DIFMAT, SORMAT, SYSVAR, SYSLOD.
-
-    if conductor.cond_num_step == 1 or np.isclose(conductor.Space_save[conductor.i_save],conductor.cond_time[-1]):
-
-        path_matr = os.path.join("D:/refactoring/function_step", "matrices/before")
-        os.makedirs(path_matr, exist_ok = True)
-
-        if conductor.cond_num_step == 1:
-            sfx = conductor.i_save - 1
-        else:
-            sfx = conductor.i_save
-
-        masmat_fname = os.path.join(
-            path_matr, f"MASMAT_{sfx}.tsv")
-        flxmat_fname = os.path.join(
-            path_matr, f"FLXMAT_{sfx}.tsv")
-        difmat_fname = os.path.join(
-            path_matr, f"DIFMAT_{sfx}.tsv")
-        sormat_fname = os.path.join(
-            path_matr, f"SORMAT_{sfx}.tsv")
-        sysvar_fname = os.path.join(
-            path_matr, f"SYSVAR_{sfx}.tsv")
-        syslod_fname = os.path.join(
-            path_matr, f"SYSLOD_{sfx}.tsv")
-        with open(masmat_fname, "w") as writer:
-            np.savetxt(writer, MASMAT, delimiter = "\t")
-        with open(flxmat_fname, "w") as writer:
-            np.savetxt(writer, FLXMAT, delimiter = "\t")
-        with open(difmat_fname, "w") as writer:
-            np.savetxt(writer, DIFMAT, delimiter = "\t")
-        with open(sormat_fname, "w") as writer:
-            np.savetxt(writer, SORMAT, delimiter = "\t")
-        with open(sysvar_fname, "w") as writer:
-            np.savetxt(writer, conductor.dict_Step["SYSVAR"], delimiter = "\t")
-        with open(syslod_fname, "w") as writer:
-            np.savetxt(writer, conductor.dict_Step["SYSLOD"], delimiter = "\t")
-
     # ** COMPUTE SYSTEM MATRIX **
     SYSMAT = eval_system_matrix(
         SYSMAT,
         (MASMAT,FLXMAT,DIFMAT,SORMAT),
         conductor,
     )
-    
-    # lines of code to save SYSMAT and SYSLOD in .tsv files
-    if conductor.cond_num_step == 1 or np.isclose(conductor.Space_save[conductor.i_save],conductor.cond_time[-1]):
-        SYSMAT_f_name = os.path.join(
-            path_matr, f"SYSMAT_{sfx}.tsv")
-        with open(SYSMAT_f_name, "w") as writer:
-            np.savetxt(writer, SYSMAT, delimiter = "\t")
 
     # ADD THE LOAD CONTRIBUTION FROM PREVIOUS STEP
     # array smart
@@ -525,13 +481,6 @@ def step(conductor, environment, qsource, num_step):
         (MASMAT,FLXMAT,DIFMAT,SORMAT),
         conductor
     )
-
-    # lines of code to save SYSLOD in .tsv files
-    if conductor.cond_num_step == 1 or np.isclose(conductor.Space_save[conductor.i_save],conductor.cond_time[-1]):
-        SYSLOD_f_name = os.path.join(
-            path_matr, f"SYSLOD_{sfx}.tsv")
-        with open(SYSLOD_f_name, "w") as writer:
-            np.savetxt(writer, conductor.dict_Step["SYSLOD"], delimiter = "\t")
 
     # IMPOSE BOUNDARY CONDITIONS AT INLET/OUTLET
     for f_comp in conductor.inventory["FluidComponent"].collection:
