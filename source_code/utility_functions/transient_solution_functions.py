@@ -1065,3 +1065,33 @@ def reorganize_th_solution(
             s_comp.dict_node_pt["temperature"][:-1]
             + s_comp.dict_node_pt["temperature"][1:]
         ) / 2. - old_temperature[s_comp.identifier]
+
+def save_ndarray(conductor:Conductor,ndarrays:tuple):
+    """Function that saves selected ndarrays to perform test according to the TDD approach. The path to the directory where to save the ndarrays is hardcoded in the function. This is not optimum but it is not trivial to do it in a different way.
+
+    Args:
+        conductor (Conductor): object with all the information of the conductor.
+        ndarrays (tuple): collection of ndarrays in the following order: MASMAT, FLXMAT, DIFMAT, SORMAT, SYSMAT, SYSVAR, SYSLOD
+    """
+    
+    if conductor.cond_num_step == 1 or np.isclose(conductor.Space_save[conductor.i_save],conductor.cond_time[-1]):
+
+        path_matr = os.path.join("D:/refactoring/function_step", "matrices/before")
+        os.makedirs(path_matr, exist_ok = True)
+
+        if conductor.cond_num_step == 1:
+            sfx = conductor.i_save - 1
+        else:
+            sfx = conductor.i_save
+        # Collection of ndimensional array.
+        nda_name = (
+            "MASMAT","FLXMAT","DIFMAT","SORMAT","SYSMAT","SYSVAR","SYSLOD"
+        )
+        # Build path to save ndimensional array.
+        paths = tuple(
+            os.path.join(path_matr, f"{name}_{sfx}.tsv") for name in nda_name
+        )
+        # Loop to save ndimensional array at the given path
+        for save_path,nda in zip(paths,ndarrays):
+            with open(save_path, "w") as writer:
+                np.savetxt(writer, nda, delimiter = "\t")
