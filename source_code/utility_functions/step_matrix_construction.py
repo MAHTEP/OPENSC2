@@ -797,6 +797,50 @@ def build_smat_solid_interface(
     
     return matrix
 
+def __smat_solid_interface(
+    matrix:np.ndarray,
+    comp_1:SolidComponent,
+    comp_2:SolidComponent,
+    eq_idx:dict,
+    **kwargs,
+    )-> np.ndarray:
+    """Function that evaluates the S matrix (SMAT) therms due to solid component interfaces at the Gauss point (SOURCE JACOBIAN) by rows (horizontally) corresponding to the equations of comp_1 for the columns of comp_1 including the contributions given by comp_2.
+
+    Args:
+        matrix (np.ndarray): S matrix after call to function build_smat_fluid_solid_interface.
+        comp_1 (SolidComponent): solid component object from which get all info to build the coefficients.
+        comp_2 (SolidComponent): solid component object from which get all info to build the coefficients.
+        eq_idx (dict): collection of solid component equation index.
+
+    Kwargs:
+        coef_htc (float): heat transfer coefficient per unit of length 
+            P * h_conv.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+    
+    coef_htc = kwargs["coef_htc"]
+    # SOLID COMPONENTS CONDUCTION EQUATION: main diagonal element 
+    # construction:
+    # (l + dict_N_equation["FluidComponent"],l 
+    # + dict_N_equation["FluidComponent"]) [Temp_l] II + III
+    matrix[
+        eq_idx[comp_1.identifier],
+        eq_idx[comp_1.identifier],
+        ] += coef_htc
+    
+    # SOLID COMPONENTS CONDUCTION EQUATION: above/below main diagonal 
+    # elements construction:
+    # (l + dict_N_equation["FluidComponent"],m 
+    # + dict_N_equation["FluidComponent"]) [Temp_m]
+    matrix[
+        eq_idx[comp_1.identifier],
+        eq_idx[comp_2.identifier],
+    ] = - coef_htc
+
+    return matrix
+
 def build_smat_env_solid_interface(
     matrix:np.ndarray,
     conductor:Conductor,
