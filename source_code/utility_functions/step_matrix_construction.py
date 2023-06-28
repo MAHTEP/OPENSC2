@@ -503,6 +503,182 @@ def build_smat_fluid_interface(
     
     return matrix
 
+def __smat_fluid_interface(
+    matrix:np.ndarray,
+    comp_1:FluidComponent,
+    comp_2:FluidComponent,
+    elem_idx:int,
+    eq_idx:dict,
+    **kwargs
+    )->np.ndarray:
+    """Function that evaluates the S matrix (SMAT) terms due to fluid component interfaces at the Gauss point (SOURCE JACOBIAN) by rows (horizontally) corresponding to the equations of comp_1 for the columns of comp_1 including the contributions given by comp_2.
+
+    Args:
+        matrix (np.ndarray): S matrix after call to function buld_smat_fluid.
+        comp_1 (FluidComponent): fluid component object from which get all info to build the coefficients.
+        comp_2 (FluidComponent): fluid component object from which get all info to build the coefficients.
+        elem_idx (int): index of the i-th element of the spatial discretization.
+        eq_idx (dict): collection of NamedTuple with fluid equation index (velocity, pressure and temperaure equations).
+    
+    Kwargs:
+        K1 (np.ndarray): transport coefficient K'.
+        K2 (np.ndarray): transport coefficient K''.
+        K3 (np.ndarray): transport coefficient K'''.
+        coef_htc (float): heat transfer coefficient per unit of length evauated as the sum of the heat transfer coefficient of the open interface time the corresponding contact perimeter and the heat transfer coefficient of the close intefrace and the corresponding contact perimeter 
+            P_o * h_o + P_c * h_c.
+
+    Returns:
+        np.ndarray: matrix with updated elements.
+    """
+    
+    # NOMENCLATURE
+    # w: enthalpy
+    # phi: Gruneisen
+    # rho: density
+    # c0: speed of sound
+    # h: heat transfer coefficient (_o: open; _c:close)
+    # P: contact perimeter (_o: open; _c:close)
+    # A: cross section
+    # v: velocity
+    # T: temperature
+    # c_v: isochoric specific heat
+
+    # Alias
+    comp_1_v = comp_1.coolant.dict_Gauss_pt["velocity"][elem_idx]
+    comp_1_rho = comp_1.coolant.dict_Gauss_pt["total_density"][elem_idx]
+    comp_1_A = comp_1.channel.inputs["CROSSECTION"]
+    comp_1_phi = comp_1.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
+    comp_1_enthalpy = comp_1.coolant.dict_Gauss_pt["total_enthalpy"][elem_idx]
+    comp_1_cv = comp_1.coolant.dict_Gauss_pt["total_isochoric_specific_heat"][
+        elem_idx
+    ]
+    K1 = kwargs["K1"]
+    K2 = kwargs["K2"]
+    K3 = kwargs["K3"]
+    coef_htc = kwargs["coef_htc"]
+
+    # VELOCITY EQUATION: above/below main diagonal elements construction:
+    # (j,j+num_fluid_components) [Pres_j]
+
+    # s_vj_pj = (K1 * v - K2) / (A * rho)
+
+    s_vj_pj = (K1 * comp_1_v - K2) / (comp_1_A * comp_1_rho)
+
+    matrix[
+        eq_idx[comp_1.identifier].velocity,
+        eq_idx[comp_1.identifier].pressure,
+    ] -= s_vj_pj
+
+    # (j,k + num_fluid_components:2*num_fluid_components) 
+    # [Pres_k]
+    matrix[
+        eq_idx[comp_1.identifier].velocity,
+        eq_idx[comp_2.identifier].pressure,
+    ] = s_vj_pj
+
+    # PRESSURE EQUATION: main diagonal elements construction:
+    # (j+num_fluid_components,j+num_fluid_components) [Pres_j]
+
+    # coef_grun_area = phi / A
+    coef_grun_area = comp_1_phi / comp_1_A
+
+    # s_pj_pj = phi/A * [K3 - vK2 - (w - v^2/2 - c0^2/phi)K1]
+    #         = coef_grun_area * [K3 - vK2 - (w - v^2/2 - c0^2/phi)K1]
+    s_pj_pj = (
+        coef_grun_area
+        * (K3 - comp_1_v * K2 - (comp_1_enthalpy - comp_1_v ** 2. / 2.
+        - comp_1.coolant.dict_Gauss_pt["total_speed_of_sound"][elem_idx] ** 2. / comp_1_phi) * K1
+        )
+    )
+
+    matrix[
+        eq_idx[comp_1.identifier].pressure,
+        eq_idx[comp_1.identifier].pressure,
+    ] += s_pj_pj
+
+    # PRESSURE EQUATION: above/below main diagonal elements construction:
+    # (j+num_fluid_components,\
+    # k + num_fluid_components:2*num_fluid_components) [Pres_k]
+    matrix[
+        eq_idx[comp_1.identifier].pressure,
+        eq_idx[comp_2.identifier].pressure,
+    ] = - s_pj_pj
+
+    # (j+num_fluid_components,j+2*num_fluid_components)
+    # [Temp_j] I
+    # s_pj_tc = phi/A * (P_o * h_o + P_c * h_c)
+    #         = coef_frun_area * coef_htc
+    s_pj_tj = coef_grun_area * coef_htc
+
+    matrix[
+        eq_idx[comp_1.identifier].pressure,
+        eq_idx[comp_1.identifier].temperature,
+    ] += s_pj_tj
+
+    # (j+num_fluid_components, 
+    # k + 2*num_fluid_components:dict_N_equation
+    # ["FluidComponent"]) [Temp_j]
+    matrix[
+        eq_idx[comp_1.identifier].pressure,
+        eq_idx[comp_2.identifier].temperature,
+    ] = - s_pj_tj
+
+    # TEMPERATURE EQUATION: elements below main diagonal \
+    # construction:
+    # (j+2*num_fluid_components,j+num_fluid_components) [Pres_j]
+
+    # coef_rho_cv_area = 1/(rho * c_v * A)
+    coef_rho_cv_area = 1. / (comp_1_rho * comp_1_cv * comp_1_A)
+    # s_tj_pj = 1/(rho * c_v * A) * [K3 - vK2 - (w - v^2/2 - phi*c_v*T)K1]
+    #         = coef_rho_cv_area * [K3 - vK2 - (w - v^2/2 - phi*c_v*T)K1]
+    s_tj_pj = (
+        coef_rho_cv_area
+        * (
+            K3 - comp_1_v * K2
+            - (comp_1_enthalpy - comp_1_v ** 2. / 2.
+                - comp_1_phi * comp_1_cv
+                * comp_1.coolant.dict_Gauss_pt["temperature"][elem_idx]
+            )
+            * K1
+        )
+    )
+
+    matrix[
+        eq_idx[comp_1.identifier].temperature,
+        eq_idx[comp_1.identifier].pressure,
+    ] += s_tj_pj
+
+    # (j+2*num_fluid_components,\
+    # k + num_fluid_components:2*num_fluid_components) [Pres_k]
+    matrix[
+        eq_idx[comp_1.identifier].temperature,
+        eq_idx[comp_2.identifier].pressure,
+    ] = - s_tj_pj
+
+    # TEMPERATURE EQUATION: main diagonal element construction:
+    # (j+2*num_fluid_components,j+2*num_fluid_components) 
+    # [Temp_j] I
+
+    # s_tj_tj = 1/(rho * c_v * A) * (P_o * h_o + P_c * h_c)
+    #         = coef_rho_cv_area * coef_htc
+    s_tj_tj = coef_rho_cv_area * coef_htc
+
+    matrix[
+        eq_idx[comp_1.identifier].temperature,
+        eq_idx[comp_1.identifier].temperature,
+    ] += s_tj_tj
+
+    # TEMPERATURE EQUATION: above/below main diagonal elements 
+    # construction:
+    # (j+2*num_fluid_components,k + 2*num_fluid_components) 
+    # [Temp_k]
+    matrix[
+        eq_idx[comp_1.identifier].temperature,
+        eq_idx[comp_2.identifier].temperature,
+    ] = - s_tj_tj
+
+    return matrix
+
 def build_smat_fluid_solid_interface(
     matrix:np.ndarray,
     conductor:Conductor,
