@@ -371,9 +371,9 @@ def build_smat_fluid_interface(
         # VELOCITY EQUATION: above/below main diagonal elements construction:
         # (j,j+num_fluid_components) [Pres_j]
 
-        # s_vj_pj = K1 * v - K2 / (A * rho)
+        # s_vj_pj = (K1 * v - K2) / (A * rho)
 
-        s_vj_pj = K1 * comp_1_v - K2 / (comp_1_A * comp_1_rho)
+        s_vj_pj = (K1 * comp_1_v - K2) / (comp_1_A * comp_1_rho)
 
         matrix[
             eq_idx[interface.comp_1.identifier].velocity,
