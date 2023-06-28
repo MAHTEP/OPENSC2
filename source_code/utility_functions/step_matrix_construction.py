@@ -339,19 +339,11 @@ def build_smat_fluid_interface(
     """
 
     # NOMENCLATURE
-    # w: enthalpy
-    # phi: Gruneisen
-    # rho: density
-    # c0: speed of sound
     # h: heat transfer coefficient (_o: open; _c:close)
     # P: contact perimeter (_o: open; _c:close)
-    # A: cross section
-    # v: velocity
-    # T: temperature
-    # c_v: isochoric specific heat
-
+    
     # Alias
-    # Collection of NamedTyple with fluid equation index (velocity, pressure 
+    # Collection of NamedTuple with fluid equation index (velocity, pressure 
     # and temperaure equations).
     eq_idx = conductor.equation_index
 
@@ -361,62 +353,6 @@ def build_smat_fluid_interface(
         K2 = conductor.dict_Gauss_pt["K2"][interface.interf_name][elem_idx]
         K3 = conductor.dict_Gauss_pt["K3"][interface.interf_name][elem_idx]
 
-        comp_1_v = interface.comp_1.coolant.dict_Gauss_pt["velocity"][elem_idx]
-        comp_1_rho = interface.comp_1.coolant.dict_Gauss_pt["total_density"][elem_idx]
-        comp_1_A = interface.comp_1.channel.inputs["CROSSECTION"]
-        comp_1_phi = interface.comp_1.coolant.dict_Gauss_pt["Gruneisen"][elem_idx]
-        comp_1_enthalpy = interface.comp_1.coolant.dict_Gauss_pt["total_enthalpy"][elem_idx]
-        comp_1_cv = interface.comp_1.coolant.dict_Gauss_pt["total_isochoric_specific_heat"][elem_idx]
-
-        # VELOCITY EQUATION: above/below main diagonal elements construction:
-        # (j,j+num_fluid_components) [Pres_j]
-
-        # s_vj_pj = (K1 * v - K2) / (A * rho)
-
-        s_vj_pj = (K1 * comp_1_v - K2) / (comp_1_A * comp_1_rho)
-
-        matrix[
-            eq_idx[interface.comp_1.identifier].velocity,
-            eq_idx[interface.comp_1.identifier].pressure,
-        ] -= s_vj_pj
-
-        # (j,k + num_fluid_components:2*num_fluid_components) 
-        # [Pres_k]
-        matrix[
-            eq_idx[interface.comp_1.identifier].velocity,
-            eq_idx[interface.comp_2.identifier].pressure,
-        ] = s_vj_pj
-
-        # PRESSURE EQUATION: main diagonal elements construction:
-        # (j+num_fluid_components,j+num_fluid_components) [Pres_j]
-
-        # coef_grun_area = phi / A
-        coef_grun_area = comp_1_phi / comp_1_A
-
-        # s_pj_pj = phi/A * [K3 - vK2 - (w - v^2/2 - c0^2/phi)K1]
-        #         = coef_grun_area * [K3 - vK2 - (w - v^2/2 - c0^2/phi)K1]
-        s_pj_pj = (
-            coef_grun_area
-            * (K3 - comp_1_v * K2 - (comp_1_enthalpy - comp_1_v ** 2. / 2.
-            - interface.comp_1.coolant.dict_Gauss_pt["total_speed_of_sound"][elem_idx] ** 2. / comp_1_phi) * K1
-            )
-        )
-
-        matrix[
-            eq_idx[interface.comp_1.identifier].pressure,
-            eq_idx[interface.comp_1.identifier].pressure,
-        ] += s_pj_pj
-
-        # PRESSURE EQUATION: above/below main diagonal elements construction:
-        # (j+num_fluid_components,\
-        # k + num_fluid_components:2*num_fluid_components) [Pres_k]
-        matrix[
-            eq_idx[interface.comp_1.identifier].pressure,
-            eq_idx[interface.comp_2.identifier].pressure,
-        ] = - s_pj_pj
-
-        # (j+num_fluid_components,j+2*num_fluid_components)
-        # [Temp_j] I
         # coef_htc = P_o * h_o + P_c * h_c
         coef_htc = (
             conductor.dict_interf_peri["ch_ch"]["Open"][interface.interf_name]
@@ -430,77 +366,32 @@ def build_smat_fluid_interface(
                 interface.interf_name
             ][elem_idx]
         )
-        # s_pj_tc = phi/A * (P_o * h_o + P_c * h_c)
-        #         = coef_frun_area * coef_htc
-        s_pj_tj = coef_grun_area * coef_htc
 
-        matrix[
-            eq_idx[interface.comp_1.identifier].pressure,
-            eq_idx[interface.comp_1.identifier].temperature,
-        ] += s_pj_tj
-
-        # (j+num_fluid_components, 
-        # k + 2*num_fluid_components:dict_N_equation
-        # ["FluidComponent"]) [Temp_j]
-        matrix[
-            eq_idx[interface.comp_1.identifier].pressure,
-            eq_idx[interface.comp_2.identifier].temperature,
-        ] = - s_pj_tj
-
-        # TEMPERATURE EQUATION: elements below main diagonal \
-        # construction:
-        # (j+2*num_fluid_components,j+num_fluid_components) [Pres_j]
-
-        # coef_rho_cv_area = 1/(rho * c_v * A)
-        coef_rho_cv_area = 1. / (comp_1_rho * comp_1_cv * comp_1_A)
-        # s_tj_pj = 1/(rho * c_v * A) * [K3 - vK2 - (w - v^2/2 - phi*c_v*T)K1]
-        #         = coef_rho_cv_area * [K3 - vK2 - (w - v^2/2 - phi*c_v*T)K1]
-        s_tj_pj = (
-            coef_rho_cv_area
-            * (
-                K3 - comp_1_v * K2
-                - (comp_1_enthalpy - comp_1_v ** 2. / 2.
-                    - comp_1_phi * comp_1_cv
-                    * interface.comp_1.coolant.dict_Gauss_pt["temperature"][elem_idx]
-                )
-                * K1
-            )
+        # Fill rows of comp_1, columns involving comp_1 and comp_2.
+        matrix = __smat_fluid_interface(
+            matrix,
+            interface.comp_1,
+            interface.comp_2,
+            elem_idx,
+            eq_idx,
+            K1=K1,
+            K2=K2,
+            K3=K3,
+            coef_htc=coef_htc,
+        )
+        # Fill rows of comp_2, columns involving comp_2 and comp_1.
+        matrix = __smat_fluid_interface(
+            matrix,
+            interface.comp_2,
+            interface.comp_1,
+            elem_idx,
+            eq_idx,
+            K1=K1,
+            K2=K2,
+            K3=K3,
+            coef_htc=coef_htc,
         )
 
-        matrix[
-            eq_idx[interface.comp_1.identifier].temperature,
-            eq_idx[interface.comp_1.identifier].pressure,
-        ] += s_tj_pj
-
-        # (j+2*num_fluid_components,\
-        # k + num_fluid_components:2*num_fluid_components) [Pres_k]
-        matrix[
-            eq_idx[interface.comp_1.identifier].temperature,
-            eq_idx[interface.comp_2.identifier].pressure,
-        ] = - s_tj_pj
-
-        # TEMPERATURE EQUATION: main diagonal element construction:
-        # (j+2*num_fluid_components,j+2*num_fluid_components) 
-        # [Temp_j] I
-
-        # s_tj_tj = 1/(rho * c_v * A) * (P_o * h_o + P_c * h_c)
-        #         = coef_rho_cv_area * coef_htc
-        s_tj_tj = coef_rho_cv_area * coef_htc
-
-        matrix[
-            eq_idx[interface.comp_1.identifier].temperature,
-            eq_idx[interface.comp_1.identifier].temperature,
-        ] += s_tj_tj
-
-        # TEMPERATURE EQUATION: above/below main diagonal elements 
-        # construction:
-        # (j+2*num_fluid_components,k + 2*num_fluid_components) 
-        # [Temp_k]
-        matrix[
-            eq_idx[interface.comp_1.identifier].temperature,
-            eq_idx[interface.comp_2.identifier].temperature,
-        ] = - s_tj_tj
-    
     return matrix
 
 def __smat_fluid_interface(
