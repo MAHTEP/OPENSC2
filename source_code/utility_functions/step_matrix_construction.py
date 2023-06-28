@@ -777,24 +777,23 @@ def build_smat_solid_interface(
             ][elem_idx]
         )
 
-        # SOLID COMPONENTS CONDUCTION EQUATION: main diagonal element 
-        # construction:
-        # (l + dict_N_equation["FluidComponent"],l 
-        # + dict_N_equation["FluidComponent"]) [Temp_l] II + III
-        matrix[
-            eq_idx[interface.comp_1.identifier],
-            eq_idx[interface.comp_1.identifier],
-         ] += coef_htc
-        
-        # SOLID COMPONENTS CONDUCTION EQUATION: above/below main diagonal 
-        # elements construction:
-        # (l + dict_N_equation["FluidComponent"],m 
-        # + dict_N_equation["FluidComponent"]) [Temp_m]
-        matrix[
-            eq_idx[interface.comp_1.identifier],
-            eq_idx[interface.comp_2.identifier],
-        ] = - coef_htc
-    
+        # Fill rows of comp_1, columns involving comp_1 and comp_2.
+        matrix = __smat_solid_interface(
+            matrix,
+            interface.comp_1,
+            interface.comp_2,
+            eq_idx,
+            coef_htc=coef_htc,
+        )
+        # Fill rows of comp_2, columns involving comp_2 and comp_1.
+        matrix = __smat_solid_interface(
+            matrix,
+            interface.comp_2,
+            interface.comp_1,
+            eq_idx,
+            coef_htc=coef_htc,
+        )
+
     return matrix
 
 def __smat_solid_interface(
