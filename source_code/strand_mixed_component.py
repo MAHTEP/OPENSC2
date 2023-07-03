@@ -43,6 +43,12 @@ from properties_of_materials.rare_earth_123 import (
     isobaric_specific_heat_re123,
     density_re123,
 )
+# HTS properties
+from properties_of_materials.magnesium_diboride import (
+    thermal_conductivity_mgb2,
+    isobaric_specific_heat_mgb2,
+    density_mgb2,
+)
 
 
 DENSITY_FUNC = dict(
@@ -51,6 +57,7 @@ DENSITY_FUNC = dict(
     nb3sn=density_nb3sn,
     nbti=density_nbti,
     ybco=density_re123,
+    mgb2=density_mgb2,
 )
 
 THERMAL_CONDUCTIVITY_FUNC = dict(
@@ -59,6 +66,7 @@ THERMAL_CONDUCTIVITY_FUNC = dict(
     nb3sn=thermal_conductivity_nb3sn,
     nbti=thermal_conductivity_nbti,
     ybco=thermal_conductivity_re123,
+    mgb2=thermal_conductivity_mgb2,
 )
 
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
@@ -67,6 +75,7 @@ ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
     nb3sn=isobaric_specific_heat_nb3sn,
     nbti=isobaric_specific_heat_nbti,
     ybco=isobaric_specific_heat_re123,
+    mgb2=isobaric_specific_heat_mgb2,
 )
 
 ELECTRICAL_RESISTIVITY_FUNC = dict(
