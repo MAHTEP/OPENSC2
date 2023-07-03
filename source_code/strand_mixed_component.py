@@ -500,6 +500,11 @@ class StrandMixedComponent(StrandComponent):
                     property["B_field"],
                     self.inputs["RRR"],
                 )
+            elif "mgb2" in func.__name__:
+                thermal_conductivity[:, ii] = func(
+                    property["temperature"],
+                    property["B_field"],
+                )
             else:
                 thermal_conductivity[:, ii] = func(property["temperature"])
         # Evaluate homogenized thermal conductivity of the strand mixed:
