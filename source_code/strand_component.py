@@ -29,6 +29,13 @@ from properties_of_materials.rare_earth_123 import (
     current_sharing_temperature_re123,
 )
 
+# MgB2 properties
+from properties_of_materials.magnesium_diboride import (
+    critical_magnetic_field_mgb2,
+    critical_current_density_mgb2,
+    current_sharing_temperature_mgb2,
+)
+
 
 class StrandComponent(SolidComponent):
 
@@ -220,6 +227,17 @@ class StrandComponent(SolidComponent):
                 self.inputs["Bc20m"],
                 self.inputs["c0"],
             )
+        elif self.inputs["superconducting_material"] == "MbB2":
+            dict_dummy["T_critical"] = self.inputs["Tc0m"] * np.ones(
+                dict_dummy["temperature"].shape
+            )
+            dict_dummy["J_critical"] = critical_current_density_mgb2(
+                dict_dummy["temperature"],
+                dict_dummy["B_field"],
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
+                self.inputs["Tc0m"],
+            )
         elif self.inputs["superconducting_material"] == "scaling.dat":
             # Get user defined scaling invoking method User_scaling_margin \
             # (cdp, 10/2020)
@@ -305,6 +323,23 @@ class StrandComponent(SolidComponent):
             #     self.inputs["Tc0m"],
             #     self.inputs["Bc20m"],
             #     self.inputs["c0"],
+            # )
+            dict_dummy["T_cur_sharing_min"] = dict_dummy["T_cur_sharing"]
+        elif self.inputs["superconducting_material"] == "MgB2":
+            dict_dummy["T_cur_sharing"] = current_sharing_temperature_mgb2(
+                dict_dummy["B_field"],
+                jop,
+                self.inputs["Bc20m"],
+                self.inputs["c0"],
+                self.inputs["Tc0m"],
+            )
+            # dict_dummy["T_cur_sharing_min"] = 
+            # current_sharing_temperature_mgb2(
+            #     bmax,
+            #     jop,
+            #     self.inputs["Bc20m"],
+            #     self.inputs["c0"],
+            #     self.inputs["Tc0m"],
             # )
             dict_dummy["T_cur_sharing_min"] = dict_dummy["T_cur_sharing"]
         elif self.inputs["superconducting_material"] == "scaling.dat":
