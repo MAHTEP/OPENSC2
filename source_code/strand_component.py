@@ -227,7 +227,7 @@ class StrandComponent(SolidComponent):
                 self.inputs["Bc20m"],
                 self.inputs["c0"],
             )
-        elif self.inputs["superconducting_material"] == "MbB2":
+        elif self.inputs["superconducting_material"] == "MgB2":
             dict_dummy["T_critical"] = self.inputs["Tc0m"] * np.ones(
                 dict_dummy["temperature"].shape
             )
