@@ -308,11 +308,10 @@ class FluidComponent:
             T_out = flow_par[1]
         
         # ALIAS
-        _, inl_p_idx, inl_t_idx = self.inl_idx # tuple unpack
-        _, out_p_idx, out_t_idx = self.out_idx # tuple unpack
+        inl_p_idx, = self.inl_idx.pressure
+        out_p_idx, = self.out_idx.pressure
         main_d_idx = conductor.dict_band["Main_diag"]
         flow_dir = self.channel.flow_dir[0]
-        velocity = self.coolant.dict_node_pt["velocity"]
         
         # Assign BC
         if flow_dir == "forward":
@@ -326,18 +325,14 @@ class FluidComponent:
             # main diagonal.
             sysmat[main_d_idx,out_p_idx.forward] = 1.0
             known[out_p_idx.forward] = p_out
-            # T_inl
-            if velocity[0] > 0:
-                sysmat[:,inl_t_idx.forward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,inl_t_idx.forward] = 1.0
-                known[inl_t_idx.forward] = T_inl
-            # T_out
-            if velocity[-1] < 0:
-                sysmat[:,out_t_idx.forward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,out_t_idx.forward] = 1.0
-                known[out_t_idx.forward] = T_out
+            # Impose temperature bondary condition.
+            known,sysmat = self.__impose_temperature_fw(
+                sysmat,
+                known,
+                T_inl,
+                T_out,
+                main_d_idx,
+            )
         elif flow_dir == "backward":
             # p_inl
             sysmat[:,inl_p_idx.backward] = 0.0
@@ -349,18 +344,14 @@ class FluidComponent:
             # main diagonal.
             sysmat[main_d_idx,out_p_idx.backward] = 1.0
             known[out_p_idx.backward] = p_out
-            # T_inl
-            if velocity[-1] < 0:
-                sysmat[:,inl_t_idx.backward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,inl_t_idx.backward] = 1.0
-                known[inl_t_idx.backward] = T_inl
-            # T_out
-            if velocity[0] > 0:
-                sysmat[:,out_t_idx.backward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,out_t_idx.backward] = 1.0
-                known[out_t_idx.backward] = T_out
+            # Impose temperature bondary condition.
+            known,sysmat = self.__impose_temperature_bw(
+                sysmat,
+                known,
+                T_inl,
+                T_out,
+                main_d_idx,
+            )
 
         return known,sysmat
 
@@ -418,11 +409,10 @@ class FluidComponent:
             T_out = flow_par[1]
 
         # ALIAS
-        _, inl_p_idx, inl_t_idx = self.inl_idx # tuple unpack
-        out_v_idx, _, out_t_idx = self.out_idx # tuple unpack
+        inl_p_idx = self.inl_idx.pressure
+        out_v_idx = self.out_idx.velocity
         main_d_idx = conductor.dict_band["Main_diag"]
         flow_dir = self.channel.flow_dir[0]
-        velocity = self.coolant.dict_node_pt["velocity"]
         density = self.coolant.dict_node_pt["total_density"]
         cross_section = self.channel.inputs["CROSSECTION"]
         
@@ -439,18 +429,14 @@ class FluidComponent:
             # main diagonal.
             sysmat[main_d_idx, inl_p_idx.forward] = 1.0
             known[inl_p_idx.forward] = p_inl
-            # T_inl
-            if velocity[0] > 0:
-                sysmat[:,inl_t_idx.forward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,inl_t_idx.forward] = 1.0
-                known[inl_t_idx.forward] = T_inl
-            # T_out (T_inl if mfr_out < 0)
-            if velocity[-1] < 0:
-                sysmat[:,out_t_idx.forward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,out_t_idx.forward] = 1.0
-                known[out_t_idx.forward] = T_out
+            # Impose temperature bondary condition.
+            known,sysmat = self.__impose_temperature_fw(
+                sysmat,
+                known,
+                T_inl,
+                T_out,
+                main_d_idx,
+            )
         elif flow_dir == "backward":
             # Flow direction from x = L to x = 0.
             # v_out
@@ -463,18 +449,14 @@ class FluidComponent:
             # main diagonal.
             sysmat[main_d_idx, inl_p_idx.backward] = 1.0
             known[inl_p_idx.backward] = p_inl
-            # T_inl
-            if velocity[-1] < 0:
-                sysmat[:,inl_t_idx.backward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,inl_t_idx.backward] = 1.0
-                known[inl_t_idx.backward] = T_inl
-            # T_out
-            if velocity[0] > 0:
-                sysmat[:,out_t_idx.backward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,out_t_idx.backward] = 1.0
-                known[out_t_idx.backward] = T_out
+            # Impose temperature bondary condition.
+            known,sysmat = self.__impose_temperature_bw(
+                sysmat,
+                known,
+                T_inl,
+                T_out,
+                main_d_idx,
+            )
         
         return known,sysmat
 
@@ -531,11 +513,10 @@ class FluidComponent:
             T_out = flow_par[1]
 
         # ALIAS
-        inl_v_idx, _, inl_t_idx = self.inl_idx # tuple unpack
-        _, out_p_idx, out_t_idx = self.out_idx # tuple unpack
+        inl_v_idx = self.inl_idx.velocity
+        out_p_idx = self.out_idx.pressure
         main_d_idx = conductor.dict_band["Main_diag"]
         flow_dir = self.channel.flow_dir[0]
-        velocity = self.coolant.dict_node_pt["velocity"]
         density = self.coolant.dict_node_pt["total_density"]
         cross_section = self.channel.inputs["CROSSECTION"]
         
@@ -552,18 +533,14 @@ class FluidComponent:
             # main diagonal.
             sysmat[main_d_idx, out_p_idx.forward] = 1.0
             known[out_p_idx.forward] = p_out
-            # T_inl
-            if velocity[0] > 0:
-                sysmat[:,inl_t_idx.forward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,inl_t_idx.forward] = 1.0
-                known[inl_t_idx.forward] = T_inl
-            # T_out (T_inl if mfr_inl < 0)
-            if velocity[-1] < 0:
-                sysmat[:,out_t_idx.forward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,out_t_idx.forward] = 1.0
-                known[out_t_idx.forward] = T_out
+            # Impose temperature bondary condition.
+            known,sysmat = self.__impose_temperature_fw(
+                sysmat,
+                known,
+                T_inl,
+                T_out,
+                main_d_idx,
+            )
         elif flow_dir == "backward":
             # Flow direction from x = L to x = 0.
             # v_inl
@@ -576,18 +553,14 @@ class FluidComponent:
             # main diagonal.
             sysmat[main_d_idx, out_p_idx.backward] = 1.0
             known[out_p_idx.backward] = p_out
-            # T_inl
-            if velocity[-1] < 0:
-                sysmat[:,inl_t_idx.backward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,inl_t_idx.backward] = 1.0
-                known[inl_t_idx.backward] = T_inl
-            # T_out
-            if velocity[0] > 0:
-                sysmat[:,out_t_idx.backward] = 0.0
-                # main diagonal.
-                sysmat[main_d_idx,out_t_idx.backward] = 1.0
-                known[out_t_idx.backward] = T_out
+            # Impose temperature bondary condition.
+            known,sysmat = self.__impose_temperature_bw(
+                sysmat,
+                known,
+                T_inl,
+                T_out,
+                main_d_idx,
+            )
         
         return known,sysmat
 
