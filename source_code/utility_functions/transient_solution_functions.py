@@ -214,14 +214,15 @@ def step(conductor, environment, qsource, num_step):
     # CLUCA ADDNOD = MAXNOD*(ICOND-1)
 
     # Collection of valid dictionary keys
-    basic_nda_name = ("MMAT","AMAT","KMAT","SMAT","SVEC")
+    basic_nda_names = ("MMAT","AMAT","KMAT","SMAT","SVEC")
     element_nda_names = ("ELMMAT","ELAMAT","ELKMAT","ELSMAT","ELSLOD")
     final_nda_names = ("MASMAT","FLXMAT","DIFMAT","SORMAT","SYSMAT","Known")
 
     # Matrices initialization.
-    MASMAT,FLXMAT,DIFMAT,SORMAT,SYSMAT = matrix_initialization(
+    final_nda = matrix_initialization(
         conductor.dict_band["Full"],
-        conductor.dict_N_equation["Total"]
+        conductor.dict_N_equation["Total"],
+        final_nda_names,
     )
     
     if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
@@ -279,16 +280,27 @@ def step(conductor, environment, qsource, num_step):
     for elem_index in range(conductor.grid_input["NELEMS"]):
 
         # Auxiliary matrices initialization to zeros at each Gauss point.
-        MMAT,AMAT,KMAT,SMAT,SVEC = ndarray_initialization(
+        basic_nda = ndarray_initialization(
             conductor.dict_N_equation["NODOFS"],
             conductor.cond_num_step,
             col=2
         )
+        # Convert basic_nda from tuple to dictionary. This works on the 
+        # assumption that array SLOD is the last item in the tuple returned by 
+        # function ndarray_initialization.
+        basic_nda = {name:nda for name,nda in zip(basic_nda_names,basic_nda)}
         
-        ELMMAT,ELAMAT,ELKMAT,ELSMAT,ELSLOD = ndarray_initialization(
+        element_nda = ndarray_initialization(
             conductor.dict_N_equation["NODOFS2"],
             conductor.cond_num_step
         )
+
+        # Convert basic_nda from tuple to dictionary. This works on the 
+        # assumption that array ELSLOD is the last item in the tuple returned 
+        # by  function ndarray_initialization.
+        element_nda = {
+            name:nda for name,nda in zip(element_nda_names,element_nda)
+            }
         
         # ** FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, 
         # FLUID COMPONENTS EQUATIONS **
