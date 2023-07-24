@@ -7,18 +7,19 @@ from fluid_component import FluidComponent
 from solid_component import SolidComponent
 from conductor import Conductor
 
-def matrix_initialization(row:int,col:int)->tuple:
-    """Wrapper of function np.zeros that inizializes five identical rectangular matrices.
+def matrix_initialization(row:int,col:int,matrix_names:tuple)->dict:
+    """Wrapper of function np.zeros that inizializes five identical rectangular matrices and collects them in a dictionary.
 
     Args:
         row (int): number of rows of the matrix.
         col (int): number of columns of the matrix.
+        matrix_names (tuple): collection of valid keywords to build the dictionary of initialized matrices.
 
     Returns:
-        tuple: collection of initialized matrices.
+        dict: collection of initialized matrices.
     """
     
-    return tuple(np.zeros((row,col)) for _ in range(5))
+    return {name:np.zeros((row,col)) for name in matrix_names}
 
 def ndarray_initialization(dimension:int,num_step:int,col:int=0)->tuple:
     """Wrapper of function np.zeros that inizializes four identical square matrices and an additional variable that can be a column vector or a tuple with matrix of shape (dimension,col) according to the value of num_step (this is necessary to correctly apply the theta method).
