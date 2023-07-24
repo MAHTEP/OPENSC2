@@ -213,6 +213,11 @@ def step(conductor, environment, qsource, num_step):
 
     # CLUCA ADDNOD = MAXNOD*(ICOND-1)
 
+    # Collection of valid dictionary keys
+    basic_nda_name = ("MMAT","AMAT","KMAT","SMAT","SVEC")
+    element_nda_names = ("ELMMAT","ELAMAT","ELKMAT","ELSMAT","ELSLOD")
+    final_nda_names = ("MASMAT","FLXMAT","DIFMAT","SORMAT","SYSMAT","Known")
+
     # Matrices initialization.
     MASMAT,FLXMAT,DIFMAT,SORMAT,SYSMAT = matrix_initialization(
         conductor.dict_band["Full"],
