@@ -827,27 +827,29 @@ def eval_sub_array_norm(
     # Collection of NamedTuple with fluid equation index (velocity, pressure 
     # and temperaure equations) and of integer for solid equation index.
     eq_idx = conductor.equation_index
+    # Evaluate the square of the array.
+    array **= 2.0
 
     # Evaluate the sub arrays euclidean norm.
     # Loop on FluidComponent.
     for f_comp in conductor.inventory["FluidComponent"].collection:
         # velocity
         sub_array_norm[eq_idx[f_comp.identifier].velocity] = np.sum(
-            array[eq_idx[f_comp.identifier].velocity::ndf] ** 2.
+            array[eq_idx[f_comp.identifier].velocity::ndf]
         )
         # pressure
         sub_array_norm[eq_idx[f_comp.identifier].pressure] = np.sum(
-            array[eq_idx[f_comp.identifier].pressure::ndf] ** 2.
+            array[eq_idx[f_comp.identifier].pressure::ndf]
         )
         # temperature
         sub_array_norm[eq_idx[f_comp.identifier].temperature] = np.sum(
-            array[eq_idx[f_comp.identifier].temperature::ndf] ** 2.
+            array[eq_idx[f_comp.identifier].temperature::ndf]
         )
     # Loop on SolidComponent.
     for s_comp in conductor.inventory["SolidComponent"].collection:
         # temperature
         sub_array_norm[eq_idx[s_comp.identifier]] = np.sum(
-            array[eq_idx[s_comp.identifier]::ndf] ** 2.
+            array[eq_idx[s_comp.identifier]::ndf]
         )
     
     return np.sqrt(sub_array_norm)
