@@ -425,7 +425,7 @@ class FluidComponent:
             sysmat[main_d_idx,out_v_idx.forward] = 1.0
             known[out_v_idx.forward] = (mfr_out / density[-1] / cross_section)
             # p_inl
-            sysmat[0:, inl_p_idx.forward] = 0.0
+            sysmat[:,inl_p_idx.forward] = 0.0
             # main diagonal.
             sysmat[main_d_idx, inl_p_idx.forward] = 1.0
             known[inl_p_idx.forward] = p_inl
@@ -445,7 +445,7 @@ class FluidComponent:
             sysmat[main_d_idx,out_v_idx.backward] = 1.0
             known[out_v_idx.backward] = (mfr_out / density[0] / cross_section)
             # p_inl
-            sysmat[0:, inl_p_idx.backward] = 0.0
+            sysmat[:,inl_p_idx.backward] = 0.0
             # main diagonal.
             sysmat[main_d_idx, inl_p_idx.backward] = 1.0
             known[inl_p_idx.backward] = p_inl
@@ -529,7 +529,7 @@ class FluidComponent:
             sysmat[main_d_idx,inl_v_idx.forward] = 1.0
             known[inl_v_idx.forward] = (mfr_inl / density[0] / cross_section)
             # p_out
-            sysmat[0:, out_p_idx.forward] = 0.0
+            sysmat[:,out_p_idx.forward] = 0.0
             # main diagonal.
             sysmat[main_d_idx, out_p_idx.forward] = 1.0
             known[out_p_idx.forward] = p_out
@@ -549,7 +549,7 @@ class FluidComponent:
             sysmat[main_d_idx,inl_v_idx.backward] = 1.0
             known[inl_v_idx.backward] = (mfr_inl / density[-1] / cross_section)
             # p_out
-            sysmat[0:, out_p_idx.backward] = 0.0
+            sysmat[:,out_p_idx.backward] = 0.0
             # main diagonal.
             sysmat[main_d_idx, out_p_idx.backward] = 1.0
             known[out_p_idx.backward] = p_out
