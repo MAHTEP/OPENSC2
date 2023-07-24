@@ -213,6 +213,45 @@ class FluidComponent:
 
         return known,sysmat
 
+    def __impose_temperature_bw(self, sysmat:np.ndarray,
+        known:np.ndarray,
+        T_inl:float,
+        T_out:float,
+        main_d_idx:int,
+        )->tuple:
+        """Private method that imposes temperature boundary conditon in the case of backward flow according to the sign of the velocity.
+
+        Args:
+            sysmat (np.ndarray): system matrix (SYSMAT) on wich impose the boundary conditions.
+            known (np.ndarray): known therm vector (Known) on wich impose the boundary conditions.
+            T_inl (float): inlet temperature boundary condition.
+            T_out (float): outlet temperature boundary condition.
+            main_d_idx (int): index of the main diagonal in sysmat matrix.
+
+        Returns:
+            tuple: collection of known term vector (Known) and system matrix (SYSMAT) np.ndarray with imposed temperature as boundary conditions.
+        """
+        
+        # Alias
+        inl_t_idx = self.inl_idx.temperature.backward
+        out_t_idx = self.out_idx.temperature.backward
+        velocity = self.coolant.dict_node_pt["velocity"]
+
+        # Assing inlet temperature (T_inl).
+        if velocity[-1] < 0:
+            sysmat[:,inl_t_idx] = 0.0
+            # main diagonal.
+            sysmat[main_d_idx,inl_t_idx] = 1.0
+            known[inl_t_idx] = T_inl
+        # Assing outlet temperature (T_out).
+        if velocity[0] > 0:
+            sysmat[:,out_t_idx] = 0.0
+            # main diagonal.
+            sysmat[main_d_idx,out_t_idx] = 1.0
+            known[out_t_idx] = T_out
+        
+        return known,sysmat
+
     def impose_pressure_drop(
         self,
         ndarrays:tuple,
