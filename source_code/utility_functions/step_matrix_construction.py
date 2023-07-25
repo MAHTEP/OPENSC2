@@ -1333,14 +1333,14 @@ def assemble_syslod(
 
 def eval_system_matrix(
     matrix:np.ndarray,
-    aux_matrices:tuple,
+    aux_matrices:dict,
     conductor:Conductor,
     )->np.ndarray:
     """Function that evaluates the system matrix using the values of the matrix MASMAT, FLXMAT, DIFMAT and SORMAT, according to the selected method for time integration.
 
     Args:
         matrix (np.ndarray): initialized SYSMAT matrix
-        aux_matrices (tuple): collection of matrix MASMAT, FLXMAT, DIFMAT and SORMAT after call to function assemble_matrix.
+        aux_matrices (dict): collection of matrix MASMAT, FLXMAT, DIFMAT and SORMAT after call to function assemble_matrix.
         conductor (Conductor): object with all the information of the conductor.
 
     Returns:
@@ -1350,7 +1350,7 @@ def eval_system_matrix(
     # Alias
     method = conductor.inputs["METHOD"]
     # Unpack auxiliary matrices (MASMAT,FLXMAT,DIFMAT,SORMAT)
-    masmat,flxmat,difmat,sormat = aux_matrices
+    masmat,flxmat,difmat,sormat = aux_matrices.values()
     # ** COMPUTE SYSTEM MATRIX **
     if method == "BE" or method == "CN":
         # Backward Euler or Crank-Nicolson
