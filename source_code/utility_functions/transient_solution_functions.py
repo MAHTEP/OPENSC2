@@ -2,7 +2,6 @@
 
 import numpy as np
 import os
-import re
 from scipy.linalg import solve_banded
 from utility_functions.auxiliary_functions import (
     get_from_xlsx,
@@ -807,32 +806,6 @@ def gbacsb(conductor, A, B):
 
     return X
     # end of the function GBACSB
-
-
-def natural_sort(comp_a, comp_b):
-    # Use the regexes to sort naturally (human like) the IDs of the components to be able to deal with all the interfaces in a general way.
-    match_a = re.search(
-        r"(?P<Fluid_component>CHAN)?(?P<Stack>STACK)?(?P<Mixed_sc_stab>STR_MIX)??(?P<StrandStabilizerComponent>STR_STAB)?(?P<JacketComponent>Z_JACKET)?_(\d+)",
-        comp_a.identifier,
-    )
-    # r'((CHAN)?(STACK)?(STR_MIX)?(STR_STAB)?(Z_JACKET)?)_(\d)+'
-    match_b = re.search(
-        r"(?P<Fluid_component>CHAN)?(?P<Stack>STACK)?(?P<Mixed_sc_stab>STR_MIX)?(?P<StrandStabilizerComponent>STR_STAB)?(?P<JacketComponent>Z_JACKET)?_(\d+)",
-        comp_b.identifier,
-    )
-
-    if match_a.group(comp_a.KIND) < match_b.group(comp_b.KIND):
-        return f"{comp_a.identifier}_{comp_b.identifier}"
-    elif match_a.group(comp_a.KIND) > match_b.group(comp_b.KIND):
-        return f"{comp_b.identifier}_{comp_a.identifier}"
-    else:
-        # Equal string part, sort by number
-        if int(match_a.group(6)) < int(match_b.group(6)):
-            return f"{comp_a.identifier}_{comp_b.identifier}"
-        else:
-            return f"{comp_b.identifier}_{comp_a.identifier}"
-        # end if
-    # end if
 
 def eval_sub_array_norm(
     array:np.ndarray,
