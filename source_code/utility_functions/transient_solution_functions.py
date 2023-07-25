@@ -303,15 +303,15 @@ def step(conductor, environment, qsource, num_step):
         # Element matrices initialization to zeros at each Gauss point, 
         # collected in dictionary element_mat.
         element_mat = matrix_initialization(
-            conductor.dict_N_equation["NODOFS"],
-            conductor.dict_N_equation["NODOFS"],
+            conductor.dict_N_equation["NODOFS2"],
+            conductor.dict_N_equation["NODOFS2"],
             element_mat_names,
         )
         # Element source term vector initialization to zeros at each Gauss 
         # point. Not included in dictionary element_mat to simplify the code, 
         # make it explicit and easy to read and maintain.
         ELSLOD = array_initialization(
-            conductor.dict_N_equation["NODOFS"],
+            conductor.dict_N_equation["NODOFS2"],
             conductor.cond_num_step,
         )
         
