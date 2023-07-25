@@ -6,12 +6,9 @@ import re
 from scipy.linalg import solve_banded
 from utility_functions.auxiliary_functions import (
     get_from_xlsx,
-    filter_component,
 )
-from collections import namedtuple
-from typing import Union, NamedTuple
+from typing import Union
 
-from fluid_component import FluidComponent
 from conductor import Conductor
 from utility_functions.step_matrix_construction import (
     matrix_initialization,
