@@ -1230,11 +1230,11 @@ def build_elslod(array:np.ndarray,
     return array
 
 def assemble_matrix(
-    big_matrices:tuple,
-    small_matrices:tuple,
+    fin_mat:dict,
+    el_mat:dict,
     conductor:Conductor,
     jump_idx:int,
-    )->tuple:
+    )->dict:
     """Function that assembles matrices MASMAT, FLXMAT, DIFMAT and SORMAT starting from the values of matrices ELMMAT, ELAMAT, ELKMAT and ELSMAT respectively. The matrices match is as follows:
         * ELMMAT builds MATMAT
         * ELAMAT builds FLXMAT
@@ -1242,13 +1242,13 @@ def assemble_matrix(
         * ELSMAT builds SORMAT
 
     Args:
-        big_matrices (tuple): collection of matrices MASMAT, FLXMAT, DIFMAT and SORMAT.
-        small_matrices (tuple): collection of matrices ELMMAT, ELAMAT, ELKMAT and ELSMAT.
+        fin_mat (dict): collection of matrices MASMAT, FLXMAT, DIFMAT and SORMAT.
+        el_mat (dict): collection of matrices ELMMAT, ELAMAT, ELKMAT and ELSMAT.
         conductor (Conductor): object with all the information of the conductor.
         jump_idx (int): index to jump over NODOFS * elem_idx position in the big matrices.
 
     Returns:
-        tuple: collection of matrices MASMAT, FLXMAT, DIFMAT and SORMAT with updated elements.
+        dict: collection of matrices MASMAT, FLXMAT, DIFMAT and SORMAT with updated elements.
     """
     
     # Alias
@@ -1266,14 +1266,14 @@ def assemble_matrix(
         # Column index.
         col = jump_idx + hbw_idx
         # Loop to update matrices masmat, flxmat, difmat and sormat stored in 
-        # tuple big_matrices exploiting matrices elmmat, elamat, elkmat and 
-        # elsmat respectively, stored in tuple small_matrices.
-        for big_matrix, small_matrix in zip(big_matrices,small_matrices):
+        # dict fin_mat exploiting matrices elmmat, elamat, elkmat and 
+        # elsmat respectively, stored in dict el_mat.
+        for fmat, elmat in zip(fin_mat.values(),el_mat.values()):
             # Sum elements from row_lb to row_ub of column col in big_matrix 
             # with all the elements in the row hbw_idx of small_matrix.
-            big_matrix[row_lb:row_ub,col] +=small_matrix[hbw_idx,:]
+            fmat[row_lb:row_ub,col] += elmat[hbw_idx,:]
     
-    return big_matrices
+    return fin_mat
 
 def assemble_syslod(
     array:np.ndarray,
