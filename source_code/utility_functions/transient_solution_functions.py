@@ -15,7 +15,7 @@ from fluid_component import FluidComponent
 from conductor import Conductor
 from utility_functions.step_matrix_construction import (
     matrix_initialization,
-    ndarray_initialization,
+    array_initialization,
     build_amat,
     build_transport_coefficients,
     build_kmat_fluid,
@@ -214,16 +214,27 @@ def step(conductor, environment, qsource, num_step):
     # CLUCA ADDNOD = MAXNOD*(ICOND-1)
 
     # Collection of valid dictionary keys
-    basic_nda_names = ("MMAT","AMAT","KMAT","SMAT","SVEC")
-    element_nda_names = ("ELMMAT","ELAMAT","ELKMAT","ELSMAT","ELSLOD")
-    final_nda_names = ("MASMAT","FLXMAT","DIFMAT","SORMAT","SYSMAT","Known")
+    basic_mat_names = ("MMAT","AMAT","KMAT","SMAT")
+    element_mat_names = ("ELMMAT","ELAMAT","ELKMAT","ELSMAT")
+    final_mat_names = ("MASMAT","FLXMAT","DIFMAT","SORMAT")
 
-    # Matrices initialization.
-    final_nda = matrix_initialization(
+    # Final matrices initialization, collected in dictionary final_mat
+    final_mat = matrix_initialization(
         conductor.dict_band["Full"],
         conductor.dict_N_equation["Total"],
-        final_nda_names,
+        final_mat_names,
     )
+
+    # Stiffness matrix initialization. Not included in dictionary final_mat to 
+    # simplify the code below, make it explicit and clear to read and maintain.
+    SYSMAT = np.zeros(
+        (conductor.dict_band["Full"],conductor.dict_N_equation["Total"])
+    )
+    # SYSVAR = np.zeros(conductor.dict_N_equation["Total"])
+    ASCALING = np.zeros(conductor.dict_N_equation["Total"])
+    UPWEQT = np.zeros(conductor.dict_N_equation["NODOFS"])
+    # Known terms vector initilaization
+    Known = np.zeros_like(ASCALING)
     
     if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
         # Backward Euler or Crank-Nicolson (cdp, 10/2020)
@@ -234,12 +245,6 @@ def step(conductor, environment, qsource, num_step):
                 :, 0
             ].copy()
             conductor.dict_Step["SYSLOD"][:, 0] = 0.0
-
-    # SYSVAR = np.zeros(conductor.dict_N_equation["Total"])
-    ASCALING = np.zeros(conductor.dict_N_equation["Total"])
-    UPWEQT = np.zeros(conductor.dict_N_equation["NODOFS"])
-    # Known terms vector (cdp, 10/2020)
-    Known = np.zeros_like(ASCALING)
 
     # qsource initialization to zeros (cdp, 07/2020)
     # questa inizializzazione è provvisoria, da capire cosa succede quando ci \
@@ -278,29 +283,37 @@ def step(conductor, environment, qsource, num_step):
 
     # riscrivere in forma array smart una volta risolti tutti i dubbi, se possibile (cdp, 07/2020)
     for elem_index in range(conductor.grid_input["NELEMS"]):
-
-        # Auxiliary matrices initialization to zeros at each Gauss point.
-        basic_nda = ndarray_initialization(
+        
+        # Basic matrices initialization to zeros at each Gauss point, collected 
+        # in dictionary basic_mat.
+        basic_mat = matrix_initialization(
+            conductor.dict_N_equation["NODOFS"],
+            conductor.dict_N_equation["NODOFS"],
+            basic_mat_names,
+        )
+        # Basic source term vector initialization to zeros at each Gauss point. 
+        # Not included in dictionary base_mat to simplify the code, make it 
+        # explicit and easy to read and maintain.
+        SVEC = array_initialization(
             conductor.dict_N_equation["NODOFS"],
             conductor.cond_num_step,
-            col=2
-        )
-        # Convert basic_nda from tuple to dictionary. This works on the 
-        # assumption that array SLOD is the last item in the tuple returned by 
-        # function ndarray_initialization.
-        basic_nda = {name:nda for name,nda in zip(basic_nda_names,basic_nda)}
-        
-        element_nda = ndarray_initialization(
-            conductor.dict_N_equation["NODOFS2"],
-            conductor.cond_num_step
+            col=2,
         )
 
-        # Convert basic_nda from tuple to dictionary. This works on the 
-        # assumption that array ELSLOD is the last item in the tuple returned 
-        # by  function ndarray_initialization.
-        element_nda = {
-            name:nda for name,nda in zip(element_nda_names,element_nda)
-            }
+        # Element matrices initialization to zeros at each Gauss point, 
+        # collected in dictionary element_mat.
+        element_mat = matrix_initialization(
+            conductor.dict_N_equation["NODOFS"],
+            conductor.dict_N_equation["NODOFS"],
+            element_mat_names,
+        )
+        # Element source term vector initialization to zeros at each Gauss 
+        # point. Not included in dictionary element_mat to simplify the code, 
+        # make it explicit and easy to read and maintain.
+        ELSLOD = array_initialization(
+            conductor.dict_N_equation["NODOFS"],
+            conductor.cond_num_step,
+        )
         
         # ** FORM THE M, A, K, S MATRICES AND S VECTOR AT THE GAUSS POINT, 
         # FLUID COMPONENTS EQUATIONS **
