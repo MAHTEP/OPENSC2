@@ -1379,14 +1379,14 @@ def eval_system_matrix(
 
 def build_known_therm_vector(
     array:np.ndarray,
-    aux_matrices:tuple,
+    aux_matrices:dict,
     conductor:Conductor
 )->np.ndarray:
     """Function that builds the known therm vector for the thermal hydraulic problem according to the selected method for time integration.
 
     Args:
         array (np.ndarray): initialized array Known.
-        aaux_matrices (tuple): collection of matrix MASMAT, FLXMAT, DIFMAT and SORMAT after call to function assemble_matrix.
+        aaux_matrices (dict): collection of matrix MASMAT, FLXMAT, DIFMAT and SORMAT after call to function assemble_matrix.
         conductor (Conductor): object with all the information of the conductor.
 
     Returns:
@@ -1407,7 +1407,7 @@ def build_known_therm_vector(
         am4_coef = np.array((9.,19.,5.,- 1.)) / 24.
     
     # Unpack auxiliary matrices (MASMAT,FLXMAT,DIFMAT,SORMAT)
-    masmat,flxmat,difmat,sormat = aux_matrices
+    masmat,flxmat,difmat,sormat = aux_matrices.values()
     
     # ADD THE LOAD CONTRIBUTION FROM PREVIOUS STEP
     # c_mat_idx: column index of the auxiliary matrices (MASMAT,FLXMAT,DIFMAT,
