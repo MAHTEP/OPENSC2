@@ -7,6 +7,10 @@ from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
 from typing import Union
 import warnings
 
+import cProfile, pstats
+from pstats import SortKey
+from line_profiler import LineProfiler
+
 from conductor import Conductor
 from conductor_flags import IOP_NOT_DEFINED
 from environment import Environment
@@ -215,11 +219,15 @@ class Simulation:
         # dictionary declaration (cdp,07/2020)
         self.dict_qsource = dict()
         if self.numObj == 1:
-            # There is only 1 Conductor object, exploit cond instantiated above (cdp,07/2020)
+            # There is only 1 Conductor object, exploit cond instantiated above.
+            # The number of columns is equal to the number of SolidComponent 
+            # equations to exploit the new function build_svec in 
+            # utility_functions/step_matrix_construction.py. Read the docstring 
+            # for further details.
             self.dict_qsource[cond.identifier] = np.zeros(
                 (
                     cond.grid_features["N_nod"],
-                    cond.dict_N_equation["JacketComponent"],
+                    cond.dict_N_equation["SolidComponent"],
                 )
             )
         else:
@@ -228,11 +236,18 @@ class Simulation:
                 cond_r = self.list_of_Conductors[rr]
                 if all(self.contactBetweenConductors.iloc[rr, :]) == 0:
                     # There is not contact between cond_r and all the others.
-                    # Consider all the columns in order to not miss the info on last raw (otherwise the last conductor will not be added as key of the dictionary).
+                    # Consider all the columns in order to not miss the info on 
+                    # last raw (otherwise the last conductor will not be added 
+                    # as key of the dictionary).
+                    # The number of columns is equal to the number of 
+                    # SolidComponent equations to exploit the new function 
+                    # build_svec in 
+                    # utility_functions/step_matrix_construction.py. Read the 
+                    # docstring for further details.
                     self.dict_qsource[cond_r.identifier] = np.zeros(
                         (
                             cond_r.grid_features["N_nod"],
-                            cond_r.dict_N_equation["JacketComponent"],
+                            cond_r.dict_N_equation["SolidComponent"],
                         )
                     )
                 else:
@@ -253,12 +268,17 @@ class Simulation:
                             # There is not contact between cond_r and cond_c (cdp,07/2020)
                             # Proposta di soluzione ma va studiata decisamente meglio!
                             # N.B. controllare anche nella chiamata a step come passare self.dict_qsource.
+                            # The number of columns is equal to the number of 
+                            # SolidComponent equations to exploit the new 
+                            # function build_svec in 
+                            # utility_functions/step_matrix_construction.py. 
+                            # Read the docstring for further details.
                             self.dict_qsource[
                                 f"{cond_r.identifier}_{cond_c.identifier}"
                             ] = np.zeros(
                                 (
                                     cond_r.grid_features["N_nod"],
-                                    cond_r.dict_N_equation["JacketComponent"],
+                                    cond_r.dict_N_equation["SolidComponent"],
                                 )
                             )
                             raise ValueError(
@@ -783,3 +803,61 @@ class Simulation:
             os.chmod(path, S_IREAD | S_IRGRP | S_IROTH)
 
     # End method save_input_files
+
+    def __profiling(self, conductor):
+        """Temporary private method to performe code profiling.
+
+        Args:
+            conductor (obj): object of type conductor.
+        """
+
+        if conductor.cond_num_step == 1:
+            path_stat = os.path.join("D:/refactoring/function_step", "profiling/before")
+            # Name of the binary file storing outcome from cProfile
+            file_name_cp_bin = os.path.join(path_stat,"case_3_stats_cprofiler")
+            # Name of the text file storing outcome from cProfile processed with pstats.
+            file_name_cp_ana = os.path.join(path_stat,"case_3_stats_cprofiler_processed.txt")
+            # Name of the binary file storing outcome from line_profiler.
+            file_name_lp_bin = os.path.join(path_stat,"case_3_stats_line_profiler.py.lprof")
+            # Name of the text file storing outcome from line_profiler.
+            file_name_lp_ana = os.path.join(path_stat,"case_3_stats_line_profiler_processed.txt")
+
+            os.makedirs(path_stat, exist_ok=True)
+            # Context manager to make the profiling of function step.
+            with cProfile.Profile() as pr:
+                step(
+                    conductor,
+                    self.environment,
+                    self.dict_qsource[conductor.identifier],
+                    self.num_step,
+                )
+                # Save row profiling outcomes inf file_name (binary).
+                pr.dump_stats(file_name_cp_bin)
+                # Context manager to write a prcessed .txt file with profiling outcomes.
+                with open(file_name_cp_ana,"w+") as ff:
+                    # instance of pstats class with methods to manipulate and print the data saved into a profile results file.
+                    pp = pstats.Stats(pr,stream=ff)
+                    # Remove extraneous path fromm all the module names.
+                    pp.strip_dirs()
+                    # Sort all the entries according to the cumulative time and number of calls.
+                    pp.sort_stats(SortKey.CUMULATIVE,SortKey.CALLS)
+                    # Print out the statistics to stdout (mandatory to not get an empty file).
+                    pp.print_stats()
+
+            # Instance of the line profiler class.
+            lp = LineProfiler()
+            # Get a wrapper of function step sutable to perform line profiling.
+            step_wrapped = lp(step)
+            # Make line profilig on function step.
+            lp.enable_by_count()
+            
+            step_wrapped(
+                conductor,
+                self.environment,
+                self.dict_qsource[conductor.identifier],
+                self.num_step,
+            )
+            
+            lp.disable_by_count()
+            # Save binary file with the outcomes of the line profiler.
+            lp.dump_stats(file_name_lp_bin)
