@@ -8,6 +8,7 @@ from scipy.sparse import coo_matrix, csr_matrix, lil_matrix, diags
 from scipy import constants, integrate
 import pandas as pd
 import os
+from collections import namedtuple
 
 # import classes
 from component_collection import ComponentCollection
@@ -551,6 +552,57 @@ class Conductor:
             # grid and then assinge the coordinates to the conductor components.
             user_defined_grid(self)
 
+    def __build_equation_idx(self):
+        """Private method that evaluates the index of the velocity, pressure and temperature equation of the FluidComponent objects, collecting them in a dictionary of NamedTuple, together with the index of the temperature equation of the SolidComponent objects stored as integer in the same dictionary.
+        """
+        
+        # Constructor of the namedtuple to store the index of the equations for 
+        # FluidComponent objects.
+        Fluid_eq_idx = namedtuple(
+            "Fluid_eq_idx",
+            ("velocity","pressure","temperature")
+        )
+
+        # self.equation_index -> dict: collection of NamedTuple with the index
+        # of velocity, pressure and temperaure equation for FluidComponent
+        # objects and of integer for the index of the temperature equation of
+        # SolidComponent.
+        
+        # Build dictionary of NamedTuple with the index of the equations for 
+        # FluidComponent objects exploiting dictionary comprehension.
+        self.equation_index = {
+            fcomp.identifier:Fluid_eq_idx(
+                # velocity equation index
+                velocity=fcomp_idx,
+                # pressure equation index
+                pressure=fcomp_idx + self.inventory["FluidComponent"].number,
+                # temperature equation index
+                # Exploit left binary shift, equivalent to:
+                # fcomp_idx + 2 * conductor.inventory["FluidComponent"].number
+                temperature=(
+                    fcomp_idx
+                    + (self.inventory["FluidComponent"].number << 1)
+                )
+            )
+            for fcomp_idx,fcomp in enumerate(
+                self.inventory["FluidComponent"].collection
+            )
+        }
+        
+        # Update dictionary equation_index with integer corresponding to the 
+        # index of the equations for SolidComponent objects exploiting 
+        # dictionary comprehension and dictionary method update.
+        self.equation_index.update(
+            {
+                scomp.identifier: scomp_idx + self.dict_N_equation[
+                    "FluidComponent"
+                ]
+                for scomp_idx,scomp in enumerate(
+                    self.inventory["SolidComponent"].collection
+                )
+            }
+        )
+
     def __build_multi_index(self) -> pd.MultiIndex:
         """Private method that builds multindex used in pandas dataframes used to store the nodal coordinates and the connectivity (matrix) of each conductor component.
 
@@ -640,6 +692,12 @@ class Conductor:
         # interfaces between channels, channels and solid components and between \
         # solid components(cdp, 09/2020)
         self.get_conductor_topology(simulation.environment)
+        
+        # Call private method __get_conductor_interfaces to get the interfaces 
+        # between conductor components. This method could replace 
+        # get_conductor_topology but this change must carefully discusse with 
+        # both prof Savoldi and prof Savino.
+        self.__get_conductor_interfaces(simulation.environment)
 
         self.dict_node_pt = dict()
         self.dict_Gauss_pt = dict()
@@ -679,6 +737,9 @@ class Conductor:
             NODOFS=self.dict_N_equation["FluidComponent"]
             + self.dict_N_equation["SolidComponent"]
         )
+        # Exploit left binary shift, equivalent to:
+        # self.dict_N_equation["NODOFS2"] = 2 * self.dict_N_equation["NODOFS"]
+        self.dict_N_equation["NODOFS2"] = self.dict_N_equation["NODOFS"] << 1
         # dict_band keys meaning:
         # ["Half"]: half band width, including main diagonal (IEDOFS) (cdp, 09/2020)
         # ["Main_diag"]: main diagonal index within the band (IHBAND) (cdp, 09/2020)
@@ -698,6 +759,14 @@ class Conductor:
             Solution=np.zeros(self.dict_N_equation["NODOFS"]),
             Change=np.zeros(self.dict_N_equation["NODOFS"]),
         )
+        
+        # Call method __build_equation_idx to build attribute equation_index;
+        # self.equation_index -> dict: collection of NamedTuple with the index
+        # of velocity, pressure and temperaure equation for FluidComponent
+        # objects and of integer for the index of the temperature equation of
+        # SolidComponent. This is used in funcion step to solve the thermal 
+        # hydraulic problem.
+        self.__build_equation_idx()
 
         # evaluate attribute EIGTIM exploiting method Aprior (cdp, 08/2020)
         self.aprior()
@@ -1955,6 +2024,127 @@ class Conductor:
 
     # end method Get_thermal_contact_channels (cdp, 09/2020)
 
+    def __get_conductor_interfaces(self,environment:object):
+        """Private method that identifies interfaces between conductor components, storing information in conductor attribute interface.
+
+        Args:
+            environment (object): object with all the info that characterize the environment.
+
+        Raises:
+            ValueError: if jacket component is not of kind outer_insulation or wall_enclosure.
+        """
+
+        # Namedtuple constructor definition.
+        Interface_collection = namedtuple(
+            "Interface_collection",
+            (
+                "fluid_fluid",
+                "fluid_solid",
+                "solid_solid",
+                "env_solid",
+            )
+        )
+
+        # Namedtuple constructor definition.
+        Interface = namedtuple(
+            "Interface",
+            (
+                "interf_name",
+                "comp_1",
+                "comp_2",
+            )
+        )
+
+        # Namedtuple initialization: each field is an empty list to be filled 
+        # with interfaces.
+        self.interface = Interface_collection(
+            fluid_fluid=list(),
+            fluid_solid=list(),
+            solid_solid=list(),
+            env_solid=list()
+        )
+
+        # Loop on FluidComponents.
+        for f_comp_a_idx,f_comp_a in enumerate(self.inventory["FluidComponent"].collection):
+            # Loop on FluidComponents: identify fluid-fluid interfaces.
+            for f_comp_b in self.inventory["FluidComponent"].collection[f_comp_a_idx+1:]:
+                # Check for interfaces.
+                if (
+                self.dict_df_coupling["contact_perimeter_flag"].at[
+                    f_comp_a.identifier, f_comp_b.identifier
+                    ]
+                    == 1
+                ):
+                    # Build fluid-fluid interface.
+                    self.interface.fluid_fluid.append(
+                        Interface(
+                            interf_name=f"{f_comp_a.identifier}_{f_comp_b.identifier}",
+                            comp_1=f_comp_a, # shallow copy: no waste of memory!
+                            comp_2=f_comp_b, # shallow copy: no waste of memory!
+                        )
+                    )
+            # Loop on SolidComponent: identify fluid-solid interfaces.
+            for s_comp in self.inventory["SolidComponent"].collection:
+                # Check for iterfaces.
+                if (
+                self.dict_df_coupling["contact_perimeter_flag"].at[
+                    f_comp_a.identifier, s_comp.identifier
+                    ]
+                    == 1
+                ):
+                    # Build fluid-solid interface.
+                    self.interface.fluid_solid.append(
+                        Interface(
+                            interf_name=f"{f_comp_a.identifier}_{s_comp.identifier}",
+                            comp_1=f_comp_a, # shallow copy: no waste of memory!
+                            comp_2=s_comp, # shallow copy: no waste of memory!
+                        )
+                    )
+        # Loop on SolidComponent.
+        for s_comp_a_idx,s_comp_a in enumerate(self.inventory["SolidComponent"].collection):
+            # Loop on SolidComponent: identify solid-solid interfaces.
+            for s_comp_b in self.inventory["SolidComponent"].collection[s_comp_a_idx+1:]:
+                # Check for interfaces.
+                if (
+                self.dict_df_coupling["contact_perimeter_flag"].at[
+                    s_comp_a.identifier, s_comp_b.identifier
+                    ]
+                    == 1
+                ):
+                    # Build solid-solid interface.
+                    self.interface.solid_solid.append(
+                        Interface(
+                            interf_name=f"{s_comp_a.identifier}_{s_comp_b.identifier}",
+                            comp_1=s_comp_a, # shallow copy: no waste of memory!
+                            comp_2=s_comp_b, # shallow copy: no waste of memory!
+                        )
+                    )
+            # Check for environment-solid interfaces.
+            if (
+                self.dict_df_coupling["contact_perimeter_flag"].at[
+                    environment.KIND, s_comp_a.identifier
+                ]
+                == 1
+            ):  
+                # Check on jacket kind.
+                if (
+                    s_comp_a.inputs["Jacket_kind"] == "outer_insulation"
+                    or s_comp_a.inputs["Jacket_kind"] == "whole_enclosure"
+                ):
+                    # Build env-solid interface.
+                    self.interface.env_solid.append(
+                        Interface(
+                            interf_name=f"{environment.KIND}_{s_comp_a.identifier}",
+                            # shallow copy: no waste of memory!
+                            comp_1=environment,
+                            comp_2=s_comp_a, # shallow copy: no waste of memory!
+                        )
+                    )
+                else:
+                    # Raise error
+                    raise ValueError(f"JacketComponent of kind {s_comp_a.inputs['Jacket_kind']} can not have and interface with the environment.\n"
+                    )
+
     ############################################################################### this method initialize the Conductor on the base of the input parameters
     ##############################################################################
 
@@ -1997,6 +2187,9 @@ class Conductor:
             fluid_comp.coolant._eval_nodal_pressure_temperature_velocity_initialization(
                 self
             )
+            # Build namedtuples fluid_comp.inl_idx and fluid_comp.inl_idx with 
+            # the index used to assign the inlet and outlet BC.
+            fluid_comp.build_th_bc_index(self)
 
         ## For each solid component evaluate temperature (cdp, 07/2020)
         ## If needed read only the sub matrix describing channel - solid objects \
@@ -2180,8 +2373,9 @@ class Conductor:
             self.dict_Step = dict(
                 SYSLOD=np.zeros((self.dict_N_equation["Total"], 4)),
                 SYSVAR=np.zeros((self.dict_N_equation["Total"], 3)),
+                # AM4_AA: four matrices of size Full * Total
                 AM4_AA=np.zeros(
-                    (self.dict_band["Full"], self.dict_N_equation["Total"], 4)
+                    (4,self.dict_band["Full"],self.dict_N_equation["Total"])
                 ),
             )
         # end if self.inputs
