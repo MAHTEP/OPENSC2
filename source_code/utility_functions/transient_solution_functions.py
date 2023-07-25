@@ -320,7 +320,7 @@ def step(conductor, environment, qsource, num_step):
 
         # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
         # FluidComponent equation: array smart
-        MMAT[
+        basic_mat["MMAT"][
             :conductor.dict_N_equation["FluidComponent"],
             :conductor.dict_N_equation["FluidComponent"],
         ] = np.eye(conductor.dict_N_equation["FluidComponent"])
@@ -329,16 +329,16 @@ def step(conductor, environment, qsource, num_step):
         for fluid_comp_j in conductor.inventory["FluidComponent"].collection:
 
             # FORM THE A MATRIX AT THE GAUSS POINT (FLUX JACOBIAN)
-            AMAT = build_amat(
-                AMAT,
+            basic_mat["AMAT"] = build_amat(
+                basic_mat["AMAT"],
                 fluid_comp_j,
                 elem_index,
                 conductor.equation_index[fluid_comp_j.identifier]
             )
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
-            KMAT = build_kmat_fluid(
-                KMAT,
+            basic_mat["KMAT"] = build_kmat_fluid(
+                basic_mat["KMAT"],
                 UPWEQT,
                 fluid_comp_j,
                 conductor,
@@ -346,8 +346,8 @@ def step(conductor, environment, qsource, num_step):
             )
 
             # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-            SMAT = build_smat_fluid(
-                SMAT,
+            basic_mat["SMAT"] = build_smat_fluid(
+                basic_mat["SMAT"],
                 fluid_comp_j,
                 elem_index,
                 conductor.equation_index[fluid_comp_j.identifier]
@@ -355,14 +355,14 @@ def step(conductor, environment, qsource, num_step):
 
         # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
         # Therms associated to fluid-fluid interfaces.
-        SMAT = build_smat_fluid_interface(
-            SMAT,
+        basic_mat["SMAT"] = build_smat_fluid_interface(
+            basic_mat["SMAT"],
             conductor,
             elem_index
         )
         # Therms associated to fluid-solid interfaces.
-        SMAT = build_smat_fluid_solid_interface(
-            SMAT,
+        basic_mat["SMAT"] = build_smat_fluid_solid_interface(
+            basic_mat["SMAT"],
             conductor,
             elem_index,
         )
@@ -375,8 +375,8 @@ def step(conductor, environment, qsource, num_step):
         ):
             # FORM THE M MATRIX AT THE GAUSS POINT (MASS AND CAPACITY)
             # SolidComponent equation.
-            MMAT = build_mmat_solid(
-                MMAT,
+            basic_mat["MMAT"] = build_mmat_solid(
+                basic_mat["MMAT"],
                 s_comp,
                 elem_index,
                 conductor.equation_index[s_comp.identifier]
@@ -388,8 +388,8 @@ def step(conductor, environment, qsource, num_step):
             # END A MATRIX: SolidComponent equation.
 
             # FORM THE K MATRIX AT THE GAUSS POINT (INCLUDING UPWIND)
-            KMAT = build_kmat_solid(
-                KMAT,
+            basic_mat["KMAT"] = build_kmat_solid(
+                basic_mat["KMAT"],
                 s_comp,
                 elem_index,
                 conductor.equation_index[s_comp.identifier]
@@ -408,8 +408,8 @@ def step(conductor, environment, qsource, num_step):
             )
 
         # FORM THE S MATRIX AT THE GAUSS POINT (SOURCE JACOBIAN)
-        SMAT = build_smat_solid_interface(
-            SMAT,
+        basic_mat["SMAT"] = build_smat_solid_interface(
+            basic_mat["SMAT"],
             conductor,
             elem_index,
         )
@@ -417,8 +417,8 @@ def step(conductor, environment, qsource, num_step):
         for interface in conductor.interface.env_solid:
             # Convective heating with the external environment (implicit 
             # treatment).
-            SMAT = build_smat_env_solid_interface(
-                SMAT,
+            basic_mat["SMAT"] = build_smat_env_solid_interface(
+                basic_mat["SMAT"],
                 conductor,
                 interface,
                 elem_index,
@@ -435,9 +435,9 @@ def step(conductor, environment, qsource, num_step):
 
         # COMPUTE THE MASS AND CAPACITY MATRIX
         # array smart
-        ELMMAT = build_elmmat(
-            ELMMAT,
-            MMAT,
+        element_mat["ELMMAT"] = build_elmmat(
+            element_mat["ELMMAT"],
+            basic_mat["MMAT"],
             conductor,
             elem_index,
             ALFA,
@@ -445,26 +445,26 @@ def step(conductor, environment, qsource, num_step):
 
         # COMPUTE THE CONVECTION MATRIX
         # array smart
-        ELAMAT = build_elamat(
-            ELAMAT,
-            AMAT,
+        element_mat["ELAMAT"] = build_elamat(
+            element_mat["ELAMAT"],
+            basic_mat["AMAT"],
             conductor,
         )
 
         # COMPUTE THE DIFFUSION MATRIX
         # array smart
-        ELKMAT = build_elkmat(
-            ELKMAT,
-            KMAT,
+        element_mat["ELKMAT"] = build_elkmat(
+            element_mat["ELKMAT"],
+            basic_mat["KMAT"],
             conductor,
             elem_index,
         )
 
         # COMPUTE THE SOURCE MATRIX
         # array smart
-        ELSMAT = build_elsmat(
-            ELSMAT,
-            SMAT,
+        element_mat["ELSMAT"] = build_elsmat(
+            element_mat["ELSMAT"],
+            basic_mat["SMAT"],
             conductor,
             elem_index,
         )
@@ -483,9 +483,9 @@ def step(conductor, environment, qsource, num_step):
         jump = conductor.dict_N_equation["NODOFS"] * elem_index
         
         # array smart
-        MASMAT,FLXMAT,DIFMAT,SORMAT = assemble_matrix(
-            (MASMAT,FLXMAT,DIFMAT,SORMAT),
-            (ELMMAT,ELAMAT,ELKMAT,ELSMAT),
+        final_mat = assemble_matrix(
+            final_mat,
+            element_mat,
             conductor,
             jump,
         )
@@ -500,7 +500,7 @@ def step(conductor, environment, qsource, num_step):
     # ** COMPUTE SYSTEM MATRIX **
     SYSMAT = eval_system_matrix(
         SYSMAT,
-        (MASMAT,FLXMAT,DIFMAT,SORMAT),
+        final_mat,
         conductor,
     )
 
@@ -508,8 +508,8 @@ def step(conductor, environment, qsource, num_step):
     # array smart
     Known = build_known_therm_vector(
         Known,
-        (MASMAT,FLXMAT,DIFMAT,SORMAT),
-        conductor
+        final_mat,
+        conductor,
     )
 
     # Call function to save ndarrays before the application of BC; this can be 
