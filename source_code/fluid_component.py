@@ -308,8 +308,8 @@ class FluidComponent:
             T_out = flow_par[1]
         
         # ALIAS
-        inl_p_idx, = self.inl_idx.pressure
-        out_p_idx, = self.out_idx.pressure
+        inl_p_idx = self.inl_idx.pressure
+        out_p_idx = self.out_idx.pressure
         main_d_idx = conductor.dict_band["Main_diag"]
         flow_dir = self.channel.flow_dir[0]
         
