@@ -188,7 +188,14 @@ def critical_magnetic_field_mgb2(temp, Bc20, Tc0):
 # End function critical_magnetic_field
 
 
-def critical_current_density_mgb2(temp, magnetic_field, Bc20, C0, Tc0):
+def critical_current_density_mgb2(
+    temp,
+    magnetic_field,
+    Bc20,
+    C0,
+    Tc0,
+    b_low = 0.01,
+    ):
     """Function that evaluates the critical current density of magnesium diboride.
 
     Args:
@@ -206,8 +213,10 @@ def critical_current_density_mgb2(temp, magnetic_field, Bc20, C0, Tc0):
     beta = 1.55
     gamma = 1.89
 
+    magnetic_field = np.maximum(magnetic_field,b_low)
     tau = temp / Tc0
     bb = magnetic_field / critical_magnetic_field_mgb2(temp, Bc20, Tc0)
+    
     return (
         (C0 / magnetic_field) * ((1.0 - tau ** beta) ** gamma) * (bb ** pp) 
         * ((1.0 - bb) ** qq)
