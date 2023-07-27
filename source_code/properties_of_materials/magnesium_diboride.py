@@ -216,7 +216,7 @@ def critical_current_density_mgb2(
     magnetic_field = np.maximum(magnetic_field,b_low)
     tau = temp / Tc0
     bb = magnetic_field / critical_magnetic_field_mgb2(temp, Bc20, Tc0)
-    
+
     return (
         (C0 / magnetic_field) * ((1.0 - tau ** beta) ** gamma) * (bb ** pp) 
         * ((1.0 - bb) ** qq)
@@ -309,7 +309,6 @@ def current_sharing_temperature_mgb2(
 
     magnetic_field[op_ind_0] = np.maximum(magnetic_field[op_ind_0], 0.01)
     temp_ub = Tc0
-    root_result_obj = list()
 
     # Convert boolean array to an array of index.
     ind = np.nonzero(op_ind_0 == True)[0]
@@ -323,7 +322,6 @@ def current_sharing_temperature_mgb2(
             temp_ub,
             ex_args,
             xtol=1e-5,
-            full_output=True,
             maxiter=10,
             disp=False
         )
@@ -345,7 +343,6 @@ def current_sharing_temperature_mgb2(
         curr_shar_temp,
         args=ex_args,
         fprime=_d_critical_current_density,
-        full_output=True,
     )
 
     return curr_shar_temp
