@@ -1,4 +1,3 @@
-*.conf
 
 # Paths to be ignored #
 Description_of_Components/**/ # Input files
