@@ -305,7 +305,7 @@ def current_sharing_temperature_mgb2(
     # Find index in op_current_density[op_ind] such that op_current_density[op_ind] > 0.0 (boolean array).
     op_ind_0 = op_current_density[op_ind] > 0.0
     if all(op_ind_0) == False:
-        return Tc0
+        return Tc0 * np.ones_like(magnetic_field)
 
     magnetic_field[op_ind_0] = np.maximum(magnetic_field[op_ind_0], 0.01)
     temp_ub = Tc0
