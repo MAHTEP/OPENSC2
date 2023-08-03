@@ -247,12 +247,9 @@ def fixed_refined_angular_discretization(
         conductor.grid_input["XEREFI"] - conductor.grid_input["XBREFI"]
     ) / (2 * np.pi * comp.cyl_helix.reduced_pitch)
 
-
-    assert (
-        comp.cyl_helix.winding_number
-        - (n_winding["left"] + n_winding["ref"] + n_winding["right"])
-        <= 1e-15
-    )
+    n_winding["tot"] = (n_winding["left"] + n_winding["ref"] + n_winding["right"])
+    if not np.isclose(comp.cyl_helix.winding_number,n_winding["tot"]):
+        raise ValueError("")
 
     dtau_ref = 2 * np.pi * n_winding["ref"] / conductor.grid_input["NELREF"]
 
