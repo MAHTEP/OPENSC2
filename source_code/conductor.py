@@ -25,6 +25,8 @@ from conductor_flags import (
     SELF_INDUCTANCE_MODE_2,
     STATIC_ELECTRIC_SOLVER,
     ELECTRIC_TIME_STEP_NUMBER,
+    VARIABLE_CONTACT_PERIMETER,
+    CONSTANT_CONTACT_PERIMETER,
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -313,6 +315,63 @@ class Conductor:
         # Raise error if sheets is not empty.
         if sheets:
             raise ValueError(f"Found repeated headings. Please check sheets {sheets} in file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.")
+
+    def __check_variable_contact_perimeter_consistency(self:Self,file_name:str):
+
+        """Private method that checks the consistecy between sheet contact_perimeter_flags in input file conductor_coupling.xlsx and the user defined auxiliary input file variable_contact_perimeter.xlsx. The assumption is that sheet in file conductor_coupling.xlsx is correct.
+
+        Args:
+            self (Self): conductor object.
+            file_name (str): auxiliary input file name as defined by the user.
+
+        Raises:
+            KeyError: if a sheet is totally missing in auxiliary input file variable_contact_perimeter.xlsx, i.e. user forget to define a full set of interfaces with a variable contact perimeter.
+            ValueError: if in an existing sheet of auxiliary input file variable_contact_perimeter.xlsx, some interfaces which are defined with a variable contact perimeter are missing.
+        """
+
+        # Aliases.
+        cont_peri_flag = self.dict_df_coupling["contact_perimeter_flag"]
+        identifiers = cont_peri_flag.index.to_list()
+        
+        missing_var_cont_peri = dict()
+
+        # Loop on rows of sheet contact_perimeter_flags.
+        for row_idx, row_name in enumerate(identifiers):
+            # Loop on colums of sheet contact_perimeter_flags, scan only the 
+            # upper triangular matrix, excluding main diagonal.
+            for col_idx, col_name in enumerate(identifiers[row_idx+1]):
+                # Check if there is iterface with flag for variable contact 
+                # perimeter.
+                if cont_peri_flag.iat[row_idx,col_idx] == VARIABLE_CONTACT_PERIMETER:
+                    # Found an interface with flag for variable contact 
+                    # perimeter: make checks on auxiliary file 
+                    # variable_contact_perimeters.xlsx
+                    # Check if sheet exists in variable_contact_perimeters.xlsx.
+                    if row_name in self.dict_df_variable_contact_perimeter:
+                        # Sheet exist.
+                        cont_peri_def = self.dict_df_variable_contact_perimeter[row_name]
+                        missing_var_cont_peri[row_name] = list()
+                        # Check if component identifier (col_name) is included 
+                        # in sheet headers.
+                        if col_name not in cont_peri_def.columns.to_list():
+                            # Component identifier (col_name) is not included 
+                            # in sheet headers: update a dictionary to build 
+                            # sutable error message.
+                            missing_var_cont_peri[row_name].append(col_name)
+                    else:
+                        # Sheet does not exist: raise KeyError.
+                        raise KeyError(f"User forgets to define a full set of interfaces with a variable contact perimeter. Please check auxiliary input file {file_name}.")
+        
+        # Filter missing_var_cont_peri on the only not empty list exploiting 
+        # dictionary comprehension.
+        missing_var_cont_peri = {key: value for key,value in missing_var_cont_peri if value}
+        # Convert into a dataframe to improve error message readability.
+        missing_var_cont_peri = pd.DataFrame(missing_var_cont_peri)
+        # Check if missing_var_cont_peri is not empty.
+        if not missing_var_cont_peri:
+            # missing_var_cont_peri is not empty: there are missing interfaces 
+            # in some sheets of auxiliary file variable_contact_perimeter.xlsx.
+            raise ValueError(f"Found missing interfaces with a variable contact perimeter. Please, in auxiliary input file {file_name}, add the columns reported in the following table (columns header are sheet names, values are missing columns in the sheet):\n{missing_var_cont_peri}.")
 
     def __delete_equipotential_inputs(self: Self):
         """Private method that deletes input values EQUIPOTENTIAL_SURFACE_NUMBER and EQUIPOTENTIAL_SURFACE_COORDINATE if they are not needed.
