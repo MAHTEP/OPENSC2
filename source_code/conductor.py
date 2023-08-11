@@ -289,7 +289,7 @@ class Conductor:
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.KIND}, identifier: {self.identifier})"
 
-    def __chech_heading_variable_contact_perimeter(self:Self):
+    def __check_heading_variable_contact_perimeter(self:Self):
         """Private method that checks if user defined repeated headings in any of the sheets of auxiliary file variable_contact_perimeter.xlsx
 
         Args:
