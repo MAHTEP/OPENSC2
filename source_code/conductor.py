@@ -1152,19 +1152,34 @@ class Conductor:
         (cdp, 09/2020)
         """
 
-        # nested dictionaries declarations (cdp, 09/2020)
+        # nested dictionaries declarations
         self.dict_topology["ch_ch"] = dict()
         self.dict_topology["ch_ch"]["Hydraulic_parallel"] = dict()
         self.dict_topology["ch_ch"]["Thermal_contact"] = dict()
         self.dict_topology["Standalone_channels"] = list()
         self.dict_interf_peri["ch_ch"] = dict()
-        self.dict_interf_peri["ch_ch"]["Open"] = dict()
-        self.dict_interf_peri["ch_ch"]["Close"] = dict()
+        self.dict_interf_peri["ch_ch"]["Open"] = dict(
+            nodal=dict(),
+            Gauss=dict(),
+        )
+        self.dict_interf_peri["ch_ch"]["Close"] = dict(
+            nodal=dict(),
+            Gauss=dict(),
+        )
         self.dict_topology["ch_sol"] = dict()
-        self.dict_interf_peri["ch_sol"] = dict()
+        self.dict_interf_peri["ch_sol"] = dict(
+            nodal=dict(),
+            Gauss=dict(),
+        )
         self.dict_topology["sol_sol"] = dict()
-        self.dict_interf_peri["sol_sol"] = dict()
-        self.dict_interf_peri["env_sol"] = dict()
+        self.dict_interf_peri["sol_sol"] = dict(
+            nodal=dict(),
+            Gauss=dict(),
+        )
+        self.dict_interf_peri["env_sol"] = dict(
+            nodal=dict(),
+            Gauss=dict(),
+        )
 
         # Call method Get_hydraulic_parallel to obtain the channels subdivision \
         # into groups of channels that are in hydraulic parallel.
@@ -1176,32 +1191,20 @@ class Conductor:
                 self.inventory["FluidComponent"].collection[rr + 1 :], rr + 1
             ):
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
+                    abs(self.dict_df_coupling["contact_perimeter_flag"].at[
                         fluid_comp_r.identifier, fluid_comp_c.identifier
-                    ]
+                    ])
                     == 1
                 ):
-                    # There is at least thermal contact between fluid_comp_r and fluid_comp_c (cdp, 09/2020)
-                    # Assign the contact perimeter value (cdp, 09/2020)
-                    self.dict_interf_peri["ch_ch"]["Open"][
-                        f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
-                    ] = (
-                        self.dict_df_coupling["contact_perimeter"].at[
-                            fluid_comp_r.identifier, fluid_comp_c.identifier
-                        ]
-                        * self.dict_df_coupling["open_perimeter_fract"].at[
-                            fluid_comp_r.identifier, fluid_comp_c.identifier
-                        ]
-                    )
-                    self.dict_interf_peri["ch_ch"]["Close"][
-                        f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
-                    ] = self.dict_df_coupling["contact_perimeter"].at[
-                        fluid_comp_r.identifier, fluid_comp_c.identifier
-                    ] * (
-                        1.0
-                        - self.dict_df_coupling["open_perimeter_fract"].at[
-                            fluid_comp_r.identifier, fluid_comp_c.identifier
-                        ]
+                    # There is at least thermal contact between fluid_comp_r 
+                    # and fluid_comp_c
+                    # Assign the contact perimeter value
+                    (
+                        self.dict_interf_peri["ch_ch"]["Close"],
+                        self.dict_interf_peri["ch_ch"]["Open"]
+                    ) = self.__assign_contact_perimeter_fluid_comps(
+                        fluid_comp_r.identifier,
+                        fluid_comp_c.identifier,
                     )
                     if cc == rr + 1:
                         # declare dictionary flag_found (cdp, 09/2020)
@@ -1286,17 +1289,19 @@ class Conductor:
             dict_topology_dummy_ch_sol[fluid_comp_r.identifier] = dict()
             for _, s_comp_c in enumerate(self.inventory["SolidComponent"].collection):
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
+                    abs(self.dict_df_coupling["contact_perimeter_flag"].at[
                         fluid_comp_r.identifier, s_comp_c.identifier
-                    ]
+                    ])
                     == 1
                 ):
-                    # There is contact between fluid_comp_r and s_comp_c (cdp, 09/2020)
-                    self.dict_interf_peri["ch_sol"][
-                        f"{fluid_comp_r.identifier}_{s_comp_c.identifier}"
-                    ] = self.dict_df_coupling["contact_perimeter"].at[
-                        fluid_comp_r.identifier, s_comp_c.identifier
-                    ]
+                    # There is contact between fluid_comp_r and s_comp_c
+
+                    self.dict_interf_peri["ch_sol"] = self.__assign_contact_perimeter_not_fluid_only(
+                        fluid_comp_r.identifier,
+                        s_comp_c.identifier,
+                        "ch_sol",
+                    )
+                    
                     # Interface identification (cdp, 09/2020)
                     dict_topology_dummy_ch_sol[fluid_comp_r.identifier][
                         s_comp_c.identifier
@@ -1341,12 +1346,19 @@ class Conductor:
                 self.inventory["SolidComponent"].collection[rr + 1 :]
             ):
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
+                    abs(self.dict_df_coupling["contact_perimeter_flag"].at[
                         s_comp_r.identifier, s_comp_c.identifier
-                    ]
+                    ])
                     == 1
                 ):
-                    # There is contact between s_comp_r and s_comp_c (cdp, 09/2020)
+                    # There is contact between s_comp_r and s_comp_c 
+
+                    self.dict_interf_peri["sol_sol"] = self.__assign_contact_perimeter_not_fluid_only(
+                        s_comp_r.identifier,
+                        s_comp_c.identifier,
+                        "sol_sol",
+                    )
+
                     self.dict_interf_peri["sol_sol"][
                         f"{s_comp_r.identifier}_{s_comp_c.identifier}"
                     ] = self.dict_df_coupling["contact_perimeter"].at[
@@ -1377,9 +1389,9 @@ class Conductor:
                 list_linked_solids,
             )
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
+                abs(self.dict_df_coupling["contact_perimeter_flag"].at[
                     environment.KIND, s_comp_r.identifier
-                ]
+                ])
                 == 1
             ):
                 if (
@@ -1387,11 +1399,11 @@ class Conductor:
                     or s_comp_r.inputs["Jacket_kind"] == "whole_enclosure"
                 ):
                     # There is an interface between environment and s_comp_r.
-                    self.dict_interf_peri["env_sol"][
-                        f"{environment.KIND}_{s_comp_r.identifier}"
-                    ] = self.dict_df_coupling["contact_perimeter"].at[
-                        environment.KIND, s_comp_r.identifier
-                    ]
+                    self.dict_interf_peri["env_sol"] = self.__assign_contact_perimeter_not_fluid_only(
+                        environment.KIND,
+                        s_comp_r.identifier,
+                        "env_sol",
+                    )
                 else:
                     # Raise error
                     raise os.error(
