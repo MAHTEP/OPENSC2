@@ -219,6 +219,39 @@ class Conductor:
             index_col=0,
         )
 
+        # Check if user declared variable contact perimeter for some of the 
+        # conductor components.
+        if (
+            self.file_input["VARIABLE_CONTACT_PERIMETER"] != "none"
+            and any(self.dict_df_coupling["contact_perimeter_flag"] == -1)
+        ):
+            # Correctly declared a variable contact perimeter: load all sheets 
+            # in file variable_contact_perimeter.xlsx in a dictionary of 
+            # dataframes.
+            self.dict_df_variable_contact_perimeter = pd.read_excel(
+                os.path.join(
+                    self.BASE_PATH,
+                    self.file_input["VARIABLE_CONTACT_PERIMETER"]
+                ),
+                sheet_name=None,
+                header=0,
+            )
+        elif (
+            self.file_input["VARIABLE_CONTACT_PERIMETER"] != "none"
+            and all(self.dict_df_coupling["contact_perimeter_flag"] == 1)
+            ):
+            # User provided a file for variable contact perimeter but in sheet 
+            # contact_perimeters_flag none of the interfaces has the flag -1.
+            raise ValueError("User provides a file for variable contact perimeter but in sheet contact_perimeter_flag none of the interfaces has the valid flag for the variable contact perimeter (-1). \nIf user wants to assign variable contact perimeters, please check sheet contact_perimeter_flag in file conductor_coupling.xlsx.\nIf user does not want to assign a variable contact perimeter flag, please check sheet CONDUCTOR_files in file conductor_definition.xlsx and replace the file name in row VARIABLE_CONTACT_PERIMETER with 'none'.")
+        elif (
+            self.file_input["VARIABLE_CONTACT_PERIMETER"] == "none"
+            and any(self.dict_df_coupling["contact_perimeter_flag"] == -1)
+            ):
+            # User prescribed the flag for variable contact perimeters without 
+            # providing an auxiliary file to read the variable contact 
+            # perimeters.
+            raise FileNotFoundError("User prescribed the flag for variable contact perimeters without providing an auxiliary file to read the variable contact perimeters.\nIf user wants to assign variable contact perimeters, please check sheet CONDUCTOR_files in file conductor_definition and provide a valid file name in row VARIABLE_CONTACT_PERIMETER with the values of the variable contact perimeters.\nIf user does not want to assign a variable contact perimeter flag, please check sheet contact_perimeter_flag in file conductor_coupling.xlsx and replace all -1 flag with value 1.")
+
         # Dictionary declaration (cdp, 09/2020)
         self.inventory = dict()
         # call method Conductor_components_instance to make instance of conductor components (cdp, 11/2020)
