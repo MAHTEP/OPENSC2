@@ -31,3 +31,10 @@ STATIC_ELECTRIC_SOLVER = 0
 
 # Default number for electric time step
 ELECTRIC_TIME_STEP_NUMBER = 10
+
+# Flags for contact perimeter
+# Variable contact perimeter (from auxiliary input file)
+VARIABLE_CONTACT_PERIMETER = -1
+# Constant contact perimeter (from sheet contact_perimeter in file 
+# conductor_coupling.xlsx)
+CONSTANT_CONTACT_PERIMETER = 1
