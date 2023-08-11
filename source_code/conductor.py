@@ -287,6 +287,33 @@ class Conductor:
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.KIND}, identifier: {self.identifier})"
 
+    def __chech_heading_variable_contact_perimeter(self:Self):
+        """Private method that checks if user defined repeated headings in any of the sheets of auxiliary file variable_contact_perimeter.xlsx
+
+        Args:
+            self (Self): conductor object.
+
+        Raises:
+            ValueError: if there are repeated headings in any of the sheets of auxiliary file variable_contact_perimeter.xlsx
+        """
+        
+        sheets = list()
+        # Loop to check if there are repeated headings in any of the sheets in 
+        # file variable_contact_perimeters.xlsx
+        for comp_id,df in self.dict_df_variable_contact_perimeter.items():
+            headers = df.columns.to_list()
+            # Remove duplicate items exploiting set primitive.
+            unique_headers = set(headers)
+            # Check if there are repeated headings.
+            if len(unique_headers) < len(headers):
+                # Found repeated headings: update the list of sheets with 
+                # repeated headings in file variable_contact_perimeter.xlsx
+                sheets.append(comp_id)
+        
+        # Raise error if sheets is not empty.
+        if sheets:
+            raise ValueError(f"Found repeated headings. Please check sheets {sheets} in file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.")
+
     def __delete_equipotential_inputs(self: Self):
         """Private method that deletes input values EQUIPOTENTIAL_SURFACE_NUMBER and EQUIPOTENTIAL_SURFACE_COORDINATE if they are not needed.
 
