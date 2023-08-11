@@ -5,7 +5,7 @@ from typing_extensions import Self
 from openpyxl import load_workbook
 import numpy as np
 from scipy.sparse import coo_matrix, csr_matrix, lil_matrix, diags
-from scipy import constants, integrate
+from scipy import constants, integrate, interpolate
 import pandas as pd
 import os
 from collections import namedtuple
@@ -1400,6 +1400,105 @@ class Conductor:
                 # End if s_comp_r.inputs["Jacket_kind"]
         # end for rr (cdp, 09/2020)
         self.dict_topology.update(sol_sol=dict_topology_dummy_sol)
+
+    def __assign_contact_perimeter_fluid_comps(
+        self:Self,
+        comp1_id:str,
+        comp2_id:str,
+        )-> tuple:
+        """Private method that evaluates and assigns contact perimeters for interfaces between fluid components, distinguiscing between closed and open contact perimeters according to the value of the open perimeter fraction. Contact perimeter can be costant or variable; in the latter case it is evaluated by interpolation in the conductor spatial discretization along z direction (the axis of the conductor) starting from values loaded from auxiliary input file variable_contact_perimeter.xlsx.
+
+        Args:
+            self (Self): conductor object
+            comp1_id (str): identifier of the first fluid component (row)
+            comp2_id (str): identifier of the first fluid component (row)
+
+        Returns:
+            tuple: collection dictionay of numpy arrays with the value of the close and open contact perimeter of the interface; key nodal has the contact perimeter on nodal points, key Gauss has the contact perimeter on Gauss points.
+        """
+
+        # Aliases
+        interf_peri_open = self.dict_interf_peri["ch_ch"]["Open"]
+        interf_peri_close = self.dict_interf_peri["ch_ch"]["Close"]
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"].at[
+            comp1_id,comp2_id
+        ]
+        open_fraction = self.dict_df_coupling["open_perimeter_fract"].at[
+            comp1_id, comp2_id
+        ]
+
+        if interf_flag == CONSTANT_CONTACT_PERIMETER:
+            
+            # Alias for constant contact perimeter.
+            contact_perimeter = self.dict_df_coupling["contact_perimeter"].at[
+            comp1_id, comp2_id
+        ]
+
+            # Assign constant contact perimeter value.
+            # To be refactored!
+
+            # Open contact perimeter in nodal points.
+            interf_peri_open["nodal"][f"{comp1_id}_{comp2_id}"] = (
+                contact_perimeter * open_fraction
+            ) * np.ones(self.grid_features["N_nod"])
+            # Open contact perimeter in Gauss points.
+            interf_peri_open["Gauss"][f"{comp1_id}_{comp2_id}"] = (
+                contact_perimeter
+                * open_fraction
+            ) * np.ones(self.grid_input["NELEMS"])
+
+            # Close contact perimeter in nodal points.
+            interf_peri_close["nodal"][f"{comp1_id}_{comp2_id}"] = (
+                contact_perimeter * (1.0 - open_fraction)
+                ) * np.ones(self.grid_features["N_nod"])
+            # Open contact perimeter in Gauss points.
+            interf_peri_close["Gauss"][f"{comp1_id}_{comp2_id}"] = (
+                contact_perimeter * (1.0 - open_fraction)
+                ) * np.ones(self.grid_input["NELEMS"])
+        
+        elif interf_flag == VARIABLE_CONTACT_PERIMETER:
+            
+            # Alias for variable contact perimeter: convert padas series into a 
+            # numpy array.
+            contact_perimeter = self.dict_df_variable_contact_perimeter[comp1_id].loc[:,comp2_id].to_numpy(dtype=float)
+            
+            # Assign variable contact perimeter value.
+            # To be refactored!
+
+            # Interpolation points.
+            space_points = self.dict_df_variable_contact_perimeter[comp1_id].iloc[:,0].to_numpy(dtype=float)
+
+            # Open contact perimeter.
+            open_contact_perimeter = contact_perimeter * open_fraction
+            # Build interpolator.
+            open_interpolator = interpolate.interp1d(
+                space_points,
+                open_contact_perimeter,
+                bounds_error=False,
+                fill_value=open_contact_perimeter[-1],
+                kind='linear',
+            )
+            # Do interpolation: nodal discretization points.
+            interf_peri_open["nodal"][f"{comp1_id}_{comp2_id}"] = open_interpolator(self.grid_features["zcoord"])
+            # Do interpolation: Gauss discretization points.
+            interf_peri_open["Gauss"][f"{comp1_id}_{comp2_id}"] = open_interpolator(self.grid_features["zcoord_gauss"])
+
+            # Close contact perimeter.
+            close_contact_perimeter = contact_perimeter * (1.0 - open_fraction)
+            # Build interpolator.
+            close_interpolator = interpolate.interp1d(
+                space_points,
+                close_contact_perimeter,
+                bounds_error=False,
+                fill_value=close_contact_perimeter[-1],
+                kind='linear',
+            )
+            # Do interpolation: nodal discretization points.
+            interf_peri_close["nodal"][f"{comp1_id}_{comp2_id}"] = close_interpolator(self.grid_features["zcoord"])
+            # Do interpolation: Gauss discretization points.
+            interf_peri_close["Gauss"][f"{comp1_id}_{comp2_id}"] = close_interpolator(self.grid_features["zcoord_gauss"])
+        
+        return interf_peri_close, interf_peri_open
 
     def chan_sol_interfaces(
         self, comp_r, comp_c, dict_comp_interface, list_linked_comp
