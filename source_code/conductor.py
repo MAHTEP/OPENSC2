@@ -390,6 +390,43 @@ class Conductor:
             # in some sheets of auxiliary file variable_contact_perimeter.xlsx.
             raise ValueError(f"Found missing interfaces with a variable contact perimeter. Please, in auxiliary input file {file_name}, add the columns reported in the following table (columns header are sheet names, values are missing columns in the sheet):\n{missing_var_cont_peri}.")
 
+    def __check_variable_contact_perimeter_coordinate(self:Self, file_name:str):
+
+        """Private method that checks the consistency of the spatial cooridinates user provides to make interpolation of the variable contact perimeter in file variable_contact_perimeter.xlsx.
+
+        Args:
+            self (Self): conductor object.
+            file_name (str): auxiliary input file name as defined by the user.
+
+        Raises:
+            ValueError: if less than two coordinates are provided.
+            ValueError: if any of the coordinates provided is negative
+            ValueError: if first coordinate is not equal to 0.0
+            ValueError: if last coordinate is larger that conductor length.
+        """
+    
+        # Aliases.
+        var_cont_peri = self.dict_df_variable_contact_perimeter
+
+        for sheet_name, df in var_cont_peri.items():
+            zcoord = df.iloc[:,0].to_numpy()
+            # Check number of items in array zcoord.
+            if zcoord.size < 2:
+                # Wrong number of items in array zcoord.
+                raise ValueError(f"User must provide at least two coordinates to define the variable contact perimeter. Please, check in sheet {sheet_name} of file {file_name}.\n")
+            
+            # Check if coordinates are positive.
+            if any(zcoord) < 0.0:
+                raise ValueError(f"Spatial coordinates for variable contact perimeter interpolation must be positive. Please, check in sheet {sheet_name} of file {file_name}.\n ")
+
+            # Check first item value in zcoord.
+            if zcoord[0] != 0.0:
+                raise ValueError(f"First z coordinate value should be 0.0. Please, check in sheet {sheet_name} of file {file_name}.\n ")
+            
+            # Check last item value in zcoord.
+            if zcoord[-1] > self.inputs["ZLENGTH"]:
+                raise ValueError(f"Last z coordinate value should be lower or equal than the conductor length ({self.inputs['ZLENGTH']} m). Please, check in sheet {sheet_name} of file {file_name}.\n ")
+
     def __delete_equipotential_inputs(self: Self):
         """Private method that deletes input values EQUIPOTENTIAL_SURFACE_NUMBER and EQUIPOTENTIAL_SURFACE_COORDINATE if they are not needed.
 
