@@ -261,10 +261,9 @@ class Conductor:
             raise FileNotFoundError("User prescribed the flag for variable contact perimeters without providing an auxiliary file to read the variable contact perimeters.\nIf user wants to assign variable contact perimeters, please check sheet CONDUCTOR_files in file conductor_definition.xlsx and provide a valid file name in row VARIABLE_CONTACT_PERIMETER with the values of the variable contact perimeters.\nIf user does not want to assign a variable contact perimeter flag, please check sheet contact_perimeter_flag in file conductor_coupling.xlsx and replace all -1 flag with value 1.")
 
         # Checks on auxiliary input file variable_contact_perimeter.xlsx
-        self.__check_heading_variable_contact_perimeter()
-        self.__check_variable_contact_perimeter_consistency()
-        self.__check_variable_contact_perimeter_coordinate()
-        self.__check_variable_contact_perimeter_surplus_info()
+        self.dict_df_variable_contact_perimeter = (
+            self.__check_variable_contact_perimeter()
+        )
 
         # Dictionary declaration (cdp, 09/2020)
         self.inventory = dict()
