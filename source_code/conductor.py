@@ -222,7 +222,9 @@ class Conductor:
         )
 
         # Alias for self.dict_df_coupling["contact_perimeter_flag"]
-        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"].to_numpy()
+        # Remove all nonzero values in interf_flag and convert matrix to array.
+        interf_flag = interf_flag[interf_flag.nonzero()]
 
         # Check if user declared variable contact perimeter for some of the 
         # conductor components.
