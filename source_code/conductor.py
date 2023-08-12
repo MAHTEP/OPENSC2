@@ -353,7 +353,9 @@ class Conductor:
         for row_idx, row_name in enumerate(identifiers):
             # Loop on colums of sheet contact_perimeter_flags, scan only the 
             # upper triangular matrix, excluding main diagonal.
-            for col_idx, col_name in enumerate(identifiers[row_idx+1]):
+            for col_idx, col_name in enumerate(
+                identifiers[row_idx+1:],row_idx+1
+            ):
                 # Check if there is iterface with flag for variable contact 
                 # perimeter.
                 if cont_peri_flag.iat[row_idx,col_idx] == VARIABLE_CONTACT_PERIMETER:
