@@ -419,16 +419,17 @@ class Conductor:
                 raise ValueError(f"User must provide at least two coordinates to define the variable contact perimeter. Please, check in sheet {sheet_name} of file {file_name}.\n")
             
             # Check if coordinates are positive.
-            if any(zcoord) < 0.0:
-                raise ValueError(f"Spatial coordinates for variable contact perimeter interpolation must be positive. Please, check in sheet {sheet_name} of file {file_name}.\n ")
+            if any(zcoord < 0.0):
+                row_idx = np.nonzero(zcoord < 0.0)[0] + 1
+                raise ValueError(f"Spatial coordinates for variable contact perimeter interpolation must be positive. Please, check rows {row_idx} in sheet {sheet_name} of file {file_name}.\n ")
 
             # Check first item value in zcoord.
             if zcoord[0] != 0.0:
-                raise ValueError(f"First z coordinate value should be 0.0. Please, check in sheet {sheet_name} of file {file_name}.\n ")
+                raise ValueError(f"First z coordinate value should be 0.0. Please, check row 2 in sheet {sheet_name} of file {file_name}.\n ")
             
             # Check last item value in zcoord.
             if zcoord[-1] > self.inputs["ZLENGTH"]:
-                raise ValueError(f"Last z coordinate value should be lower or equal than the conductor length ({self.inputs['ZLENGTH']} m). Please, check in sheet {sheet_name} of file {file_name}.\n ")
+                raise ValueError(f"Last z coordinate value should be lower or equal than the conductor length ({self.inputs['ZLENGTH']} m). Please, check row {zcoord.size + 1} in sheet {sheet_name} of file {file_name}.\n ")
 
     def __delete_equipotential_inputs(self: Self):
         """Private method that deletes input values EQUIPOTENTIAL_SURFACE_NUMBER and EQUIPOTENTIAL_SURFACE_COORDINATE if they are not needed.
