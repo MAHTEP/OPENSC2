@@ -221,11 +221,14 @@ class Conductor:
             index_col=0,
         )
 
+        # Alias for self.dict_df_coupling["contact_perimeter_flag"]
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         # Check if user declared variable contact perimeter for some of the 
         # conductor components.
         if (
             self.file_input["VARIABLE_CONTACT_PERIMETER"] != "none"
-            and any(self.dict_df_coupling["contact_perimeter_flag"] == -1)
+            and any(interf_flag == -1)
         ):
             # Correctly declared a variable contact perimeter: load all sheets 
             # in file variable_contact_perimeter.xlsx in a dictionary of 
@@ -240,14 +243,14 @@ class Conductor:
             )
         elif (
             self.file_input["VARIABLE_CONTACT_PERIMETER"] != "none"
-            and all(self.dict_df_coupling["contact_perimeter_flag"] == 1)
+            and all(interf_flag == 1)
             ):
             # User provided a file for variable contact perimeter but in sheet 
             # contact_perimeters_flag none of the interfaces has the flag -1.
             raise ValueError("User provides a file for variable contact perimeter but in sheet contact_perimeter_flag none of the interfaces has the valid flag for the variable contact perimeter (-1). \nIf user wants to assign variable contact perimeters, please check sheet contact_perimeter_flag in file conductor_coupling.xlsx.\nIf user does not want to assign a variable contact perimeter flag, please check sheet CONDUCTOR_files in file conductor_definition.xlsx and replace the file name in row VARIABLE_CONTACT_PERIMETER with 'none'.")
         elif (
             self.file_input["VARIABLE_CONTACT_PERIMETER"] == "none"
-            and any(self.dict_df_coupling["contact_perimeter_flag"] == -1)
+            and any(interf_flag == -1)
             ):
             # User prescribed the flag for variable contact perimeters without 
             # providing an auxiliary file to read the variable contact 
@@ -1155,6 +1158,9 @@ class Conductor:
         (cdp, 09/2020)
         """
 
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         # nested dictionaries declarations
         self.dict_topology["ch_ch"] = dict()
         self.dict_topology["ch_ch"]["Hydraulic_parallel"] = dict()
@@ -1194,10 +1200,10 @@ class Conductor:
                 self.inventory["FluidComponent"].collection[rr + 1 :], rr + 1
             ):
                 if (
-                    abs(self.dict_df_coupling["contact_perimeter_flag"].at[
+                    abs(interf_flag.at[
                         fluid_comp_r.identifier, fluid_comp_c.identifier
-                    ])
-                    == 1
+                    ]
+                    ) == 1
                 ):
                     # There is at least thermal contact between fluid_comp_r 
                     # and fluid_comp_c
@@ -1217,7 +1223,7 @@ class Conductor:
                     flag_found = self.get_thermal_contact_channels(
                         rr, cc, fluid_comp_r, fluid_comp_c, flag_found
                     )
-                # end self.dict_df_coupling["contact_perimeter_flag"].at[fluid_comp_r.identifier, fluid_comp_c.identifier] == 1 (cdp, 09/2020)
+                # end abs(interf_flag.at[fluid_comp_r.identifier, fluid_comp_c.identifier]) == 1 (cdp, 09/2020)
             # end for cc (cdp, 09/2020)
             if (
                 self.dict_topology["ch_ch"]["Thermal_contact"].get(
@@ -1292,10 +1298,10 @@ class Conductor:
             dict_topology_dummy_ch_sol[fluid_comp_r.identifier] = dict()
             for _, s_comp_c in enumerate(self.inventory["SolidComponent"].collection):
                 if (
-                    abs(self.dict_df_coupling["contact_perimeter_flag"].at[
-                        fluid_comp_r.identifier, s_comp_c.identifier
-                    ])
-                    == 1
+                    abs(interf_flag.at[
+                            fluid_comp_r.identifier, s_comp_c.identifier
+                        ]
+                    ) == 1
                 ):
                     # There is contact between fluid_comp_r and s_comp_c
 
@@ -1319,7 +1325,7 @@ class Conductor:
                         dict_chan_s_comp_contact,
                         list_linked_chan_sol,
                     )
-                # end if self.dict_df_coupling["contact_perimeter_flag"].at[fluid_comp_r.identifier, s_comp_c.identifier] == 1: (cdp, 09/2020)
+                # end if abs(interf_flag.at[fluid_comp_r.identifier, s_comp_c.identifier]) == 1: (cdp, 09/2020)
             # end for cc (cdp, 09/2020)
             # Call method Update_interface_dictionary to update dictionaries \
             # (cdp, 09/2020)
@@ -1349,10 +1355,10 @@ class Conductor:
                 self.inventory["SolidComponent"].collection[rr + 1 :]
             ):
                 if (
-                    abs(self.dict_df_coupling["contact_perimeter_flag"].at[
-                        s_comp_r.identifier, s_comp_c.identifier
-                    ])
-                    == 1
+                    abs(interf_flag.at[
+                            s_comp_r.identifier, s_comp_c.identifier
+                        ]
+                    ) == 1
                 ):
                     # There is contact between s_comp_r and s_comp_c 
 
@@ -1378,7 +1384,7 @@ class Conductor:
                     ] = self.chan_sol_interfaces(
                         s_comp_r, s_comp_c, dict_s_comps_contact, list_linked_solids
                     )
-                # end if self.dict_df_coupling["contact_perimeter_flag"].iat[rr, cc] == 1: (cdp, 09/2020)
+                # end if abs(interf_flag.iat[rr, cc]) == 1: (cdp, 09/2020)
             # end for cc (cdp, 09/2020)
             # Call method Update_interface_dictionary to update dictionaries \
             # (cdp, 09/2020)
@@ -1392,10 +1398,7 @@ class Conductor:
                 list_linked_solids,
             )
             if (
-                abs(self.dict_df_coupling["contact_perimeter_flag"].at[
-                    environment.KIND, s_comp_r.identifier
-                ])
-                == 1
+                abs(interf_flag.at[environment.KIND,s_comp_r.identifier]) == 1
             ):
                 if (
                     s_comp_r.inputs["Jacket_kind"] == "outer_insulation"
