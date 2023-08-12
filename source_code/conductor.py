@@ -268,6 +268,9 @@ class Conductor:
         self.__check_variable_contact_perimeter_coordinate(
             self.file_input["VARIABLE_CONTACT_PERIMETER"]
         )
+        self.__check_variable_contact_perimeter_surplus_info(
+            self.file_input["VARIABLE_CONTACT_PERIMETER"]
+        )
 
         # Dictionary declaration (cdp, 09/2020)
         self.inventory = dict()
