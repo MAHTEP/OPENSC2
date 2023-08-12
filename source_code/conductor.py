@@ -4362,6 +4362,14 @@ class Conductor:
                 )
             # End for jacket_c.
         # end for jacket.
+    
+    def operating_conditions_th_initialization(self,simulation):
+        """Method that evaluates thermal hydraulic (th) operating conditions in both nodal and in Gauss points.
+        To be called at initialization only since it avoids a second call to method self.__update_grid_features, which is already called in method self.__init__.
+        """
+
+        self.get_transp_coeff(simulation)
+        self.__eval_gauss_point_th(simulation)
 
     def operating_conditions_th(self,simulation):
         """Method that evaluates thermal hydraulic (th) operating conditions also in Gauss points."""
