@@ -5334,12 +5334,16 @@ class Conductor:
         Args:
             environment ([type]): [description]
         """
+
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         for jk in self.inventory["JacketComponent"].collection:
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    environment.KIND, jk.identifier
-                ]
-                == 1
+                abs(interf_flag.at[
+                        environment.KIND, jk.identifier
+                    ]
+                ) == 1
             ):
                 key = f"{environment.KIND}_{jk.identifier}"
                 self.heat_exchange_jk_env[key] = (
@@ -5356,7 +5360,7 @@ class Conductor:
                         - jk.dict_Gauss_pt["temperature"]
                     )
                 )  # W
-            # End if self.dict_df_coupling["contact_perimeter_flag"].
+            # End if interf_flag.
         # End for jk.
 
     # End method _compute_heat_exchange_environment.
