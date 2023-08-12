@@ -452,7 +452,7 @@ class Conductor:
                 raise ValueError(f"Last z coordinate value should be lower or equal than the conductor length ({self.inputs['ZLENGTH']} m). Please, check row {zcoord.size + 1} in sheet {sheet_name} of file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n ")
 
     def __check_variable_contact_perimeter_surplus_info(self:Self)->dict:
-        """Private method that checks if there are any surplus sheets in user defined auxiliary input file variable_contact_perimeter.xlsx and removes them. Moreover the method checks if there are surplus columns from valid sheets in the same file and removes them.
+        """Private method that checks if there are any surplus sheets in user defined auxiliary input file variable_contact_perimeter.xlsx and removes them. Moreover the method checks if there are surplus columns from valid sheets in the same file and removes them. Reference sheet names and colums names cames from attribute self.dict_df_coupling["contact_perimeter_flag"].
 
         Args:
             self (Self): conductor object.
