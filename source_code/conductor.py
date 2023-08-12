@@ -376,7 +376,7 @@ class Conductor:
                             missing_var_cont_peri[row_name].append(col_name)
                     else:
                         # Sheet does not exist: raise KeyError.
-                        raise KeyError(f"User forgets to define a full set of interfaces with a variable contact perimeter. Please check auxiliary input file {file_name}.")
+                        raise KeyError(f"User forgets to define a full set of interfaces with a variable contact perimeter. Please check auxiliary input file {file_name}, missing sheet {row_name}.")
         
         # Filter missing_var_cont_peri on the only not empty list exploiting 
         # dictionary comprehension.
