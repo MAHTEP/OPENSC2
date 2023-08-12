@@ -278,6 +278,8 @@ class Conductor:
         self.__coordinates(simulation)
         # conductorlogger.debug(f"After call method {self.__coordinates.__name__}")
 
+        self.__update_grid_features()
+
         # Call private method __initialize_attributes to initialize all the other useful and necessary attributes of class Conductor.
         # conductorlogger.debug(
         #     f"Before call method {self.__initialize_attributes.__name__}"
@@ -286,6 +288,7 @@ class Conductor:
         # conductorlogger.debug(
         #     f"After call method {self.__initialize_attributes.__name__}"
         # )
+
 
     # end method __init__ (cdp, 11/2020)
 
