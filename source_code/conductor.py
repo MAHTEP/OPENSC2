@@ -366,7 +366,8 @@ class Conductor:
                     if row_name in self.dict_df_variable_contact_perimeter:
                         # Sheet exist.
                         cont_peri_def = self.dict_df_variable_contact_perimeter[row_name]
-                        missing_var_cont_peri[row_name] = list()
+                        if row_name not in missing_var_cont_peri:
+                            missing_var_cont_peri[row_name] = list()
                         # Check if component identifier (col_name) is included 
                         # in sheet headers.
                         if col_name not in cont_peri_def.columns.to_list():
@@ -382,7 +383,7 @@ class Conductor:
         # dictionary comprehension.
         missing_var_cont_peri = {key: value for key,value in missing_var_cont_peri.items() if value}
         # Check if missing_var_cont_peri is not empty.
-        if not missing_var_cont_peri:
+        if missing_var_cont_peri:
             # Convert into a dataframe to improve error message readability.
             missing_var_cont_peri = pd.DataFrame(missing_var_cont_peri)
             # missing_var_cont_peri is not empty: there are missing interfaces 
