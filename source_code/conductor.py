@@ -4594,6 +4594,8 @@ class Conductor:
         solid components, both in nodal and Gauss points.
         """
 
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
         # loop to evaluate htc_steady for each channel according to its geometry (cpd 06/2020)
         for fluid_comp in self.inventory["FluidComponent"].collection:
 
@@ -4648,10 +4650,10 @@ class Conductor:
                 # Rationale: compute dictionary vaules only if there is an interface \
                 # (cdp, 09/2020)
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
-                        fluid_comp_r.identifier, s_comp.identifier
-                    ]
-                    == 1
+                    abs(interf_flag.at[
+                            fluid_comp_r.identifier, s_comp.identifier
+                        ]
+                    ) == 1
                 ):
                     htc_len = htc_len + 1
                     # new channel-solid interface (cdp, 09/2020)
@@ -4740,10 +4742,10 @@ class Conductor:
                             fluid_comp_r.identifier, fluid_comp_c.identifier
                         ]
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
-                        fluid_comp_r.identifier, fluid_comp_c.identifier
-                    ]
-                    == 1
+                    abs(interf_flag.at[
+                            fluid_comp_r.identifier, fluid_comp_c.identifier
+                        ]
+                    ) == 1
                 ):
                     # new channel-channel interface (cdp, 09/2020)
                     htc_len = htc_len + 1
@@ -4822,10 +4824,10 @@ class Conductor:
                             s_comp_r.identifier, s_comp_c.identifier
                         ]
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
-                        s_comp_r.identifier, s_comp_c.identifier
-                    ]
-                    == 1
+                    abs(interf_flag.at[
+                            s_comp_r.identifier, s_comp_c.identifier
+                        ]
+                    ) == 1
                 ):
                     dict_dummy["HTC"]["sol_sol"]["cond"][
                         self.dict_topology["sol_sol"][s_comp_r.identifier][
@@ -4960,10 +4962,10 @@ class Conductor:
 
             key = f"{simulation.environment.KIND}_{s_comp_r.identifier}"
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    simulation.environment.KIND, s_comp_r.identifier
-                ]
-                == 1
+                abs(interf_flag.at[
+                        simulation.environment.KIND, s_comp_r.identifier
+                    ]
+                ) == 1
             ):
                 # New environment-solid interface
                 htc_len = htc_len + 1
@@ -5108,15 +5110,16 @@ class Conductor:
                         f"JacketComponent of kind {s_comp_r.inputs['Jacket_kind']} can not exchange heat by radiation and/or convection with the environment.\n"
                     )
                 # End if s_comp_r.inputs["Jacket_kind"]
-            # End if self.dict_df_coupling["contact_perimeter_flag"].at[simulation.environment.KIND, s_comp_r.identifier]
+            # End if abs(intef_flag.at[simulation.environment.KIND, s_comp_r.identifier])
         # end for loop rr
 
         # Check number of evaluated interface htc (cdp, 06/2020)
 
-        if htc_len != self.dict_df_coupling["contact_perimeter_flag"].to_numpy().sum():
+        # Evaluate total number of user defined interfaces.
+        total_interf_number = np.abs(interf_flag.to_numpy()).sum()
+        if htc_len != total_interf_number:
             raise ValueError(
-                f"ERROR!!! Number of interface and number of \
-        evaluated interface htc mismatch: {self.dict_df_coupling['contact_perimeter_flag'].to_numpy().sum()} != {htc_len}"
+                f"ERROR!!! Number of interface and number of evaluated interface htc mismatch: {total_interf_number} != {htc_len}"
             )
 
         return dict_dummy
