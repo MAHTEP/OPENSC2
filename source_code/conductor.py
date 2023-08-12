@@ -2569,7 +2569,7 @@ class Conductor:
 
         # Initialize thermal hydraulic quantities in both nodal and Gauss 
         # points.
-        self.operating_conditions_th(simulation)
+        self.operating_conditions_th_initialization(simulation)
         # Initialize electromagnetic quantities in both nodal and Gauss 
         # points.
         self.operating_conditions_em()
