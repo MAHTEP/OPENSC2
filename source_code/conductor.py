@@ -4151,7 +4151,8 @@ class Conductor:
         self.__get_total_joule_power_electric_conductance()
 
     def __update_grid_features(self):
-        """Private method that updates dictionary grid_features evaluating arrays delta_z, delta_z_tilde and zcoord_gauss as keys of dictioray self.grid_features. These arrys are used:
+        """Private method that updates dictionary grid_features evaluating arrays delta_z, delta_z_tilde and zcoord_gauss as keys of dictionary self.grid_features. These arrays are used:
+        * in method self.__assign_contact_perimeter_not_fluid_comps and self.__assign_contact_perimeter_not_fluid_only (zcoord_gauss);
         * in function step (delta_z);
         * in the joule power evaluation associated to electric resistance between StrandComponent objects (delta_z);
         * in the joule power evaluation associated to electric conductance between StrandComponent objects (delta_z_tilde);
