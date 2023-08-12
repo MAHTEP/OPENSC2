@@ -381,10 +381,10 @@ class Conductor:
         # Filter missing_var_cont_peri on the only not empty list exploiting 
         # dictionary comprehension.
         missing_var_cont_peri = {key: value for key,value in missing_var_cont_peri.items() if value}
-        # Convert into a dataframe to improve error message readability.
-        missing_var_cont_peri = pd.DataFrame(missing_var_cont_peri)
         # Check if missing_var_cont_peri is not empty.
         if not missing_var_cont_peri:
+            # Convert into a dataframe to improve error message readability.
+            missing_var_cont_peri = pd.DataFrame(missing_var_cont_peri)
             # missing_var_cont_peri is not empty: there are missing interfaces 
             # in some sheets of auxiliary file variable_contact_perimeter.xlsx.
             raise ValueError(f"Found missing interfaces with a variable contact perimeter. Please, in auxiliary input file {file_name}, add the columns reported in the following table (columns header are sheet names, values are missing columns in the sheet):\n{missing_var_cont_peri}.")
