@@ -2347,6 +2347,11 @@ class Conductor:
             ValueError: if jacket component is not of kind outer_insulation or wall_enclosure.
         """
 
+        # Aliases
+        fluid_components = self.inventory["FluidComponent"].collection
+        solid_components = self.inventory["SolidComponent"].collection
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         # Namedtuple constructor definition.
         Interface_collection = namedtuple(
             "Interface_collection",
@@ -2378,15 +2383,14 @@ class Conductor:
         )
 
         # Loop on FluidComponents.
-        for f_comp_a_idx,f_comp_a in enumerate(self.inventory["FluidComponent"].collection):
+        for f_comp_a_idx,f_comp_a in enumerate(fluid_components):
             # Loop on FluidComponents: identify fluid-fluid interfaces.
-            for f_comp_b in self.inventory["FluidComponent"].collection[f_comp_a_idx+1:]:
+            for f_comp_b in fluid_components[f_comp_a_idx+1:]:
                 # Check for interfaces.
                 if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    f_comp_a.identifier, f_comp_b.identifier
-                    ]
-                    == 1
+                    abs(
+                        interf_flag.at[f_comp_a.identifier,f_comp_b.identifier]
+                    ) == 1
                 ):
                     # Build fluid-fluid interface.
                     self.interface.fluid_fluid.append(
@@ -2397,13 +2401,12 @@ class Conductor:
                         )
                     )
             # Loop on SolidComponent: identify fluid-solid interfaces.
-            for s_comp in self.inventory["SolidComponent"].collection:
+            for s_comp in solid_components:
                 # Check for iterfaces.
                 if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    f_comp_a.identifier, s_comp.identifier
-                    ]
-                    == 1
+                    abs(
+                        interf_flag.at[f_comp_a.identifier,s_comp.identifier]
+                    ) == 1
                 ):
                     # Build fluid-solid interface.
                     self.interface.fluid_solid.append(
@@ -2414,15 +2417,14 @@ class Conductor:
                         )
                     )
         # Loop on SolidComponent.
-        for s_comp_a_idx,s_comp_a in enumerate(self.inventory["SolidComponent"].collection):
+        for s_comp_a_idx,s_comp_a in enumerate(solid_components):
             # Loop on SolidComponent: identify solid-solid interfaces.
-            for s_comp_b in self.inventory["SolidComponent"].collection[s_comp_a_idx+1:]:
+            for s_comp_b in solid_components[s_comp_a_idx+1:]:
                 # Check for interfaces.
                 if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    s_comp_a.identifier, s_comp_b.identifier
-                    ]
-                    == 1
+                    abs(
+                        interf_flag.at[s_comp_a.identifier,s_comp_b.identifier]
+                    ) == 1
                 ):
                     # Build solid-solid interface.
                     self.interface.solid_solid.append(
@@ -2434,10 +2436,9 @@ class Conductor:
                     )
             # Check for environment-solid interfaces.
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    environment.KIND, s_comp_a.identifier
-                ]
-                == 1
+                abs(
+                    interf_flag.at[environment.KIND,s_comp_a.identifier]
+                ) == 1
             ):  
                 # Check on jacket kind.
                 if (
