@@ -750,12 +750,15 @@ class Simulation:
         # -3 and not -4 since one column of the input file becomes the index of
         # the data frame and should not be considered.
         n_cond = conductors["CONDUCTOR_files"].shape[1] - 3
-        other_files = pd.Series(np.zeros((12 * n_cond), dtype=object))
+        # Number of dataframe rows: number of auxiliary files that the user can 
+        # define for each conductor.
+        n_aux_file = conductors["CONDUCTOR_files"].shape[0]
+        other_files = pd.Series(np.zeros((n_aux_file * n_cond), dtype=object))
 
         for ii in range(n_cond):
-            other_files.iloc[ii * 12 : 12 * (ii + 1)] = conductors[
-                "CONDUCTOR_files"
-            ].iloc[:, ii + 3]
+            other_files.iloc[
+                ii * n_aux_file:n_aux_file * (ii + 1)
+            ] = conductors["CONDUCTOR_files"].iloc[:, ii + 3]
 
         del conductors, transient_input
         # Remove repeated file names (if more than one conductor is defined,
