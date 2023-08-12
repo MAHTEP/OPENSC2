@@ -483,10 +483,10 @@ def make_plots(simulation, kind="Space_distr"):
                     # End if abs().
                 # End for cc.
             if (
-                cond.dict_df_coupling["contact_perimeter_flag"].at[
+                abs(cond.dict_df_coupling["contact_perimeter_flag"].at[
                     simulation.environment.KIND, jk_r.identifier
                 ]
-                == 1
+                ) == 1
             ):
                 prop = f"Heat_exch_{simulation.environment.KIND}_{jk_r.identifier}"
                 # Build file path.
