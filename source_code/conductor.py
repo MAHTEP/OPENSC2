@@ -5190,6 +5190,10 @@ class Conductor:
         """
         Function that operform mass and energy balance on conductor (cdp, 09/2020)
         """
+
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         self.mass_balance = 0.0  # mass balance initialization (cdp, 09/2020)
         self.energy_balance = 0.0  # energy balance initialization (cdp, 09/2020)
         self.inner_pow = 0.0
@@ -5229,10 +5233,10 @@ class Conductor:
         # End for fluid_comp.
         for jacket in self.inventory["JacketComponent"].collection:
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].loc[
-                    simulation.environment.KIND, jacket.identifier
-                ]
-                == 1
+                abs(interf_flag.loc[
+                        simulation.environment.KIND, jacket.identifier
+                    ]
+                ) == 1
             ):
                 key = f"{simulation.environment.KIND}_{jacket.identifier}"
                 self.energy_balance = (
