@@ -178,12 +178,17 @@ def eval_transport_coefficients(conductor:Conductor,
     Returns:
         Conductor: conductor with updated values of K', K'' and K'''.
     """
+    
+    # Aliases
     velocity = comp.coolant.dict_Gauss_pt["velocity"][index]
+    interf_peri = conductor.dict_interf_peri["ch_ch"]["Open"]["Gauss"][
+        interf_name
+    ]
 
     # K' evaluation [ms]:
     # K' = A_othogonal*sqrt(2*density/k_loc*abs(Delta_p))
     K1 = (
-        conductor.dict_interf_peri["ch_ch"]["Open"][interf_name]
+        interf_peri[index]
         * np.sqrt(
             2.
             * comp.coolant.dict_Gauss_pt["total_density"][index]
@@ -333,22 +338,19 @@ def build_smat_fluid_interface(
 
     for interface in conductor.interface.fluid_fluid:
         
+        # Aliases
         K1 = conductor.dict_Gauss_pt["K1"][interface.interf_name][elem_idx]
         K2 = conductor.dict_Gauss_pt["K2"][interface.interf_name][elem_idx]
         K3 = conductor.dict_Gauss_pt["K3"][interface.interf_name][elem_idx]
+        interf_peri = conductor.dict_interf_peri["ch_ch"]
+        htc_gauss = conductor.dict_Gauss_pt["HTC"]["ch_ch"]
 
         # coef_htc = P_o * h_o + P_c * h_c
         coef_htc = (
-            conductor.dict_interf_peri["ch_ch"]["Open"][interface.interf_name]
-            * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Open"][
-                interface.interf_name
-            ][elem_idx]
-            + conductor.dict_interf_peri["ch_ch"]["Close"][
-                interface.interf_name
-            ]
-            * conductor.dict_Gauss_pt["HTC"]["ch_ch"]["Close"][
-                interface.interf_name
-            ][elem_idx]
+            interf_peri["Open"]["Gauss"][interface.interf_name][elem_idx]
+            * htc_gauss["Open"][interface.interf_name][elem_idx]
+            + interf_peri["Close"]["Gauss"][interface.interf_name][elem_idx]
+            * htc_gauss["Close"][interface.interf_name][elem_idx]
         )
 
         # Fill rows of comp_1, columns involving comp_1 and comp_2.
@@ -599,7 +601,8 @@ def build_smat_fluid_solid_interface(
 
         # coef_htc = P * h
         coef_htc = (
-            conductor.dict_interf_peri["ch_sol"][interface.interf_name]
+            conductor.dict_interf_peri["ch_sol"]["Gauss"][
+                interface.interf_name][elem_idx]
             * conductor.dict_Gauss_pt["HTC"]["ch_sol"][interface.interf_name][
                 elem_idx
             ]
@@ -755,7 +758,7 @@ def build_smat_solid_interface(
 
         # coef_htc = P * h_conv W / m / K
         coef_htc = (
-            conductor.dict_interf_peri["sol_sol"][interface.interf_name]
+            conductor.dict_interf_peri["sol_sol"]["Gauss"][interface.interf_name][elem_idx]
             * conductor.dict_Gauss_pt["HTC"]["sol_sol"]["cond"][
                 interface.interf_name
             ][elem_idx]
@@ -870,9 +873,9 @@ def build_smat_env_solid_interface(
     else:
         coef_htc = (
             h_conv[elem_idx]
-            * conductor.dict_interf_peri["env_sol"][
+            * conductor.dict_interf_peri["env_sol"]["Gauss"][
                 interface.interf_name
-            ]
+            ][elem_idx]
         )
     # Update matrix coefficients.
     matrix[
@@ -986,9 +989,9 @@ def build_svec_env_jacket_interface(
         + width* (h_conv["bottom"][elem_idx] + h_conv["top"][elem_idx])
     else:
         coef = (
-            conductor.dict_interf_peri["env_sol"][
+            conductor.dict_interf_peri["env_sol"]["Gauss"][
                 interface.interf_name
-            ]
+            ][elem_idx]
             * h_conv[elem_idx]
         )
     
