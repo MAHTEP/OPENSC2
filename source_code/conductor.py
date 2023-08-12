@@ -380,7 +380,7 @@ class Conductor:
         
         # Filter missing_var_cont_peri on the only not empty list exploiting 
         # dictionary comprehension.
-        missing_var_cont_peri = {key: value for key,value in missing_var_cont_peri if value}
+        missing_var_cont_peri = {key: value for key,value in missing_var_cont_peri.items() if value}
         # Convert into a dataframe to improve error message readability.
         missing_var_cont_peri = pd.DataFrame(missing_var_cont_peri)
         # Check if missing_var_cont_peri is not empty.
