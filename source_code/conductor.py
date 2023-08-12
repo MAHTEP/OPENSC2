@@ -463,9 +463,6 @@ class Conductor:
         for row_idx, row_name in enumerate(identifiers):
             # Initialize reference set of columns
             reference_columns = set()
-            # Build the test set of columns from a dataframe in var_cont_peri 
-            # remmoving the first header (z_coord).
-            columns = set(var_cont_peri[row_idx].columns.to_list()[1:])
 
             # Loop on colums of sheet contact_perimeter_flags, scan only the 
             # upper triangular matrix, excluding main diagonal.
@@ -480,16 +477,20 @@ class Conductor:
                     reference_sheets.add(row_name)
                     # Update set reference_columns
                     reference_columns.add(col_name)
-                
-            # Compare set columns agaist set referece_columns: get the elements 
-            # in columns that are not in reference_columns, i.e. the surplus 
-            # columns information.
-            column_diff = columns.difference(reference_columns)
-            # Check if columns_diff is not empyt
-            if column_diff:
-                # Remove extra columns from var_cont_peri[row_name].
-                var_cont_peri[row_name].drop(columns=column_diff,inplace=True)
-                warnings.warn(f"Removed surplus columns {column_diff} from sheet {row_name} in {file_name}.\n")
+            
+            if row_name in var_cont_peri:
+                # Build the test set of columns from a dataframe in 
+                # var_cont_peri removing the first header (z_coord).
+                columns = set(var_cont_peri[row_name].columns.to_list()[1:])
+                # Compare set columns agaist set referece_columns: get the 
+                # elements in columns that are not in reference_columns, i.e. 
+                # the surplus columns information.
+                column_diff = columns.difference(reference_columns)
+                # Check if columns_diff is not empyt
+                if column_diff:
+                    # Remove extra columns from var_cont_peri[row_name].
+                    var_cont_peri[row_name].drop(columns=column_diff,inplace=True)
+                    warnings.warn(f"Removed surplus columns {column_diff} from sheet {row_name} in {file_name}.\n")
             
         # Compare set sheets agaist set referece_sheets: get the elements in 
         # sheet that are not in reference:sheets, i.e. the surplus information.
@@ -499,7 +500,7 @@ class Conductor:
             # Remove extra sheets from var_cont_peri.
             for sheet in sheet_diff:
                 var_cont_peri.pop(sheet)
-                warnings.warn(f"Removed surplus sheet {sheet} from {row_name} in {file_name}.\n")
+                warnings.warn(f"Removed surplus sheet {sheet} from in {file_name}.\n")
 
         return var_cont_peri
 
