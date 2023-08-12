@@ -4225,6 +4225,9 @@ class Conductor:
             simulation (object): object with all information about the simulation.
         """
         
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         # Loop on StrandComponent objects.
         for strand in self.inventory["StrandComponent"].collection:
             if self.cond_num_step == 0 and strand.operations["IQFUN"] == 0:
@@ -4273,14 +4276,13 @@ class Conductor:
             # each conductor solid components.
             jacket.set_energy_counters(self)
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
+                abs(interf_flag.at[
                     simulation.environment.KIND, jacket.identifier
-                ]
-                == 1
+                ]) == 1
             ):
                 # Evaluate the external heat by radiation in nodal points.
                 jacket._radiative_source_therm_env(self, simulation.environment)
-            # End if self.dict_df_coupling["contact_perimeter_flag"]
+            # End if abb(interf_flag)
             for _, jacket_c in enumerate(
                 self.inventory["JacketComponent"].collection[rr + 1 :]
             ):
