@@ -9,6 +9,7 @@ from scipy import constants, integrate, interpolate
 import pandas as pd
 import os
 from collections import namedtuple
+import warnings
 
 # import classes
 from component_collection import ComponentCollection
@@ -430,6 +431,74 @@ class Conductor:
             # Check last item value in zcoord.
             if zcoord[-1] > self.inputs["ZLENGTH"]:
                 raise ValueError(f"Last z coordinate value should be lower or equal than the conductor length ({self.inputs['ZLENGTH']} m). Please, check row {zcoord.size + 1} in sheet {sheet_name} of file {file_name}.\n ")
+
+    def __check_variable_contact_perimeter_surplus_info(
+        self:Self,
+        file_name:str
+    )->dict:
+        """Private method that checks if there are any surplus sheets in user defined auxiliary input file variable_contact_perimeter.xlsx and removes them. Moreover the method checks if there are surplus columns from valid sheets in the same file and removes them.
+
+        Args:
+            self (Self): conductor object.
+            file_name (str): auxiliary input file name as defined by the user.
+
+        Returns:
+            dict: cleaned collection of data to interpolate the variable contact perimeter.
+        """
+
+        # Aliases.
+        cont_peri_flag = self.dict_df_coupling["contact_perimeter_flag"]
+        identifiers = cont_peri_flag.index.to_list()
+        var_cont_peri = self.dict_df_variable_contact_perimeter
+
+        # Build the test set of sheets from var_cont_peri
+        sheets = set(var_cont_peri.keys())
+        # Initialize empty reference set for sheets
+        reference_sheets = set()
+
+        # Loop on rows of sheet contact_perimeter_flags.
+        for row_idx, row_name in enumerate(identifiers):
+            # Initialize reference set of columns
+            reference_columns = set()
+            # Build the test set of columns from a dataframe in var_cont_peri 
+            # remmoving the first header (z_coord).
+            columns = set(var_cont_peri[row_idx].columns.to_list()[1:])
+
+            # Loop on colums of sheet contact_perimeter_flags, scan only the 
+            # upper triangular matrix, excluding main diagonal.
+            for col_idx, col_name in enumerate(
+                identifiers[row_idx+1:],row_idx+1
+            ):
+                # Check if there is iterface with flag for variable contact 
+                # perimeter.
+                if cont_peri_flag.iat[row_idx,col_idx] == VARIABLE_CONTACT_PERIMETER:
+                    # Found an interface with flag for variable contact 
+                    # perimeter: update set reference_sheets
+                    reference_sheets.add(row_name)
+                    # Update set reference_columns
+                    reference_columns.add(col_name)
+                
+            # Compare set columns agaist set referece_columns: get the elements 
+            # in columns that are not in reference_columns, i.e. the surplus 
+            # columns information.
+            column_diff = columns.difference(reference_columns)
+            # Check if columns_diff is not empyt
+            if column_diff:
+                # Remove extra columns from var_cont_peri[row_name].
+                var_cont_peri[row_name].drop(columns=column_diff,inplace=True)
+                warnings.warn(f"Removed surplus columns {column_diff} from sheet {row_name} in {file_name}.\n")
+            
+        # Compare set sheets agaist set referece_sheets: get the elements in 
+        # sheet that are not in reference:sheets, i.e. the surplus information.
+        sheet_diff = sheets.difference(reference_sheets)
+        # Check if sheet_diff is not empyt
+        if sheet_diff:
+            # Remove extra sheets from var_cont_peri.
+            for sheet in sheet_diff:
+                var_cont_peri.pop(sheet)
+                warnings.warn(f"Removed surplus sheet {sheet} from {row_name} in {file_name}.\n")
+
+        return var_cont_peri
 
     def __delete_equipotential_inputs(self: Self):
         """Private method that deletes input values EQUIPOTENTIAL_SURFACE_NUMBER and EQUIPOTENTIAL_SURFACE_COORDINATE if they are not needed.
