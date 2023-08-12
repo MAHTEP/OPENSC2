@@ -2941,6 +2941,9 @@ class Conductor:
         Values stored in private attribute _contact_nodes_first.
         """
 
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         self._contact_nodes_first = np.array([])
         # 1+self.inventory["FluidComponent"].number keeps into account the
         # Environment component.
@@ -2950,17 +2953,14 @@ class Conductor:
             + self.inventory["FluidComponent"].number
             + self.inventory["StrandComponent"].number,
         ):
-            ind = np.nonzero(
-                self.dict_df_coupling["contact_perimeter_flag"]
-                .iloc[
+            ind = np.nonzero(abs(interf_flag.iloc[
                     row,
                     1
                     + self.inventory["FluidComponent"].number : 1
                     + self.inventory["FluidComponent"].number
                     + self.inventory["StrandComponent"].number,
-                ]
-                .to_numpy()
-                == 1
+                ].to_numpy()
+            ) == 1
             )[0]
 
             # Reduce the row index to convert from the whole system to the
