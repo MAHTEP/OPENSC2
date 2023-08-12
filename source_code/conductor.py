@@ -303,6 +303,31 @@ class Conductor:
 
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.KIND}, identifier: {self.identifier})"
+    
+    def __check_variable_contact_perimeter(self:Self)->dict:
+        """Private method that performs checks on user defined auxiliary input file variable_contact_perimeter.xlsx.
+
+        Args:
+            self (Self): conductor object.
+
+        Returns:
+            dict: cleaned collection of data to interpolate the variable contact perimeter.
+        """
+        
+        # Checks the column heading in self.dict_df_variable_contact_perimeter.
+        self.__check_heading_variable_contact_perimeter()
+        # Checks consistencty between self.dict_df_variable_contact_perimeter and self.dict_df_coupling["contact_perimeter_flag"] (the reference one).
+        self.__check_variable_contact_perimeter_consistency()
+        # Check if user provided valid coordinates to perform variable contact 
+        # perimeter interpolation alogn conductor spatial discretization.
+        self.__check_variable_contact_perimeter_coordinate()
+        # Checks if there are sheets in excess in file 
+        # variable_contact_perimeter.xlsx of if in valid sheets there are 
+        # columns in exces and removes them.
+        v_c_p = self.__check_variable_contact_perimeter_surplus_info()
+        
+        return v_c_p
+
 
     def __check_heading_variable_contact_perimeter(self:Self):
         """Private method that checks if user defined repeated headings in any of the sheets of auxiliary file variable_contact_perimeter.xlsx
