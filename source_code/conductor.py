@@ -254,6 +254,11 @@ class Conductor:
             for df in self.dict_df_variable_contact_perimeter.values():
                 df.columns = [col_name.split(".")[0] for col_name in df.columns]
 
+            # Checks on auxiliary input file variable_contact_perimeter.xlsx
+            self.dict_df_variable_contact_perimeter = (
+                self.__check_variable_contact_perimeter()
+            )
+
         elif (
             self.file_input["VARIABLE_CONTACT_PERIMETER"] != "none"
             and all(interf_flag == 1)
@@ -269,11 +274,6 @@ class Conductor:
             # providing an auxiliary file to read the variable contact 
             # perimeters.
             raise FileNotFoundError("User prescribed the flag for variable contact perimeters without providing an auxiliary file to read the variable contact perimeters.\nIf user wants to assign variable contact perimeters, please check sheet CONDUCTOR_files in file conductor_definition.xlsx and provide a valid file name in row VARIABLE_CONTACT_PERIMETER with the values of the variable contact perimeters.\nIf user does not want to assign a variable contact perimeter flag, please check sheet contact_perimeter_flag in file conductor_coupling.xlsx and replace all -1 flag with value 1.")
-
-        # Checks on auxiliary input file variable_contact_perimeter.xlsx
-        self.dict_df_variable_contact_perimeter = (
-            self.__check_variable_contact_perimeter()
-        )
 
         # Dictionary declaration (cdp, 09/2020)
         self.inventory = dict()
