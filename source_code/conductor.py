@@ -311,6 +311,26 @@ class Conductor:
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.KIND}, identifier: {self.identifier})"
     
+    def __check_thermal_contact_resistance_values(self:Self):
+
+        """Private method that checks that values in sheet thermal_contact_resistance of input file conductor_coupling.xlsx are larger or equal than zero.
+
+        Args:
+            self (Self): conductor object.
+        
+        Raises:
+            ValueError: if negative values for the thermal contact resistance are provided by the user.
+        """
+
+        # Alias.
+        therm_cont_res = self.dict_df_coupling["thermal_contact_resistance"].to_numpy()
+        # Get index with negative values for thermal contact resistances.
+        negative_idx = np.nonzero(therm_cont_res < 0.0)
+        # Check if negative_idx is not empty.
+        if negative_idx:
+            # negative_idx is not empty: raise ValueError.
+            raise ValueError(f"Thermal contact resistance should be >= 0.0. Please check index {negative_idx} in sheet thermal_contact_resistance of input file {self.file_input['STRUCTURE_COUPLING']}")
+
     def __check_variable_contact_perimeter(self:Self)->dict:
         """Private method that performs checks on user defined auxiliary input file variable_contact_perimeter.xlsx.
 
