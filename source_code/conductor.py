@@ -346,7 +346,7 @@ class Conductor:
             ValueError: if there are repeated headings in any of the sheets of auxiliary file variable_contact_perimeter.xlsx
         """
         
-        sheets = list()
+        sheets = dict()
         # Loop to check if there are repeated headings in any of the sheets in 
         # file variable_contact_perimeters.xlsx
         for comp_id,df in self.dict_df_variable_contact_perimeter.items():
@@ -355,13 +355,15 @@ class Conductor:
             unique_headers = set(headers)
             # Check if there are repeated headings.
             if len(unique_headers) < len(headers):
-                # Found repeated headings: update the list of sheets with 
+                # Found repeated headings: update the dictionary of sheets with 
                 # repeated headings in file variable_contact_perimeter.xlsx
-                sheets.append(comp_id)
+                sheets[comp_id] = [
+                    col for col in unique_headers if headers.count(col) > 1
+                ]
         
         # Raise error if sheets is not empty.
         if sheets:
-            raise ValueError(f"Found repeated headings. Please check sheets {sheets} in file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.")
+            raise ValueError(f"Found repeated headings. Please check remove repeated headings in file {self.file_input['VARIABLE_CONTACT_PERIMETER']} as described below:\n{sheets}")
 
     def __check_variable_contact_perimeter_consistency(self:Self):
 
