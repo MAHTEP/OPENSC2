@@ -418,11 +418,9 @@ class Conductor:
         missing_var_cont_peri = {key: value for key,value in missing_var_cont_peri.items() if value}
         # Check if missing_var_cont_peri is not empty.
         if missing_var_cont_peri:
-            # Convert into a dataframe to improve error message readability.
-            missing_var_cont_peri = pd.DataFrame(missing_var_cont_peri)
             # missing_var_cont_peri is not empty: there are missing interfaces 
             # in some sheets of auxiliary file variable_contact_perimeter.xlsx.
-            raise ValueError(f"Found missing interfaces with a variable contact perimeter. Please, in auxiliary input file {self.file_input['VARIABLE_CONTACT_PERIMETER']}, add the columns reported in the following table (columns header are sheet names, values are missing columns in the sheet):\n{missing_var_cont_peri}.")
+            raise ValueError(f"Found missing interfaces with a variable contact perimeter. Please, in auxiliary input file {self.file_input['VARIABLE_CONTACT_PERIMETER']}, add the columns reported below:\n{missing_var_cont_peri}.")
 
     def __check_variable_contact_perimeter_coordinate(self:Self):
 
