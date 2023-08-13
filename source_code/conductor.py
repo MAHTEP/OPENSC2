@@ -345,7 +345,7 @@ class Conductor:
             "electric_conductance_mode",
             "electric_conductance",
             "open_perimeter_fract",
-            "intef_thickness",
+            "interf_thickness",
             "trans_transp_multiplier",
             "view_factors",
             }
