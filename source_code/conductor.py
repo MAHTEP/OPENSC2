@@ -311,6 +311,17 @@ class Conductor:
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.KIND}, identifier: {self.identifier})"
     
+    def __check_conductor_coupling(self:Self):
+        """Private method that performs checks on user defined input file conductor_coupling.xlsx.
+
+        Args:
+            self (Self): conductor object."""
+        
+        self.__check_coupling_sheet_names()
+        self.__check_thermal_contact_resistance_values()
+        # Add call to methods that perform cheks on file
+        # conductor_coupling.xlsx below.
+
     def __check_coupling_sheet_names(self:Self):
 
         """Private method that checks sheet names in input file conductor_coupling.xlsx.
