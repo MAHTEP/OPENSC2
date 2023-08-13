@@ -244,6 +244,14 @@ class Conductor:
                 sheet_name=None,
                 header=0,
             )
+
+            # Loop to restore original column name (the engine of method 
+            # pd.read_excel would append a number to columns with the same 
+            # name, e.g. JK_1, JK_1.1,...; this loop will remove the .1,..., 
+            # part of the column name).
+            for df in self.dict_df_variable_contact_perimeter.values():
+                df.columns = [col_name.split(".")[0] for col_name in df.columns]
+
         elif (
             self.file_input["VARIABLE_CONTACT_PERIMETER"] != "none"
             and all(interf_flag == 1)
