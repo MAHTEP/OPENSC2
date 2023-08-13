@@ -311,6 +311,45 @@ class Conductor:
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.KIND}, identifier: {self.identifier})"
     
+    def __check_coupling_sheet_names(self:Self):
+
+        """Private method that checks sheet names in input file conductor_coupling.xlsx.
+
+        Args:
+            self (Self): conductor object.
+
+        Raises:
+            KeyError: any of the sheet names in file conductor_coupling.xlsx is not consistent with the reference ones.
+        """
+
+        ref_sheet_names = {
+            "contact_perimeter_flag",
+            "contact_perimeter",
+            "HTC_choice",
+            "contact_HTC",
+            "thermal_contact_resistance",
+            "HTC_multiplier",
+            "electric_conductance_mode",
+            "electric_conductance",
+            "open_perimeter_fract",
+            "intef_thickness",
+            "trans_transp_multiplier",
+            "view_factors",
+            }
+        
+        wrong_sheet_names = list()
+
+        # Loop to check sheet names in input file conductor_coupling.xlsx.
+        for sheet_name in self.dict_df_coupling.keys():
+            if sheet_name not in ref_sheet_names:
+                wrong_sheet_names.append(sheet_name)
+
+        # Check if list wrong_sheet_names is not empty.
+        if wrong_sheet_names:
+            # Found not consisten sheet names in file conductor_coupling.xlsx: 
+            # raise ValueError.
+            raise ValueError(f"Found not valid sheets name in input file {self.file_input['STRUCTURE_COUPLING']}.List of not valid sheet names:{wrong_sheet_names}\nlist of valid sheet names:\n{ref_sheet_names}")
+
     def __check_thermal_contact_resistance_values(self:Self):
 
         """Private method that checks that values in sheet thermal_contact_resistance of input file conductor_coupling.xlsx are larger or equal than zero.
