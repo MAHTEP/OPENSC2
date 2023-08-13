@@ -352,12 +352,6 @@ class Simulation:
                 f"Simulation time: {self.simulation_time[-1]:.{self.n_digit_time}f} s; {self.simulation_time[-1]/self.transient_input['TEND']*100:5.2f} %"
             )
             for conductor in self.list_of_Conductors:
-                # Evaluate thermal hydraulic properties and quantities in Gauss 
-                # points, method __eval_Gauss_point_th is invoked inside method 
-                # operating_conditions_th. Method operating_conditions_th is 
-                # called at each time step before function step because the 
-                # method for the integration in time is implicit.
-                conductor.operating_conditions_th(self)
                 
                 # Use electric method only if needed, i.e., user specifies a 
                 # current.
@@ -366,6 +360,13 @@ class Simulation:
                     # initialize, solve and reorganize the electric problem.
                     conductor.electric_method()
 
+                # Evaluate thermal hydraulic properties and quantities in Gauss 
+                # points, method __eval_Gauss_point_th is invoked inside method 
+                # operating_conditions_th. Method operating_conditions_th is 
+                # called at each time step before function step because the 
+                # method for the integration in time is implicit.
+                conductor.operating_conditions_th(self)
+                
                 conductor.build_heat_source(self)
                 # call step to solve the problem @ new timestep (cdp, 07/2020)
                 step(

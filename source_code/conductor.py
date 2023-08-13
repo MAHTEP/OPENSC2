@@ -2782,21 +2782,21 @@ class Conductor:
                 self.total_sc_cross_section, self.total_so_cross_section, self.inventory
             )
 
-        # Initialize thermal hydraulic quantities in both nodal and Gauss 
-        # points.
-        self.operating_conditions_th_initialization(simulation)
         # Initialize electromagnetic quantities in both nodal and Gauss 
         # points.
         self.operating_conditions_em()
+        # Initialize thermal hydraulic quantities in both nodal and Gauss 
+        # points.
+        self.operating_conditions_th_initialization(simulation)
 
-        # Loop on SolidComponent (cdp, 01/2021)
-        # N.B. questo loop si potrebbe fare usando map.
-        for s_comp in self.inventory["SolidComponent"].collection:
-            # compute, average density, thermal conductivity, specifi heat at \
-            # constant pressure and electrical resistivity at initial \
-            # SolidComponent temperature in nodal points (cdp, 01/2021)
-            s_comp.eval_sol_comp_properties(self.inventory)
-        # end for s_comp.
+        # # Loop on SolidComponent (cdp, 01/2021)
+        # # N.B. questo loop si potrebbe fare usando map.
+        # for s_comp in self.inventory["SolidComponent"].collection:
+        #     # compute, average density, thermal conductivity, specifi heat at \
+        #     # constant pressure and electrical resistivity at initial \
+        #     # SolidComponent temperature in nodal points (cdp, 01/2021)
+        #     s_comp.eval_sol_comp_properties(self.inventory)
+        # # end for s_comp.
 
         # Loop to initialize electric related quantities for each
         # SolidComponent object.
@@ -4623,39 +4623,42 @@ class Conductor:
                         # initialization (0) and at the first electriC time 
                         # step (1).
                         strand.get_tcs()
+            if self.cond_el_num_step <= 1:
+                # Evaluate properties only at initialization (0) and at 
+                # the first electric time step (1).
+                strand.eval_sol_comp_properties(self.inventory)
+            else:
+                # Update only electrical resistivity (stabilizer) at each 
+                # electric time step.
+                if isinstance(strand,StrandMixedComponent):
+                    strand.dict_node_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity_not_sc(
+                            strand.dict_node_pt
+                        )
+                elif isinstance(strand, StrandStabilizerComponent):
+                    strand.dict_node_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity(
+                            strand.dict_node_pt
+                        )
 
         for jacket in self.inventory["JacketComponent"].collection:
             jacket.get_current(self)
             jacket.get_magnetic_field(self)
+            if self.cond_el_num_step <= 1:
+                # Evaluate properties only at initialization (0) and at 
+                # the first electric time step (1).
+                jacket.eval_sol_comp_properties(self.inventory)
+            else:
+                # Update only electrical resistivity at each electri time step.
+                jacket.dict_node_pt["total_electrical_resistivity"] = jacket.jacket_electrical_resistivity(
+                        jacket.dict_node_pt
+                    )
 
         self.__eval_gauss_point_em()
 
     def __eval_gauss_point_th(self, simulation):
         """
-        Method that evaluates temperatures and transport coefficients at the Gauss point, i.e at the centre of the element.
+        Method that evaluates transport coefficients at the Gauss point, i.e at the centre of the element.
         N.B. Fluid component properties are evaluated calling method get_transp_coeff.
         """
-
-        # JacketComponent
-        for jacket in self.inventory["JacketComponent"].collection:
-            jacket.dict_Gauss_pt["temperature"] = (
-                np.abs(
-                    jacket.dict_node_pt["temperature"][:-1]
-                    + jacket.dict_node_pt["temperature"][1:]
-                )
-                / 2.0
-            )
-        # end for rr.
-
-        # StrandComponent
-        for strand in self.inventory["StrandComponent"].collection:
-            strand.dict_Gauss_pt["temperature"] = (
-                np.abs(
-                    strand.dict_node_pt["temperature"][:-1]
-                    + strand.dict_node_pt["temperature"][1:]
-                )
-                / 2.0
-            )
 
         # call method Get_transp_coeff to evaluate transport properties (heat
         # transfer coefficient and friction factor) in each Gauss point
@@ -4665,6 +4668,8 @@ class Conductor:
         """
         Private method that evaluates material properties and coefficients at the Gauss point, i.e at the centre of the element.
         """
+
+        self.__eval_temperature_solids_gauss_point()
 
         # JacketComponent
         for jacket in self.inventory["JacketComponent"].collection:
@@ -4723,6 +4728,20 @@ class Conductor:
                     strand.dict_Gauss_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity(
                             strand.dict_Gauss_pt
                         )
+
+    def __eval_temperature_solids_gauss_point(self:Self):
+        """Private method that evaluate temperature of SolidComponents in Gauss points.
+        """
+
+        # Loop on SolidComponent
+        for obj in self.inventory["SolidComponent"].collection:
+            obj.dict_Gauss_pt["temperature"] = (
+                np.abs(
+                    obj.dict_node_pt["temperature"][:-1]
+                    + obj.dict_node_pt["temperature"][1:]
+                )
+                / 2.0
+            )
 
     def post_processing(self, simulation):
 
