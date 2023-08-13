@@ -222,6 +222,8 @@ class Conductor:
             index_col=0,
         )
 
+        self.__check_conductor_coupling()
+
         # Alias for self.dict_df_coupling["contact_perimeter_flag"]
         interf_flag = self.dict_df_coupling["contact_perimeter_flag"].to_numpy()
         # Remove all nonzero values in interf_flag and convert matrix to array.
