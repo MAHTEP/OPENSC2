@@ -379,7 +379,7 @@ class Conductor:
         # Get index with negative values for thermal contact resistances.
         negative_idx = np.nonzero(therm_cont_res < 0.0)
         # Check if negative_idx is not empty.
-        if negative_idx:
+        if negative_idx[0]:
             # negative_idx is not empty: raise ValueError.
             raise ValueError(f"Thermal contact resistance should be >= 0.0. Please check index {negative_idx} in sheet thermal_contact_resistance of input file {self.file_input['STRUCTURE_COUPLING']}")
 
