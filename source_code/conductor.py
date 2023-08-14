@@ -4970,6 +4970,7 @@ class Conductor:
                     True: fluid_comp_c.coolant.dict_node_pt,
                     False: fluid_comp_c.coolant.dict_Gauss_pt,
                 }
+
                 # Multiplier used in both cases (positive and negative flag).
                 mlt = self.dict_df_coupling["HTC_multiplier"].at[
                             fluid_comp_r.identifier, fluid_comp_c.identifier
@@ -5045,6 +5046,10 @@ class Conductor:
                 True: s_comp_r.dict_node_pt,
                 False: s_comp_r.dict_Gauss_pt,
             }
+            # Thermal conductivity of s_comp_c
+            kk_s_comp_r = dict_dummy_comp_r[flag_nodal][
+                "total_thermal_conductivity"
+            ] # W/m/K
             for _, s_comp_c in enumerate(
                 self.inventory["SolidComponent"].collection[rr + 1 :]
             ):
@@ -5081,20 +5086,59 @@ class Conductor:
                         ]
                         == 1
                     ):
-                        # Thermal contact.
-                        htc_solid = 500.0
                         
+                        # Aliases
+                        # Thermal contact resistance between s_comp_r and 
+                        # s_comp_c.
+                        R_contact = self.dict_df_coupling[
+                            "thermal_contact_resistance"
+                            ].at[
+                                s_comp_r.identifier,s_comp_c.identifier
+                            ] # m^2K/W
+                        # Thickness of component s_comp_r when in contact with 
+                        # component s_comp_c. It is assumed constant, even 
+                        # though it may change in the case of variable contact 
+                        # perimeter.
+                        thick_s_comp_r_c = self.dict_df_coupling[
+                            "interf_thickness"
+                            ].at[
+                                s_comp_r.identifier,s_comp_c.identifier
+                            ] # m
+                        # Thickness of component s_comp_c when in contact with 
+                        # component s_comp_r. It is assumed constant, even 
+                        # though it may change in the case of variable contact 
+                        # perimeter.
+                        thick_s_comp_c_r = self.dict_df_coupling[
+                            "interf_thickness"
+                            ].at[
+                                s_comp_c.identifier,s_comp_r.identifier
+                            ] # m
+                        # Thermal conductivity of s_comp_c
+                        kk_s_comp_c = dict_dummy_comp_c[flag_nodal][
+                            "total_thermal_conductivity"
+                        ] # W/m/K
+
+                        # Evaluate thermal resistance of c_comp_r.
+                        R_s_comp_r = thick_s_comp_r_c/kk_s_comp_r # m^2K/W
+                        # Evaluate thermal resistance of c_comp_c.
+                        R_s_comp_c = thick_s_comp_c_r/kk_s_comp_c # m^2K/W
+
+                        # Evaluate variable conductive heat transfer 
+                        # coefficient W/m^2/K.
+                        htc_solid = 1.0 / (R_s_comp_r + R_contact + R_s_comp_c)
+                        
+                        # Assign variable conductive heat transfer coefficient.
+                        # Assumptions:
+                        #   1) constant interface thickness, it may be actually 
+                        # variable in case of variable contact perimeter;
+                        #   2) constant multiplier, it may be actually a 
+                        # function of the contact perimeter, temperature and 
+                        # magnetic field.
                         dict_dummy["HTC"]["sol_sol"]["cond"][
                             self.dict_topology["sol_sol"][s_comp_r.identifier][
                                 s_comp_c.identifier
                             ]
-                        ] = (
-                            mlt
-                            * htc_solid
-                            * np.ones(
-                                dict_dummy_comp_r[flag_nodal]["temperature"].shape
-                            )
-                        )
+                        ] = mlt * htc_solid
                     elif (
                         self.dict_df_coupling["HTC_choice"].at[
                             s_comp_r.identifier, s_comp_c.identifier
