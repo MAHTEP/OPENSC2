@@ -140,7 +140,7 @@ class JacketComponent(SolidComponent):
                     self.radiative_heat_env[:, 1] = self.radiative_heat_env[:, 0].copy()
                 # Update value at the current time step.
                 self.radiative_heat_env[:, 0] = (
-                    conductor.dict_interf_peri["env_sol"][key]
+                    conductor.dict_interf_peri["env_sol"]["nodal"][key]
                     * conductor.dict_node_pt["HTC"]["env_sol"][key]["rad"]
                     * (
                         environment.inputs["Temperature"]
@@ -159,7 +159,7 @@ class JacketComponent(SolidComponent):
                 self.radiative_heat_env[:, 1:4] = self.radiative_heat_env[:, 0:3].copy()
                 # Update value at the current time step.
                 self.radiative_heat_env[:, 0] = (
-                    conductor.dict_interf_peri["env_sol"][key]
+                    conductor.dict_interf_peri["env_sol"]["nodal"][key]
                     * conductor.dict_node_pt["HTC"]["env_sol"][key]["rad"]
                     * (
                         environment.inputs["Temperature"]
@@ -200,7 +200,7 @@ class JacketComponent(SolidComponent):
                     ].copy()
                 # Update value at the current time step.
                 self.radiative_heat_inn[key][:, 0] = (
-                    conductor.dict_interf_peri["sol_sol"][key]
+                    conductor.dict_interf_peri["sol_sol"]["nodal"][key]
                     * conductor.dict_node_pt["HTC"]["sol_sol"]["rad"][key]
                     * (
                         jk_inner.dict_node_pt["temperature"]
@@ -221,7 +221,7 @@ class JacketComponent(SolidComponent):
                 ].copy()
                 # Update value at the current time step.
                 self.radiative_heat_inn[key][:, 0] = (
-                    conductor.dict_interf_peri["sol_sol"][key]
+                    conductor.dict_interf_peri["sol_sol"]["nodal"][key]
                     * conductor.dict_node_pt["HTC"]["sol_sol"]["rad"][key]
                     * (
                         jk_inner.dict_node_pt["temperature"]

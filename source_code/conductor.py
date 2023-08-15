@@ -5,10 +5,11 @@ from typing_extensions import Self
 from openpyxl import load_workbook
 import numpy as np
 from scipy.sparse import coo_matrix, csr_matrix, lil_matrix, diags
-from scipy import constants, integrate
+from scipy import constants, integrate, interpolate
 import pandas as pd
 import os
 from collections import namedtuple
+import warnings
 
 # import classes
 from component_collection import ComponentCollection
@@ -25,6 +26,8 @@ from conductor_flags import (
     SELF_INDUCTANCE_MODE_2,
     STATIC_ELECTRIC_SOLVER,
     ELECTRIC_TIME_STEP_NUMBER,
+    VARIABLE_CONTACT_PERIMETER,
+    CONSTANT_CONTACT_PERIMETER,
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -219,6 +222,59 @@ class Conductor:
             index_col=0,
         )
 
+        self.__check_conductor_coupling()
+
+        # Alias for self.dict_df_coupling["contact_perimeter_flag"]
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"].to_numpy()
+        # Remove all nonzero values in interf_flag and convert matrix to array.
+        interf_flag = interf_flag[interf_flag.nonzero()]
+
+        # Check if user declared variable contact perimeter for some of the 
+        # conductor components.
+        if (
+            self.file_input["VARIABLE_CONTACT_PERIMETER"] != "none"
+            and any(interf_flag == -1)
+        ):
+            # Correctly declared a variable contact perimeter: load all sheets 
+            # in file variable_contact_perimeter.xlsx in a dictionary of 
+            # dataframes.
+            self.dict_df_variable_contact_perimeter = pd.read_excel(
+                os.path.join(
+                    self.BASE_PATH,
+                    self.file_input["VARIABLE_CONTACT_PERIMETER"]
+                ),
+                sheet_name=None,
+                header=0,
+            )
+
+            # Loop to restore original column name (the engine of method 
+            # pd.read_excel would append a number to columns with the same 
+            # name, e.g. JK_1, JK_1.1,...; this loop will remove the .1,..., 
+            # part of the column name).
+            for df in self.dict_df_variable_contact_perimeter.values():
+                df.columns = [col_name.split(".")[0] for col_name in df.columns]
+
+            # Checks on auxiliary input file variable_contact_perimeter.xlsx
+            self.dict_df_variable_contact_perimeter = (
+                self.__check_variable_contact_perimeter()
+            )
+
+        elif (
+            self.file_input["VARIABLE_CONTACT_PERIMETER"] != "none"
+            and all(interf_flag == 1)
+            ):
+            # User provided a file for variable contact perimeter but in sheet 
+            # contact_perimeters_flag none of the interfaces has the flag -1.
+            raise ValueError("User provides a file for variable contact perimeter but in sheet contact_perimeter_flag none of the interfaces has the valid flag for the variable contact perimeter (-1). \nIf user wants to assign variable contact perimeters, please check sheet contact_perimeter_flag in file conductor_coupling.xlsx.\nIf user does not want to assign a variable contact perimeter flag, please check sheet CONDUCTOR_files in file conductor_definition.xlsx and replace the file name in row VARIABLE_CONTACT_PERIMETER with 'none'.")
+        elif (
+            self.file_input["VARIABLE_CONTACT_PERIMETER"] == "none"
+            and any(interf_flag == -1)
+            ):
+            # User prescribed the flag for variable contact perimeters without 
+            # providing an auxiliary file to read the variable contact 
+            # perimeters.
+            raise FileNotFoundError("User prescribed the flag for variable contact perimeters without providing an auxiliary file to read the variable contact perimeters.\nIf user wants to assign variable contact perimeters, please check sheet CONDUCTOR_files in file conductor_definition.xlsx and provide a valid file name in row VARIABLE_CONTACT_PERIMETER with the values of the variable contact perimeters.\nIf user does not want to assign a variable contact perimeter flag, please check sheet contact_perimeter_flag in file conductor_coupling.xlsx and replace all -1 flag with value 1.")
+
         # Dictionary declaration (cdp, 09/2020)
         self.inventory = dict()
         # call method Conductor_components_instance to make instance of conductor components (cdp, 11/2020)
@@ -237,6 +293,8 @@ class Conductor:
         self.__coordinates(simulation)
         # conductorlogger.debug(f"After call method {self.__coordinates.__name__}")
 
+        self.__update_grid_features()
+
         # Call private method __initialize_attributes to initialize all the other useful and necessary attributes of class Conductor.
         # conductorlogger.debug(
         #     f"Before call method {self.__initialize_attributes.__name__}"
@@ -246,6 +304,7 @@ class Conductor:
         #     f"After call method {self.__initialize_attributes.__name__}"
         # )
 
+
     # end method __init__ (cdp, 11/2020)
 
     def __str__(self):
@@ -253,6 +312,289 @@ class Conductor:
 
     def __repr__(self):
         return f"{self.__class__.__name__}(Type: {self.KIND}, identifier: {self.identifier})"
+    
+    def __check_conductor_coupling(self:Self):
+        """Private method that performs checks on user defined input file conductor_coupling.xlsx.
+
+        Args:
+            self (Self): conductor object."""
+        
+        self.__check_coupling_sheet_names()
+        self.__check_thermal_contact_resistance_values()
+        # Add call to methods that perform cheks on file
+        # conductor_coupling.xlsx below.
+
+    def __check_coupling_sheet_names(self:Self):
+
+        """Private method that checks sheet names in input file conductor_coupling.xlsx.
+
+        Args:
+            self (Self): conductor object.
+
+        Raises:
+            KeyError: any of the sheet names in file conductor_coupling.xlsx is not consistent with the reference ones.
+        """
+
+        ref_sheet_names = {
+            "contact_perimeter_flag",
+            "contact_perimeter",
+            "HTC_choice",
+            "contact_HTC",
+            "thermal_contact_resistance",
+            "HTC_multiplier",
+            "electric_conductance_mode",
+            "electric_conductance",
+            "open_perimeter_fract",
+            "interf_thickness",
+            "trans_transp_multiplier",
+            "view_factors",
+            }
+        
+        wrong_sheet_names = list()
+
+        # Loop to check sheet names in input file conductor_coupling.xlsx.
+        for sheet_name in self.dict_df_coupling.keys():
+            if sheet_name not in ref_sheet_names:
+                wrong_sheet_names.append(sheet_name)
+
+        # Check if list wrong_sheet_names is not empty.
+        if wrong_sheet_names:
+            # Found not consisten sheet names in file conductor_coupling.xlsx: 
+            # raise ValueError.
+            raise ValueError(f"Found not valid sheets name in input file {self.file_input['STRUCTURE_COUPLING']}.List of not valid sheet names:{wrong_sheet_names}\nlist of valid sheet names:\n{ref_sheet_names}")
+
+    def __check_thermal_contact_resistance_values(self:Self):
+
+        """Private method that checks that values in sheet thermal_contact_resistance of input file conductor_coupling.xlsx are larger or equal than zero.
+
+        Args:
+            self (Self): conductor object.
+        
+        Raises:
+            ValueError: if negative values for the thermal contact resistance are provided by the user.
+        """
+
+        # Alias.
+        therm_cont_res = self.dict_df_coupling["thermal_contact_resistance"].to_numpy()
+        # Get index with negative values for thermal contact resistances.
+        negative_idx = np.nonzero(therm_cont_res < 0.0)
+        # Check if negative_idx is not empty.
+        if negative_idx[0]:
+            # negative_idx is not empty: raise ValueError.
+            raise ValueError(f"Thermal contact resistance should be >= 0.0. Please check index {negative_idx} in sheet thermal_contact_resistance of input file {self.file_input['STRUCTURE_COUPLING']}")
+
+    def __check_variable_contact_perimeter(self:Self)->dict:
+        """Private method that performs checks on user defined auxiliary input file variable_contact_perimeter.xlsx.
+
+        Args:
+            self (Self): conductor object.
+
+        Returns:
+            dict: cleaned collection of data to interpolate the variable contact perimeter.
+        """
+        
+        # Checks the column heading in self.dict_df_variable_contact_perimeter.
+        self.__check_heading_variable_contact_perimeter()
+        # Checks consistencty between self.dict_df_variable_contact_perimeter and self.dict_df_coupling["contact_perimeter_flag"] (the reference one).
+        self.__check_variable_contact_perimeter_consistency()
+        # Check if user provided valid coordinates to perform variable contact 
+        # perimeter interpolation alogn conductor spatial discretization.
+        self.__check_variable_contact_perimeter_coordinate()
+        # Checks if there are sheets in excess in file 
+        # variable_contact_perimeter.xlsx of if in valid sheets there are 
+        # columns in exces and removes them.
+        v_c_p = self.__check_variable_contact_perimeter_surplus_info()
+        
+        return v_c_p
+
+
+    def __check_heading_variable_contact_perimeter(self:Self):
+        """Private method that checks if user defined repeated headings in any of the sheets of auxiliary file variable_contact_perimeter.xlsx
+
+        Args:
+            self (Self): conductor object.
+
+        Raises:
+            ValueError: if there are repeated headings in any of the sheets of auxiliary file variable_contact_perimeter.xlsx
+        """
+        
+        sheets = dict()
+        # Loop to check if there are repeated headings in any of the sheets in 
+        # file variable_contact_perimeters.xlsx
+        for comp_id,df in self.dict_df_variable_contact_perimeter.items():
+            headers = df.columns.to_list()
+            # Remove duplicate items exploiting set primitive.
+            unique_headers = set(headers)
+            # Check if there are repeated headings.
+            if len(unique_headers) < len(headers):
+                # Found repeated headings: update the dictionary of sheets with 
+                # repeated headings in file variable_contact_perimeter.xlsx
+                sheets[comp_id] = [
+                    col for col in unique_headers if headers.count(col) > 1
+                ]
+        
+        # Raise error if sheets is not empty.
+        if sheets:
+            raise ValueError(f"Found repeated headings. Please check remove repeated headings in file {self.file_input['VARIABLE_CONTACT_PERIMETER']} as described below:\n{sheets}")
+
+    def __check_variable_contact_perimeter_consistency(self:Self):
+
+        """Private method that checks the consistecy between sheet contact_perimeter_flags in input file conductor_coupling.xlsx and the user defined auxiliary input file variable_contact_perimeter.xlsx. The assumption is that sheet in file conductor_coupling.xlsx is correct.
+
+        Args:
+            self (Self): conductor object.
+
+        Raises:
+            KeyError: if a sheet is totally missing in auxiliary input file variable_contact_perimeter.xlsx, i.e. user forget to define a full set of interfaces with a variable contact perimeter.
+            ValueError: if in an existing sheet of auxiliary input file variable_contact_perimeter.xlsx, some interfaces which are defined with a variable contact perimeter are missing.
+        """
+
+        # Aliases.
+        cont_peri_flag = self.dict_df_coupling["contact_perimeter_flag"]
+        identifiers = cont_peri_flag.index.to_list()
+        
+        missing_var_cont_peri = dict()
+
+        # Loop on rows of sheet contact_perimeter_flags.
+        for row_idx, row_name in enumerate(identifiers):
+            # Loop on colums of sheet contact_perimeter_flags, scan only the 
+            # upper triangular matrix, excluding main diagonal.
+            for col_idx, col_name in enumerate(
+                identifiers[row_idx+1:],row_idx+1
+            ):
+                # Check if there is iterface with flag for variable contact 
+                # perimeter.
+                if cont_peri_flag.iat[row_idx,col_idx] == VARIABLE_CONTACT_PERIMETER:
+                    # Found an interface with flag for variable contact 
+                    # perimeter: make checks on auxiliary file 
+                    # variable_contact_perimeters.xlsx
+                    # Check if sheet exists in variable_contact_perimeters.xlsx.
+                    if row_name in self.dict_df_variable_contact_perimeter:
+                        # Sheet exist.
+                        cont_peri_def = self.dict_df_variable_contact_perimeter[row_name]
+                        if row_name not in missing_var_cont_peri:
+                            missing_var_cont_peri[row_name] = list()
+                        # Check if component identifier (col_name) is included 
+                        # in sheet headers.
+                        if col_name not in cont_peri_def.columns.to_list():
+                            # Component identifier (col_name) is not included 
+                            # in sheet headers: update a dictionary to build 
+                            # sutable error message.
+                            missing_var_cont_peri[row_name].append(col_name)
+                    else:
+                        # Sheet does not exist: raise KeyError.
+                        raise KeyError(f"User forgets to define a full set of interfaces with a variable contact perimeter. Please check auxiliary input file {self.file_input['VARIABLE_CONTACT_PERIMETER']}, missing sheet {row_name}.")
+        
+        # Filter missing_var_cont_peri on the only not empty list exploiting 
+        # dictionary comprehension.
+        missing_var_cont_peri = {key: value for key,value in missing_var_cont_peri.items() if value}
+        # Check if missing_var_cont_peri is not empty.
+        if missing_var_cont_peri:
+            # missing_var_cont_peri is not empty: there are missing interfaces 
+            # in some sheets of auxiliary file variable_contact_perimeter.xlsx.
+            raise ValueError(f"Found missing interfaces with a variable contact perimeter. Please, in auxiliary input file {self.file_input['VARIABLE_CONTACT_PERIMETER']}, add the columns reported below:\n{missing_var_cont_peri}.")
+
+    def __check_variable_contact_perimeter_coordinate(self:Self):
+
+        """Private method that checks the consistency of the spatial cooridinates user provides to make interpolation of the variable contact perimeter in file variable_contact_perimeter.xlsx.
+
+        Args:
+            self (Self): conductor object.
+
+        Raises:
+            ValueError: if less than two coordinates are provided.
+            ValueError: if any of the coordinates provided is negative
+            ValueError: if first coordinate is not equal to 0.0
+            ValueError: if last coordinate is larger that conductor length.
+        """
+    
+        # Aliases.
+        var_cont_peri = self.dict_df_variable_contact_perimeter
+
+        for sheet_name, df in var_cont_peri.items():
+            zcoord = df.iloc[:,0].to_numpy()
+            # Check number of items in array zcoord.
+            if zcoord.size < 2:
+                # Wrong number of items in array zcoord.
+                raise ValueError(f"User must provide at least two coordinates to define the variable contact perimeter. Please, check in sheet {sheet_name} of file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n")
+            
+            # Check if coordinates are positive.
+            if any(zcoord < 0.0):
+                row_idx = np.nonzero(zcoord < 0.0)[0] + 1
+                raise ValueError(f"Spatial coordinates for variable contact perimeter interpolation must be positive. Please, check rows {row_idx} in sheet {sheet_name} of file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n ")
+
+            # Check first item value in zcoord.
+            if zcoord[0] != 0.0:
+                raise ValueError(f"First z coordinate value should be 0.0. Please, check row 2 in sheet {sheet_name} of file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n ")
+            
+            # Check last item value in zcoord.
+            if zcoord[-1] > self.inputs["ZLENGTH"]:
+                raise ValueError(f"Last z coordinate value should be lower or equal than the conductor length ({self.inputs['ZLENGTH']} m). Please, check row {zcoord.size + 1} in sheet {sheet_name} of file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n ")
+
+    def __check_variable_contact_perimeter_surplus_info(self:Self)->dict:
+        """Private method that checks if there are any surplus sheets in user defined auxiliary input file variable_contact_perimeter.xlsx and removes them. Moreover the method checks if there are surplus columns from valid sheets in the same file and removes them. Reference sheet names and colums names cames from attribute self.dict_df_coupling["contact_perimeter_flag"].
+
+        Args:
+            self (Self): conductor object.
+
+        Returns:
+            dict: cleaned collection of data to interpolate the variable contact perimeter.
+        """
+
+        # Aliases.
+        cont_peri_flag = self.dict_df_coupling["contact_perimeter_flag"]
+        identifiers = cont_peri_flag.index.to_list()
+        var_cont_peri = self.dict_df_variable_contact_perimeter
+
+        # Build the test set of sheets from var_cont_peri
+        sheets = set(var_cont_peri.keys())
+        # Initialize empty reference set for sheets
+        reference_sheets = set()
+
+        # Loop on rows of sheet contact_perimeter_flags.
+        for row_idx, row_name in enumerate(identifiers):
+            # Initialize reference set of columns
+            reference_columns = set()
+
+            # Loop on colums of sheet contact_perimeter_flags, scan only the 
+            # upper triangular matrix, excluding main diagonal.
+            for col_idx, col_name in enumerate(
+                identifiers[row_idx+1:],row_idx+1
+            ):
+                # Check if there is iterface with flag for variable contact 
+                # perimeter.
+                if cont_peri_flag.iat[row_idx,col_idx] == VARIABLE_CONTACT_PERIMETER:
+                    # Found an interface with flag for variable contact 
+                    # perimeter: update set reference_sheets
+                    reference_sheets.add(row_name)
+                    # Update set reference_columns
+                    reference_columns.add(col_name)
+            
+            if row_name in var_cont_peri:
+                # Build the test set of columns from a dataframe in 
+                # var_cont_peri removing the first header (z_coord).
+                columns = set(var_cont_peri[row_name].columns.to_list()[1:])
+                # Compare set columns agaist set referece_columns: get the 
+                # elements in columns that are not in reference_columns, i.e. 
+                # the surplus columns information.
+                column_diff = columns.difference(reference_columns)
+                # Check if columns_diff is not empyt
+                if column_diff:
+                    # Remove extra columns from var_cont_peri[row_name].
+                    var_cont_peri[row_name].drop(columns=column_diff,inplace=True)
+                    warnings.warn(f"Removed surplus columns {column_diff} from sheet {row_name} in {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n")
+            
+        # Compare set sheets agaist set referece_sheets: get the elements in 
+        # sheet that are not in reference:sheets, i.e. the surplus information.
+        sheet_diff = sheets.difference(reference_sheets)
+        # Check if sheet_diff is not empyt
+        if sheet_diff:
+            # Remove extra sheets from var_cont_peri.
+            for sheet in sheet_diff:
+                var_cont_peri.pop(sheet)
+                warnings.warn(f"Removed surplus sheet {sheet} from in {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n")
+
+        return var_cont_peri
 
     def __delete_equipotential_inputs(self: Self):
         """Private method that deletes input values EQUIPOTENTIAL_SURFACE_NUMBER and EQUIPOTENTIAL_SURFACE_COORDINATE if they are not needed.
@@ -1027,19 +1369,37 @@ class Conductor:
         (cdp, 09/2020)
         """
 
-        # nested dictionaries declarations (cdp, 09/2020)
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
+        # nested dictionaries declarations
         self.dict_topology["ch_ch"] = dict()
         self.dict_topology["ch_ch"]["Hydraulic_parallel"] = dict()
         self.dict_topology["ch_ch"]["Thermal_contact"] = dict()
         self.dict_topology["Standalone_channels"] = list()
         self.dict_interf_peri["ch_ch"] = dict()
-        self.dict_interf_peri["ch_ch"]["Open"] = dict()
-        self.dict_interf_peri["ch_ch"]["Close"] = dict()
+        self.dict_interf_peri["ch_ch"]["Open"] = dict(
+            nodal=dict(),
+            Gauss=dict(),
+        )
+        self.dict_interf_peri["ch_ch"]["Close"] = dict(
+            nodal=dict(),
+            Gauss=dict(),
+        )
         self.dict_topology["ch_sol"] = dict()
-        self.dict_interf_peri["ch_sol"] = dict()
+        self.dict_interf_peri["ch_sol"] = dict(
+            nodal=dict(),
+            Gauss=dict(),
+        )
         self.dict_topology["sol_sol"] = dict()
-        self.dict_interf_peri["sol_sol"] = dict()
-        self.dict_interf_peri["env_sol"] = dict()
+        self.dict_interf_peri["sol_sol"] = dict(
+            nodal=dict(),
+            Gauss=dict(),
+        )
+        self.dict_interf_peri["env_sol"] = dict(
+            nodal=dict(),
+            Gauss=dict(),
+        )
 
         # Call method Get_hydraulic_parallel to obtain the channels subdivision \
         # into groups of channels that are in hydraulic parallel.
@@ -1051,32 +1411,20 @@ class Conductor:
                 self.inventory["FluidComponent"].collection[rr + 1 :], rr + 1
             ):
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
+                    abs(interf_flag.at[
                         fluid_comp_r.identifier, fluid_comp_c.identifier
                     ]
-                    == 1
+                    ) == 1
                 ):
-                    # There is at least thermal contact between fluid_comp_r and fluid_comp_c (cdp, 09/2020)
-                    # Assign the contact perimeter value (cdp, 09/2020)
-                    self.dict_interf_peri["ch_ch"]["Open"][
-                        f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
-                    ] = (
-                        self.dict_df_coupling["contact_perimeter"].at[
-                            fluid_comp_r.identifier, fluid_comp_c.identifier
-                        ]
-                        * self.dict_df_coupling["open_perimeter_fract"].at[
-                            fluid_comp_r.identifier, fluid_comp_c.identifier
-                        ]
-                    )
-                    self.dict_interf_peri["ch_ch"]["Close"][
-                        f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
-                    ] = self.dict_df_coupling["contact_perimeter"].at[
-                        fluid_comp_r.identifier, fluid_comp_c.identifier
-                    ] * (
-                        1.0
-                        - self.dict_df_coupling["open_perimeter_fract"].at[
-                            fluid_comp_r.identifier, fluid_comp_c.identifier
-                        ]
+                    # There is at least thermal contact between fluid_comp_r 
+                    # and fluid_comp_c
+                    # Assign the contact perimeter value
+                    (
+                        self.dict_interf_peri["ch_ch"]["Close"],
+                        self.dict_interf_peri["ch_ch"]["Open"]
+                    ) = self.__assign_contact_perimeter_fluid_comps(
+                        fluid_comp_r.identifier,
+                        fluid_comp_c.identifier,
                     )
                     if cc == rr + 1:
                         # declare dictionary flag_found (cdp, 09/2020)
@@ -1086,7 +1434,7 @@ class Conductor:
                     flag_found = self.get_thermal_contact_channels(
                         rr, cc, fluid_comp_r, fluid_comp_c, flag_found
                     )
-                # end self.dict_df_coupling["contact_perimeter_flag"].at[fluid_comp_r.identifier, fluid_comp_c.identifier] == 1 (cdp, 09/2020)
+                # end abs(interf_flag.at[fluid_comp_r.identifier, fluid_comp_c.identifier]) == 1 (cdp, 09/2020)
             # end for cc (cdp, 09/2020)
             if (
                 self.dict_topology["ch_ch"]["Thermal_contact"].get(
@@ -1161,17 +1509,19 @@ class Conductor:
             dict_topology_dummy_ch_sol[fluid_comp_r.identifier] = dict()
             for _, s_comp_c in enumerate(self.inventory["SolidComponent"].collection):
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
-                        fluid_comp_r.identifier, s_comp_c.identifier
-                    ]
-                    == 1
+                    abs(interf_flag.at[
+                            fluid_comp_r.identifier, s_comp_c.identifier
+                        ]
+                    ) == 1
                 ):
-                    # There is contact between fluid_comp_r and s_comp_c (cdp, 09/2020)
-                    self.dict_interf_peri["ch_sol"][
-                        f"{fluid_comp_r.identifier}_{s_comp_c.identifier}"
-                    ] = self.dict_df_coupling["contact_perimeter"].at[
-                        fluid_comp_r.identifier, s_comp_c.identifier
-                    ]
+                    # There is contact between fluid_comp_r and s_comp_c
+
+                    self.dict_interf_peri["ch_sol"] = self.__assign_contact_perimeter_not_fluid_only(
+                        fluid_comp_r.identifier,
+                        s_comp_c.identifier,
+                        "ch_sol",
+                    )
+                    
                     # Interface identification (cdp, 09/2020)
                     dict_topology_dummy_ch_sol[fluid_comp_r.identifier][
                         s_comp_c.identifier
@@ -1186,7 +1536,7 @@ class Conductor:
                         dict_chan_s_comp_contact,
                         list_linked_chan_sol,
                     )
-                # end if self.dict_df_coupling["contact_perimeter_flag"].at[fluid_comp_r.identifier, s_comp_c.identifier] == 1: (cdp, 09/2020)
+                # end if abs(interf_flag.at[fluid_comp_r.identifier, s_comp_c.identifier]) == 1: (cdp, 09/2020)
             # end for cc (cdp, 09/2020)
             # Call method Update_interface_dictionary to update dictionaries \
             # (cdp, 09/2020)
@@ -1216,12 +1566,19 @@ class Conductor:
                 self.inventory["SolidComponent"].collection[rr + 1 :]
             ):
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
-                        s_comp_r.identifier, s_comp_c.identifier
-                    ]
-                    == 1
+                    abs(interf_flag.at[
+                            s_comp_r.identifier, s_comp_c.identifier
+                        ]
+                    ) == 1
                 ):
-                    # There is contact between s_comp_r and s_comp_c (cdp, 09/2020)
+                    # There is contact between s_comp_r and s_comp_c 
+
+                    self.dict_interf_peri["sol_sol"] = self.__assign_contact_perimeter_not_fluid_only(
+                        s_comp_r.identifier,
+                        s_comp_c.identifier,
+                        "sol_sol",
+                    )
+
                     self.dict_interf_peri["sol_sol"][
                         f"{s_comp_r.identifier}_{s_comp_c.identifier}"
                     ] = self.dict_df_coupling["contact_perimeter"].at[
@@ -1238,7 +1595,7 @@ class Conductor:
                     ] = self.chan_sol_interfaces(
                         s_comp_r, s_comp_c, dict_s_comps_contact, list_linked_solids
                     )
-                # end if self.dict_df_coupling["contact_perimeter_flag"].iat[rr, cc] == 1: (cdp, 09/2020)
+                # end if abs(interf_flag.iat[rr, cc]) == 1: (cdp, 09/2020)
             # end for cc (cdp, 09/2020)
             # Call method Update_interface_dictionary to update dictionaries \
             # (cdp, 09/2020)
@@ -1252,21 +1609,18 @@ class Conductor:
                 list_linked_solids,
             )
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    environment.KIND, s_comp_r.identifier
-                ]
-                == 1
+                abs(interf_flag.at[environment.KIND,s_comp_r.identifier]) == 1
             ):
                 if (
                     s_comp_r.inputs["Jacket_kind"] == "outer_insulation"
                     or s_comp_r.inputs["Jacket_kind"] == "whole_enclosure"
                 ):
                     # There is an interface between environment and s_comp_r.
-                    self.dict_interf_peri["env_sol"][
-                        f"{environment.KIND}_{s_comp_r.identifier}"
-                    ] = self.dict_df_coupling["contact_perimeter"].at[
-                        environment.KIND, s_comp_r.identifier
-                    ]
+                    self.dict_interf_peri["env_sol"] = self.__assign_contact_perimeter_not_fluid_only(
+                        environment.KIND,
+                        s_comp_r.identifier,
+                        "env_sol",
+                    )
                 else:
                     # Raise error
                     raise os.error(
@@ -1275,6 +1629,179 @@ class Conductor:
                 # End if s_comp_r.inputs["Jacket_kind"]
         # end for rr (cdp, 09/2020)
         self.dict_topology.update(sol_sol=dict_topology_dummy_sol)
+
+    def __assign_contact_perimeter_fluid_comps(
+        self:Self,
+        comp1_id:str,
+        comp2_id:str,
+        )-> tuple:
+        """Private method that evaluates and assigns contact perimeters for interfaces between fluid components, distinguiscing between closed and open contact perimeters according to the value of the open perimeter fraction. Contact perimeter can be costant or variable; in the latter case it is evaluated by interpolation in the conductor spatial discretization along z direction (the axis of the conductor) starting from values loaded from auxiliary input file variable_contact_perimeter.xlsx.
+
+        Args:
+            self (Self): conductor object
+            comp1_id (str): identifier of the first fluid component (row)
+            comp2_id (str): identifier of the first fluid component (row)
+
+        Returns:
+            tuple: collection dictionay of numpy arrays with the value of the close and open contact perimeter of the interface; key nodal has the contact perimeter on nodal points, key Gauss has the contact perimeter on Gauss points.
+        """
+
+        # Aliases
+        interf_peri_open = self.dict_interf_peri["ch_ch"]["Open"]
+        interf_peri_close = self.dict_interf_peri["ch_ch"]["Close"]
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"].at[
+            comp1_id,comp2_id
+        ]
+        open_fraction = self.dict_df_coupling["open_perimeter_fract"].at[
+            comp1_id, comp2_id
+        ]
+
+        if interf_flag == CONSTANT_CONTACT_PERIMETER:
+            
+            # Alias for constant contact perimeter.
+            contact_perimeter = self.dict_df_coupling["contact_perimeter"].at[
+            comp1_id, comp2_id
+        ]
+
+            # Assign constant contact perimeter value.
+            # To be refactored!
+
+            # Open contact perimeter in nodal points.
+            interf_peri_open["nodal"][f"{comp1_id}_{comp2_id}"] = (
+                contact_perimeter * open_fraction
+            ) * np.ones(self.grid_features["N_nod"])
+            # Open contact perimeter in Gauss points.
+            interf_peri_open["Gauss"][f"{comp1_id}_{comp2_id}"] = (
+                contact_perimeter
+                * open_fraction
+            ) * np.ones(self.grid_input["NELEMS"])
+
+            # Close contact perimeter in nodal points.
+            interf_peri_close["nodal"][f"{comp1_id}_{comp2_id}"] = (
+                contact_perimeter * (1.0 - open_fraction)
+                ) * np.ones(self.grid_features["N_nod"])
+            # Open contact perimeter in Gauss points.
+            interf_peri_close["Gauss"][f"{comp1_id}_{comp2_id}"] = (
+                contact_perimeter * (1.0 - open_fraction)
+                ) * np.ones(self.grid_input["NELEMS"])
+        
+        elif interf_flag == VARIABLE_CONTACT_PERIMETER:
+            
+            # Alias for variable contact perimeter: convert padas series into a 
+            # numpy array.
+            contact_perimeter = self.dict_df_variable_contact_perimeter[comp1_id].loc[:,comp2_id].to_numpy(dtype=float)
+            
+            # Assign variable contact perimeter value.
+            # To be refactored!
+
+            # Interpolation points.
+            space_points = self.dict_df_variable_contact_perimeter[comp1_id].iloc[:,0].to_numpy(dtype=float)
+
+            # Open contact perimeter.
+            open_contact_perimeter = contact_perimeter * open_fraction
+            # Build interpolator.
+            open_interpolator = interpolate.interp1d(
+                space_points,
+                open_contact_perimeter,
+                bounds_error=False,
+                fill_value=open_contact_perimeter[-1],
+                kind='linear',
+            )
+            # Do interpolation: nodal discretization points.
+            interf_peri_open["nodal"][f"{comp1_id}_{comp2_id}"] = open_interpolator(self.grid_features["zcoord"])
+            # Do interpolation: Gauss discretization points.
+            interf_peri_open["Gauss"][f"{comp1_id}_{comp2_id}"] = open_interpolator(self.grid_features["zcoord_gauss"])
+
+            # Close contact perimeter.
+            close_contact_perimeter = contact_perimeter * (1.0 - open_fraction)
+            # Build interpolator.
+            close_interpolator = interpolate.interp1d(
+                space_points,
+                close_contact_perimeter,
+                bounds_error=False,
+                fill_value=close_contact_perimeter[-1],
+                kind='linear',
+            )
+            # Do interpolation: nodal discretization points.
+            interf_peri_close["nodal"][f"{comp1_id}_{comp2_id}"] = close_interpolator(self.grid_features["zcoord"])
+            # Do interpolation: Gauss discretization points.
+            interf_peri_close["Gauss"][f"{comp1_id}_{comp2_id}"] = close_interpolator(self.grid_features["zcoord_gauss"])
+        
+        return interf_peri_close, interf_peri_open
+
+    def __assign_contact_perimeter_not_fluid_only(
+        self:Self,
+        comp1_id:str,
+        comp2_id:str,
+        interf_kind:str,
+        )->dict:
+        """Private method that evaluates and assigns contact perimeters for interfaces between fluid components and solid components (ch_sol), between solid components (sol_sol) and between environment and solid components (env_sol). Contact perimeter can be costant or variable; in the latter case it is evaluated by interpolation in the conductor spatial discretization along z direction (the axis of the conductor) starting from values loaded from auxiliary input file variable_contact_perimeter.xlsx.
+
+        Args:
+            self (Self): conductor object
+            comp1_id (str): identifier of the first fluid component (row)
+            comp2_id (str): identifier of the first fluid component (row)
+            interf_kind (str): key to access nested dictionaries in attribute self.dict_interf_peri. Possible values: ch_sol, sol_sol and env_sol.
+
+        Returns:
+            dict: collection of numpy arrays with the value of contact perimeter of the interface; key nodal has the contact perimeter on nodal points, key Gauss has the contact perimeter on Gauss points.
+        """
+
+        # Aliases
+        interf_peri = self.dict_interf_peri[interf_kind]
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"].at[
+            comp1_id,comp2_id
+        ]
+
+        if interf_flag == CONSTANT_CONTACT_PERIMETER:
+            
+            # Alias for constant contact perimeter.
+            contact_perimeter = self.dict_df_coupling["contact_perimeter"].at[
+            comp1_id, comp2_id
+        ]
+
+            # Assign constant contact perimeter value.
+            # To be refactored!
+
+            # Open contact perimeter in nodal points.
+            interf_peri["nodal"][f"{comp1_id}_{comp2_id}"] = (
+                contact_perimeter * np.ones(self.grid_features["N_nod"])
+            )
+            # Open contact perimeter in Gauss points.
+            interf_peri["Gauss"][f"{comp1_id}_{comp2_id}"] = (
+                contact_perimeter * np.ones(self.grid_input["NELEMS"])
+            )
+        
+        elif interf_flag == VARIABLE_CONTACT_PERIMETER:
+            
+            # Alias for variable contact perimeter: convert padas series into a 
+            # numpy array.
+            contact_perimeter = self.dict_df_variable_contact_perimeter[comp1_id].loc[:,comp2_id].to_numpy(dtype=float)
+            
+            # Assign variable contact perimeter value.
+            # To be refactored!
+
+            # Interpolation points.
+            space_points = self.dict_df_variable_contact_perimeter[comp1_id].iloc[:,0].to_numpy(dtype=float)
+
+            # Build interpolator.
+            interpolator = interpolate.interp1d(
+                space_points,
+                contact_perimeter,
+                bounds_error=False,
+                fill_value=contact_perimeter[-1],
+                kind='linear',
+            )
+            # Do interpolation: nodal discretization points.
+            interf_peri["nodal"][f"{comp1_id}_{comp2_id}"] = interpolator(
+                self.grid_features["zcoord"]
+            )
+            # Do interpolation: Gauss discretization points.
+            interf_peri["Gauss"][f"{comp1_id}_{comp2_id}"] = interpolator(
+                self.grid_features["zcoord_gauss"]
+            )
+        
+        return interf_peri
 
     def chan_sol_interfaces(
         self, comp_r, comp_c, dict_comp_interface, list_linked_comp
@@ -2034,6 +2561,11 @@ class Conductor:
             ValueError: if jacket component is not of kind outer_insulation or wall_enclosure.
         """
 
+        # Aliases
+        fluid_components = self.inventory["FluidComponent"].collection
+        solid_components = self.inventory["SolidComponent"].collection
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         # Namedtuple constructor definition.
         Interface_collection = namedtuple(
             "Interface_collection",
@@ -2065,15 +2597,14 @@ class Conductor:
         )
 
         # Loop on FluidComponents.
-        for f_comp_a_idx,f_comp_a in enumerate(self.inventory["FluidComponent"].collection):
+        for f_comp_a_idx,f_comp_a in enumerate(fluid_components):
             # Loop on FluidComponents: identify fluid-fluid interfaces.
-            for f_comp_b in self.inventory["FluidComponent"].collection[f_comp_a_idx+1:]:
+            for f_comp_b in fluid_components[f_comp_a_idx+1:]:
                 # Check for interfaces.
                 if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    f_comp_a.identifier, f_comp_b.identifier
-                    ]
-                    == 1
+                    abs(
+                        interf_flag.at[f_comp_a.identifier,f_comp_b.identifier]
+                    ) == 1
                 ):
                     # Build fluid-fluid interface.
                     self.interface.fluid_fluid.append(
@@ -2084,13 +2615,12 @@ class Conductor:
                         )
                     )
             # Loop on SolidComponent: identify fluid-solid interfaces.
-            for s_comp in self.inventory["SolidComponent"].collection:
+            for s_comp in solid_components:
                 # Check for iterfaces.
                 if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    f_comp_a.identifier, s_comp.identifier
-                    ]
-                    == 1
+                    abs(
+                        interf_flag.at[f_comp_a.identifier,s_comp.identifier]
+                    ) == 1
                 ):
                     # Build fluid-solid interface.
                     self.interface.fluid_solid.append(
@@ -2101,15 +2631,14 @@ class Conductor:
                         )
                     )
         # Loop on SolidComponent.
-        for s_comp_a_idx,s_comp_a in enumerate(self.inventory["SolidComponent"].collection):
+        for s_comp_a_idx,s_comp_a in enumerate(solid_components):
             # Loop on SolidComponent: identify solid-solid interfaces.
-            for s_comp_b in self.inventory["SolidComponent"].collection[s_comp_a_idx+1:]:
+            for s_comp_b in solid_components[s_comp_a_idx+1:]:
                 # Check for interfaces.
                 if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    s_comp_a.identifier, s_comp_b.identifier
-                    ]
-                    == 1
+                    abs(
+                        interf_flag.at[s_comp_a.identifier,s_comp_b.identifier]
+                    ) == 1
                 ):
                     # Build solid-solid interface.
                     self.interface.solid_solid.append(
@@ -2121,10 +2650,9 @@ class Conductor:
                     )
             # Check for environment-solid interfaces.
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    environment.KIND, s_comp_a.identifier
-                ]
-                == 1
+                abs(
+                    interf_flag.at[environment.KIND,s_comp_a.identifier]
+                ) == 1
             ):  
                 # Check on jacket kind.
                 if (
@@ -2254,21 +2782,21 @@ class Conductor:
                 self.total_sc_cross_section, self.total_so_cross_section, self.inventory
             )
 
-        # Initialize thermal hydraulic quantities in both nodal and Gauss 
-        # points.
-        self.operating_conditions_th(simulation)
         # Initialize electromagnetic quantities in both nodal and Gauss 
         # points.
         self.operating_conditions_em()
+        # Initialize thermal hydraulic quantities in both nodal and Gauss 
+        # points.
+        self.operating_conditions_th_initialization(simulation)
 
-        # Loop on SolidComponent (cdp, 01/2021)
-        # N.B. questo loop si potrebbe fare usando map.
-        for s_comp in self.inventory["SolidComponent"].collection:
-            # compute, average density, thermal conductivity, specifi heat at \
-            # constant pressure and electrical resistivity at initial \
-            # SolidComponent temperature in nodal points (cdp, 01/2021)
-            s_comp.eval_sol_comp_properties(self.inventory)
-        # end for s_comp.
+        # # Loop on SolidComponent (cdp, 01/2021)
+        # # N.B. questo loop si potrebbe fare usando map.
+        # for s_comp in self.inventory["SolidComponent"].collection:
+        #     # compute, average density, thermal conductivity, specifi heat at \
+        #     # constant pressure and electrical resistivity at initial \
+        #     # SolidComponent temperature in nodal points (cdp, 01/2021)
+        #     s_comp.eval_sol_comp_properties(self.inventory)
+        # # end for s_comp.
 
         # Loop to initialize electric related quantities for each
         # SolidComponent object.
@@ -2627,6 +3155,9 @@ class Conductor:
         Values stored in private attribute _contact_nodes_first.
         """
 
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         self._contact_nodes_first = np.array([])
         # 1+self.inventory["FluidComponent"].number keeps into account the
         # Environment component.
@@ -2636,17 +3167,14 @@ class Conductor:
             + self.inventory["FluidComponent"].number
             + self.inventory["StrandComponent"].number,
         ):
-            ind = np.nonzero(
-                self.dict_df_coupling["contact_perimeter_flag"]
-                .iloc[
+            ind = np.nonzero(abs(interf_flag.iloc[
                     row,
                     1
                     + self.inventory["FluidComponent"].number : 1
                     + self.inventory["FluidComponent"].number
                     + self.inventory["StrandComponent"].number,
-                ]
-                .to_numpy()
-                == 1
+                ].to_numpy()
+            ) == 1
             )[0]
 
             # Reduce the row index to convert from the whole system to the
@@ -3838,7 +4366,8 @@ class Conductor:
         self.__get_total_joule_power_electric_conductance()
 
     def __update_grid_features(self):
-        """Private method that updates dictionary grid_features evaluating arrays delta_z, delta_z_tilde and zcoord_gauss as keys of dictioray self.grid_features. These arrys are used:
+        """Private method that updates dictionary grid_features evaluating arrays delta_z, delta_z_tilde and zcoord_gauss as keys of dictionary self.grid_features. These arrays are used:
+        * in method self.__assign_contact_perimeter_not_fluid_comps and self.__assign_contact_perimeter_not_fluid_only (zcoord_gauss);
         * in function step (delta_z);
         * in the joule power evaluation associated to electric resistance between StrandComponent objects (delta_z);
         * in the joule power evaluation associated to electric conductance between StrandComponent objects (delta_z_tilde);
@@ -3910,6 +4439,9 @@ class Conductor:
             simulation (object): object with all information about the simulation.
         """
         
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         # Loop on StrandComponent objects.
         for strand in self.inventory["StrandComponent"].collection:
             if self.cond_num_step == 0 and strand.operations["IQFUN"] == 0:
@@ -3958,14 +4490,13 @@ class Conductor:
             # each conductor solid components.
             jacket.set_energy_counters(self)
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
+                abs(interf_flag.at[
                     simulation.environment.KIND, jacket.identifier
-                ]
-                == 1
+                ]) == 1
             ):
                 # Evaluate the external heat by radiation in nodal points.
                 jacket._radiative_source_therm_env(self, simulation.environment)
-            # End if self.dict_df_coupling["contact_perimeter_flag"]
+            # End if abb(interf_flag)
             for _, jacket_c in enumerate(
                 self.inventory["JacketComponent"].collection[rr + 1 :]
             ):
@@ -4048,6 +4579,14 @@ class Conductor:
                 )
             # End for jacket_c.
         # end for jacket.
+    
+    def operating_conditions_th_initialization(self,simulation):
+        """Method that evaluates thermal hydraulic (th) operating conditions in both nodal and in Gauss points.
+        To be called at initialization only since it avoids a second call to method self.__update_grid_features, which is already called in method self.__init__.
+        """
+
+        self.get_transp_coeff(simulation)
+        self.__eval_gauss_point_th(simulation)
 
     def operating_conditions_th(self,simulation):
         """Method that evaluates thermal hydraulic (th) operating conditions also in Gauss points."""
@@ -4084,39 +4623,42 @@ class Conductor:
                         # initialization (0) and at the first electriC time 
                         # step (1).
                         strand.get_tcs()
+            if self.cond_el_num_step <= 1:
+                # Evaluate properties only at initialization (0) and at 
+                # the first electric time step (1).
+                strand.eval_sol_comp_properties(self.inventory)
+            else:
+                # Update only electrical resistivity (stabilizer) at each 
+                # electric time step.
+                if isinstance(strand,StrandMixedComponent):
+                    strand.dict_node_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity_not_sc(
+                            strand.dict_node_pt
+                        )
+                elif isinstance(strand, StrandStabilizerComponent):
+                    strand.dict_node_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity(
+                            strand.dict_node_pt
+                        )
 
         for jacket in self.inventory["JacketComponent"].collection:
             jacket.get_current(self)
             jacket.get_magnetic_field(self)
+            if self.cond_el_num_step <= 1:
+                # Evaluate properties only at initialization (0) and at 
+                # the first electric time step (1).
+                jacket.eval_sol_comp_properties(self.inventory)
+            else:
+                # Update only electrical resistivity at each electri time step.
+                jacket.dict_node_pt["total_electrical_resistivity"] = jacket.jacket_electrical_resistivity(
+                        jacket.dict_node_pt
+                    )
 
         self.__eval_gauss_point_em()
 
     def __eval_gauss_point_th(self, simulation):
         """
-        Method that evaluates temperatures and transport coefficients at the Gauss point, i.e at the centre of the element.
+        Method that evaluates transport coefficients at the Gauss point, i.e at the centre of the element.
         N.B. Fluid component properties are evaluated calling method get_transp_coeff.
         """
-
-        # JacketComponent
-        for jacket in self.inventory["JacketComponent"].collection:
-            jacket.dict_Gauss_pt["temperature"] = (
-                np.abs(
-                    jacket.dict_node_pt["temperature"][:-1]
-                    + jacket.dict_node_pt["temperature"][1:]
-                )
-                / 2.0
-            )
-        # end for rr.
-
-        # StrandComponent
-        for strand in self.inventory["StrandComponent"].collection:
-            strand.dict_Gauss_pt["temperature"] = (
-                np.abs(
-                    strand.dict_node_pt["temperature"][:-1]
-                    + strand.dict_node_pt["temperature"][1:]
-                )
-                / 2.0
-            )
 
         # call method Get_transp_coeff to evaluate transport properties (heat
         # transfer coefficient and friction factor) in each Gauss point
@@ -4126,6 +4668,8 @@ class Conductor:
         """
         Private method that evaluates material properties and coefficients at the Gauss point, i.e at the centre of the element.
         """
+
+        self.__eval_temperature_solids_gauss_point()
 
         # JacketComponent
         for jacket in self.inventory["JacketComponent"].collection:
@@ -4184,6 +4728,20 @@ class Conductor:
                     strand.dict_Gauss_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity(
                             strand.dict_Gauss_pt
                         )
+
+    def __eval_temperature_solids_gauss_point(self:Self):
+        """Private method that evaluate temperature of SolidComponents in Gauss points.
+        """
+
+        # Loop on SolidComponent
+        for obj in self.inventory["SolidComponent"].collection:
+            obj.dict_Gauss_pt["temperature"] = (
+                np.abs(
+                    obj.dict_node_pt["temperature"][:-1]
+                    + obj.dict_node_pt["temperature"][1:]
+                )
+                / 2.0
+            )
 
     def post_processing(self, simulation):
 
@@ -4269,6 +4827,8 @@ class Conductor:
         solid components, both in nodal and Gauss points.
         """
 
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
         # loop to evaluate htc_steady for each channel according to its geometry (cpd 06/2020)
         for fluid_comp in self.inventory["FluidComponent"].collection:
 
@@ -4323,10 +4883,10 @@ class Conductor:
                 # Rationale: compute dictionary vaules only if there is an interface \
                 # (cdp, 09/2020)
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
-                        fluid_comp_r.identifier, s_comp.identifier
-                    ]
-                    == 1
+                    abs(interf_flag.at[
+                            fluid_comp_r.identifier, s_comp.identifier
+                        ]
+                    ) == 1
                 ):
                     htc_len = htc_len + 1
                     # new channel-solid interface (cdp, 09/2020)
@@ -4410,15 +4970,16 @@ class Conductor:
                     True: fluid_comp_c.coolant.dict_node_pt,
                     False: fluid_comp_c.coolant.dict_Gauss_pt,
                 }
+
                 # Multiplier used in both cases (positive and negative flag).
                 mlt = self.dict_df_coupling["HTC_multiplier"].at[
                             fluid_comp_r.identifier, fluid_comp_c.identifier
                         ]
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
-                        fluid_comp_r.identifier, fluid_comp_c.identifier
-                    ]
-                    == 1
+                    abs(interf_flag.at[
+                            fluid_comp_r.identifier, fluid_comp_c.identifier
+                        ]
+                    ) == 1
                 ):
                     # new channel-channel interface (cdp, 09/2020)
                     htc_len = htc_len + 1
@@ -4485,6 +5046,10 @@ class Conductor:
                 True: s_comp_r.dict_node_pt,
                 False: s_comp_r.dict_Gauss_pt,
             }
+            # Thermal conductivity of s_comp_c
+            kk_s_comp_r = dict_dummy_comp_r[flag_nodal][
+                "total_thermal_conductivity"
+            ] # W/m/K
             for _, s_comp_c in enumerate(
                 self.inventory["SolidComponent"].collection[rr + 1 :]
             ):
@@ -4497,10 +5062,10 @@ class Conductor:
                             s_comp_r.identifier, s_comp_c.identifier
                         ]
                 if (
-                    self.dict_df_coupling["contact_perimeter_flag"].at[
-                        s_comp_r.identifier, s_comp_c.identifier
-                    ]
-                    == 1
+                    abs(interf_flag.at[
+                            s_comp_r.identifier, s_comp_c.identifier
+                        ]
+                    ) == 1
                 ):
                     dict_dummy["HTC"]["sol_sol"]["cond"][
                         self.dict_topology["sol_sol"][s_comp_r.identifier][
@@ -4521,20 +5086,59 @@ class Conductor:
                         ]
                         == 1
                     ):
-                        # Thermal contact.
-                        htc_solid = 500.0
                         
+                        # Aliases
+                        # Thermal contact resistance between s_comp_r and 
+                        # s_comp_c.
+                        R_contact = self.dict_df_coupling[
+                            "thermal_contact_resistance"
+                            ].at[
+                                s_comp_r.identifier,s_comp_c.identifier
+                            ] # m^2K/W
+                        # Thickness of component s_comp_r when in contact with 
+                        # component s_comp_c. It is assumed constant, even 
+                        # though it may change in the case of variable contact 
+                        # perimeter.
+                        thick_s_comp_r_c = self.dict_df_coupling[
+                            "interf_thickness"
+                            ].at[
+                                s_comp_r.identifier,s_comp_c.identifier
+                            ] # m
+                        # Thickness of component s_comp_c when in contact with 
+                        # component s_comp_r. It is assumed constant, even 
+                        # though it may change in the case of variable contact 
+                        # perimeter.
+                        thick_s_comp_c_r = self.dict_df_coupling[
+                            "interf_thickness"
+                            ].at[
+                                s_comp_c.identifier,s_comp_r.identifier
+                            ] # m
+                        # Thermal conductivity of s_comp_c
+                        kk_s_comp_c = dict_dummy_comp_c[flag_nodal][
+                            "total_thermal_conductivity"
+                        ] # W/m/K
+
+                        # Evaluate thermal resistance of c_comp_r.
+                        R_s_comp_r = thick_s_comp_r_c/kk_s_comp_r # m^2K/W
+                        # Evaluate thermal resistance of c_comp_c.
+                        R_s_comp_c = thick_s_comp_c_r/kk_s_comp_c # m^2K/W
+
+                        # Evaluate variable conductive heat transfer 
+                        # coefficient W/m^2/K.
+                        htc_solid = 1.0 / (R_s_comp_r + R_contact + R_s_comp_c)
+                        
+                        # Assign variable conductive heat transfer coefficient.
+                        # Assumptions:
+                        #   1) constant interface thickness, it may be actually 
+                        # variable in case of variable contact perimeter;
+                        #   2) constant multiplier, it may be actually a 
+                        # function of the contact perimeter, temperature and 
+                        # magnetic field.
                         dict_dummy["HTC"]["sol_sol"]["cond"][
                             self.dict_topology["sol_sol"][s_comp_r.identifier][
                                 s_comp_c.identifier
                             ]
-                        ] = (
-                            mlt
-                            * htc_solid
-                            * np.ones(
-                                dict_dummy_comp_r[flag_nodal]["temperature"].shape
-                            )
-                        )
+                        ] = mlt * htc_solid
                     elif (
                         self.dict_df_coupling["HTC_choice"].at[
                             s_comp_r.identifier, s_comp_c.identifier
@@ -4635,10 +5239,10 @@ class Conductor:
 
             key = f"{simulation.environment.KIND}_{s_comp_r.identifier}"
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    simulation.environment.KIND, s_comp_r.identifier
-                ]
-                == 1
+                abs(interf_flag.at[
+                        simulation.environment.KIND, s_comp_r.identifier
+                    ]
+                ) == 1
             ):
                 # New environment-solid interface
                 htc_len = htc_len + 1
@@ -4783,15 +5387,16 @@ class Conductor:
                         f"JacketComponent of kind {s_comp_r.inputs['Jacket_kind']} can not exchange heat by radiation and/or convection with the environment.\n"
                     )
                 # End if s_comp_r.inputs["Jacket_kind"]
-            # End if self.dict_df_coupling["contact_perimeter_flag"].at[simulation.environment.KIND, s_comp_r.identifier]
+            # End if abs(intef_flag.at[simulation.environment.KIND, s_comp_r.identifier])
         # end for loop rr
 
         # Check number of evaluated interface htc (cdp, 06/2020)
 
-        if htc_len != self.dict_df_coupling["contact_perimeter_flag"].to_numpy().sum():
+        # Evaluate total number of user defined interfaces.
+        total_interf_number = np.abs(interf_flag.to_numpy()).sum()
+        if htc_len != total_interf_number:
             raise ValueError(
-                f"ERROR!!! Number of interface and number of \
-        evaluated interface htc mismatch: {self.dict_df_coupling['contact_perimeter_flag'].to_numpy().sum()} != {htc_len}"
+                f"ERROR!!! Number of interface and number of evaluated interface htc mismatch: {total_interf_number} != {htc_len}"
             )
 
         return dict_dummy
@@ -4862,6 +5467,10 @@ class Conductor:
         """
         Function that operform mass and energy balance on conductor (cdp, 09/2020)
         """
+
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         self.mass_balance = 0.0  # mass balance initialization (cdp, 09/2020)
         self.energy_balance = 0.0  # energy balance initialization (cdp, 09/2020)
         self.inner_pow = 0.0
@@ -4901,10 +5510,10 @@ class Conductor:
         # End for fluid_comp.
         for jacket in self.inventory["JacketComponent"].collection:
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].loc[
-                    simulation.environment.KIND, jacket.identifier
-                ]
-                == 1
+                abs(interf_flag.loc[
+                        simulation.environment.KIND, jacket.identifier
+                    ]
+                ) == 1
             ):
                 key = f"{simulation.environment.KIND}_{jacket.identifier}"
                 self.energy_balance = (
@@ -5002,12 +5611,16 @@ class Conductor:
         Args:
             environment ([type]): [description]
         """
+
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
         for jk in self.inventory["JacketComponent"].collection:
             if (
-                self.dict_df_coupling["contact_perimeter_flag"].at[
-                    environment.KIND, jk.identifier
-                ]
-                == 1
+                abs(interf_flag.at[
+                        environment.KIND, jk.identifier
+                    ]
+                ) == 1
             ):
                 key = f"{environment.KIND}_{jk.identifier}"
                 self.heat_exchange_jk_env[key] = (
@@ -5024,7 +5637,7 @@ class Conductor:
                         - jk.dict_Gauss_pt["temperature"]
                     )
                 )  # W
-            # End if self.dict_df_coupling["contact_perimeter_flag"].
+            # End if interf_flag.
         # End for jk.
 
     # End method _compute_heat_exchange_environment.
