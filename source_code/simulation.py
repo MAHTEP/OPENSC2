@@ -210,6 +210,23 @@ class Simulation:
                 # initialize, solve and reorganize the electric problem.
                 cond.eval_total_operating_current()
                 cond.electric_method()
+            else:
+                # Quick fix to the following silent bug: solid components 
+                # thermophysical, electromagnetic and critical properties 
+                # do not update at each time step if flag 
+                # conductor.inputs ["I0_OP_MODE"] == IOP_NOT_DEFINED. 
+                # This will not cause the simulation to stop, but will give 
+                # reasonable but wrong output. Since all solid component 
+                # properties are updated in method operating_conditions_em of 
+                # class Conductor, a quick fix is to explicitly call this 
+                # method when flag 
+                # conductor.inputs["I0_OP_MODE"] == IOP_NOT_DEFINED and let 
+                # method electric_method of class Conductor call it in all the 
+                # other cases.
+                # A better fix involves a complete refactoring of at least 
+                # methods operating_conditions_th and operating_conditions_em 
+                # of class Conductor and should be done later.
+                cond.operating_conditions_em()
 
             # plot conductor initialization spatial distribution (cdp, 12/2020)
             plot_properties(self, cond)
@@ -359,7 +376,25 @@ class Simulation:
                     # Call to electric_electric method allows to define, 
                     # initialize, solve and reorganize the electric problem.
                     conductor.electric_method()
-
+                else:
+                    # Quick fix to the following silent bug: solid components 
+                    # thermophysical, electromagnetic and critical properties 
+                    # do not update at each time step if flag 
+                    # conductor.inputs ["I0_OP_MODE"] == IOP_NOT_DEFINED. 
+                    # This will not cause the simulation to stop, but will give 
+                    # reasonable but wrong output. Since all solid component 
+                    # properties are updated in method operating_conditions_em 
+                    # of class Conductor, a quick fix is to explicitly call 
+                    # this method when flag 
+                    # conductor.inputs["I0_OP_MODE"] == IOP_NOT_DEFINED and let 
+                    # method electric_method of class Conductor call it in all 
+                    # the other cases.
+                    # A better fix involves a complete refactoring of at least 
+                    # methods operating_conditions_th and 
+                    # operating_conditions_em of class Conductor and should be 
+                    # done later.
+                    conductor.operating_conditions_em()
+                    
                 # Evaluate thermal hydraulic properties and quantities in Gauss 
                 # points, method __eval_Gauss_point_th is invoked inside method 
                 # operating_conditions_th. Method operating_conditions_th is 
