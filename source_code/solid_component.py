@@ -455,7 +455,7 @@ class SolidComponent:
             # necessary to distinguish according to "Method" options at this point \
             # (cdp, 10/2020)
             if (
-                conductor.cond_time[-1] > self.operations["TQBEG"]
+                conductor.cond_time[-1] >= self.operations["TQBEG"]
                 and conductor.cond_time[-1] <= self.operations["TQEND"]
             ):
                 self.heat0_where(conductor)
