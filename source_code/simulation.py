@@ -786,25 +786,30 @@ class Simulation:
         # -3 and not -4 since one column of the input file becomes the index of
         # the data frame and should not be considered.
         n_cond = conductors["CONDUCTOR_files"].shape[1] - 3
-        # Number of dataframe rows: number of auxiliary files that the user can 
-        # define for each conductor.
-        n_aux_file = conductors["CONDUCTOR_files"].shape[0]
-        other_files = pd.Series(np.zeros((n_aux_file * n_cond), dtype=object))
+        # Empty set to store default (necessary or primary) input file names.
+        default_files = set()
+        # Empty set to store auxiliary input file names.
+        aux_files = set()
 
+        files_index_name = conductors["CONDUCTOR_files"].index.to_list()
         for ii in range(n_cond):
-            other_files.iloc[
-                ii * n_aux_file:n_aux_file * (ii + 1)
-            ] = conductors["CONDUCTOR_files"].iloc[:, ii + 3]
+            for idx, fname in enumerate(conductors["CONDUCTOR_files"].iloc[:, ii + 3]):
+                # Check if file is classified as default or auxiliary (keyword 
+                # EXTERNAL in variable name).
+                if "EXTERNAL" in files_index_name[idx]:
+                    # Auxiliary input file.
+                    aux_files.add(fname)
+                else:
+                    # Default input file.
+                    default_files.add(fname)
+        
+        aux_files.discard("none")
+        default_files.discard("none")
 
         del conductors, transient_input
-        # Remove repeated file names (if more than one conductor is defined,
-        # some input files can be shared by the conductors).
-        other_files = other_files.unique()
-        # Remove not defined file names.
-        other_files = other_files[other_files != "none"]
 
         # Complete load_paths list
-        for fname in other_files:
+        for fname in default_files.union(aux_files):
             load_paths.append(os.path.join(self.basePath, fname))
             filenames.append(fname)
 
@@ -822,8 +827,11 @@ class Simulation:
                 or "transitory_input" in fname
             ):
                 skip_rows = 1
+            elif fname in aux_files:
+                skip_rows = 0
             else:
                 skip_rows = 2
+
             # Load input file
             dff = pd.read_excel(
                 load_paths[ii],
