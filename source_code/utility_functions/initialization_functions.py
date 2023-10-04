@@ -141,7 +141,7 @@ def fixed_refined_spatial_discretization(
         dx_ref <= conductor.grid_input["SIZMAX"]
     ):
         # refined mesh
-        zcoord[n_node["left"] : n_node["left"] + NOD_ref] = np.linspace(
+        zcoord[n_elem["left"] : n_elem["left"] + NOD_ref] = np.linspace(
             conductor.grid_input["XBREFI"], conductor.grid_input["XEREFI"], NOD_ref
         )
     elif dx_ref < conductor.grid_input["SIZMIN"]:
@@ -154,22 +154,36 @@ def fixed_refined_spatial_discretization(
         )
 
     if n_elem["left"] > 0:
-        # Discretization of coarse region left to refined zone
+        # Discretization of coarse region left to refined zone.
         dx_try = (conductor.grid_input["XBREFI"] - 0.0) / n_elem["left"]
         dx1 = dx_ref  # dummy to not overwrite dx_ref
         ii = 0
+        # Condition ii < n_elem["left"] - 1 is to stop at the second node since 
+        # the first value (0.0) is already assigned by initialization.
         while (dx_try / dx1 > conductor.grid_input["DXINCRE"]) and (
-            ii <= n_elem["left"]
+            ii < n_elem["left"] - 1
         ):
             ii = ii + 1
             dx = dx1 * conductor.grid_input["DXINCRE"]
-            zcoord[n_elem["left"] - ii] = zcoord[n_elem["left"] + 1 - ii] - dx
+            # Coarse the mesh removing dx to the last known value (backward 
+            # direction).
+            zcoord[n_elem["left"] - ii] = zcoord[n_node["left"] - ii] - dx
             dx1 = dx
+            # Compute new tentative spatial discretization pitch for the 
+            # uniform mesh.
             dx_try = (zcoord[n_elem["left"] - ii] - 0.0) / (n_elem["left"] - ii)
-
-        zcoord[0 : n_elem["left"] - ii + 1] = np.linspace(
-            0.0, zcoord[n_elem["left"] - ii], n_elem["left"] - ii + 1
-        )
+        if ii < n_elem["left"] - 1:
+            # Use n_node["left"] to take into account that the upper bound is 
+            # not incuded in the slicing.
+            zcoord[:n_node["left"] - ii] = np.linspace(
+                0.0, zcoord[n_elem["left"] - ii], n_node["left"] - ii
+            )
+        else:
+            # Still coarsening the mesh.
+            # Check if element lenght between the second and first node is 
+            # larger than the expected one.
+            if zcoord[1] > dx1 * conductor.grid_input["DXINCRE"]:
+                raise ValueError(f"Bad spatial discretization.\nElement lenght between the second and first node is larger than the expected one. Please, consider use a larger DXINCRE_LEFT or a different number of total elements and elements used in the refined region or a combination of both.")
 
     if n_elem["right"] > 0:
         # Discretization of coarse region right to refined zone
