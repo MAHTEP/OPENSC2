@@ -298,10 +298,17 @@ def fixed_refined_angular_discretization(
             d_tau_try = tau[n_elem["left"] - ii] / (n_elem["left"] - ii - 1)
             ii = ii + 1
 
+        # The previous while loop identified the last index of the vector for
+        # which a variable mesh was needed according to the DXINCRE parameter.
+        # At this point from the first node up to this one just identified we
+        # want to construct a regular mesh, in which all points are equidistant.
         tau_beg = 0.0
         tau_end = tau[n_elem["left"] + 1 - ii]
-        tau[: n_elem["left"] + 1 - ii] = np.linspace(
-            tau_beg, tau_end, n_elem["left"] + 1 - ii
+        # There is a +2 here because in the equivalent spacing we want to include
+        # both the last node just found in the while loop (first +1) and the first
+        # node in the vector, the one that has index 0 (second +1)
+        tau[: n_elem["left"] + 2 - ii] = np.linspace(
+            tau_beg, tau_end, n_elem["left"] + 2 - ii
         )
 
     if n_elem["right"] > 0:
