@@ -112,7 +112,7 @@ def fixed_refined_spatial_discretization(
         np.ndarray: array of length conductor.grid_features["N_nod"] with fixed refined spatial discretization for straight conductor components.
     """
     n_elem = dict()
-
+    n_node = dict()
     # total number of elements to be used for coarse region of the mesh
     n_elem["coarse"] = conductor.grid_input["NELEMS"] - conductor.grid_input["NELREF"]
     # number of elements to be used in coarse region left to refined mesh zone
@@ -126,6 +126,9 @@ def fixed_refined_spatial_discretization(
     )
     n_elem["right"] = n_elem["coarse"] - n_elem["left"]
 
+    n_node["left"] = n_elem["left"] + 1
+    n_node["right"] = n_elem["right"] + 1
+
     NOD_ref = conductor.grid_input["NELREF"] + 1
 
     # Refined zone discretization
@@ -138,7 +141,7 @@ def fixed_refined_spatial_discretization(
         dx_ref <= conductor.grid_input["SIZMAX"]
     ):
         # refined mesh
-        zcoord[n_elem["left"] : n_elem["left"] + NOD_ref] = np.linspace(
+        zcoord[n_node["left"] : n_node["left"] + NOD_ref] = np.linspace(
             conductor.grid_input["XBREFI"], conductor.grid_input["XEREFI"], NOD_ref
         )
     elif dx_ref < conductor.grid_input["SIZMIN"]:
