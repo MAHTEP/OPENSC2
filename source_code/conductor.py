@@ -5238,6 +5238,10 @@ class Conductor:
             # end for loop cc
 
             key = f"{simulation.environment.KIND}_{s_comp_r.identifier}"
+            # Multiplier used in both cases (positive and negative flag).
+            mlt = self.dict_df_coupling["HTC_multiplier"].at[
+                            simulation.environment.KIND, s_comp_r.identifier
+                        ]
             if (
                 abs(interf_flag.at[
                         simulation.environment.KIND, s_comp_r.identifier
