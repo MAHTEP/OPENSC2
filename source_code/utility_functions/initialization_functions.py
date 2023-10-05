@@ -246,6 +246,7 @@ def fixed_refined_angular_discretization(
     tau: np.ndarray,
 ) -> np.ndarray:
     """Function that evaluate fixed refined angular discretization, used for hlicoidal geometry.
+    Assumption: initial and final node delimiting the refined region belong to this region. Therefore, the number of nodes in the other regions coicides with the number of elements.
 
     Args:
         conductor (Conductor): conductor object, has all the information to evaluate the fixed refined grid.
