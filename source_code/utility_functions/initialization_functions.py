@@ -99,6 +99,7 @@ def fixed_refined_spatial_discretization(
     conductor: object, zcoord: np.ndarray
 ) -> np.ndarray:
     """Function that evaluate fixed refined spatial discretization along z direction.
+    Assumption: initial and final node delimiting the refined region belong to this region. Therefore, the number of nodes in the other regions coicides with the number of elements.
 
     Args:
         conductor (Conductor): conductor object, has all the information to evaluate the fixed refined grid.
@@ -170,6 +171,12 @@ def fixed_refined_spatial_discretization(
             # uniform mesh.
             dx_try = (zcoord[n_elem["left"] - ii] - 0.0) / (n_elem["left"] - ii)
         if ii < n_elem["left"] - 1:
+            # The previous while loop identified the last index of the vector 
+            # for which a variable mesh was needed according to the 
+            # DXINCRE_LEFT parameter. At this point from the first node up to 
+            # this one just identified we want to construct a regular mesh, in 
+            # which all points are equidistant.
+
             # Use n_elem["left"] + 1 to take into account that the upper bound 
             # is not incuded in the slicing.
             zcoord[:n_elem["left"] + 1 - ii] = np.linspace(
@@ -180,7 +187,7 @@ def fixed_refined_spatial_discretization(
             # Check if element lenght between the second and first node is 
             # larger than the expected one.
             if zcoord[1] > dx1 * conductor.grid_input["DXINCRE_LEFT"]:
-                raise ValueError(f"Bad spatial discretization.\nElement lenght between the second and first node is larger than the expected one. Please, consider use a larger DXINCRE_LEFT or a different number of total elements and elements used in the refined region or a combination of both.")
+                raise ValueError(f"Bad spatial discretization.\nElement lenght between the second and first node is larger than the expected one. Please, consider using a larger DXINCRE_LEFT or a different number of total elements and elements used in the refined region or a combination of both.")
 
     if n_elem["right"] > 0:
         # Discretization of coarse region right to refined zone
@@ -210,6 +217,12 @@ def fixed_refined_spatial_discretization(
             ) / (n_elem["right"] - ii)
         
         if ii < n_elem["right"] - 1:
+            # The previous while loop identified the last index of the vector 
+            # for which a variable mesh was needed according to the 
+            # DXINCRE_RIGHT parameter. At this point from this node up to the 
+            # last one we want to construct a regular mesh, in which all points 
+            # are equidistant.
+
             zcoord[
                 n_elem["left"] + conductor.grid_input["NELREF"] + ii:
             ] = np.linspace(
@@ -223,7 +236,7 @@ def fixed_refined_spatial_discretization(
             # Check if element lenght between the last but one and last node is 
             # larger than the expected one.
             if zcoord[-1] > zcoord[-2] + dx1 * conductor.grid_input["DXINCRE_RIGHT"]:
-                raise ValueError(f"Bad spatial discretization.\nElement lenght between the last but one and last node is larger than the expected one. Please, consider use a larger DXINCRE_RIGHT or a different number of total elements and elements used in the refined region or a combination of both.")
+                raise ValueError(f"Bad spatial discretization.\nElement lenght between the last but one and last node is larger than the expected one. Please, consider using a larger DXINCRE_RIGHT or a different number of total elements and elements used in the refined region or a combination of both.")
     return zcoord
 
 
