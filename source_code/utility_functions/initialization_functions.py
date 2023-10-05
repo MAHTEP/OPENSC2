@@ -319,27 +319,39 @@ def fixed_refined_angular_discretization(
         d_tau_try = 2 * np.pi * n_winding["left"] / n_elem["left"]
         d_tau1 = dtau_ref
         ii = 0
-        while (d_tau_try / d_tau1 > conductor.grid_input["DXINCRE"]) and (
-            ii <= n_elem["left"]
+        # Condition ii < n_elem["left"] - 1 is to stop at the second node since 
+        # the first value (0.0) is already assigned by initialization.
+        while (d_tau_try / d_tau1 > conductor.grid_input["DXINCRE_LEFT"]) and (
+            ii < n_elem["left"] - 1
         ):
-            d_tau = d_tau1 * conductor.grid_input["DXINCRE"]
+            ii = ii + 1
+            d_tau = d_tau1 * conductor.grid_input["DXINCRE_LEFT"]
+            # Coarse the mesh removing d_tau to the last known value (backward 
+            # direction).
             tau[n_elem["left"] - ii] = tau[n_elem["left"] + 1 - ii] - d_tau
             d_tau1 = d_tau
-            d_tau_try = tau[n_elem["left"] - ii] / (n_elem["left"] - ii - 1)
-            ii = ii + 1
+            # Compute new tentative angular discretization pitch for the 
+            # uniform mesh.
+            d_tau_try = tau[n_elem["left"] - ii] / (n_elem["left"] - ii)
+        
+        if ii < n_elem["left"] - 1:
+            # The previous while loop identified the last index of the vector 
+            # for which a variable mesh was needed according to the 
+            # DXINCRE_LEFT parameter. At this point from the first node up to 
+            # this one just identified we want to construct a regular mesh, in 
+            # which all points are equidistant.
 
-        # The previous while loop identified the last index of the vector for
-        # which a variable mesh was needed according to the DXINCRE parameter.
-        # At this point from the first node up to this one just identified we
-        # want to construct a regular mesh, in which all points are equidistant.
-        tau_beg = 0.0
-        tau_end = tau[n_elem["left"] + 1 - ii]
-        # There is a +2 here because in the equivalent spacing we want to include
-        # both the last node just found in the while loop (first +1) and the first
-        # node in the vector, the one that has index 0 (second +1)
-        tau[: n_elem["left"] + 2 - ii] = np.linspace(
-            tau_beg, tau_end, n_elem["left"] + 2 - ii
-        )
+            # Use n_elem["left"] + 1 to take into account that the upper bound 
+            # is not incuded in the slicing.
+            tau[:n_elem["left"] + 1 - ii] = np.linspace(
+                0.0, tau[n_elem["left"] - ii], n_elem["left"] + 1 - ii
+            )
+        else:
+            # Still coarsening the mesh.
+            # Check if element lenght between the second and first node is 
+            # larger than the expected one.
+            if tau[1] > d_tau1 * conductor.grid_input["DXINCRE_LEFT"]:
+                raise ValueError(f"Bad spatial discretization.\nElement lenght between the second and first node is larger than the expected one. Please, consider using a larger DXINCRE_LEFT or a different number of total elements and elements used in the refined region or a combination of both.")
 
     if n_elem["right"] > 0:
 
