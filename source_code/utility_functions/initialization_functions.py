@@ -261,6 +261,8 @@ def fixed_refined_angular_discretization(
     )
     n_elem["right"] = n_elem["coarse"] - n_elem["left"]
 
+    NOD_ref = conductor.grid_input["NELREF"] + 1
+
     n_winding = dict()
     # number of windings left to the refined region
     n_winding["left"] = conductor.grid_input["XBREFI"] / (
@@ -301,8 +303,8 @@ def fixed_refined_angular_discretization(
         tau_beg = 2 * np.pi * n_winding["left"] + dtau_ref
         tau_end = 2 * np.pi * (n_winding["left"] + n_winding["ref"])
         tau[
-            n_elem["left"] + 1 : (n_elem["left"] + 1) + (conductor.grid_input["NELREF"] + 1)
-        ] = np.linspace(tau_beg, tau_end, conductor.grid_input["NELREF"] + 1)
+            n_elem["left"] : n_elem["left"] + NOD_ref
+        ] = np.linspace(tau_beg, tau_end, NOD_ref)
     elif dtau_ref < dtau_min:
         raise ValueError(
             f"ERROR: {dtau_ref=} rad in refined zone < {dtau_min=} rad!!!\n"
