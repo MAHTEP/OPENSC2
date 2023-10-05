@@ -281,6 +281,9 @@ def fixed_refined_angular_discretization(
     if not np.isclose(comp.cyl_helix.winding_number,n_winding["tot"]):
         raise ValueError("")
 
+    # Angle at the final node.
+    tau_n = 2 * np.pi * comp.cyl_helix.winding_number
+
     dtau_ref = 2 * np.pi * n_winding["ref"] / conductor.grid_input["NELREF"]
 
     # Evaluate the number of elements needed if SIZEMIN is used in for the 
@@ -358,26 +361,48 @@ def fixed_refined_angular_discretization(
         d_tau_try = 2 * np.pi * n_winding["right"] / n_elem["right"]
         d_tau1 = dtau_ref
         ii = 0
-        while (d_tau_try / d_tau1 > conductor.grid_input["DXINCRE"]) and (
-            ii <= n_elem["right"]
+        # Condition ii < n_elem["right"] - 1 is to stop at the last but one 
+        # node since the last value (tau_n) can be computed from the total 
+        # number of windings.
+        while (d_tau_try / d_tau1 > conductor.grid_input["DXINCRE_RIGHT"]) and (
+            ii < n_elem["right"] - 1
         ):
-            d_tau = d_tau1 * conductor.grid_input["DXINCRE"]
-            tau[(n_elem["left"] + 1) + (conductor.grid_input["NELREF"]) + ii] = (
-                tau[(n_elem["left"] + 1) + (conductor.grid_input["NELREF"]) + ii - 1]
+            ii = ii + 1
+            d_tau = d_tau1 * conductor.grid_input["DXINCRE_RIGHT"]
+            # Coarse the mesh adding d_tau to the last known value (forward 
+            # direction).
+            tau[n_elem["left"] + conductor.grid_input["NELREF"] + ii] = (
+                tau[n_elem["left"] + conductor.grid_input["NELREF"] + ii - 1]
                 + d_tau
             )
             d_tau1 = d_tau
+            # Compute new tentative angular discretization pitch for the 
+            # uniform mesh.
             d_tau_try = (
-                2 * np.pi * comp.cyl_helix.winding_number
-                - tau[(n_elem["left"] + 1) + (conductor.grid_input["NELREF"]) + ii]
-            ) / (n_elem["left"] - ii - 1)
-            ii = ii + 1
+                tau_n
+                - tau[n_elem["left"] + conductor.grid_input["NELREF"] + ii]
+            ) / (n_elem["right"] - ii)
 
-        tau_beg = tau[n_elem["left"] + conductor.grid_input["NELREF"] + ii - 1]
-        tau_end = 2 * np.pi * comp.cyl_helix.winding_number
-        tau[
-            n_elem["left"] + conductor.grid_input["NELREF"] + ii - 1:
-        ] = np.linspace(tau_beg, tau_end, n_elem["right"] + 1 - ii + 1)
+        if ii < n_elem["right"] - 1:
+            # The previous while loop identified the last index of the vector 
+            # for which a variable mesh was needed according to the 
+            # DXINCRE_RIGHT parameter. At this point from this node up to the 
+            # last one we want to construct a regular mesh, in which all points 
+            # are equidistant.
+            tau[
+                n_elem["left"] + conductor.grid_input["NELREF"] + ii:
+            ] = np.linspace(
+                tau[n_elem["left"] + conductor.grid_input["NELREF"] + ii],
+                tau_n,
+                n_elem["right"] + 1 - ii,
+            )
+        else:
+            # Still coarsening the mesh: assign the last node value.
+            tau[-1] = tau_n
+            # Check if element lenght between the last but one and last node is 
+            # larger than the expected one.
+            if tau[-1] > tau[-2] + d_tau1 * conductor.grid_input["DXINCRE_RIGHT"]:
+                raise ValueError(f"Bad spatial discretization.\nElement lenght between the last but one and last node is larger than the expected one. Please, consider using a larger DXINCRE_RIGHT or a different number of total elements and elements used in the refined region or a combination of both.")
 
     return tau
 
