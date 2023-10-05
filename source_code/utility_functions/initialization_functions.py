@@ -17,6 +17,7 @@ from cylindrical_helix import CylindricalHelix
 
 logger_discretization = logging.getLogger("opensc2Logger.discretization")
 
+GRID_REGIONS = {True: "left", False: "right"}
 
 def conductor_spatial_discretization(simulation: object, conductor: object):
     """Function that evaluate the z component of the spatial discretization of conductor.
@@ -93,6 +94,27 @@ def uniform_angular_discretization(
         comp.cyl_helix.winding_number * 2 * np.pi,
         conductor.grid_features["N_nod"],
     )
+
+def check_refined_grid_quality(
+    dx_coarse: float,
+    n_elem: int,
+    region_length: float,
+    is_left: bool = True):
+    """Function that checks the quality of the refined grid. The check is performed comparing the spatial discretization pitch used for the uniform region (dx) to the left or to the right of the refined region, with respect to the last spatial discretization pitch used for coarsening (dx_coarse). If dx < dx_coarse the grid quality is not good and an error is raised.
+
+    Args:
+        dx_coarse (float): last spatial discretization pitch used for coarsening.
+        n_elem (int): number of available elements to the left or to the right of the refined region for the uniform mesh.
+        region_length (float): lenght of the uniform mesh region to the left or to the right of the refined region.
+        is_left (bool, optional): flag to identify if the check is performed to the left (True) or to the right (False). It is used as key for dictionary GRID_REGIONS.  Defaults to True.
+
+    Raises:
+        ValueError: if dx < dx_coarse because the grid quality is not good.
+    """
+
+    dx = region_length / n_elem
+    if dx < dx_coarse:
+        raise ValueError(f"Bad spatial discretization.\nDiscretization pitch in used in the uniform region to the {GRID_REGIONS[is_left]} of the refined region is lower than the last discretization pitch used for coarsening. Please, consider using a larger DXINCRE_{GRID_REGIONS[is_left].upper()} or a different number of total elements and elements used in the refined region or a combination of both.")
 
 
 def fixed_refined_spatial_discretization(
