@@ -112,7 +112,7 @@ def fixed_refined_spatial_discretization(
         np.ndarray: array of length conductor.grid_features["N_nod"] with fixed refined spatial discretization for straight conductor components.
     """
     n_elem = dict()
-    n_node = dict()
+
     # total number of elements to be used for coarse region of the mesh
     n_elem["coarse"] = conductor.grid_input["NELEMS"] - conductor.grid_input["NELREF"]
     # number of elements to be used in coarse region left to refined mesh zone
@@ -125,9 +125,6 @@ def fixed_refined_spatial_discretization(
         * n_elem["coarse"]
     )
     n_elem["right"] = n_elem["coarse"] - n_elem["left"]
-
-    n_node["left"] = n_elem["left"] + 1
-    n_node["right"] = n_elem["right"] + 1
 
     NOD_ref = conductor.grid_input["NELREF"] + 1
 
@@ -167,16 +164,16 @@ def fixed_refined_spatial_discretization(
             dx = dx1 * conductor.grid_input["DXINCRE_LEFT"]
             # Coarse the mesh removing dx to the last known value (backward 
             # direction).
-            zcoord[n_elem["left"] - ii] = zcoord[n_node["left"] - ii] - dx
+            zcoord[n_elem["left"] - ii] = zcoord[n_elem["left"] + 1 - ii] - dx
             dx1 = dx
             # Compute new tentative spatial discretization pitch for the 
             # uniform mesh.
             dx_try = (zcoord[n_elem["left"] - ii] - 0.0) / (n_elem["left"] - ii)
         if ii < n_elem["left"] - 1:
-            # Use n_node["left"] to take into account that the upper bound is 
-            # not incuded in the slicing.
-            zcoord[:n_node["left"] - ii] = np.linspace(
-                0.0, zcoord[n_elem["left"] - ii], n_node["left"] - ii
+            # Use n_elem["left"] + 1 to take into account that the upper bound 
+            # is not incuded in the slicing.
+            zcoord[:n_elem["left"] + 1 - ii] = np.linspace(
+                0.0, zcoord[n_elem["left"] - ii], n_elem["left"] + 1 - ii
             )
         else:
             # Still coarsening the mesh.
@@ -218,7 +215,7 @@ def fixed_refined_spatial_discretization(
             ] = np.linspace(
                 zcoord[n_elem["left"] + conductor.grid_input["NELREF"] + ii],
                 conductor.inputs["ZLENGTH"],
-                n_node["right"] - ii,
+                n_elem["right"] + 1 - ii,
             )
         else:
             # Still coarsening the mesh: assign the last node value.
