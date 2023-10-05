@@ -204,6 +204,12 @@ def fixed_refined_spatial_discretization(
             zcoord[:n_elem["left"] + 1 - ii] = np.linspace(
                 0.0, zcoord[n_elem["left"] - ii], n_elem["left"] + 1 - ii
             )
+
+            check_refined_grid_quality(
+                dx_coarse=dx1,
+                n_elem=n_elem["left"] - ii,
+                region_length=zcoord[n_elem["left"] - ii],
+            )
         else:
             # Still coarsening the mesh.
             # Check if element lenght between the second and first node is 
@@ -251,6 +257,13 @@ def fixed_refined_spatial_discretization(
                 zcoord[n_elem["left"] + conductor.grid_input["NELREF"] + ii],
                 conductor.inputs["ZLENGTH"],
                 n_elem["right"] + 1 - ii,
+            )
+
+            check_refined_grid_quality(
+                dx_coarse=dx1,
+                n_elem=n_elem["right"] - ii,
+                region_length=conductor.inputs["ZLENGTH"] - zcoord[n_elem["left"] + conductor.grid_input["NELREF"] + ii],
+                is_left=False,
             )
         else:
             # Still coarsening the mesh: assign the last node value.
@@ -382,6 +395,12 @@ def fixed_refined_angular_discretization(
             tau[:n_elem["left"] + 1 - ii] = np.linspace(
                 0.0, tau[n_elem["left"] - ii], n_elem["left"] + 1 - ii
             )
+
+            check_refined_grid_quality(
+                dx_coarse=d_tau1,
+                n_elem=n_elem["left"] - ii,
+                region_length=tau[n_elem["left"] - ii],
+            )
         else:
             # Still coarsening the mesh.
             # Check if element lenght between the second and first node is 
@@ -428,6 +447,13 @@ def fixed_refined_angular_discretization(
                 tau[n_elem["left"] + conductor.grid_input["NELREF"] + ii],
                 tau_n,
                 n_elem["right"] + 1 - ii,
+            )
+
+            check_refined_grid_quality(
+                dx_coarse=d_tau1,
+                n_elem=n_elem["right"] - ii,
+                region_length=tau_n - tau[n_elem["left"] + conductor.grid_input["NELREF"] + ii],
+                is_left=False,
             )
         else:
             # Still coarsening the mesh: assign the last node value.
