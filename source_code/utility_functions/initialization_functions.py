@@ -160,11 +160,11 @@ def fixed_refined_spatial_discretization(
         ii = 0
         # Condition ii < n_elem["left"] - 1 is to stop at the second node since 
         # the first value (0.0) is already assigned by initialization.
-        while (dx_try / dx1 > conductor.grid_input["DXINCRE"]) and (
+        while (dx_try / dx1 > conductor.grid_input["DXINCRE_LEFT"]) and (
             ii < n_elem["left"] - 1
         ):
             ii = ii + 1
-            dx = dx1 * conductor.grid_input["DXINCRE"]
+            dx = dx1 * conductor.grid_input["DXINCRE_LEFT"]
             # Coarse the mesh removing dx to the last known value (backward 
             # direction).
             zcoord[n_elem["left"] - ii] = zcoord[n_node["left"] - ii] - dx
@@ -182,7 +182,7 @@ def fixed_refined_spatial_discretization(
             # Still coarsening the mesh.
             # Check if element lenght between the second and first node is 
             # larger than the expected one.
-            if zcoord[1] > dx1 * conductor.grid_input["DXINCRE"]:
+            if zcoord[1] > dx1 * conductor.grid_input["DXINCRE_LEFT"]:
                 raise ValueError(f"Bad spatial discretization.\nElement lenght between the second and first node is larger than the expected one. Please, consider use a larger DXINCRE_LEFT or a different number of total elements and elements used in the refined region or a combination of both.")
 
     if n_elem["right"] > 0:
@@ -194,11 +194,11 @@ def fixed_refined_spatial_discretization(
         ii = 0
         # Condition ii < n_elem["right"] - 1 is to stop at the last but one 
         # node since the last value (L) is known from input files.
-        while (dx_try / dx1 > conductor.grid_input["DXINCRE"]) and (
+        while (dx_try / dx1 > conductor.grid_input["DXINCRE_RIGHT"]) and (
             ii < n_elem["right"] - 1
         ):
             ii = ii + 1
-            dx = dx1 * conductor.grid_input["DXINCRE"]
+            dx = dx1 * conductor.grid_input["DXINCRE_RIGHT"]
             # Coarse the mesh adding dx to the last known value (forward 
             # direction).
             zcoord[n_elem["left"] + conductor.grid_input["NELREF"] + ii] = (
@@ -225,7 +225,7 @@ def fixed_refined_spatial_discretization(
             zcoord[-1] = conductor.inputs["ZLENGTH"]
             # Check if element lenght between the last but one and last node is 
             # larger than the expected one.
-            if zcoord[-1] > zcoord[-2] + dx1 * conductor.grid_input["DXINCRE"]:
+            if zcoord[-1] > zcoord[-2] + dx1 * conductor.grid_input["DXINCRE_RIGHT"]:
                 raise ValueError(f"Bad spatial discretization.\nElement lenght between the last but one and last node is larger than the expected one. Please, consider use a larger DXINCRE_RIGHT or a different number of total elements and elements used in the refined region or a combination of both.")
     return zcoord
 
