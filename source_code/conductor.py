@@ -435,7 +435,7 @@ class Conductor:
         
         # Raise error if sheets is not empty.
         if sheets:
-            raise ValueError(f"Found repeated headings. Please check remove repeated headings in file {self.file_input['VARIABLE_CONTACT_PERIMETER']} as described below:\n{sheets}")
+            raise ValueError(f"Found repeated headings. Please check remove repeated headings in file {self.file_input['EXTERNAL_CONTACT_PERIMETER']} as described below:\n{sheets}")
 
     def __check_variable_contact_perimeter_consistency(self:Self):
 
@@ -483,7 +483,7 @@ class Conductor:
                             missing_var_cont_peri[row_name].append(col_name)
                     else:
                         # Sheet does not exist: raise KeyError.
-                        raise KeyError(f"User forgets to define a full set of interfaces with a variable contact perimeter. Please check auxiliary input file {self.file_input['VARIABLE_CONTACT_PERIMETER']}, missing sheet {row_name}.")
+                        raise KeyError(f"User forgets to define a full set of interfaces with a variable contact perimeter. Please check auxiliary input file {self.file_input['EXTERNAL_CONTACT_PERIMETER']}, missing sheet {row_name}.")
         
         # Filter missing_var_cont_peri on the only not empty list exploiting 
         # dictionary comprehension.
@@ -492,7 +492,7 @@ class Conductor:
         if missing_var_cont_peri:
             # missing_var_cont_peri is not empty: there are missing interfaces 
             # in some sheets of auxiliary file variable_contact_perimeter.xlsx.
-            raise ValueError(f"Found missing interfaces with a variable contact perimeter. Please, in auxiliary input file {self.file_input['VARIABLE_CONTACT_PERIMETER']}, add the columns reported below:\n{missing_var_cont_peri}.")
+            raise ValueError(f"Found missing interfaces with a variable contact perimeter. Please, in auxiliary input file {self.file_input['EXTERNAL_CONTACT_PERIMETER']}, add the columns reported below:\n{missing_var_cont_peri}.")
 
     def __check_variable_contact_perimeter_coordinate(self:Self):
 
@@ -516,20 +516,20 @@ class Conductor:
             # Check number of items in array zcoord.
             if zcoord.size < 2:
                 # Wrong number of items in array zcoord.
-                raise ValueError(f"User must provide at least two coordinates to define the variable contact perimeter. Please, check in sheet {sheet_name} of file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n")
+                raise ValueError(f"User must provide at least two coordinates to define the variable contact perimeter. Please, check in sheet {sheet_name} of file {self.file_input['EXTERNAL_CONTACT_PERIMETER']}.\n")
             
             # Check if coordinates are positive.
             if any(zcoord < 0.0):
                 row_idx = np.nonzero(zcoord < 0.0)[0] + 1
-                raise ValueError(f"Spatial coordinates for variable contact perimeter interpolation must be positive. Please, check rows {row_idx} in sheet {sheet_name} of file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n ")
+                raise ValueError(f"Spatial coordinates for variable contact perimeter interpolation must be positive. Please, check rows {row_idx} in sheet {sheet_name} of file {self.file_input['EXTERNAL_CONTACT_PERIMETER']}.\n ")
 
             # Check first item value in zcoord.
             if zcoord[0] != 0.0:
-                raise ValueError(f"First z coordinate value should be 0.0. Please, check row 2 in sheet {sheet_name} of file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n ")
+                raise ValueError(f"First z coordinate value should be 0.0. Please, check row 2 in sheet {sheet_name} of file {self.file_input['EXTERNAL_CONTACT_PERIMETER']}.\n ")
             
             # Check last item value in zcoord.
             if zcoord[-1] > self.inputs["ZLENGTH"]:
-                raise ValueError(f"Last z coordinate value should be lower or equal than the conductor length ({self.inputs['ZLENGTH']} m). Please, check row {zcoord.size + 1} in sheet {sheet_name} of file {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n ")
+                raise ValueError(f"Last z coordinate value should be lower or equal than the conductor length ({self.inputs['ZLENGTH']} m). Please, check row {zcoord.size + 1} in sheet {sheet_name} of file {self.file_input['EXTERNAL_CONTACT_PERIMETER']}.\n ")
 
     def __check_variable_contact_perimeter_surplus_info(self:Self)->dict:
         """Private method that checks if there are any surplus sheets in user defined auxiliary input file variable_contact_perimeter.xlsx and removes them. Moreover the method checks if there are surplus columns from valid sheets in the same file and removes them. Reference sheet names and colums names cames from attribute self.dict_df_coupling["contact_perimeter_flag"].
@@ -582,7 +582,7 @@ class Conductor:
                 if column_diff:
                     # Remove extra columns from var_cont_peri[row_name].
                     var_cont_peri[row_name].drop(columns=column_diff,inplace=True)
-                    warnings.warn(f"Removed surplus columns {column_diff} from sheet {row_name} in {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n")
+                    warnings.warn(f"Removed surplus columns {column_diff} from sheet {row_name} in {self.file_input['EXTERNAL_CONTACT_PERIMETER']}.\n")
             
         # Compare set sheets agaist set referece_sheets: get the elements in 
         # sheet that are not in reference:sheets, i.e. the surplus information.
@@ -592,7 +592,7 @@ class Conductor:
             # Remove extra sheets from var_cont_peri.
             for sheet in sheet_diff:
                 var_cont_peri.pop(sheet)
-                warnings.warn(f"Removed surplus sheet {sheet} from in {self.file_input['VARIABLE_CONTACT_PERIMETER']}.\n")
+                warnings.warn(f"Removed surplus sheet {sheet} from in {self.file_input['EXTERNAL_CONTACT_PERIMETER']}.\n")
 
         return var_cont_peri
 
