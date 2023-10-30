@@ -51,16 +51,20 @@ def get_time_step(conductor, transient_input, num_step):
     FACTLO = 0.5
 
     if num_step == 1:
-        # At the first step time_step is equal to STPMIN for all the conductors 
-        conductor.time_step = transient_input["STPMIN"]
+        # At the first step time_step is equal to STPMIN for all the 
+        # conductors. At this state it is assigned to conductor attribute 
+        # time_step here after the function returns but should be done outside 
+        # this function in the conductor instantiation or initialization phase 
+        # to reduce also one level of indentation.
+        return transient_input["STPMIN"]
     else:
         if transient_input["IADAPTIME"] == 0:
-            conductor.time_step = transient_input["STPMIN"]
+            time_step = transient_input["STPMIN"]
             
-            conductor.time_step = min(
-                conductor.time_step, transient_input["TEND"] - conductor.cond_time[-1]
+            time_step = min(
+                time_step, transient_input["TEND"] - conductor.cond_time[-1]
             ) 
-            return
+            return time_step
 
         # Differentiate the indexes depending on ischannel
         t_step_comp = np.zeros(conductor.dict_N_equation["NODOFS"])
@@ -115,20 +119,22 @@ def get_time_step(conductor, transient_input, num_step):
         OPTSTP = min(t_step_comp)
 
         # Tune the time step smoothly
-        if conductor.time_step < 0.5 * OPTSTP:
-            conductor.time_step = conductor.time_step * FACTUP
-        elif conductor.time_step > 1.0 * OPTSTP:
-            conductor.time_step = conductor.time_step * FACTLO
+        if time_step < 0.5 * OPTSTP:
+            time_step = time_step * FACTUP
+        elif time_step > 1.0 * OPTSTP:
+            time_step = time_step * FACTLO
         
         # Limit the time step in the window allowed by the user
-        conductor.time_step = max(conductor.time_step, transient_input["STPMIN"])
-        conductor.time_step = min(
-            conductor.time_step, transient_input["TEND"] - conductor.cond_time[-1]
+        time_step = max(time_step, transient_input["STPMIN"])
+        time_step = min(
+            time_step, transient_input["TEND"] - conductor.cond_time[-1]
         )
         
-        print(f"Selected conductor time step is: {conductor.time_step}\n")
+        print(f"Selected conductor time step is: {time_step}\n")
 
-def step(conductor, environment, qsource, num_step):
+        return time_step
+
+def step(conductor, envionment, qsource, num_step):
 
     """
     ##############################################################################

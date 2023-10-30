@@ -347,7 +347,11 @@ class Simulation:
             time_step = np.zeros(self.numObj)
             for ii, conductor in enumerate(self.list_of_Conductors):
                 # Call function Get_time_step to select new time step (cdp, 08/2020)
-                get_time_step(conductor, self.transient_input, self.num_step)
+                conductor.time_step = get_time_step(
+                    conductor,
+                    self.transient_input,
+                    self.num_step
+                )
                 time_step[ii] = conductor.time_step
                 # Increase time (cdp, 08/2020)
                 conductor.cond_time.append(
