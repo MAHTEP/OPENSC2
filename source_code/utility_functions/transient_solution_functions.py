@@ -66,45 +66,6 @@ def get_time_step(conductor, transient_input, num_step):
             )  # crb (March 9, 2011)
             return
 
-        # Ad hoc to emulate time adaptivity for simulation whith feeder CS3U2.
-        # Do not use STPMIN; it is tuned on the AC loss time evolution.
-        if transient_input["IADAPTIME"] == 3:
-            # Array of times.
-            times = np.array([0.0, transient_input["TIME_SHIFT"], transient_input["TIME_SHIFT"]+10.0-1.0, transient_input["TIME_SHIFT"] + 69.0, transient_input["TIME_SHIFT"] + 69.8, transient_input["TIME_SHIFT"] + 69.9, transient_input["TIME_SHIFT"]+ 70.0, transient_input["TIME_SHIFT"] + 70.1, transient_input["TIME_SHIFT"] + 70.15, transient_input["TIME_SHIFT"] + 70.5, transient_input["TIME_SHIFT"] + 71.0,transient_input["TIME_SHIFT"] + 73.0])
-            # Adapt the time step according to the simulation time.
-            if conductor.cond_time[-1] >= times[0] and conductor.cond_time[-1] <= times[1]:
-                # Phase in which there is only radiative heat that stabilizes 
-                # at time_shift; for the next 9 s there is no magnetic fiel or 
-                # current or ac loss.
-                conductor.time_step = 1.0 # s
-            elif conductor.cond_time[-1] >= times[1] and conductor.cond_time[-1] < times[2]:
-                # Some AC loss appears
-                conductor.time_step = 1e-1 # s
-            elif conductor.cond_time[-1] >= times[2] and conductor.cond_time[-1] < times[3]:
-                # Some AC loss appears
-                conductor.time_step = 1e-2 # s
-            elif conductor.cond_time[-1] >= times[3] and conductor.cond_time[-1] < times[4]:
-                conductor.time_step = 1e-3 # s
-            elif conductor.cond_time[-1] >= times[4] and conductor.cond_time[-1] < times[5]:
-                conductor.time_step = 1e-4 # s
-            elif conductor.cond_time[-1] >= times[5] and conductor.cond_time[-1] < times[6]:
-                # High and localized AC loss peack
-                conductor.time_step = 1e-5 # s
-            elif conductor.cond_time[-1] >= times[6] and conductor.cond_time[-1] < times[7]:
-                conductor.time_step = 1e-4 # s
-            elif conductor.cond_time[-1] >= times[7] and conductor.cond_time[-1] < times[8]:
-                conductor.time_step = 1e-3 # s
-            elif conductor.cond_time[-1] >= times[8] and conductor.cond_time[-1] < times[9]:
-                conductor.time_step = 5e-3 # s
-            elif conductor.cond_time[-1] >= times[9] and conductor.cond_time[-1] < times[10]:
-                conductor.time_step = 1e-2 # s
-            else:
-                conductor.time_step = 5e-2 # s
-                # C * LIMIT THE TIME STEP IF PRINT-OUT OR STORAGE IS REQUIRED
-                conductor.time_step = min(
-                    conductor.time_step, transient_input["TEND"] - conductor.cond_time[-1])
-            return
-        
         # crb Differentiate the indexes depending on ischannel (December 16, 2015)
         t_step_comp = np.zeros(conductor.dict_N_equation["NODOFS"])
         for ii in range(conductor.inventory["FluidComponent"].number):
