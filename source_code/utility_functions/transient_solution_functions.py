@@ -70,54 +70,24 @@ def get_time_step(
             ) 
             return time_step
 
-        # Differentiate the indexes depending on ischannel
         t_step_comp = np.zeros(conductor.dict_N_equation["NODOFS"])
-        for ii in range(conductor.inventory["FluidComponent"].number):
-            # FluidComponent objects
-            # The following statements would control the accuracy of the 
-            # momentum
-            if abs(transient_input["IADAPTIME"]) == 1:
-                # Use adaptive time step
 
-                # Velocity
-                t_step_comp[ii] = conductor.EIGTIM / (conductor.EQTEIG[ii] + tiny_value)
-                # Pressure
-                t_step_comp[
-                    ii + conductor.inventory["FluidComponent"].number
-                ] = conductor.EIGTIM / (
-                    conductor.EQTEIG[
-                        ii + conductor.inventory["FluidComponent"].number
-                    ]
-                    + tiny_value
-                )
-            elif transient_input["IADAPTIME"] == 2:
-                # ... but are substituded by these
-                # Velocity
-                t_step_comp[ii] = huge_value
-                # Pressure
-                t_step_comp[
-                    ii + conductor.inventory["FluidComponent"].number
-                ] = huge_value
-            
-            # Temperature
-            t_step_comp[
-                ii + 2 * conductor.inventory["FluidComponent"].number
-            ] = conductor.EIGTIM / (
-                conductor.EQTEIG[
-                    ii + 2 * conductor.inventory["FluidComponent"].number
-                ]
-                + tiny_value
-            )
-            
-        for ii in range(conductor.inventory["SolidComponent"].number):
-            # SolidComponent objects
-            # Temperature
-            t_step_comp[
-                ii + conductor.dict_N_equation["FluidComponent"]
-            ] = conductor.EIGTIM / (
-                conductor.EQTEIG[ii + conductor.dict_N_equation["FluidComponent"]]
-                + tiny_value
-            )
+        # Index of the temperature unknown of the first fluid component 
+        # (computed with binary left shift)
+        idx_first_temp = conductor.inventory["FluidComponent"].number << 1
+        # The following statements would control the accuracy of the momentum; 
+        # used to select the next adaptive time step.
+        
+        # Deal index smaller than idx_first_temp (velocity and pressure 
+        # variable)
+        if abs(transient_input["IADAPTIME"]) == 1:
+            t_step_comp[:idx_first_temp] = conductor.EIGTIM / (conductor.EQTEIG[:idx_first_temp] + tiny_value)
+        elif transient_input["IADAPTIME"] == 2:
+            # Use huge_value in this case
+            t_step_comp[:idx_first_temp] = huge_value
+        # Deal index larger than idx_first_temp (fluid and solid component 
+        # temperature variable)
+        t_step_comp[idx_first_temp:] = conductor.EIGTIM / (conductor.EQTEIG[idx_first_temp:] + tiny_value)
 
         # Store the optimal time step (from accuracy point of view)
         OPTSTP = min(t_step_comp)
