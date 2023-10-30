@@ -35,7 +35,15 @@ from utility_functions.step_matrix_construction import (
     build_known_therm_vector,
 )
 
-def get_time_step(conductor, transient_input, num_step):
+def get_time_step(
+    conductor,
+    transient_input,
+    num_step,
+    tiny_value = 1e-10,
+    mlt_upper = 1.2,
+    mlt_lower = 0.5,
+    huge_value = 1e10,
+    ):
 
     """
     ##############################################################################
@@ -45,10 +53,6 @@ def get_time_step(conductor, transient_input, num_step):
     # Translation from Fortran to Python: Placido D. PoliTo, 07/08/2020
     ##############################################################################
     """
-
-    TINY = 1.0e-10
-    FACTUP = 1.2
-    FACTLO = 0.5
 
     if num_step == 1:
         # At the first step time_step is equal to STPMIN for all the 
@@ -76,7 +80,7 @@ def get_time_step(conductor, transient_input, num_step):
                 # Use adaptive time step
 
                 # Velocity
-                t_step_comp[ii] = conductor.EIGTIM / (conductor.EQTEIG[ii] + TINY)
+                t_step_comp[ii] = conductor.EIGTIM / (conductor.EQTEIG[ii] + tiny_value)
                 # Pressure
                 t_step_comp[
                     ii + conductor.inventory["FluidComponent"].number
@@ -84,16 +88,16 @@ def get_time_step(conductor, transient_input, num_step):
                     conductor.EQTEIG[
                         ii + conductor.inventory["FluidComponent"].number
                     ]
-                    + TINY
+                    + tiny_value
                 )
             elif transient_input["IADAPTIME"] == 2:
                 # ... but are substituded by these
                 # Velocity
-                t_step_comp[ii] = 1.0e10
+                t_step_comp[ii] = huge_value
                 # Pressure
                 t_step_comp[
                     ii + conductor.inventory["FluidComponent"].number
-                ] = 1.0e10
+                ] = huge_value
             
             # Temperature
             t_step_comp[
@@ -102,7 +106,7 @@ def get_time_step(conductor, transient_input, num_step):
                 conductor.EQTEIG[
                     ii + 2 * conductor.inventory["FluidComponent"].number
                 ]
-                + TINY
+                + tiny_value
             )
             
         for ii in range(conductor.inventory["SolidComponent"].number):
@@ -112,7 +116,7 @@ def get_time_step(conductor, transient_input, num_step):
                 ii + conductor.dict_N_equation["FluidComponent"]
             ] = conductor.EIGTIM / (
                 conductor.EQTEIG[ii + conductor.dict_N_equation["FluidComponent"]]
-                + TINY
+                + tiny_value
             )
 
         # Store the optimal time step (from accuracy point of view)
@@ -120,9 +124,9 @@ def get_time_step(conductor, transient_input, num_step):
 
         # Tune the time step smoothly
         if time_step < 0.5 * OPTSTP:
-            time_step = time_step * FACTUP
+            time_step = time_step * mlt_upper
         elif time_step > 1.0 * OPTSTP:
-            time_step = time_step * FACTLO
+            time_step = time_step * mlt_lower
         
         # Limit the time step in the window allowed by the user
         time_step = max(time_step, transient_input["STPMIN"])
