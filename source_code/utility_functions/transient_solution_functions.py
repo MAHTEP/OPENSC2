@@ -51,29 +51,31 @@ def get_time_step(conductor, transient_input, num_step):
     FACTLO = 0.5
 
     if num_step == 1:
-        # at the first step time_step is equal to STPMIN for all the conductors \
-        # (cdo, 08/2020)
+        # At the first step time_step is equal to STPMIN for all the conductors 
         conductor.time_step = transient_input["STPMIN"]
     else:
-        # STORE THE PREVIOUS VALUE OF THE OPTIMAL TIME STEP
-        #      PRVSTP=OPTSTP
+        # Store the previous value of the optimal time step.
         PRVSTP = conductor.time_step
         if transient_input["IADAPTIME"] == 0:
             conductor.time_step = transient_input["STPMIN"]
-            # C * LIMIT THE TIME STEP IF PRINT-OUT OR STORAGE IS REQUIRED
+            
             conductor.time_step = min(
                 conductor.time_step, transient_input["TEND"] - conductor.cond_time[-1]
-            )  # crb (March 9, 2011)
+            ) 
             return
 
-        # crb Differentiate the indexes depending on ischannel (December 16, 2015)
+        # Differentiate the indexes depending on ischannel
         t_step_comp = np.zeros(conductor.dict_N_equation["NODOFS"])
         for ii in range(conductor.inventory["FluidComponent"].number):
-            # FluidComponent objects (cdp, 08/2020)
-            # C * THE FOLLOWING STATEMENTS WOULD CONTROL THE ACCURACY OF MOMENTUM...
-            if abs(transient_input["IADAPTIME"]) == 1:  # crb (Jan 20, 2011)
-                # (cdp, 08/2020)
+            # FluidComponent objects
+            # The following statements would control the accuracy of the 
+            # momentum
+            if abs(transient_input["IADAPTIME"]) == 1:
+                # Use adaptive time step
+
+                # Velocity
                 t_step_comp[ii] = conductor.EIGTIM / (conductor.EQTEIG[ii] + TINY)
+                # Pressure
                 t_step_comp[
                     ii + conductor.inventory["FluidComponent"].number
                 ] = conductor.EIGTIM / (
@@ -83,12 +85,15 @@ def get_time_step(conductor, transient_input, num_step):
                     + TINY
                 )
             elif transient_input["IADAPTIME"] == 2:
-                # C * ... BUT ARE SUBSTITUTED BY THESE
+                # ... but are substituded by these
+                # Velocity
                 t_step_comp[ii] = 1.0e10
+                # Pressure
                 t_step_comp[
                     ii + conductor.inventory["FluidComponent"].number
                 ] = 1.0e10
-            # endif (iadaptime)
+            
+            # Temperature
             t_step_comp[
                 ii + 2 * conductor.inventory["FluidComponent"].number
             ] = conductor.EIGTIM / (
@@ -97,12 +102,10 @@ def get_time_step(conductor, transient_input, num_step):
                 ]
                 + TINY
             )
-            # TSTPVH2 = 1.0e+10
-            # TSTPPH2 = 1.0e+10
-            # TSTPTH2 = 1.0e+10
-            # crb (June 26, 2015) # cod (July 23, 2015)
+            
         for ii in range(conductor.inventory["SolidComponent"].number):
-            # SolidComponent objects (cdp, 08/2020)
+            # SolidComponent objects
+            # Temperature
             t_step_comp[
                 ii + conductor.dict_N_equation["FluidComponent"]
             ] = conductor.EIGTIM / (
@@ -110,39 +113,22 @@ def get_time_step(conductor, transient_input, num_step):
                 + TINY
             )
 
-        # C * STORED THE OPTIMAL TIME STEP (FROM ACCURACY POINT OF VIEW)
-        OPTSTP = min(t_step_comp)  # cod (July 23, 2015)
+        # Store the optimal time step (from accuracy point of view)
+        OPTSTP = min(t_step_comp)
 
-        # CL* CONTROL THE TIME STEPPING ALSO BY THE VOLTAGE
-        # cl* add following lines
-        # cl* August 17, 2000 - start *************************************
-        # è associata almodulo elettrico,ignorare per ora
-        ##if FFLAG_IOP > 0:
-        ##	TSTEP_VOLT = EFIELD_INCR(ICOND)/conductor.time_step
-        ##	TSTEP_VOLT = DBLE(EIGTIM(ICOND)/TSTEP_VOLT)
-        ##	OPTSTP=min(TSTPVB,TSTPVH1,TSTPVH2,TSTPPH1,TSTPPH2,TSTPPB,&# cod (July 23, 2015)
-        ##	 &             TSTPTH1,TSTPTH2,TSTPTB,TSTPCO,TSTPJK,TSTEP_VOLT)
-
-        # cl* August 17, 2000 - end ***************************************
-
-        # C * CHANGE THE STEP SMOOTHLY
+        # Tune the time step smoothly
         if conductor.time_step < 0.5 * OPTSTP:
             conductor.time_step = conductor.time_step * FACTUP
         elif conductor.time_step > 1.0 * OPTSTP:
             conductor.time_step = conductor.time_step * FACTLO
-        # endif
-
-        # C * LIMIT THE TIME STEP IN THE WINDOW ALLOWED BY THE USER
+        
+        # Limit the time step in the window allowed by the user
         conductor.time_step = max(conductor.time_step, transient_input["STPMIN"])
-        # caf June 26, 2015 moved these 2 lines to the end of the subroutine
-        # C * LIMIT THE TIME STEP IF PRINT-OUT OR STORAGE IS REQUIRED
         conductor.time_step = min(
             conductor.time_step, transient_input["TEND"] - conductor.cond_time[-1]
         )
-        # C --------------
+        
         print(f"Selected conductor time step is: {conductor.time_step}\n")
-        # C --------------
-        # caf end *********************************************** June 26, 2015
 
 def step(conductor, environment, qsource, num_step):
 
