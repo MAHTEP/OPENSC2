@@ -54,8 +54,6 @@ def get_time_step(conductor, transient_input, num_step):
         # At the first step time_step is equal to STPMIN for all the conductors 
         conductor.time_step = transient_input["STPMIN"]
     else:
-        # Store the previous value of the optimal time step.
-        PRVSTP = conductor.time_step
         if transient_input["IADAPTIME"] == 0:
             conductor.time_step = transient_input["STPMIN"]
             
