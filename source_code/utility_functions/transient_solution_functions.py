@@ -86,7 +86,7 @@ def get_time_step(
             if abs(transient_input["IADAPTIME"]) == 1:
                 # Store the optimal time step (from accuracy point of view) 
                 # accounting for the whole solution variation.
-                OPTSTP = min(t_step_comp)
+                opt_tstep = min(t_step_comp)
             elif transient_input["IADAPTIME"] == 2:
                 # Index of the temperature unknown of the first fluid 
                 # component, i.e. first index corresponding to a temperature in 
@@ -95,12 +95,12 @@ def get_time_step(
                 idx_first_temp = conductor.inventory["FluidComponent"].number << 1
                 # Store the optimal time step (from accuracy point of view) 
                 # accounting for the temperature variation only.
-                OPTSTP = min(t_step_comp[idx_first_temp:])
+                opt_tstep = min(t_step_comp[idx_first_temp:])
 
             # Tune the time step smoothly
-            if time_step < 0.5 * OPTSTP:
+            if time_step < 0.5 * opt_tstep:
                 time_step = time_step * mlt_upper
-            elif time_step > 1.0 * OPTSTP:
+            elif time_step > 1.0 * opt_tstep:
                 time_step = time_step * mlt_lower
             
             # Limit the time step in the window allowed by the user
