@@ -42,9 +42,6 @@ def get_time_step(
     conductor,
     transient_input,
     fpath,
-    tiny_value = 1e-10,
-    mlt_upper = 1.2,
-    mlt_lower = 0.5,
     ):
 
     """
@@ -64,6 +61,9 @@ def get_time_step(
         fpath,
         "TRANSIENT",
         )
+
+    # Introduce to avoid division by zero in the evaluation of t_step_comp.
+    tiny_value = 1e-10
 
     if transient_input["IADAPTIME"] == 0:
         time_step = transient_input["STPMIN"]
@@ -102,9 +102,9 @@ def get_time_step(
 
         # Tune the time step smoothly
         if time_step < 0.5 * opt_tstep:
-            time_step = time_step * mlt_upper
+            time_step = time_step * transient_input["MLT_UPPER"]
         elif time_step > 1.0 * opt_tstep:
-            time_step = time_step * mlt_lower
+            time_step = time_step * transient_input["MLT_UPPER"]
         
         # Limit the time step in the window allowed by the user
         time_step = max(time_step, transient_input["STPMIN"])
