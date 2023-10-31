@@ -871,7 +871,7 @@ def eval_eigenvalues(
         )
         # pressure
         sub_array[eq_idx[f_comp.identifier].pressure] = max(
-            array[eq_idx[f_comp.identifier].velocity::ndf]
+            array[eq_idx[f_comp.identifier].pressure::ndf]
         )
         # temperature
         sub_array[eq_idx[f_comp.identifier].temperature] = max(
