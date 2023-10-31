@@ -346,12 +346,7 @@ class Simulation:
             self.num_step = self.num_step + 1
             time_step = np.zeros(self.numObj)
             for ii, conductor in enumerate(self.list_of_Conductors):
-                # Call function Get_time_step to select new time step (cdp, 08/2020)
-                conductor.time_step = get_time_step(
-                    conductor,
-                    self.transient_input,
-                    self.num_step
-                )
+                
                 time_step[ii] = conductor.time_step
                 # Increase time (cdp, 08/2020)
                 conductor.cond_time.append(
@@ -414,6 +409,20 @@ class Simulation:
                     self.dict_qsource[conductor.identifier],
                     self.num_step,
                 )
+
+                # Call function get_time_step to compute the new time step used 
+                # to compute the next value of the time at which the next 
+                # thermal-hydraulic solution will be evaluated. Moving the call 
+                # to function get_time_step after the call to funciton step 
+                # allows to avoid checking if num_step > 1 for each time step 
+                # and for each conductor. The initial value of the time step 
+                # for each conductor is defined at conductor instance and it is 
+                # equal to the minimum time step.
+                conductor.time_step = get_time_step(
+                    conductor,
+                    self.transient_input,
+                )
+
                 # Loop on FluidComponent (cdp, 10/2020)
                 for fluid_comp in conductor.inventory["FluidComponent"].collection:
                     # compute density and mass flow rate in nodal points with the
