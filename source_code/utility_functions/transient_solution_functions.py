@@ -5,6 +5,7 @@ import os
 from scipy.linalg import solve_banded
 from utility_functions.auxiliary_functions import (
     get_from_xlsx,
+    check_flag_value,
 )
 from typing import Union
 
@@ -35,10 +36,13 @@ from utility_functions.step_matrix_construction import (
     build_known_therm_vector,
 )
 
+from utils_global_info import VALID_FLAG_VALUES
+
 def get_time_step(
     conductor,
     transient_input,
     num_step,
+    fpath,
     tiny_value = 1e-10,
     mlt_upper = 1.2,
     mlt_lower = 0.5,
@@ -61,6 +65,16 @@ def get_time_step(
         # to reduce also one level of indentation.
         return transient_input["STPMIN"]
     else:
+
+        # Check if user specified a valid value to flag IADAPTIME.
+        check_flag_value(
+            transient_input["IADAPTIME"],
+            VALID_FLAG_VALUES,
+            "IADAPTIME",
+            fpath,
+            "TRANSIENT",
+            )
+
         if transient_input["IADAPTIME"] == 0:
             time_step = transient_input["STPMIN"]
             
