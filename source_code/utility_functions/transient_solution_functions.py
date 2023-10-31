@@ -69,44 +69,49 @@ def get_time_step(
                 time_step, transient_input["TEND"] - conductor.cond_time[-1]
             ) 
             return time_step
+        elif transient_input["IADAPTIME"] > 0:
 
-        t_step_comp = np.zeros(conductor.dict_N_equation["NODOFS"])
+            # Adaptive time step as a response of the variations in the 
+            # thermal-hydraulic solution:
+            # IADAPTIME = 1 considers the whole solution (velocity, pressure 
+            # and temperature for fluid components and temperature for solid 
+            # components);
+            # IADAPTIME = 2 considers only temperature variation in fluid and 
+            # solid components.
 
-        # Index of the temperature unknown of the first fluid component 
-        # (computed with binary left shift)
-        idx_first_temp = conductor.inventory["FluidComponent"].number << 1
-        # The following statements would control the accuracy of the momentum; 
-        # used to select the next adaptive time step.
-        
-        # Deal index smaller than idx_first_temp (velocity and pressure 
-        # variable)
-        if abs(transient_input["IADAPTIME"]) == 1:
-            t_step_comp[:idx_first_temp] = conductor.EIGTIM / (conductor.EQTEIG[:idx_first_temp] + tiny_value)
-        elif transient_input["IADAPTIME"] == 2:
-            # Use huge_value in this case
-            t_step_comp[:idx_first_temp] = huge_value
-        # Deal index larger than idx_first_temp (fluid and solid component 
-        # temperature variable)
-        t_step_comp[idx_first_temp:] = conductor.EIGTIM / (conductor.EQTEIG[idx_first_temp:] + tiny_value)
+            # This would control the accuracy of the momentum; used to select 
+            # the next adaptive time step.
+            t_step_comp = conductor.EIGTIM / (conductor.EQTEIG + tiny_value)
+            
+            if abs(transient_input["IADAPTIME"]) == 1:
+                # Store the optimal time step (from accuracy point of view) 
+                # accounting for the whole solution variation.
+                OPTSTP = min(t_step_comp)
+            elif transient_input["IADAPTIME"] == 2:
+                # Index of the temperature unknown of the first fluid 
+                # component, i.e. first index corresponding to a temperature in 
+                # the solution vector, starting from that index there are only 
+                # temperatures. Index is computed with left binary shift.
+                idx_first_temp = conductor.inventory["FluidComponent"].number << 1
+                # Store the optimal time step (from accuracy point of view) 
+                # accounting for the temperature variation only.
+                OPTSTP = min(t_step_comp[idx_first_temp:])
 
-        # Store the optimal time step (from accuracy point of view)
-        OPTSTP = min(t_step_comp)
+            # Tune the time step smoothly
+            if time_step < 0.5 * OPTSTP:
+                time_step = time_step * mlt_upper
+            elif time_step > 1.0 * OPTSTP:
+                time_step = time_step * mlt_lower
+            
+            # Limit the time step in the window allowed by the user
+            time_step = max(time_step, transient_input["STPMIN"])
+            time_step = min(
+                time_step, transient_input["TEND"] - conductor.cond_time[-1]
+            )
+            
+            print(f"Selected conductor time step is: {time_step}\n")
 
-        # Tune the time step smoothly
-        if time_step < 0.5 * OPTSTP:
-            time_step = time_step * mlt_upper
-        elif time_step > 1.0 * OPTSTP:
-            time_step = time_step * mlt_lower
-        
-        # Limit the time step in the window allowed by the user
-        time_step = max(time_step, transient_input["STPMIN"])
-        time_step = min(
-            time_step, transient_input["TEND"] - conductor.cond_time[-1]
-        )
-        
-        print(f"Selected conductor time step is: {time_step}\n")
-
-        return time_step
+            return time_step
 
 def step(conductor, envionment, qsource, num_step):
 
