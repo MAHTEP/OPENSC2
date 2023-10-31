@@ -9,7 +9,6 @@ from typing import Union
 import warnings
 
 
-
 def check_repeated_headings(input_file, sheet):
     """[summary]
 
@@ -795,3 +794,26 @@ def natural_sort(comp_a, comp_b):
             return f"{comp_b.identifier}_{comp_a.identifier}"
         # end if
     # end if
+
+def check_flag_value(
+    flag_value:Union[int,str,bool,None],
+    flag_valid_values:dict,
+    flag_name:str,
+    file_path:str,
+    sheet_name:str,
+    ):
+    """Function that checks if a valid value is given to a flag, checking against the corresponding valid values.
+
+    Args:
+        flag_value (Union[int,str,bool,None]): user defined value to the flag.
+        flag_valid_values (dict): data structure with all the valid values for flags.
+        flag_name (str): valid name of the flag
+        file_path (str): path to the input file where the flag is defined
+        sheet_name (str): name of the sheet where the flag is defined
+
+    Raises:
+        ValueError: if the value assigned to the flag by the user is not a valid one.
+    """
+
+    if flag_value not in flag_valid_values[flag_name]:
+        raise ValueError(f"Value {flag_value} is not allowed for flag {flag_name}. Please check sheet {sheet_name} in file {file_path}.")
