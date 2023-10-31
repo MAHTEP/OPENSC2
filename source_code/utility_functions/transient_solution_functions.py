@@ -124,6 +124,38 @@ def get_time_step(
                     transient_input,
                 )
 
+def user_adaptive_time_step(conductor:Conductor,transient_input:dict)->float:
+    """Function that allows user to specify its own rules for the adaptive time step for the thermal-hydraulic loop.
+
+    Args:
+        conductor (Conductor): object with all the information of the conductor.
+        transient_input (dict): data structure with user defined input related to the simulation among which time step possible range and duration of the simulation.
+
+    Returns:
+        float: time step for the thermal-hydraulic loop to be used in the next iteration. The nex value in conductor.cond_time is evaluated as conductor.cond_time[-1] + time_step.
+    """
+
+    # ALIASES
+    # Minimum time step.
+    stpmin = transient_input["STPMIN"]
+    # Maximum time step
+    stpmin = transient_input["STPMAX"]
+    # End time of the simulatin
+    tend = transient_input["TEND"]
+    # Time to start use an adaptive time step
+    time_ref = transient_input["TIMEREF"]
+    # Time duration of the most refined grid
+    tau_ref = transient_input["TAUREF"]
+    # List with all the conductor time step
+    time = conductor.cond_time
+    # Present conductor time step.
+    time_step = conductor.time_step
+
+    # User may write its own code below. User could exploit the above listed 
+    # aliases but it is not mandatory.
+
+    return time_step
+
 def step(conductor, envionment, qsource, num_step):
 
     """
