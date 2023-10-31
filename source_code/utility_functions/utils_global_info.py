@@ -7,3 +7,10 @@ IADAPTIME_VALUES = (
     1, # adaptive time step accounting for variation in the whole thermal-hydraulic solution
     2, # adaptive time step accounting only for variation in temperature solution
 )
+
+# Dictionary of tuple with valid flag values, used in function 
+# check_flag_value. Dictionary keys are the name of the flag as specified in 
+# the input file.
+VALID_FLAG_VALUES = dict(
+    IADAPTIME = IADAPTIME_VALUES, # time step beaviour
+)
