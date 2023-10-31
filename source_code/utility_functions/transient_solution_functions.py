@@ -42,7 +42,6 @@ def get_time_step(
     tiny_value = 1e-10,
     mlt_upper = 1.2,
     mlt_lower = 0.5,
-    huge_value = 1e10,
     ):
 
     """
