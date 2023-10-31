@@ -33,7 +33,7 @@ from utility_functions.plots import (
     create_real_time_plots,
     update_real_time_plots,
 )
-
+from simulation_global_info import MLT_DEFAULT_VALUE
 
 class Simulation:
 
@@ -97,6 +97,19 @@ class Simulation:
             total_isochoric_specific_heat="Cvmass",
             total_speed_of_sound="speed_of_sound",
             total_thermal_conductivity="conductivity",
+        )
+
+        # Apply default values to keys MLT_UPPER and MLT_LOWER if user 
+        # specifies value none in input file transitory_input.xlsx (i.e. use 
+        # the default value).
+        self.transient_input.update(
+            {
+                key: val for key,val in MLT_DEFAULT_VALUE.values() 
+                if (
+                    isinstance(self.transient_input[key],str) 
+                    and self.transient_input[key].lower() == "none"
+                )
+            }
         )
 
     # end method __init__ (cdp, 06/2020)
