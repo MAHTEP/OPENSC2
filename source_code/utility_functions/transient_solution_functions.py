@@ -111,6 +111,18 @@ def get_time_step(
             print(f"Selected conductor time step is: {time_step}\n")
 
             return time_step
+        elif transient_input["IADAPTIME"] < 0:
+            # Get adaptive time step from user defined auxiliary input file 
+            # (IADAPTIME = -1) or from user defined function 
+            # user_adaptive_time_step (IADAPTIME = -2)
+
+            if transient_input["IADAPTIME"] == -1:
+                raise ValueError("Adaptive time step from user defined inptu file (IADAPTIME = -1) should stil be implemented. Plese consider use other allowed values for flag IADAPTIME in sheet TRANSIENT of input file transitory_input.xlsx.")
+            elif transient_input["IADAPTIME"] == -2:
+                return user_adaptive_time_step(
+                    conductor,
+                    transient_input,
+                )
 
 def step(conductor, envionment, qsource, num_step):
 
