@@ -783,13 +783,12 @@ class Simulation:
         filenames = list()
 
         # Load and save paths for transitory_input file.
-        load_transient_input = os.path.join(self.basePath, self.starter_file)
-        load_paths.append(os.path.join(self.basePath, self.starter_file))
+        load_paths.append(self.starter_file_path)
         filenames.append(self.starter_file)
 
         # Load file transitory_input.
         transient_input = pd.read_excel(
-            load_transient_input,
+            self.starter_file_path,
             sheet_name="TRANSIENT",
             skiprows=1,
             header=0,
