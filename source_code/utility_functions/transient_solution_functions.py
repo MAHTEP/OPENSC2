@@ -36,7 +36,7 @@ from utility_functions.step_matrix_construction import (
     build_known_therm_vector,
 )
 
-from utils_global_info import VALID_FLAG_VALUES
+from utility_functions.utils_global_info import VALID_FLAG_VALUES
 
 def get_time_step(
     conductor:Conductor,
