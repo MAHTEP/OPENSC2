@@ -438,6 +438,7 @@ class Simulation:
                 conductor.time_step = get_time_step(
                     conductor,
                     self.transient_input,
+                    self.starter_file_path,
                 )
 
                 # Loop on FluidComponent (cdp, 10/2020)
