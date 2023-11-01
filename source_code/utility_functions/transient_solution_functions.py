@@ -53,9 +53,14 @@ def get_time_step(
     ##############################################################################
     """
 
+    # Aliases
+    iadaptime = transient_input["IADAPTIME"]
+    t_step_min = transient_input["STPMIN"]
+    t_end = transient_input["TEND"]
+    
     # Check if user specified a valid value to flag IADAPTIME.
     check_flag_value(
-        transient_input["IADAPTIME"],
+        iadaptime,
         VALID_FLAG_VALUES,
         "IADAPTIME",
         fpath,
@@ -65,13 +70,14 @@ def get_time_step(
     # Introduce to avoid division by zero in the evaluation of t_step_comp.
     tiny_value = 1e-10
 
-    if transient_input["IADAPTIME"] == 0:
+
+    if iadaptime == 0:
         
         time_step = min(
-            transient_input["STPMIN"], transient_input["TEND"] - conductor.cond_time[-1]
+            t_step_min, t_end - conductor.cond_time[-1]
         ) 
         return time_step
-    elif transient_input["IADAPTIME"] > 0:
+    elif iadaptime > 0:
 
         # Adaptive time step as a response of the variations in the 
         # thermal-hydraulic solution:
@@ -85,11 +91,11 @@ def get_time_step(
         # the next adaptive time step.
         t_step_comp = conductor.EIGTIM / (conductor.EQTEIG + tiny_value)
         
-        if abs(transient_input["IADAPTIME"]) == 1:
+        if abs(iadaptime) == 1:
             # Store the optimal time step (from accuracy point of view) 
             # accounting for the whole solution variation.
             opt_tstep = min(t_step_comp)
-        elif transient_input["IADAPTIME"] == 2:
+        elif iadaptime == 2:
             # Index of the temperature unknown of the first fluid 
             # component, i.e. first index corresponding to a temperature in 
             # the solution vector, starting from that index there are only 
@@ -106,23 +112,23 @@ def get_time_step(
             time_step = time_step * transient_input["MLT_UPPER"]
         
         # Limit the time step in the window allowed by the user
-        time_step = max(time_step, transient_input["STPMIN"])
+        time_step = max(time_step, t_step_min)
         time_step = min(time_step, transient_input["STPMAX"])
         time_step = min(
-            time_step, transient_input["TEND"] - conductor.cond_time[-1]
+            time_step, t_end - conductor.cond_time[-1]
         )
         
         print(f"Selected conductor time step is: {time_step}\n")
 
         return time_step
-    elif transient_input["IADAPTIME"] < 0:
+    elif iadaptime < 0:
         # Get adaptive time step from user defined auxiliary input file 
         # (IADAPTIME = -1) or from user defined function 
         # user_adaptive_time_step (IADAPTIME = -2)
 
-        if transient_input["IADAPTIME"] == -1:
+        if iadaptime == -1:
             raise ValueError("Adaptive time step from user defined inptu file (IADAPTIME = -1) should stil be implemented. Plese consider use other allowed values for flag IADAPTIME in sheet TRANSIENT of input file transitory_input.xlsx.")
-        elif transient_input["IADAPTIME"] == -2:
+        elif iadaptime == -2:
             return user_adaptive_time_step(
                 conductor,
                 transient_input,
