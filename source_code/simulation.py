@@ -57,9 +57,13 @@ class Simulation:
         for f_name in input_files:
             if "transitory_input" in f_name:
                 self.starter_file = f_name
+        
+        # Path of the starting file (master input file)
+        self.starter_file_path = os.path.join(self.basePath, self.starter_file)
+    
         # Load input file transitory_input.xlsx and convert to a dictionary.
         self.transient_input = pd.read_excel(
-            os.path.join(self.basePath, self.starter_file),
+            self.starter_file_path,
             sheet_name="TRANSIENT",
             skiprows=1,
             header=0,
