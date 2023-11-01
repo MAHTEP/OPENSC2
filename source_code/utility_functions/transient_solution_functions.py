@@ -66,10 +66,9 @@ def get_time_step(
     tiny_value = 1e-10
 
     if transient_input["IADAPTIME"] == 0:
-        time_step = transient_input["STPMIN"]
         
         time_step = min(
-            time_step, transient_input["TEND"] - conductor.cond_time[-1]
+            transient_input["STPMIN"], transient_input["TEND"] - conductor.cond_time[-1]
         ) 
         return time_step
     elif transient_input["IADAPTIME"] > 0:
@@ -108,6 +107,7 @@ def get_time_step(
         
         # Limit the time step in the window allowed by the user
         time_step = max(time_step, transient_input["STPMIN"])
+        time_step = min(time_step, transient_input["STPMAX"])
         time_step = min(
             time_step, transient_input["TEND"] - conductor.cond_time[-1]
         )
