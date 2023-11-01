@@ -39,18 +39,28 @@ from utility_functions.step_matrix_construction import (
 from utils_global_info import VALID_FLAG_VALUES
 
 def get_time_step(
-    conductor,
-    transient_input,
-    fpath,
-    ):
+    conductor:Conductor,
+    transient_input:dict,
+    fpath:str,
+    )->float:
 
-    """
-    ##############################################################################
-      SUBROUTINE GETSTP(TIME,TEND  ,STPMIN,STPMAX, &
-      PRVSTP,OPTSTP,ICOND,NCOND) # cza added NCOND (August 14, 2017)
-    ##############################################################################
-    # Translation from Fortran to Python: Placido D. PoliTo, 07/08/2020
-    ##############################################################################
+    """Function that allows computes the time step for the thermal-hydraulic loop according to the value of flag IADAPTIME:
+        * -2 -> adaptive time step from user defiend function
+        * -1 -> adaptive time step from user defined auxiliary input file
+        * 0 -> no adaptive time step (time_step = t_step_min)
+        * 1 -> adaptive time step accounting for variation in the whole thermal-hydraulic solution
+        * 2 -> adaptive time step accounting only for variation in temperature solution
+
+    Args:
+        conductor (Conductor): object with all the information of the conductor.
+        transient_input (dict): data structure with user defined input related to the simulation among which time step possible range and duration of the simulation.
+        fpath (str): path to the master input file, where user can set the value to flag IADAPTIME.
+
+    Raises:
+        ValueError: if IADAPTIME = -1 since at the time being this option is not available (to be implemented in a later future).
+
+    Returns:
+        float: time step for the thermal-hydraulic loop to be used in the next iteration. The nex value of conductor.cond_time is evaluated as conductor.cond_time[-1] + time_step.
     """
 
     # Aliases
@@ -69,7 +79,6 @@ def get_time_step(
 
     # Introduce to avoid division by zero in the evaluation of t_step_comp.
     tiny_value = 1e-10
-
 
     if iadaptime == 0:
         
