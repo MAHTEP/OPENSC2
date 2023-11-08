@@ -244,7 +244,7 @@ $RECYCLE.BIN/
 *.tsv
 *.dat
 *.csv
-*.xlsx
+# *.xlsx
 *.ods
 
 # Temporary files #
@@ -256,3 +256,4 @@ Simulations_results/**/ # code output directory
 source_code/opensc2/**/ # virtual environment
 source_code/GUI_icons/**/ # graphical user interface images
 TDD_examples/**/ # input files template for the three selected cases used whitin the Test Driven Development approach
+Simulations_results/
