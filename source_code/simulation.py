@@ -813,6 +813,13 @@ class Simulation:
             load_paths.append(os.path.join(self.basePath, fname))
             filenames.append(fname)
 
+        # Add prefix meta (for metadata) to each file name to distinguish the 
+        # saved input files with respect to the initial set of input files used 
+        # to run the simulation. This allows to overcome the fact that two .xlsx
+        # files with the same name could not be opened and could be useful for 
+        # file comparison.
+        filenames = ["meta_" + fname for fname in filenames]
+
         for ii, fname in enumerate(filenames):
             # Build save_paths from load_paths.
             save_paths.append(os.path.join(self.dict_path["Save_input"], fname))
