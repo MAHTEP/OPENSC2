@@ -684,8 +684,21 @@ class SolidComponent:
         # conductance across the cable in the electric module.
         self.dict_node_pt["integral_power_el_cond"] = np.zeros(n_nod)
 
-    def fname(arg):
-        pass
+    def set_power_array_to_zeros(self, conductor):
+        """Method that sets to zeros arrays used in the evaluation of the Joule power afther the initialization carried out with method initialize_electric_quantities.
+
+        Args:
+            conductor (Conductor): object with all the information useful for the computation.
+        """
+
+        # Aliases
+        n_nod = conductor.grid_features["N_nod"]
+        n_elem = conductor.grid_input["NELEMS"]
+
+        # Set the following arrays to zeros
+        self.dict_Gauss_pt["integral_power_el_res_mod1"] = np.zeros(n_elem)
+        self.dict_Gauss_pt["integral_power_el_res_mod2"] = np.zeros(n_elem)
+        self.dict_node_pt["integral_power_el_cond"] = np.zeros(n_nod)
 
     def get_joule_power_along(self, conductor: object):
         """Method that evaluate the contribution to the total power in the element of Joule power (in W/m) due to the electic resistances along the SolidComponent objects.
