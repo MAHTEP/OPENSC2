@@ -656,10 +656,13 @@ class SolidComponent:
     def initialize_electric_quantities(self, conductor):
         """Method that initializes to zero some arrays that are an outcome of the electric method for each SolidComponent object:
 
-        * self.dict_Gauss_pt["current_along"];
-        * self.dict_Gauss_pt["delta_voltage_along"];
-        * self.dict_Gauss_pt["delta_voltage_along_sum"];
-        * self.dict_node_pt["total_power_el_cond"].
+        * self.dict_Gauss_pt["current_along"]
+        * self.dict_Gauss_pt["delta_voltage_along"]
+        * self.dict_Gauss_pt["delta_voltage_along_sum"]
+        * self.dict_Gauss_pt["integral_power_el_res_mod1"]
+        * self.dict_Gauss_pt["integral_power_el_res_mod2"]
+        * self.dict_node_pt["total_power_el_cond"]
+        * self.dict_node_pt["integral_power_el_cond"]
         """
 
         # Aliases
@@ -669,7 +672,20 @@ class SolidComponent:
         self.dict_Gauss_pt["current_along"] = np.zeros(n_elem)
         self.dict_Gauss_pt["delta_voltage_along"] = np.zeros(n_elem)
         self.dict_Gauss_pt["delta_voltage_along_sum"] = np.zeros(n_elem)
+        # Introduced to evaluate the integral value Joule power due to electric 
+        # resistance along the cable in the electric module as R * I^2.
+        self.dict_Gauss_pt["integral_power_el_res_mod1"] = np.zeros(n_elem)
+        # Introduced to evaluate the integral value Joule power due to electric 
+        # resistance along the cable in the electric module as Delta V * I.
+        self.dict_Gauss_pt["integral_power_el_res_mod2"] = np.zeros(n_elem)
+
         self.dict_node_pt["total_power_el_cond"] = np.zeros(n_nod)
+        # Introduced to evaluate the integral value Joule power due to electric 
+        # conductance across the cable in the electric module.
+        self.dict_node_pt["integral_power_el_cond"] = np.zeros(n_nod)
+
+    def fname(arg):
+        pass
 
     def get_joule_power_along(self, conductor: object):
         """Method that evaluate the contribution to the total power in the element of Joule power (in W/m) due to the electic resistances along the SolidComponent objects.
