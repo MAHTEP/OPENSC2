@@ -662,16 +662,14 @@ class SolidComponent:
         * self.dict_node_pt["total_power_el_cond"].
         """
 
-        self.dict_Gauss_pt["current_along"] = np.zeros(conductor.grid_input["NELEMS"])
-        self.dict_Gauss_pt["delta_voltage_along"] = np.zeros(
-            conductor.grid_input["NELEMS"]
-        )
-        self.dict_Gauss_pt["delta_voltage_along_sum"] = np.zeros(
-            conductor.grid_input["NELEMS"]
-        )
-        self.dict_node_pt["total_power_el_cond"] = np.zeros(
-            conductor.grid_features["N_nod"]
-        )
+        # Aliases
+        n_nod = conductor.grid_features["N_nod"]
+        n_elem = conductor.grid_input["NELEMS"]
+
+        self.dict_Gauss_pt["current_along"] = np.zeros(n_elem)
+        self.dict_Gauss_pt["delta_voltage_along"] = np.zeros(n_elem)
+        self.dict_Gauss_pt["delta_voltage_along_sum"] = np.zeros(n_elem)
+        self.dict_node_pt["total_power_el_cond"] = np.zeros(n_nod)
 
     def get_joule_power_along(self, conductor: object):
         """Method that evaluate the contribution to the total power in the element of Joule power (in W/m) due to the electic resistances along the SolidComponent objects.
