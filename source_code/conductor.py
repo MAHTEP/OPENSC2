@@ -4209,8 +4209,8 @@ class Conductor:
 
         self.electric_right_hand_side = self.electric_right_hand_side[idx] - bar
 
-    def __electric_solution_reorganization(self):
-        """Private method that reorganizes the electric solution. Specifically it:
+    def electric_solution_reorganization(self):
+        """Method that reorganizes the electric solution. Specifically it:
         * extracts edge current (current along StrandComponent) and nodal potentials from electric solution array;
         * computes voltage difference along StrandComponent;
         * assignes current along StrandComponent and voltage difference along StrandComponent.
