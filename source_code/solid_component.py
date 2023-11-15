@@ -809,6 +809,42 @@ class SolidComponent:
                     / conductor.grid_features["delta_z_tilde"]
                 )
 
+    def get_joule_power_along_steady(self, conductor: object):
+        """Method that evaluate the contribution to the total power in the element of Joule power (in W/m) due to the electic resistances along the SolidComponent objects.
+        This method should be called in the electric method, when the transient solution is used and for the solid component that actually carries a current. It works when the steady state solution for the electric module is computed.
+
+        Args:
+            conductor (object): ConductorComponent object with all informations to make the calculation.
+        """
+
+        # Alias
+        el_res = self.dict_Gauss_pt["electric_resistance"]
+        current = self.dict_Gauss_pt["current_along"]
+        voltage = self.dict_Gauss_pt["delta_voltage_along"]
+        d_z_tilde = conductor.grid_features["delta_z"] * self.inputs["COSTETA"]
+
+        # Mode 1: evaluate Joule linear power along the strand in W, due
+        # to electric resistances only for current carriers:
+        # P_along = R_along * I_along ^2
+        self.dict_Gauss_pt["integral_power_el_res_mod1"] = current ** 2 * el_res
+
+        # Mode 2: evaluate Joule linear power along the strand in W, due
+        # to electric resistances only for current carriers:
+        # P_along = Delta_Phi_along * I_along
+        self.dict_Gauss_pt["integral_power_el_res_mod2"] = voltage * current
+
+        # Check equivalence of Mode 1 and Mode 2 (they should be equivalent 
+        # but Mode 2 may give numerical cancellation).
+        if not np.allclose(self.dict_Gauss_pt["integral_power_el_res_mod1"],self.dict_Gauss_pt["integral_power_el_res_mod2"]):
+            warnings.warn("P_Joule = R I^2 != Delta_Phi I. Possible violation of the energy conservation!")
+        # Convert W in W/m keping into account the cos(theta).
+        # This is independent of the time integration method since at the 
+        # initialization (when this function is used) BE, CN and AM4 should 
+        # fill only the 0 index column.
+        self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
+            self.dict_Gauss_pt["integral_power_el_res_mod1"] / d_z_tilde
+        )
+
     def set_energy_counters(self, conductor):
         # tesded: ok (cdp, 06/2020)
 
