@@ -4347,6 +4347,16 @@ class Conductor:
 
         if self.cond_num_step == 0:
             electric_steady_state_solution(self)
+
+            # Call method electric_solution_reorganization: reorganize electric
+            # solution and computes useful quantities used in the Joule power
+            # evaluation.
+            self.electric_solution_reorganization()
+            # Call method get_total_joule_power_electric_conductance to evaluate
+            # the total Joule power in each node of the spatial discretization
+            # associated to the electric conductance between StrandComponent
+            # objects.
+            self.get_total_joule_power_electric_conductance()
         else:
             self.__get_electric_time_step()
             # Always solve the electromagnetic problem as a transient problem. 
