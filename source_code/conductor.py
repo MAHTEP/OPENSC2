@@ -4359,11 +4359,11 @@ class Conductor:
         self.electric_solution_reorganization()
 
         self.__compute_voltage_sum()
-        # Call method __get_total_joule_power_electric_conductance to evaluate
+        # Call method get_total_joule_power_electric_conductance to evaluate
         # the total Joule power in each node of the spatial discretization
         # associated to the electric conductance between StrandComponent
         # objects.
-        self.__get_total_joule_power_electric_conductance()
+        self.get_total_joule_power_electric_conductance()
 
     def __update_grid_features(self):
         """Private method that updates dictionary grid_features evaluating arrays delta_z, delta_z_tilde and zcoord_gauss as keys of dictionary self.grid_features. These arrays are used:
