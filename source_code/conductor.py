@@ -4487,6 +4487,23 @@ class Conductor:
             # End for jacket_c.
         # End for rr.
 
+    def __get_heat_source_em_steady(self):
+
+        """Private method that initializes Joule power arrays due to the electric module. This method is called only once at conductor initialization and it is introduced in order to limit the number of times the check on time or number of step is carried out to select the suitable operation.
+        Call methods get_joule_power_along_steady and get_joule_power_across_steady because this method is called only at conductor initialization after the post processing of the electric solution evaluated with the steady state solver.
+        At the time being the method loops only on strand object because it is assumed that jackets do not carry currents. This allows to avoid the check on obj.name in methods get_joule_power_along_steady and get_joule_power_across_steady: the rationale is to call the method only if needed.
+        In the name of the method there is no reference to nodal or gauss point since method get_joule_power_along_steady updates dictionary dict_Gauss_pt while method get_joule_power_across_steady updates dictionary dict_node_pt.
+        """
+
+        # Loop on StrandComponent objects.
+        for strand in self.inventory["StrandComponent"].collection:
+            # Evaluate joule power due to electric resistance along strand 
+            # object.
+            strand.get_joule_power_along_steady(self)
+            # Evaluate joule power due to electric conductance across strand 
+            # object.
+            strand.get_joule_power_across_steady(self)
+
     def build_heat_source(self, simulation):
         """Method that builds heat source therms in nodal and Gauss points for 
         strand and jacket objects.
