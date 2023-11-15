@@ -4339,7 +4339,7 @@ class Conductor:
                     obj.dict_Gauss_pt["delta_voltage_along_sum"][idxp] = obj.dict_Gauss_pt["delta_voltage_along"][idx:idxp+1].sum()
 
     def electric_method(self):
-        """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls private method self.__electric_solution_reorganization to reorganize the electric solution.
+        """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls method self.electric_solution_reorganization to reorganize the electric solution.
 
         Raises:
             ValueError: if to flag self.operations["ELECTRIC_SOLVER"] user assigns not valid value.
@@ -4353,10 +4353,10 @@ class Conductor:
             # This is not general but edge cases are few and mostly "theoretic".
             electric_transient_solution(self)
         
-        # Call method __electric_solution_reorganization: reorganize electric
+        # Call method electric_solution_reorganization: reorganize electric
         # solution and computes useful quantities used in the Joule power
         # evaluation.
-        self.__electric_solution_reorganization()
+        self.electric_solution_reorganization()
 
         self.__compute_voltage_sum()
         # Call method __get_total_joule_power_electric_conductance to evaluate
