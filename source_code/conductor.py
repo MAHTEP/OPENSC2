@@ -4430,6 +4430,63 @@ class Conductor:
             # Deal with cases specified in https://stackoverflow.com/questions/8101353/counting-significant-figures-in-python
             self.n_digit_z = len(Decimal(numstr).as_tuple().digits)
     
+    def __initialize_heat_source_nodal_pt_th(self, simulation):
+        """Private method that initializes heat source arrays in nodal points for strand and jacket objects keeping into account of the contribution strictly related to the thermal hydraulic model. The Joule power due to the electric module is evaluated in a different method. This method is called only once at conductor initialization and it is introduced in order to limit the number of times the check on time or number of step is carried out to select the suitable operation.
+
+        Args:
+            simulation (object): object with all information about the simulation.
+        """
+        
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+
+        # Loop on StrandComponent objects.
+        for strand in self.inventory["StrandComponent"].collection:
+            strand.get_heat(self)
+            # Call method jhtflx_new_0 to initialize JHTFLX to zeros for each 
+            # conductor solid components.
+            strand.jhtflx_new_0(self)
+            # Call set_energy_counters to initialize EEXT and EJHT to zeros for 
+            # each conductor solid components.
+            strand.set_energy_counters(self)
+
+        # Loop on JacketComponents objects.
+        for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
+            jacket.get_heat(self)
+
+            # Call method jhtflx_new_0 to initialize JHTFLX to zeros for each 
+            # conductor solid components.
+            jacket.jhtflx_new_0(self)
+            # Call set_energy_counters to initialize EEXT and EJHT to zeros for 
+            # each conductor solid components.
+            jacket.set_energy_counters(self)
+            if (
+                abs(interf_flag.at[
+                    simulation.environment.KIND, jacket.identifier
+                ]) == 1
+            ):
+                # Evaluate the external heat by radiation in nodal points.
+                jacket._radiative_source_therm_env(self, simulation.environment)
+            # End if abb(interf_flag)
+            for _, jacket_c in enumerate(
+                self.inventory["JacketComponent"].collection[rr + 1 :]
+            ):
+                if (
+                    abs(
+                        self.dict_df_coupling["HTC_choice"].at[
+                            jacket.identifier, jacket_c.identifier
+                        ]
+                    )
+                    == 3
+                ):
+                    # Evaluate the inner heat exchange by radiation in nodal 
+                    # points.
+                    jacket._radiative_heat_exc_inner(self, jacket_c)
+                    jacket_c._radiative_heat_exc_inner(self, jacket)
+                # End if abs.
+            # End for jacket_c.
+        # End for rr.
+
     def build_heat_source(self, simulation):
         """Method that builds heat source therms in nodal and Gauss points for 
         strand and jacket objects.
