@@ -661,6 +661,8 @@ class SolidComponent:
         * self.dict_Gauss_pt["delta_voltage_along_sum"]
         * self.dict_Gauss_pt["integral_power_el_res_mod1"]
         * self.dict_Gauss_pt["integral_power_el_res_mod2"]
+        * self.dict_Gauss_pt["linear_power_el_resistance"]
+        * self.dict_node_pt["total_linear_power_el_cond"]
         * self.dict_node_pt["total_power_el_cond"]
         * self.dict_node_pt["integral_power_el_cond"]
         """
@@ -668,6 +670,7 @@ class SolidComponent:
         # Aliases
         n_nod = conductor.grid_features["N_nod"]
         n_elem = conductor.grid_input["NELEMS"]
+        method = conductor.inputs["METHOD"]
 
         self.dict_Gauss_pt["current_along"] = np.zeros(n_elem)
         self.dict_Gauss_pt["delta_voltage_along"] = np.zeros(n_elem)
@@ -683,6 +686,23 @@ class SolidComponent:
         # Introduced to evaluate the integral value Joule power due to electric 
         # conductance across the cable in the electric module.
         self.dict_node_pt["integral_power_el_cond"] = np.zeros(n_nod)
+
+        if method == "BE" or method == "CN":
+            # Backward Euler or Crank-Nicolson.
+            self.dict_node_pt["total_linear_power_el_cond"] = np.zeros(
+                (n_nod,2)
+            )
+            self.dict_Gauss_pt["linear_power_el_resistance"] = np.zeros(
+                    (n_elem,2)
+                )
+        elif method == "AM4":
+            # Adams-Moulton 4.
+            self.dict_node_pt["total_linear_power_el_cond"] = np.zeros(
+                (n_nod,4)
+            )
+            self.dict_Gauss_pt["linear_power_el_resistance"] = np.zeros(
+                    (n_elem,4)
+                )
 
     def set_power_array_to_zeros(self, conductor):
         """Method that sets to zeros arrays used in the evaluation of the Joule power afther the initialization carried out with method initialize_electric_quantities.
