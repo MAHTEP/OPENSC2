@@ -4244,8 +4244,8 @@ class Conductor:
                 * obj.dict_Gauss_pt["electric_resistance"]
                     )
 
-    def __get_total_joule_power_electric_conductance(self):
-        """Private method that evaluates total Joule power in each node of the spatial discretization associated to the electric conductance between StrandComponent objects. The method re-distribues computed values to each defined StrandComponent object."""
+    def get_total_joule_power_electric_conductance(self):
+        """Method that evaluates total Joule power in each node of the spatial discretization associated to the electric conductance between StrandComponent objects. The method re-distribues computed values to each defined StrandComponent object."""
 
         # Loop to initialize total_powe_el_cond to 0 for each StrandComponent.
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
