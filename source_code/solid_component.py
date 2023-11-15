@@ -845,6 +845,22 @@ class SolidComponent:
             self.dict_Gauss_pt["integral_power_el_res_mod1"] / d_z_tilde
         )
 
+    def get_joule_power_across_steady(self, conductor: object):
+        """Method that evaluates the contribution to the total power in the nodes of Joule power (in W/m) due to the electic conductance across the SolidComponent objects.
+        This method should be called in the electric method, when the transient solution is used. It works when the steady state solution for the electric module is computed.
+
+        Args:
+            conductor (object): ConductorComponent object with all informations to make the calculation.
+        """
+
+        # Evaluate total Joule linear power across the strand in W/m, due to 
+        # electric conductance only for current carriers:
+        # P_l_t = P_t / Delta_z_tilde
+        self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
+            self.dict_node_pt["total_power_el_cond"]
+            / conductor.grid_features["delta_z_tilde"]
+        )
+
     def set_energy_counters(self, conductor):
         # tesded: ok (cdp, 06/2020)
 
