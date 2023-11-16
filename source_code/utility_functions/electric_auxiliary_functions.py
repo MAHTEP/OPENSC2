@@ -270,3 +270,21 @@ def electric_transient_solution(conductor: object):
             conductor.electric_known_term_vector.copy()
         )
         solution_completion(conductor, idx, electric_solution)
+
+        # Call method electric_solution_reorganization: reorganize electric
+        # solution and computes useful quantities used in the Joule power
+        # evaluation.
+        conductor.electric_solution_reorganization()
+        # Call method get_total_joule_power_electric_conductance to evaluate
+        # the total Joule power in each node of the spatial discretization
+        # associated to the electric conductance between StrandComponent
+        # objects.
+        conductor.get_total_joule_power_electric_conductance()
+        # Compute the numerator of the integral Joule power due to both the 
+        # electric resistance along the current carrier and the electric 
+        # conductance between current carriers. This is approximated as the sum 
+        # of the procucts of the Joule power at the i-th electric time step 
+        # times the value of the electric time step (P_{Joule,i} * dt_em). This 
+        # sum is updated at each electric time step and for each current 
+        # carrier.
+        conductor.eval_integral_joule_power()
