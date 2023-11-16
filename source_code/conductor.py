@@ -4602,7 +4602,12 @@ class Conductor:
 
     def __build_heat_source_gauss_pt(self):
         """Private method that builds heat source therms in Gauss points for 
-        strand and jacket objects."""
+        strand and jacket objects.
+        Sets to zeros the following arrays as preliminary step for the next evaluation:
+            * strand.dict_Gauss_pt["integral_power_el_res_mod1"]
+            * strand.dict_Gauss_pt["integral_power_el_res_mod2"]
+            * strand.dict_node_pt["integral_power_el_cond"]
+        """
 
         # Loop on StrandComponent objects.
         for strand in self.inventory["StrandComponent"].collection:
@@ -4620,6 +4625,12 @@ class Conductor:
                 + strand.dict_node_pt["total_linear_power_el_cond"][1:]
                 + strand.dict_Gauss_pt["linear_power_el_resistance"]
             )
+
+            # Set arrays strand.dict_Gauss_pt["integral_power_el_res_mod1"], 
+            # strand.dict_Gauss_pt["integral_power_el_res_mod2"] and 
+            # strand.dict_node_pt["integral_power_el_cond"] to zero for the 
+            # next evaluation.
+            strand.set_power_array_to_zeros()
         
         # Loop on JacketComponents objects.
         for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
