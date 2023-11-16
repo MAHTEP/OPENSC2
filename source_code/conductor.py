@@ -4338,6 +4338,42 @@ class Conductor:
                     idxp = ind_zcoord_gauss[ii]
                     obj.dict_Gauss_pt["delta_voltage_along_sum"][idxp] = obj.dict_Gauss_pt["delta_voltage_along"][idx:idxp+1].sum()
 
+    def __electric_method_steady(self):
+        """Private method that allows to define the electric problem and solve it with the steady state solver, calculating the Joule power in a consistent way to be used as heat source for the next iterations (carried out with the transient solver).
+        """
+        
+        # Define and solve the electric problem with the steady state solver.
+        electric_steady_state_solution(self)
+
+        # Call method electric_solution_reorganization: reorganize electric
+        # solution and computes useful quantities used in the Joule power
+        # evaluation.
+        self.electric_solution_reorganization()
+        # Call method get_total_joule_power_electric_conductance to evaluate
+        # the total Joule power in each node of the spatial discretization
+        # associated to the electric conductance between StrandComponent
+        # objects.
+        self.get_total_joule_power_electric_conductance()
+
+        # Compute the Joule power contributions (along and across) 
+        # exploiting the outcome from the steady state solution of the 
+        # elecric module.
+        self.__get_heat_source_em_steady()
+
+        # At this point all the heat source therm should be evaluated and 
+        # the arrays used in function step could be constructed. Namely:
+        # 1) all the thermal hydraulic heat source are computed in calling 
+        # method self.__initialize_heat_source_nodal_pt_th in self.
+        # initialization before entering this branch (in method simulation.
+        # conductor_initialization);
+        # 2) all the Joule power contribution due to the electric solution 
+        # are evaluated calling method self.__get_heat_source_em_steady.
+        # N.B. arrays obj.dict_Gauss_pt["integral_power_el_res_mod1"]
+        # obj.dict_Gauss_pt["integral_power_el_res_mod2"] and 
+        # obj.dict_node_pt["integral_power_el_cond"] are set to zero for 
+        # the next evaluation inside method __build_heat_source_gauss_pt
+        self.__build_heat_source_gauss_pt()
+
     def electric_method(self):
         """Method that performs electric solution according to flag self.operations["ELECTRIC_SOLVER"]. Calls method self.electric_solution_reorganization to reorganize the electric solution.
 
