@@ -775,7 +775,7 @@ class SolidComponent:
 
     def get_joule_power_across(self, conductor: object):
         """Method that evaluates the contribution to the total power in the nodes of Joule power (in W/m) due to the electic conductance across the SolidComponent objects.
-        This method should be called in the electric method, when the transient solution is used.
+        This method should be called in the electric method, when the transient solution is used and only for current carriers.
 
         Args:
             conductor (object): ConductorComponent object with all informations to make the calculation.
@@ -783,6 +783,18 @@ class SolidComponent:
 
         # Alias
         method = conductor.inputs["METHOD"]
+
+        # Finalize the evaluation of the integral value of the Joule power due 
+        # to electric conductance between the current carrier started in method 
+        # conductor.eval_integral_joule_power. Array integral_power_el_cond 
+        # stores the numerator (energy in J) that here is divided by the 
+        # thermal hydraulic to get again a power (W), which is further divided 
+        # by a suitable length to get a linear power density (W/m):
+        # P_Joule = sum_1^N_em P_{Joule,i} / (Delta_t_TH * Delta_z_tilde)
+        integral_j_pow_across = (
+            self.self.dict_node_pt["integral_power_el_cond"]
+            / (conductor.grid_features["delta_z_tilde"] * conductor.time_step)
+        )
 
         if method == "BE" or method == "CN":
             # Backward Euler or Crank-Nicolson.
@@ -794,27 +806,21 @@ class SolidComponent:
                 self.dict_node_pt["total_linear_power_el_cond"][
                     :, 1
                 ] = self.dict_node_pt["total_linear_power_el_cond"][:, 0].copy()
-            if self.name != "Z_JACKET":
-                # Evaluate total Joule linear power across the strand in
-                # W/m, due to electric conductance only for current carriers:
-                # P_l_t = P_t / Delta_z_tilde
-                self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
-                    self.dict_node_pt["total_power_el_cond"]
-                    / conductor.grid_features["delta_z_tilde"]
-                )
+            # Assign the integral value of the linear power density of the 
+            # Joule power across current carrier.
+            self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
+                integral_j_pow_across
+            )
         elif method == "AM4":
             # Adams-Moulton 4.
             self.dict_node_pt["total_linear_power_el_cond"][
                 :, 1:4
             ] = self.dict_node_pt["total_linear_power_el_cond"][:, 0:3].copy()
-            if self.name != "Z_JACKET":
-                # Evaluate total Joule linear power across the strand in
-                # W/m, due to electric conductance only for current carriers:
-                # P_l_t = P_t / Delta_z_tilde
-                self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
-                    self.dict_node_pt["total_power_el_cond"]
-                    / conductor.grid_features["delta_z_tilde"]
-                )
+            # Assign the integral value of the linear power density of the 
+            # Joule power across current carrier.
+            self.dict_node_pt["total_linear_power_el_cond"][:, 0] = (
+                integral_j_pow_across
+            )
 
     def get_joule_power_along_steady(self, conductor: object):
         """Method that evaluate the contribution to the total power in the element of Joule power (in W/m) due to the electic resistances along the SolidComponent objects.
