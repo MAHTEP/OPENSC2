@@ -4357,6 +4357,26 @@ class Conductor:
             # associated to the electric conductance between StrandComponent
             # objects.
             self.get_total_joule_power_electric_conductance()
+
+            # Compute the Joule power contributions (along and across) 
+            # exploiting the outcome from the steady state solution of the 
+            # elecric module.
+            self.__get_heat_source_em_steady()
+
+            # At this point all the heat source therm should be evaluated and 
+            # the arrays used in function step could be constructed. Namely:
+            # 1) all the thermal hydraulic heat source are computed in calling 
+            # method self.__initialize_heat_source_nodal_pt_th in self.
+            # initialization before entering this branch (in method simulation.
+            # conductor_initialization);
+            # 2) all the Joule power contribution due to the electric solution 
+            # are evaluated calling method self.__get_heat_source_em_steady.
+            # N.B. arrays obj.dict_Gauss_pt["integral_power_el_res_mod1"]
+            # obj.dict_Gauss_pt["integral_power_el_res_mod2"] and 
+            # obj.dict_node_pt["integral_power_el_cond"] are set to zero for 
+            # the next evaluation inside method __build_heat_source_gauss_pt
+            self.__build_heat_source_gauss_pt()
+
         else:
             self.__get_electric_time_step()
             # Always solve the electromagnetic problem as a transient problem. 
