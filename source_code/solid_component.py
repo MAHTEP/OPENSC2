@@ -721,8 +721,8 @@ class SolidComponent:
         self.dict_node_pt["integral_power_el_cond"] = np.zeros(n_nod)
 
     def get_joule_power_along(self, conductor: object):
-        """Method that evaluate the contribution to the total power in the element of Joule power (in W/m) due to the electic resistances along the SolidComponent objects.
-        This method should be called in the electric method, when the transient solution is used.
+        """Method that evaluate the contribution to the integral power in the element of Joule power (in W/m) due to the electic resistances along the SolidComponent objects.
+        This method should be called in the electric method, when the transient solution is used and only for current carriers.
 
         Args:
             conductor (object): ConductorComponent object with all informations to make the calculation.
@@ -730,6 +730,20 @@ class SolidComponent:
 
         # Alias
         method = conductor.inputs["METHOD"]
+
+        # Finalize the evaluation of the integral value of the Joule power due 
+        # to electric resistance along the current carrier started in method 
+        # conductor.eval_integral_joule_power. Array integral_power_el_res_mod1 
+        # stores the numerator (energy in J) that here is divided by the 
+        # thermal hydraulic to get again a power (W), which is further divided 
+        # by the length of the discreticazion element corrected by cos(theta) 
+        # to get a linear power density (W/m):
+        # P_Joule = sum_1^N_em P_{Joule,i} / (Delta_t_TH * Delta_z * costheta)
+        integral_j_pow_along = (
+            self.self.dict_Gauss_pt["integral_power_el_res_mod1"]
+            / (conductor.grid_features["delta_z"] * self.inputs["COSTETA"]
+            * conductor.time_step)
+        )
 
         if method == "BE" or method == "CN":
             if conductor.cond_num_step == 1:
@@ -742,29 +756,22 @@ class SolidComponent:
                 ] = self.dict_Gauss_pt["linear_power_el_resistance"][
                         :,0
                     ].copy()
-            if self.name != "Z_JACKET":
-                # Evaluate Joule linear power along the strand in W/m, due
-                # to electric resistances only for current carriers:
-                # P_along = R_along * I_along ^2 / (Delta_z * costheta)
-                self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
-                    self.dict_Gauss_pt["current_along"] ** 2
-                    * self.dict_Gauss_pt["electric_resistance"]
-                    / (conductor.grid_features["delta_z"] * self.inputs["COSTETA"])
-                )
+
+            # Assign the integral value of the linear power density of the 
+            # Joule power along current carrier.
+            self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
+                integral_j_pow_along
+            )
         elif method == "AM4":
             # Adams-Moulton 4.
             self.dict_Gauss_pt["linear_power_el_resistance"][
                 :, 1:4
             ] = self.dict_Gauss_pt["linear_power_el_resistance"][:, 0:3].copy()
-            if self.name != "Z_JACKET":
-                # Evaluate Joule linear power along the strand in W/m, due
-                # to electric resistances only for current carriers:
-                # P_along = R_along * I_along ^2 / (Delta_z * costheta)
-                self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
-                    self.dict_Gauss_pt["current_along"] ** 2
-                    * self.dict_Gauss_pt["electric_resistance"]
-                    / (conductor.grid_features["delta_z"] * self.inputs["COSTETA"])
-                )
+            # Assign the integral value of the linear power density of the 
+            # Joule power along current carrier.
+            self.dict_Gauss_pt["linear_power_el_resistance"][:, 0] = (
+                integral_j_pow_along
+            )
 
     def get_joule_power_across(self, conductor: object):
         """Method that evaluates the contribution to the total power in the nodes of Joule power (in W/m) due to the electic conductance across the SolidComponent objects.
