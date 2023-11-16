@@ -4704,6 +4704,66 @@ class Conductor:
             # End for jacket_c.
         # end for jacket.
     
+    def eval_integral_joule_power(self):
+        
+        """Method that evaluates the numerator of the expression used to evaluate the integral value of the Joule power. For the Joule power due to the electric resistance along the current carriers two different but equivalent approaches are used:
+            * mode1 -> P_Joule = R * I^2 (R electric resistance in Ohm, I electric current)
+            * mode2 -> P_Joule = \Delta_Phi * I
+        with
+            * R electric resistance in Ohm
+            * I electric current in A
+            * \Delta_Ph electric voltage potential difference along current carriers in V
+        For the Joule power due to the electric conductances between current carriers it is exploited the power computed in method get_total_joule_power_electric_conductance
+        Regardless of the kind of Joule power, the integration can be performed as follows:
+            P_Joule = 1/Delta_t_TH * int_0^Delta_t_TH (dt P_{Joule,i})
+        The above integral could be approximated as
+            P_Joule ~= 1/Delta_t_TH * sum_1^N_em dt_em P_{Joule,i}
+        Where:
+        * P_Joule: integral value of the Joule power in W
+        * P_{Joule,i}: value of the Joule power computed with the electric 
+        soltution at the i-th electric time step in W
+        * Delta_t_TH: value of the thermal hydraulic time step in s (always >= 
+        electric time step)
+        * dt_em: electric time step in s
+        * N_em: number of electric time step required to cover a full thermal 
+        hydraulic time step.
+
+        This method computes the numerator of the above equation, i.e.
+            sum_1^N_em dt_em P_{Joule,i}
+        The final quantities is computed in other methods (get_joule_power_along, get_joule_power_across).
+        """
+
+        # Loop on StrandComponent objects.
+        for strand in self.inventory["StrandComponent"].collection:
+            
+            # Compute the numerator of the integral Joule power due to the 
+            # electric resistance along the current carrier, mode1.
+            strand.dict_Gauss_pt["integral_power_el_res_mod1"] += (
+                strand.dict_Gauss_pt["current_along"] ** 2
+                * strand.dict_Gauss_pt["electric_resistance"]
+                * self.electric_time_step
+            )
+
+            # Compute the numerator of the integral Joule power due to the 
+            # electric resistance along the current carrier, mode2.
+            strand.dict_Gauss_pt["integral_power_el_res_mod2"] += (
+                strand.dict_Gauss_pt["current_along"]
+                * strand.dict_Gauss_pt["delta_voltage_along"]
+                * self.electric_time_step
+            )
+
+            # Check equivalence of Mode 1 and Mode 2 (they should be equivalent 
+            # but Mode 2 may give numerical cancellation).
+            if not np.allclose(self.dict_Gauss_pt["integral_power_el_res_mod1"],self.dict_Gauss_pt["integral_power_el_res_mod2"]):
+                warnings.warn("P_Joule = R I^2 dt_em != Delta_Phi I dt_em.Possible violation of the energy conservation!")
+
+            # Compute the numerator of the integral Joule power due to the 
+            # electric conductance between current carriers.
+            strand.dict_node_pt["integral_power_el_cond"] += (
+            strand.dict_node_pt["total_power_el_cond"]
+            * self.electric_time_step
+        )
+
     def operating_conditions_th_initialization(self,simulation):
         """Method that evaluates thermal hydraulic (th) operating conditions in both nodal and in Gauss points.
         To be called at initialization only since it avoids a second call to method self.__update_grid_features, which is already called in method self.__init__.
