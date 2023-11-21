@@ -226,7 +226,17 @@ class StrandStabilizerComponent(StrandComponent):
         Returns:
             np.ndarray: array of electrical resistance in Ohm of length {conductor.grid_input["NELEMS"] = }.
         """
-        self.dict_Gauss_pt["electric_resistance"] = (self.dict_Gauss_pt["electrical_resistivity_stabilizer"]
-            * conductor.node_distance[("StrandComponent", self.identifier)]
-            / self.inputs["CROSSECTION"])
-        return self.dict_Gauss_pt["electric_resistance"]
+
+        # Aliases
+        rho_el = self.dict_Gauss_pt["electrical_resistivity_stabilizer"]
+        node_dist = conductor.node_distance[
+            ("StrandComponent", self.identifier)
+            ].to_numpy() # Convert pandas series to numpy.
+        cross_section = self.inputs["CROSSECTION"]
+
+        # Compute electric resistance: rho_el * l / A
+        el_res = rho_el * node_dist / cross_section
+        # Store electric resitance value.
+        self.dict_Gauss_pt["electric_resistance"] = el_res
+        
+        return el_res
