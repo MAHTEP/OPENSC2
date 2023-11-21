@@ -4748,7 +4748,7 @@ class Conductor:
 
             # Check equivalence of Mode 1 and Mode 2 (they should be equivalent 
             # but Mode 2 may give numerical cancellation).
-            if not np.allclose(self.dict_Gauss_pt["integral_power_el_res_mod1"],self.dict_Gauss_pt["integral_power_el_res_mod2"]):
+            if not np.allclose(strand.dict_Gauss_pt["integral_power_el_res_mod1"],strand.dict_Gauss_pt["integral_power_el_res_mod2"]):
                 warnings.warn("P_Joule = R I^2 dt_em != Delta_Phi I dt_em.Possible violation of the energy conservation!")
 
             # Compute the numerator of the integral Joule power due to the 
