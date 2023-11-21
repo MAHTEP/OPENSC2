@@ -4653,7 +4653,7 @@ class Conductor:
             # strand.dict_Gauss_pt["integral_power_el_res_mod2"] and 
             # strand.dict_node_pt["integral_power_el_cond"] to zero for the 
             # next evaluation.
-            strand.set_power_array_to_zeros()
+            strand.set_power_array_to_zeros(self)
         
         # Loop on JacketComponents objects.
         for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
