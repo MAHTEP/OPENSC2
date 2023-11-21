@@ -740,7 +740,7 @@ class SolidComponent:
         # to get a linear power density (W/m):
         # P_Joule = sum_1^N_em P_{Joule,i} / (Delta_t_TH * Delta_z * costheta)
         integral_j_pow_along = (
-            self.self.dict_Gauss_pt["integral_power_el_res_mod1"]
+            self.dict_Gauss_pt["integral_power_el_res_mod1"]
             / (conductor.grid_features["delta_z"] * self.inputs["COSTETA"]
             * conductor.time_step)
         )
@@ -792,7 +792,7 @@ class SolidComponent:
         # by a suitable length to get a linear power density (W/m):
         # P_Joule = sum_1^N_em P_{Joule,i} / (Delta_t_TH * Delta_z_tilde)
         integral_j_pow_across = (
-            self.self.dict_node_pt["integral_power_el_cond"]
+            self.dict_node_pt["integral_power_el_cond"]
             / (conductor.grid_features["delta_z_tilde"] * conductor.time_step)
         )
 
