@@ -223,9 +223,13 @@ def electric_transient_solution(conductor: object):
         # current electric time step for each conductor component.
         conductor.eval_total_operating_current()
         # Evaluate all matrices needed to solve the electromagnetic problem.
-        # N.B it is not needed to evaluate at each time step the inductance 
+        # N.B. it is not needed to evaluate at each time step the inductance 
         # matrix, only the resistance matrix should be updated at each time 
-        # step: to be improved with refactoring.
+        # step: to be improved with refactoring. A good optimization would be 
+        # to actually update only the resistivity of the superconductor since 
+        # it depends also from the current, and the electrical resistivity of 
+        # the copper since it also depends on the magnetic fields. Other 
+        # materials should be updated only in the thermal loop.
         conductor.electric_preprocessing()
 
         electric_stiffness_matrix = conductor.electric_stiffness_matrix.copy()
