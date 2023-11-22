@@ -5094,9 +5094,17 @@ class Conductor:
                                 + dict_dummy_chan_r[flag_nodal]["temperature"] ** 2
                             )
                         )
-                        if self.cond_time[-1] > s_comp.operations["TQBEG"]:
-                            # implementation fully correct only for fully implicit method \
-                            # (cdp, 06/2020)
+                        if s_comp.operations["IQFUN"] != 0 and self.cond_time[-1] > s_comp.operations["TQBEG"]:
+                            # The check on s_comp.operations["IQFUN"] allows to 
+                            # compute htc_transient only if there is an 
+                            # heating. At the time being this correction does 
+                            # not account for the different ways to define an 
+                            # external heating, that is why user should specify 
+                            # the value of TQBEG also if IQFUN = -1 (read heat 
+                            # from external file).
+
+                            # Implementation fully correct only for fully 
+                            # implicit method.
                             htc_transient = np.sqrt(
                                 (
                                     dict_dummy_chan_r[flag_nodal][
