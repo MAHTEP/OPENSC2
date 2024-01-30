@@ -393,7 +393,7 @@ def current_sharing_temperature_re123(B, JOP, TC0M, BC20M, c0):
 
     for _, vv in enumerate(JC_ind):
 
-        T_lower = np.array([3.5])
+        T_lower = np.array([0.5])
         # T_upper = np.array([40.0])
         T_upper = np.array([TC0M])
 
