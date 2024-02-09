@@ -4368,8 +4368,7 @@ class Conductor:
         # conductor_initialization);
         # 2) all the Joule power contribution due to the electric solution 
         # are evaluated calling method self.__get_heat_source_em_steady.
-        # N.B. arrays obj.dict_Gauss_pt["integral_power_el_res_mod1"]
-        # obj.dict_Gauss_pt["integral_power_el_res_mod2"] and 
+        # N.B. arrays obj.dict_Gauss_pt["integral_power_el_res"] and 
         # obj.dict_node_pt["integral_power_el_cond"] are set to zero for 
         # the next evaluation inside method __build_heat_source_gauss_pt
         self.__build_heat_source_gauss_pt()
@@ -4627,8 +4626,7 @@ class Conductor:
         """Private method that builds heat source therms in Gauss points for 
         strand and jacket objects.
         Sets to zeros the following arrays as preliminary step for the next evaluation:
-            * strand.dict_Gauss_pt["integral_power_el_res_mod1"]
-            * strand.dict_Gauss_pt["integral_power_el_res_mod2"]
+            * strand.dict_Gauss_pt["integral_power_el_res"]
             * strand.dict_node_pt["integral_power_el_cond"]
         """
 
@@ -4649,8 +4647,7 @@ class Conductor:
                 + strand.dict_Gauss_pt["linear_power_el_resistance"]
             )
 
-            # Set arrays strand.dict_Gauss_pt["integral_power_el_res_mod1"], 
-            # strand.dict_Gauss_pt["integral_power_el_res_mod2"] and 
+            # Set arrays strand.dict_Gauss_pt["integral_power_el_res"] and 
             # strand.dict_node_pt["integral_power_el_cond"] to zero for the 
             # next evaluation.
             strand.set_power_array_to_zeros(self)
@@ -4700,13 +4697,12 @@ class Conductor:
     
     def eval_integral_joule_power(self):
         
-        """Method that evaluates the numerator of the expression used to evaluate the integral value of the Joule power. For the Joule power due to the electric resistance along the current carriers two different but equivalent approaches are used:
-            * mode1 -> P_Joule = R * I^2 (R electric resistance in Ohm, I electric current)
-            * mode2 -> P_Joule = \Delta_Phi * I
+        """Method that evaluates the numerator of the expression used to evaluate the integral value of the Joule power. The Joule power along the current carriers is computed as:
+            P_Joule = \Delta_Phi * I
         with
-            * R electric resistance in Ohm
             * I electric current in A
             * \Delta_Ph electric voltage potential difference along current carriers in V
+        This approach was discussed with prof. Zach Hartwig and Dr. Nicolò Riva and is more general and coservative that the evaluation that takes into account only the contribution of the electric resistance.
         For the Joule power due to the electric conductances between current carriers it is exploited the power computed in method get_total_joule_power_electric_conductance
         Regardless of the kind of Joule power, the integration can be performed as follows:
             P_Joule = 1/Delta_t_TH * int_0^Delta_t_TH (dt P_{Joule,i})
@@ -4730,26 +4726,16 @@ class Conductor:
         # Loop on StrandComponent objects.
         for strand in self.inventory["StrandComponent"].collection:
             
-            # Compute the numerator of the integral Joule power due to the 
-            # electric resistance along the current carrier, mode1.
-            strand.dict_Gauss_pt["integral_power_el_res_mod1"] += (
-                strand.dict_Gauss_pt["current_along"] ** 2
-                * strand.dict_Gauss_pt["electric_resistance"]
-                * self.electric_time_step
-            )
-
-            # Compute the numerator of the integral Joule power due to the 
-            # electric resistance along the current carrier, mode2.
-            strand.dict_Gauss_pt["integral_power_el_res_mod2"] += (
+            # Compute the numerator of the integral Joule power along the 
+            # current carrier.
+            # N.B. this evaluation accounts aslo for the voltage due to the 
+            # inductance and is a conservative an more general approach.
+            # Discussed with prof. Zach Hartwig and Dr. Nicolò Riva.
+            strand.dict_Gauss_pt["integral_power_el_res"] += (
                 strand.dict_Gauss_pt["current_along"]
                 * strand.dict_Gauss_pt["delta_voltage_along"]
                 * self.electric_time_step
             )
-
-            # Check equivalence of Mode 1 and Mode 2 (they should be equivalent 
-            # but Mode 2 may give numerical cancellation).
-            if not np.allclose(strand.dict_Gauss_pt["integral_power_el_res_mod1"],strand.dict_Gauss_pt["integral_power_el_res_mod2"]):
-                warnings.warn("P_Joule = R I^2 dt_em != Delta_Phi I dt_em.Possible violation of the energy conservation!")
 
             # Compute the numerator of the integral Joule power due to the 
             # electric conductance between current carriers.
