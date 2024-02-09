@@ -135,22 +135,25 @@ class Simulation:
             if "grid" in f_name:
                 dict_file["GRID"] = os.path.join(self.basePath, f_name)
             elif "diagnostic" in f_name:
-                dict_file["Spatial_distribution"] = os.path.join(self.basePath, f_name)
-                dict_file["Time_evolution"] = os.path.join(self.basePath, f_name)
+                dict_file["DIAGNO"] = os.path.join(self.basePath, f_name)
             # End if "grid".
         # End for f_name.
         # Load workbook conductor_definition.xlsx.
         conductorsSpec = load_workbook(conductor_defn, data_only=True)
+        
         list_conductor_sheet = [
-            conductorsSpec["CONDUCTOR_files"],
-            conductorsSpec["CONDUCTOR_input"],
-            conductorsSpec["CONDUCTOR_operation"],
-        ]
-
+            conductorsSpec[sheet_name] for sheet_name in conductorsSpec.sheetnames if "coupling" not in sheet_name
+            ]
         # Load the workbook in file conductor_grid.xlsx.
         gridCond = load_workbook(dict_file["GRID"], data_only=True)
         # Load the workbook in file conductor_diagnostic.xlsx.
-        wb_diagno = load_workbook(dict_file["Spatial_distribution"], data_only=True)
+        wb_diagno = load_workbook(dict_file["DIAGNO"], data_only=True)
+
+        dict_file.update(
+            {key:dict_file["DIAGNO"] for key in wb_diagno.sheetnames}
+        )
+        # Delete key "DIAGNO"
+        del dict_file["DIAGNO"]
         # Loop to check if user define conductors with the same identifier.
         for sheet in list_conductor_sheet:
             check_repeated_headings(conductor_defn, sheet)
@@ -163,12 +166,14 @@ class Simulation:
         # End for sheet.
         # Check if the number of defined conductors is consitent in file conductor_definition.xlsx and in file conductor_gri.xlsx.
 
+        # Create a list of the sheets to be checked exploiting list 
+        # comprehension
+        sheets_to_check = [
+            gridCond["GRID"],
+            *[wb_diagno[key] for key in wb_diagno.sheetnames]
+            ]
         for cond_sheet in list_conductor_sheet:
-            for sheet in [
-                gridCond["GRID"],
-                wb_diagno["Spatial_distribution"],
-                wb_diagno["Time_evolution"],
-            ]:
+            for sheet in sheets_to_check:
                 check_object_number(
                     self,
                     self.transient_input["MAGNET"],
