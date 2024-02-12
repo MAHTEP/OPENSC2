@@ -106,5 +106,5 @@ SHEET_NAME = dict(
         jacket = "Z_JACKET",
         ),
     environment_input = Env_sheet_name(environment = "ENVIRONMENT"),
-    transitory_intput = Trans_sheet_name(transient = "TRANSIENT"),
+    transitory_input = Trans_sheet_name(transient = "TRANSIENT"),
 )
