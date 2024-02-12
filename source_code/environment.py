@@ -5,6 +5,7 @@ import pandas as pd
 from scipy import constants
 from CoolProp.CoolProp import PropsSI
 
+from conductor_flags import SHEET_NAME
 
 class Environment:
     """docstring for Environment."""
@@ -24,7 +25,7 @@ class Environment:
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(
             f_path,
-            sheet_name="ENVIRONMENT",
+            sheet_name=SHEET_NAME["environment_input"].environment,
             header=0,
             index_col=0,
             usecols=["Variable name", "Value"],

@@ -61,7 +61,7 @@ class Simulation:
         # Load input file transitory_input.xlsx and convert to a dictionary.
         self.transient_input = pd.read_excel(
             os.path.join(self.basePath, self.starter_file),
-            sheet_name="TRANSIENT",
+            sheet_name=SHEET_NAME["transitory_input"].transient,
             skiprows=1,
             header=0,
             index_col=0,
