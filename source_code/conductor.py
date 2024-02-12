@@ -28,6 +28,7 @@ from conductor_flags import (
     ELECTRIC_TIME_STEP_NUMBER,
     VARIABLE_CONTACT_PERIMETER,
     CONSTANT_CONTACT_PERIMETER,
+    SHEET_NAME,
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -40,6 +41,7 @@ from strand_stabilizer_component import StrandStabilizerComponent
 from utility_functions.auxiliary_functions import (
     check_repeated_headings,
     check_headers,
+    check_sheet_names,
     check_object_number,
     set_diagnostic,
 )
@@ -318,8 +320,11 @@ class Conductor:
 
         Args:
             self (Self): conductor object."""
-        
-        self.__check_coupling_sheet_names()
+        check_sheet_names(
+            SHEET_NAME["conductor_coupling"],
+            self.dict_df_coupling.keys(),
+            self.file_input['STRUCTURE_COUPLING'],
+        )
         self.__check_thermal_contact_resistance_values()
         # Add call to methods that perform cheks on file
         # conductor_coupling.xlsx below.
@@ -689,6 +694,8 @@ class Conductor:
         wb_input = load_workbook(dict_file_path["input"], data_only=True)
         # Load workbook conductor_operation.xlsx.
         wb_operations = load_workbook(dict_file_path["operation"], data_only=True)
+
+        check_sheet_names(SHEET_NAME["conductor_input"],wb_input.sheetnames,dict_file_path["input"])
 
         listOfComponents = wb_input.get_sheet_names()
         self.inventory["FluidComponent"] = ComponentCollection("CHAN")
