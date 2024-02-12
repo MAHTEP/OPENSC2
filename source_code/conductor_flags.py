@@ -44,11 +44,11 @@ CONSTANT_CONTACT_PERIMETER = 1
 # Component sheet names
 Comp_sheet_name = namedtuple("Comp_sheet_name",
     (
-        "fluid_comp",
-        "stack",
-        "str_mix",
-        "stab",
-        "jacket",
+        "FluidComponent",
+        "StackComponent",
+        "StrandMixedComponent",
+        "StrandStabilizerComponent",
+        "JacketComponent",
     )
 )
 
@@ -90,20 +90,20 @@ SHEET_NAME = dict(
     # Key conductor_input is a namedtuple and not a set because I want to 
     # exploit access by field in method conductor_component_instance.
     conductor_input = Comp_sheet_name(
-        fluid_comp = "CHAN",
-        stack = "STACK",
-        str_mix = "STR_MIX",
-        stab = "STR_STAB",
-        jacket = "Z_JACKET",
+        FluidComponent = "CHAN",
+        StackComponent = "STACK",
+        StrandMixedComponent = "STR_MIX",
+        StrandStabilizerComponent = "STR_STAB",
+        JacketComponent = "Z_JACKET",
         ),
     # Key conductor_input is a namedtuple and not a set because I want to 
     # exploit access by field in method conductor_component_instance.
     conductor_operation = Comp_sheet_name(
-        fluid_comp = "CHAN",
-        stack = "STACK",
-        str_mix = "STR_MIX",
-        stab = "STR_STAB",
-        jacket = "Z_JACKET",
+        FluidComponent = "CHAN",
+        StackComponent = "STACK",
+        StrandMixedComponent = "STR_MIX",
+        StrandStabilizerComponent = "STR_STAB",
+        JacketComponent = "Z_JACKET",
         ),
     environment_input = Env_sheet_name(environment = "ENVIRONMENT"),
     transitory_input = Trans_sheet_name(transient = "TRANSIENT"),
