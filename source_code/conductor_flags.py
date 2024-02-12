@@ -41,7 +41,27 @@ VARIABLE_CONTACT_PERIMETER = -1
 # conductor_coupling.xlsx)
 CONSTANT_CONTACT_PERIMETER = 1
 
-# Component sheet names
+# Namedtuple constructor for conductor sheet names
+Cond_sheet_name = namedtuple("Cond_sheet_name",
+    (
+        "files",
+        "inputs",
+        "operation",
+        "coupling",
+    )
+)
+
+# Namedtuple constructor for diagnostic sheet names
+Diagno_sheet_name = namedtuple("Cond_sheet_name",
+    (
+        "space_distr",
+        "time_evol",
+        "vol_tap_name",
+        "vol_tap_coord",
+    )
+)
+
+# Namedtuple constructor for component sheet names
 Comp_sheet_name = namedtuple("Comp_sheet_name",
     (
         "FluidComponent",
@@ -52,10 +72,10 @@ Comp_sheet_name = namedtuple("Comp_sheet_name",
     )
 )
 
-# Environment sheet name
+# Namedtuple constructor for environment sheet name
 Env_sheet_name = namedtuple("Env_sheet_name",("environment"))
 
-# Transient sheet name
+# Namedtuple constructor for transient sheet name
 Trans_sheet_name = namedtuple("Trans_sheet_name",("transient"))
 
 # Dictionary with all the valid sheet names of each input file.
@@ -74,18 +94,18 @@ SHEET_NAME = dict(
             "trans_transp_multiplier",
             "view_factors",
             },
-    conductor_definition = {
-        "CONDUCTOR_files",
-        "CONDUCTOR_input",
-        "CONDUCTOR_operation",
-        "CONDUCTOR_coupling",
-    },
-    conductor_diagnostic = {
-        "Spatial_distribution",
-        "Time_evolution",
-        "Voltage_tap_name",
-        "Voltage_tap_coordinate",
-    },
+    conductor_definition = Cond_sheet_name(
+        files = "CONDUCTOR_files",
+        inputs = "CONDUCTOR_input",
+        operation = "CONDUCTOR_operation",
+        coupling = "CONDUCTOR_coupling",
+        ),
+    conductor_diagnostic = Diagno_sheet_name(
+        space_distr = "Spatial_distribution",
+        time_evol = "Time_evolution",
+        vol_tap_name = "Voltage_tap_name",
+        vol_tap_coord = "Voltage_tap_coordinate",
+        ),
     conductor_grid = {"GRID"},
     # Key conductor_input is a namedtuple and not a set because I want to 
     # exploit access by field in method conductor_component_instance.
