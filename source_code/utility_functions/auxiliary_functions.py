@@ -795,3 +795,32 @@ def natural_sort(comp_a, comp_b):
             return f"{comp_b.identifier}_{comp_a.identifier}"
         # end if
     # end if
+
+def check_sheet_names(
+    ref_sheet_names:Union[list,tuple,set],
+    sheet_names:Union[list,tuple,set],
+    file_path: str,
+    ):
+    """Function that verify if there are wrong sheet names in the primary input files.
+
+    Args:
+        ref_sheet_names (Union[list,tuple,set]): iterable with the reference sheet names
+        sheet_names (Union[list,tuple,set]): iterable with the actual sheet names in the input file.
+        file_path (str): path of the input file
+
+    Raises:
+        ValueError: if any of the sheet names in the primary input file is not consistent with the reference ones.
+    """
+
+    wrong_sheet_names = list()
+
+    # Loop to check sheet names in the primary input file.
+    for sheet_name in sheet_names:
+        if sheet_name not in ref_sheet_names:
+            wrong_sheet_names.append(sheet_name)
+
+    # Check if list wrong_sheet_names is not empty.
+    if wrong_sheet_names:
+        # Found not consisten sheet names in the primary file: 
+        # raise ValueError.
+        raise ValueError(f"Found not valid sheets name in input file {file_path}.\nList of not valid sheet names:{wrong_sheet_names}\nlist of valid sheet names:\n{ref_sheet_names}")
