@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 # Flags for the current definition
 
 # User does not define a current: do not use the electric module
@@ -38,3 +40,65 @@ VARIABLE_CONTACT_PERIMETER = -1
 # Constant contact perimeter (from sheet contact_perimeter in file 
 # conductor_coupling.xlsx)
 CONSTANT_CONTACT_PERIMETER = 1
+
+# Component sheet names
+Comp_sheet_name = namedtuple("Comp_sheet_name",
+    (
+        "fluid_comp",
+        "stack",
+        "str_mix",
+        "stab",
+        "jacket",
+    )
+)
+
+# Dictionary with all the valid sheet names of each input file.
+SHEET_NAME = dict(
+    conductor_coupling = {
+            "contact_perimeter_flag",
+            "contact_perimeter",
+            "HTC_choice",
+            "contact_HTC",
+            "thermal_contact_resistance",
+            "HTC_multiplier",
+            "electric_conductance_mode",
+            "electric_conductance",
+            "open_perimeter_fract",
+            "interf_thickness",
+            "trans_transp_multiplier",
+            "view_factors",
+            },
+    conductor_definition = {
+        "CONDUCTOR_files",
+        "CONDUCTOR_input",
+        "CONDUCTOR_operation",
+        "CONDUCTOR_coupling",
+    },
+    conductor_diagnostic = {
+        "Spatial_distribution",
+        "Time_evolution",
+        "Voltage_tap_name",
+        "Voltage_tap_coordinate",
+    },
+    conductor_grid = {"GRID"},
+    # Key conductor_input is a namedtuple and not a set because I want to 
+    # exploit access by field in method conductor_component_instance.
+    conductor_input = Comp_sheet_name(
+        fluid_comp = "CHAN",
+        stack = "STACK",
+        str_mix = "STR_MIX",
+        stab = "STR_STAB",
+        jacket = "Z_JACKET",
+        ),
+    # Key conductor_input is a namedtuple and not a set because I want to 
+    # exploit access by field in method conductor_component_instance.
+    conductor_operation = Comp_sheet_name(
+        fluid_comp = "CHAN",
+        stack = "STACK",
+        str_mix = "STR_MIX",
+        stab = "STR_STAB",
+        jacket = "Z_JACKET",
+        ),
+    environment_input = {"ENVIRONMENT"},
+    transitory_intput = {"TRANSIENT"},
+)
