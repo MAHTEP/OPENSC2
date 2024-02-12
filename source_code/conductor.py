@@ -1428,7 +1428,7 @@ class Conductor:
             z_table = np.array([vol_tap_coord[istart],vol_tap_coord[iend]])
             raise ValueError(f"Voltage tap end coordinate must be greater than Voltage tap start coordinate.\n"
             + file_check_message
-            + "\nList of wrong coordinate input (first column start, second column end):\n{z_table.T}")
+            + f"\nList of wrong coordinate input (first column start, second column end):\n{z_table.T}")
         
         vt_z_min = vol_tap_coord.min()
         # Check that mimimun voltage tap coordinate is >= 0.0
