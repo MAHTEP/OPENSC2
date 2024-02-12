@@ -1339,6 +1339,76 @@ class Conductor:
         
         return vol_tap_name
 
+
+    def __load_voltage_tap_coord(self,
+        diagno_names:namedtuple,
+        path_diagno:str,
+        )->np.array:
+        """Private method that loads and checks the consistency of user-defined coordinate pairs for voltage taps.
+
+        Args:
+            diagno_names (namedtuple): collection with the sheet names in input file conductor_diagnostix.xlsx.
+            path_diagno (str): path to the input file conductor_diagnostic.xlsx
+
+        Raises:
+            ValueError: if number of coordinate pairs is not equal to the number of defined voltage taps.
+            ValueError: if first coordinate of the pair is larger than the second coordinate
+            ValueError: if minimum coordinate is < 0.0
+            ValueError: if maximumn coordinate is > conductor length
+
+        Returns:
+            np.array: arrais with user-defined coordinate pairs for voltage taps
+        """
+
+        # Load sheet Voltage_tap_coordinate
+        vol_tap_coord = (
+            pd.read_excel(
+                path_diagno,
+                sheet_name=diagno_names.vol_tap_coord,
+                skiprows=2,
+                header=0,
+                usecols=[self.identifier],
+                squeeze=True,
+            )
+            .dropna()
+        ).to_numpy()
+
+        file_check_message = f"Please check sheet {diagno_names.vol_tap_coord} in file {self.file_input['OUTPUT']}.\n"
+
+        pair_number = vol_tap_coord.size/2
+        # Check consistency of voltage tap coordinate pari number
+        if pair_number != self.inputs["N_voltage_taps"]:
+            raise ValueError(f"The number of voltage tap coorinate pairs ({pair_number}) is not consistent with the declared number of voltage taps ({self.inputs['N_voltage_taps']}).\n"
+            + file_check_message)
+
+        v_coor_diff = np.nonzero(
+            vol_tap_coord[1::2] <= vol_tap_coord[0::2]
+        )[0]
+        # Check that for each coordinate pari x_end > x_start
+        if any(v_coor_diff):
+            # voltage tap start coordinate index
+            istart = 2*v_coor_diff
+            # voltage tap end coordinate index
+            iend = istart + 1
+            z_table = np.array([vol_tap_coord[istart],vol_tap_coord[iend]])
+            raise ValueError(f"Voltage tap end coordinate must be greater than Voltage tap start coordinate.\n"
+            + file_check_message
+            + "\nList of wrong coordinate input (first column start, second column end):\n{z_table.T}")
+        
+        vt_z_min = vol_tap_coord.min()
+        # Check that mimimun voltage tap coordinate is >= 0.0
+        if vt_z_min < 0.0:
+            raise ValueError(f"Voltage tap coordinate must be >= 0: {vt_z_min=}.\n"
+            + file_check_message)
+        
+        vt_z_max = vol_tap_coord.max()
+        # Check that maximum voltage tap coordinate is <= L (conductor length)
+        if vt_z_max > self.inputs['ZLENGTH']:
+            raise ValueError(f"Voltage tap coordinate must be <= conductor length: {vt_z_max=}.\n"
+            + file_check_message)
+        
+        return vol_tap_coord
+
     def __initialize_mesh_dataframe(self):
         """Private method that initializes pandas dataframes used to store nodal coordinates and connectivity (matrix)."""
 
