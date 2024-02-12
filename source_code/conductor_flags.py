@@ -52,6 +52,12 @@ Comp_sheet_name = namedtuple("Comp_sheet_name",
     )
 )
 
+# Environment sheet name
+Env_sheet_name = namedtuple("Env_sheet_name",("environment"))
+
+# Transient sheet name
+Trans_sheet_name = namedtuple("Trans_sheet_name",("transient"))
+
 # Dictionary with all the valid sheet names of each input file.
 SHEET_NAME = dict(
     conductor_coupling = {
@@ -99,6 +105,6 @@ SHEET_NAME = dict(
         stab = "STR_STAB",
         jacket = "Z_JACKET",
         ),
-    environment_input = {"ENVIRONMENT"},
-    transitory_intput = {"TRANSIENT"},
+    environment_input = Env_sheet_name(environment = "ENVIRONMENT"),
+    transitory_intput = Trans_sheet_name(transient = "TRANSIENT"),
 )
