@@ -1082,59 +1082,9 @@ class Conductor:
 
         # evaluate attribute EIGTIM exploiting method Aprior (cdp, 08/2020)
         self.aprior()
-        path_diagnostic = os.path.join(self.BASE_PATH, self.file_input["OUTPUT"])
-        # Load the content of column self.ID of sheet Space in file conductors_disgnostic.xlsx as a series and convert to numpy array of float.
-        self.Space_save = (
-            pd.read_excel(
-                path_diagnostic,
-                sheet_name="Spatial_distribution",
-                skiprows=2,
-                header=0,
-                usecols=[self.identifier],
-                squeeze=True,
-            )
-            .dropna()
-            .to_numpy()
-            .astype(float)
-        )
-        # Adjust the user defined diagnostic.
-        self.Space_save = set_diagnostic(
-            self.Space_save, lb=0.0, ub=simulation.transient_input["TEND"]
-        )
-        # Check on spatial distribution diagnostic.
-        if self.Space_save.max() > simulation.transient_input["TEND"]:
-            raise ValueError(
-                f"File {self.file_input['OUTPUT']}, sheet Space, conductor {self.identifier}: impossible to save spatial distributions at time {self.Space_save.max()} s since it is larger than the end time of the simulation {simulation.transient_input['TEND']} s.\n"
-            )
-        # End if self.Space_save.max() > simulation.transient_input["TEND"]
-        # index pointer to save solution spatial distribution (cdp, 12/2020)
-        self.i_save = 0
-        # list of number of time steps at wich save the spatial discretization
-        self.num_step_save = np.zeros(self.Space_save.shape, dtype=int)
-        # Load the content of column self.identifier of sheet Time in file conductors_disgnostic.xlsx as a series and convert to numpy array of float.
-        self.Time_save = (
-            pd.read_excel(
-                path_diagnostic,
-                sheet_name="Time_evolution",
-                skiprows=2,
-                header=0,
-                usecols=[self.identifier],
-                squeeze=True,
-            )
-            .dropna()
-            .to_numpy()
-            .astype(float)
-        )
-        # Adjust the user defined diagnostic.
-        self.Time_save = set_diagnostic(
-            self.Time_save, lb=0.0, ub=self.inputs["ZLENGTH"]
-        )
-        # Check on time evolution diagnostic.
-        if self.Time_save.max() > self.inputs["ZLENGTH"]:
-            raise ValueError(
-                f"File {self.file_input['OUTPUT']}, sheet Time, conductor {self.identifier}: impossible to save time evolutions at axial coordinate {self.Time_save.max()} s since it is ouside the computational domain of the simulation [0, {self.inputs['ZLENGTH']}] m.\n"
-            )
-        # End if self.Time_save.max() > self.inputs["ZLENGTH"]
+        
+        # Deal with conductor diagnostic
+        self.__diagnostic_definition(simulation)
 
         # declare dictionaries to store Figure and axes objects to constructi real \
         # time figures (cdp, 10/2020)
