@@ -1286,6 +1286,41 @@ class Conductor:
             )
         # End if self.Time_save.max() > self.inputs["ZLENGTH"]
 
+        # Namedtuple constructor used to store voltage tap coordinates.
+        Voltage_tap_coord = namedtuple("Voltage_tap_coord",("z_start","z_end"))
+        self.voltage_tap_coord = dict(
+        # By default the code saves the time evolution of voltage difference 
+        # along the whole cable length.
+        VT_tot=Voltage_tap_coord(z_start=0.0,z_end=self.inputs['ZLENGTH'])
+        )
+        # Management of saving the time evolution of voltage difference
+        if self.inputs["N_voltage_taps"] > 0:
+            # Load and check sheet Voltage_tap_name
+            vol_tap_name = self.__load_voltage_tap_names(
+                diagno_names,
+                path_diagnostic,
+            )
+            # Load and check sheet Voltage_tap_coordinate
+            vol_tap_coord = self.__load_voltage_tap_coord(
+                diagno_names,
+                path_diagnostic,
+            )
+
+            # index of the start coordinate of each pair of voltage tap 
+            # coordinates.
+            idx_z_start = range(self.inputs["N_voltage_taps"],step=2)
+            # Update voltage tap coordinates pairs (start and end) to each 
+            # voltage tap name exploitihg dictionary comprehension.
+            self.voltage_tap_coord.update(
+                {
+                    vt_name: Voltage_tap_coord(
+                        z_start=vol_tap_coord[ii],
+                        z_end=vol_tap_coord[ii+1],
+                    )
+                    for ii, vt_name in zip(idx_z_start,vol_tap_name)
+                }
+            )
+
     def __load_voltage_tap_names(
         self,
         diagno_names:namedtuple,
