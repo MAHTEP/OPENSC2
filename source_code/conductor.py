@@ -1269,6 +1269,74 @@ class Conductor:
         #     f"After call method {self.__initialize_mesh_dataframe.__name__}\n"
         # )
 
+    def __diagnostic_definition(self,simulation):
+        
+        """Private method that defines the data structure used in the diagnostic of the conductor.
+
+        Raises:
+            ValueError: if time at which save spatial distribution is greater than the end time of the simulation.
+            ValueError: if axial coordinates at which save time evolutions are outside the domain.
+        """
+
+        path_diagnostic = os.path.join(self.BASE_PATH, self.file_input["OUTPUT"])
+        # Alias for sheet names of input file conductor_diagnostic.xlsx
+        diagno_names = SHEET_NAME["conductor_diagnostic"]
+        # Load the content of column self.ID of sheet Space in file 
+        # conductors_disgnostic.xlsx as a series and convert to numpy array of 
+        # float.
+        self.Space_save = (
+            pd.read_excel(
+                path_diagnostic,
+                sheet_name=diagno_names.space_distr,
+                skiprows=2,
+                header=0,
+                usecols=[self.identifier],
+                squeeze=True,
+            )
+            .dropna()
+            .to_numpy()
+            .astype(float)
+        )
+        # Adjust the user defined diagnostic.
+        self.Space_save = set_diagnostic(
+            self.Space_save, lb=0.0, ub=simulation.transient_input["TEND"]
+        )
+        # Check on spatial distribution diagnostic.
+        if self.Space_save.max() > simulation.transient_input["TEND"]:
+            raise ValueError(
+                f"File {self.file_input['OUTPUT']}, sheet Space, conductor {self.identifier}: impossible to save spatial distributions at time {self.Space_save.max()} s since it is larger than the end time of the simulation {simulation.transient_input['TEND']} s.\n"
+            )
+        # End if self.Space_save.max() > simulation.transient_input["TEND"]
+        # index pointer to save solution spatial distribution (cdp, 12/2020)
+        self.i_save = 0
+        # list of number of time steps at wich save the spatial discretization
+        self.num_step_save = np.zeros(self.Space_save.shape, dtype=int)
+        # Load the content of column self.identifier of sheet Time in file conductors_disgnostic.xlsx as a series and convert to numpy array of float.
+        self.Time_save = (
+            pd.read_excel(
+                path_diagnostic,
+                sheet_name=diagno_names.time_evol,
+                skiprows=2,
+                header=0,
+                usecols=[self.identifier],
+                squeeze=True,
+            )
+            .dropna()
+            .to_numpy()
+            .astype(float)
+        )
+        # Adjust the user defined diagnostic.
+        self.Time_save = set_diagnostic(
+            self.Time_save, lb=0.0, ub=self.inputs["ZLENGTH"]
+        )
+        # Check on time evolution diagnostic.
+        if self.Time_save.max() > self.inputs["ZLENGTH"]:
+            raise ValueError(
+                f"File {self.file_input['OUTPUT']}, sheet Time, conductor {self.identifier}: impossible to save time evolutions at axial coordinate {self.Time_save.max()} s since it is ouside the computational domain of the simulation [0, {self.inputs['ZLENGTH']}] m.\n"
+            )
+        # End if self.Time_save.max() > self.inputs["ZLENGTH"]
+
+
     def __initialize_mesh_dataframe(self):
         """Private method that initializes pandas dataframes used to store nodal coordinates and connectivity (matrix)."""
 
