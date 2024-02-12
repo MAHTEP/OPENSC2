@@ -1308,7 +1308,7 @@ class Conductor:
 
             # index of the start coordinate of each pair of voltage tap 
             # coordinates.
-            idx_z_start = range(self.inputs["N_voltage_taps"],step=2)
+            idx_z_start = range(0,self.inputs["N_voltage_taps"],2)
             # Update voltage tap coordinates pairs (start and end) to each 
             # voltage tap name exploitihg dictionary comprehension.
             self.voltage_tap_coord.update(
