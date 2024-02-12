@@ -12,11 +12,12 @@ from pstats import SortKey
 from line_profiler import LineProfiler
 
 from conductor import Conductor
-from conductor_flags import IOP_NOT_DEFINED
+from conductor_flags import (IOP_NOT_DEFINED, SHEET_NAME)
 from environment import Environment
 from utility_functions.auxiliary_functions import (
     check_repeated_headings,
     check_object_number,
+    check_sheet_names,
     with_read_csv,
     with_read_excel,
 )
@@ -140,7 +141,14 @@ class Simulation:
         # End for f_name.
         # Load workbook conductor_definition.xlsx.
         conductorsSpec = load_workbook(conductor_defn, data_only=True)
-        
+
+        # Check the names of the sheets in file conductor_definition
+        check_sheet_names(
+            SHEET_NAME["conductor_definition"],
+            conductorsSpec.sheetnames,
+            conductor_defn,
+            )
+
         list_conductor_sheet = [
             conductorsSpec[sheet_name] for sheet_name in conductorsSpec.sheetnames if "coupling" not in sheet_name
             ]
@@ -148,6 +156,19 @@ class Simulation:
         gridCond = load_workbook(dict_file["GRID"], data_only=True)
         # Load the workbook in file conductor_diagnostic.xlsx.
         wb_diagno = load_workbook(dict_file["DIAGNO"], data_only=True)
+
+        keys = ("conductor_definition","conductor_grid","conductor_diagnostic")
+        paths = (conductor_defn,dict_file["GRID"],dict_file["DIAGNO"])
+        wbs = (conductorsSpec,gridCond,wb_diagno)
+        # Loop to check the names of the sheets in file conductor_definition, 
+        # conductor_grid and conductor_diagnostic.
+        for key, wb, pt in zip(keys,wbs,paths):
+            # Check the names of the sheets in file conductor_definition
+            check_sheet_names(
+                SHEET_NAME[key],
+                wb.sheetnames,
+                pt,
+                )
 
         dict_file.update(
             {key:dict_file["DIAGNO"] for key in wb_diagno.sheetnames}
