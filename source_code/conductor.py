@@ -656,14 +656,16 @@ class Conductor:
         # Load workbook conductor_operation.xlsx.
         wb_operations = load_workbook(dict_file_path["operation"], data_only=True)
 
-        check_sheet_names(SHEET_NAME["conductor_input"],wb_input.sheetnames,dict_file_path["input"])
+        # Alias for the sheet names in file conductor_input.xlsx
+        cond_input_names = SHEET_NAME["conductor_input"]
+
+        check_sheet_names(cond_input_names,wb_input.sheetnames,dict_file_path["input"])
 
         listOfComponents = wb_input.get_sheet_names()
-        self.inventory["FluidComponent"] = ComponentCollection("CHAN")
-        self.inventory["StrandMixedComponent"] = ComponentCollection("STR_MIX")
-        self.inventory["StrandStabilizerComponent"] = ComponentCollection("STR_STAB")
-        self.inventory["StackComponent"] = ComponentCollection("STACK")
-        self.inventory["JacketComponent"] = ComponentCollection("Z_JACKET")
+        
+        for field, val in zip(cond_input_names._fields,cond_input_names):
+            self.inventory[field] = ComponentCollection(val)
+
         self.inventory["StrandComponent"] = ComponentCollection()
         self.inventory["SolidComponent"] = ComponentCollection()
         self.inventory["all_component"] = ComponentCollection()
@@ -692,7 +694,7 @@ class Conductor:
             )
             kindObj = sheet.cell(row=1, column=1).value  # sheet["A1"].value
             numObj = int(sheet.cell(row=1, column=2).value)  # sheet["B1"].value
-            if kindObj == "CHAN":
+            if kindObj == cond_input_names.FluidComponent:
                 # Assign the total number of defined FluidComponent object to
                 # attribute number of object ComponentCollection.
                 self.inventory["FluidComponent"].number = numObj
@@ -707,7 +709,7 @@ class Conductor:
                         self.inventory["FluidComponent"].collection[ii - 1]
                     )
                 # end for ii (cdp, 09/2020)
-            elif kindObj == "STACK":
+            elif kindObj == cond_input_names.StackComponent:
                 # Assign the total number of defined StackComponent object to
                 # attribute number of object ComponentCollection.
                 self.inventory["StackComponent"].number = numObj
@@ -732,7 +734,7 @@ class Conductor:
                         self.inventory["StackComponent"].collection[ii - 1]
                     )
                 # end for ii (cdp, 09/2020)
-            elif kindObj == "STR_MIX":
+            elif kindObj == cond_input_names.StrandMixedComponent:
                 # Assign the total number of defined StrandMixedComponent object to
                 # attribute number of object ComponentCollection.
                 self.inventory["StrandMixedComponent"].number = numObj
@@ -757,7 +759,7 @@ class Conductor:
                         self.inventory["StrandMixedComponent"].collection[ii - 1]
                     )
                 # end for ii (cdp, 09/2020)
-            elif kindObj == "STR_STAB":
+            elif kindObj == cond_input_names.StrandStabilizerComponent:
                 # Assign the total number of defined StrandStabilizerComponent object to
                 # attribute number of object ComponentCollection.
                 self.inventory["StrandStabilizerComponent"].number = numObj
@@ -782,7 +784,7 @@ class Conductor:
                         self.inventory["StrandStabilizerComponent"].collection[ii - 1]
                     )
                 # end for ii (cdp, 09/2020)
-            elif kindObj == "Z_JACKET":
+            elif kindObj == cond_input_names.JacketComponent:
                 # Assign the total number of defined JacketComponent object to
                 # attribute number of object ComponentCollection.
                 self.inventory["JacketComponent"].number = numObj
