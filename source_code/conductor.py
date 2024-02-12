@@ -1286,6 +1286,58 @@ class Conductor:
             )
         # End if self.Time_save.max() > self.inputs["ZLENGTH"]
 
+    def __load_voltage_tap_names(
+        self,
+        diagno_names:namedtuple,
+        path_diagno:str,
+        )->pd.Series:
+        """Private method that loads and checks the consistency of the user defined voltage tap names.
+
+        Args:
+            diagno_names (namedtuple): collection with the sheet names in input file conductor_diagnostix.xlsx.
+            path_diagno (str): path to the input file conductor_diagnostic.xlsx
+
+        Raises:
+            ValueError: if number of voltage tap names is not equal to the defined number of voltage taps.
+            ValueError: if there are repeated voltage tap names
+            ValueError: if the not available name VT_tot is used as voltage tap name.
+
+        Returns:
+            pd.Series: series with the user defined voltage tap names for the current conductor.
+        """
+
+        # Load sheet Voltage_tap_name
+        vol_tap_name = (
+            pd.read_excel(
+                path_diagno,
+                sheet_name=diagno_names.vol_tap_name,
+                skiprows=2,
+                header=0,
+                usecols=[self.identifier],
+                squeeze=True,
+            )
+            .dropna()
+        )
+
+        file_check_message = f"Please check sheet {diagno_names.vol_tap_name} in file {self.file_input['OUTPUT']}.\n"
+        # Check consistency of voltage tap name
+        if vol_tap_name.size != self.inputs["N_voltage_taps"]:
+            raise ValueError(f"The number of voltage tap names ({vol_tap_name.size}) is not consistent with the declared number of voltage taps ({self.inputs['N_voltage_taps']}).\n"
+            + file_check_message)
+        
+        repeated_name_bool = vol_tap_name.duplicated()
+        # Check if there are repeated voltage tap names
+        if any(repeated_name_bool):
+            raise ValueError(f"Voltage tap names must be unique.\n"
+            + file_check_message
+            + f"List of repeated voltage names:\n{vol_tap_name[repeated_name_bool]}\n")
+        
+        # Check if not available name VT_tot is assigned
+        if any(vol_tap_name.isin(["VT_tot"])):
+            raise ValueError(f"Voltage tap name VT_tot is not available.\n"
+            + file_check_message)
+        
+        return vol_tap_name
 
     def __initialize_mesh_dataframe(self):
         """Private method that initializes pandas dataframes used to store nodal coordinates and connectivity (matrix)."""
