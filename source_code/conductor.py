@@ -3776,91 +3776,92 @@ class Conductor:
         """
 
         jj = np.r_[ii + 1 : self.total_elements_current_carriers]
-        ll = lmod[jj]
-        mm = lmod[ii]
-        len_jj = self.total_elements_current_carriers - (ii + 1)
-        rr = dict(
-            end_end=np.zeros(len_jj),
-            end_start=np.zeros(len_jj),
-            start_start=np.zeros(len_jj),
-            start_end=np.zeros(len_jj),
-        )
+        # ll = lmod[jj]
+        # mm = lmod[ii]
+        # len_jj = self.total_elements_current_carriers - (ii + 1)
+        # rr = dict(
+        #     end_end=np.zeros(len_jj),
+        #     end_start=np.zeros(len_jj),
+        #     start_start=np.zeros(len_jj),
+        #     start_end=np.zeros(len_jj),
+        # )
 
-        for key in rr.keys():
-            rr[key] = self.__vertex_to_vertex_distance(key, ii, jj)
-        # End for key
+        # for key in rr.keys():
+        #     rr[key] = self.__vertex_to_vertex_distance(key, ii, jj)
+        # # End for key
 
-        # Additional parameters
-        alpha2 = (
-            rr["start_end"] ** 2
-            - rr["start_start"] ** 2
-            + rr["end_start"] ** 2
-            - rr["end_end"] ** 2
-        )
+        # # Additional parameters
+        # alpha2 = (
+        #     rr["start_end"] ** 2
+        #     - rr["start_start"] ** 2
+        #     + rr["end_start"] ** 2
+        #     - rr["end_end"] ** 2
+        # )
 
-        cos_eps = np.minimum(np.maximum(alpha2 / (2 * ll * mm), -1.0), 1.0)
-        sin_eps = np.sin(np.arccos(cos_eps))
+        # cos_eps = np.minimum(np.maximum(alpha2 / (2 * ll * mm), -1.0), 1.0)
+        # sin_eps = np.sin(np.arccos(cos_eps))
 
-        dd = 4 * ll ** 2 * mm ** 2 - alpha2 ** 2
-        mu = (
-            ll
-            * (
-                2 * mm ** 2 * (rr["end_start"] ** 2 - rr["start_start"] ** 2 - ll ** 2)
-                + alpha2 * (rr["start_end"] ** 2 - rr["start_start"] ** 2 - mm ** 2)
-            )
-            / dd
-        )
-        nu = (
-            mm
-            * (
-                2 * ll ** 2 * (rr["start_end"] ** 2 - rr["start_start"] ** 2 - mm ** 2)
-                + alpha2 * (rr["end_start"] ** 2 - rr["start_start"] ** 2 - ll ** 2)
-            )
-            / dd
-        )
-        d2 = rr["start_start"] ** 2 - mu ** 2 - nu ** 2 + 2 * mu * nu * cos_eps
+        # dd = 4 * ll ** 2 * mm ** 2 - alpha2 ** 2
+        # mu = (
+        #     ll
+        #     * (
+        #         2 * mm ** 2 * (rr["end_start"] ** 2 - rr["start_start"] ** 2 - ll ** 2)
+        #         + alpha2 * (rr["start_end"] ** 2 - rr["start_start"] ** 2 - mm ** 2)
+        #     )
+        #     / dd
+        # )
+        # nu = (
+        #     mm
+        #     * (
+        #         2 * ll ** 2 * (rr["start_end"] ** 2 - rr["start_start"] ** 2 - mm ** 2)
+        #         + alpha2 * (rr["end_start"] ** 2 - rr["start_start"] ** 2 - ll ** 2)
+        #     )
+        #     / dd
+        # )
+        # d2 = rr["start_start"] ** 2 - mu ** 2 - nu ** 2 + 2 * mu * nu * cos_eps
 
-        # avoid rounding for segments in a plane
-        d2[d2 < abstol ** 2] = 0
-        d0 = np.sqrt(d2)
+        # # avoid rounding for segments in a plane
+        # d2[d2 < abstol ** 2] = 0
+        # d0 = np.sqrt(d2)
 
-        # solid angles
-        omega = (
-            np.arctan(
-                (d2 * cos_eps + (mu + ll) * (nu + mm) * sin_eps ** 2)
-                / (d0 * rr["end_end"] * sin_eps)
-            )
-            - np.arctan(
-                (d2 * cos_eps + (mu + ll) * nu * sin_eps ** 2)
-                / (d0 * rr["end_start"] * sin_eps)
-            )
-            + np.arctan(
-                (d2 * cos_eps + mu * nu * sin_eps ** 2)
-                / (d0 * rr["start_start"] * sin_eps)
-            )
-            - np.arctan(
-                (d2 * cos_eps + mu * (nu + mm) * sin_eps ** 2)
-                / (d0 * rr["start_end"] * sin_eps)
-            )
-        )
-        omega[d0 == 0.0] = 0.0
+        # # solid angles
+        # omega = (
+        #     np.arctan(
+        #         (d2 * cos_eps + (mu + ll) * (nu + mm) * sin_eps ** 2)
+        #         / (d0 * rr["end_end"] * sin_eps)
+        #     )
+        #     - np.arctan(
+        #         (d2 * cos_eps + (mu + ll) * nu * sin_eps ** 2)
+        #         / (d0 * rr["end_start"] * sin_eps)
+        #     )
+        #     + np.arctan(
+        #         (d2 * cos_eps + mu * nu * sin_eps ** 2)
+        #         / (d0 * rr["start_start"] * sin_eps)
+        #     )
+        #     - np.arctan(
+        #         (d2 * cos_eps + mu * (nu + mm) * sin_eps ** 2)
+        #         / (d0 * rr["start_end"] * sin_eps)
+        #     )
+        # )
+        # omega[d0 == 0.0] = 0.0
 
-        # contribution
-        pp = np.zeros((len_jj, 5), dtype=float)
-        pp[:, 0] = (ll + mu) * np.arctanh(mm / (rr["end_end"] + rr["end_start"]))
-        pp[:, 1] = -nu * np.arctanh(ll / (rr["end_start"] + rr["start_start"]))
-        pp[:, 2] = (mm + nu) * np.arctanh(ll / (rr["end_end"] + rr["start_end"]))
-        pp[:, 3] = -mu * np.arctanh(mm / (rr["start_start"] + rr["start_end"]))
-        pp[:, 4] = d0 * omega / sin_eps
+        # # contribution
+        # pp = np.zeros((len_jj, 5), dtype=float)
+        # pp[:, 0] = (ll + mu) * np.arctanh(mm / (rr["end_end"] + rr["end_start"]))
+        # pp[:, 1] = -nu * np.arctanh(ll / (rr["end_start"] + rr["start_start"]))
+        # pp[:, 2] = (mm + nu) * np.arctanh(ll / (rr["end_end"] + rr["start_end"]))
+        # pp[:, 3] = -mu * np.arctanh(mm / (rr["start_start"] + rr["start_end"]))
+        # pp[:, 4] = d0 * omega / sin_eps
 
-        # filter odd cases (e.g. consecutive segments)
-        pp[np.isnan(pp)] = 0.0
-        pp[np.isinf(pp)] = 0.0
+        # # filter odd cases (e.g. consecutive segments)
+        # pp[np.isnan(pp)] = 0.0
+        # pp[np.isinf(pp)] = 0.0
 
         # Mutual inductances
         matrix[ii, jj] = (
-            2 * cos_eps * (pp[:, 0] + pp[:, 1] + pp[:, 2] + pp[:, 3])
-            - cos_eps * pp[:, 4]
+            5.0e-8 # Mutual inductance imposed by Zappatore input file
+            # 2 * cos_eps * (pp[:, 0] + pp[:, 1] + pp[:, 2] + pp[:, 3])
+            # - cos_eps * pp[:, 4]
         )
         return matrix
 
@@ -3920,23 +3921,24 @@ class Conductor:
 
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
             self_inductance[ii :: self.inventory["StrandComponent"].number] = (
-               2
-               * lmod[ii :: self.inventory["StrandComponent"].number]
-               * (
-                   np.arcsinh(
-                       lmod[ii :: self.inventory["StrandComponent"].number]
-                       / obj.radius
-                   )
-                   - np.sqrt(
-                       1.0
-                       + (
-                           obj.radius
-                           / lmod[ii :: self.inventory["StrandComponent"].number]
-                       )
-                       ** 2
-                   )
-                   + obj.radius / lmod[ii :: self.inventory["StrandComponent"].number]
-               )
+                1.0e-7
+ #               2
+ #               * lmod[ii :: self.inventory["StrandComponent"].number]
+ #               * (
+ #                   np.arcsinh(
+ #                       lmod[ii :: self.inventory["StrandComponent"].number]
+ #                       / obj.radius
+ #                   )
+ #                   - np.sqrt(
+ #                       1.0
+ #                       + (
+ #                           obj.radius
+ #                           / lmod[ii :: self.inventory["StrandComponent"].number]
+ #                       )
+ #                       ** 2
+ #                   )
+ #                   + obj.radius / lmod[ii :: self.inventory["StrandComponent"].number]
+ #               )
             )
         return self_inductance
 
@@ -3953,25 +3955,26 @@ class Conductor:
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
 
             self_inductance[ii :: self.inventory["StrandComponent"].number] = (
-            2 * (
-               lmod[ii :: self.inventory["StrandComponent"].number]
-               * np.log(
-                   (
-                       lmod[ii :: self.inventory["StrandComponent"].number]
-                       + np.sqrt(
-                           lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                           + obj.radius ** 2
-                       )
-                   )
-                   / obj.radius
-               )
-               - np.sqrt(
-                   lmod[ii :: self.inventory["StrandComponent"].number] ** 2
-                   + obj.radius ** 2
-               )
-               + lmod[ii :: self.inventory["StrandComponent"].number] / 4
-               + obj.radius
-            ))
+                1.0e-7
+#            2 * (
+#                lmod[ii :: self.inventory["StrandComponent"].number]
+#                * np.log(
+#                    (
+#                        lmod[ii :: self.inventory["StrandComponent"].number]
+#                        + np.sqrt(
+#                            lmod[ii :: self.inventory["StrandComponent"].number] ** 2
+#                            + obj.radius ** 2
+#                        )
+#                    )
+#                    / obj.radius
+#                )
+#                - np.sqrt(
+#                    lmod[ii :: self.inventory["StrandComponent"].number] ** 2
+#                    + obj.radius ** 2
+#                )
+#                + lmod[ii :: self.inventory["StrandComponent"].number] / 4
+#                + obj.radius
+            )
 
         return self_inductance
 
