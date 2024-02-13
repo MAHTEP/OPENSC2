@@ -14,6 +14,7 @@ import warnings
 # import classes
 from component_collection import ComponentCollection
 from conductor_flags import (
+    CONSTANT_INDUCTANCE,
     ANALYTICAL_INDUCTANCE,
     APPROXIMATE_INDUCTANCE,
     ELECTRIC_CONDUCTANCE_UNIT_LENGTH,
@@ -22,6 +23,7 @@ from conductor_flags import (
     IOP_CONSTANT,
     IOP_FROM_EXT_FUNCTION,
     IOP_FROM_FILE,
+    SELF_INDUCTANCE_MODE_0,
     SELF_INDUCTANCE_MODE_1,
     SELF_INDUCTANCE_MODE_2,
     STATIC_ELECTRIC_SOLVER,
@@ -3753,9 +3755,9 @@ class Conductor:
             mode (int,optional): flag to select the equation for the analytical evaluation of self inductance. 1: mode 1; 2: mode 2. Defaults to 2.
         """
 
-        if mode != 1 and mode != 2:
+        if mode!= SELF_INDUCTANCE_MODE_0 and mode != SELF_INDUCTANCE_MODE_1 and mode != SELF_INDUCTANCE_MODE_2:
             raise ValueError(
-                f"{self.identifier}\nArgument 'mode' must be equal to {SELF_INDUCTANCE_MODE_1 = } or to {SELF_INDUCTANCE_MODE_2 = }. Current value {mode = } is not allowed. Please check sheet {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
+                f"{self.identifier}\nArgument 'mode' must be equal to {SELF_INDUCTANCE_MODE_0 = } or to {SELF_INDUCTANCE_MODE_1 = } or to {SELF_INDUCTANCE_MODE_2 = }. Current value {mode = } is not allowed. Please check sheet {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
             )
         ABSTOL = 1e-6
         lmod = (
@@ -3799,6 +3801,7 @@ class Conductor:
 
         # Switch to evalutae self inductance.
         self_inductance_switch = {
+            SELF_INDUCTANCE_MODE_0: self.__constant_self_inductance_evaluation,
             SELF_INDUCTANCE_MODE_1: self.__self_inductance_mode1,
             SELF_INDUCTANCE_MODE_2: self.__self_inductance_mode2,
         }
@@ -4053,8 +4056,13 @@ class Conductor:
 
     # START: INDUCTANCE APPROXIMATE EVALUATION
 
-    def __inductance_approximate_calculation(self):
+    def __inductance_approximate_calculation(self, mode : int = 2):
         """Private method that approximate the inductance of the system. For an analytical evaluation of the inductance use private method __inductance_analytical_calculation."""
+        
+        if mode!= SELF_INDUCTANCE_MODE_0 and mode != SELF_INDUCTANCE_MODE_1 and mode != SELF_INDUCTANCE_MODE_2:
+            raise ValueError(
+                f"{self.identifier}\nArgument 'mode' must be equal to {SELF_INDUCTANCE_MODE_0 = } or to {SELF_INDUCTANCE_MODE_1 = } or to {SELF_INDUCTANCE_MODE_2 = }. Current value {mode = } is not allowed. Please check sheet {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
+            )
 
         ll = (
             self.nodal_coordinates.iloc[
@@ -4088,8 +4096,13 @@ class Conductor:
                 ll, mutual_inductance
             )
 
-        # Evaluate self inductance
-        self_inductance = self.__self_inductance_approximate(lmod)
+        self_inductance_switch = {
+            SELF_INDUCTANCE_MODE_0: self.__constant_self_inductance_evaluation,
+            SELF_INDUCTANCE_MODE_1: self.__self_inductance_mode1,
+            SELF_INDUCTANCE_MODE_2: self.__self_inductance_mode2,
+        }
+        self_inductance = self_inductance_switch[mode](lmod)
+
         # Evaluate internal inductance
         internal_inductance = lmod.to_numpy() / 2.0
 
@@ -4214,19 +4227,21 @@ class Conductor:
         """
 
         if (
-            self.operations["INDUCTANCE_MODE"] != 0
-            and self.operations["INDUCTANCE_MODE"] != 1
+            self.operations["INDUCTANCE_MODE"] != CONSTANT_INDUCTANCE
+            and self.operations["INDUCTANCE_MODE"] != ANALYTICAL_INDUCTANCE
+            and self.operations["INDUCTANCE_MODE"] != APPROXIMATE_INDUCTANCE
         ):
             raise ValueError(
-                f"{self.identifier = }\nArgument self.operations['INDUCTANCE_MODE'] should be equal to {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({self.operations['INDUCTANCE_MODE'] = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
+                f"{self.identifier = }\nArgument self.operations['INDUCTANCE_MODE'] should be equal to {CONSTANT_INDUCTANCE = } or {APPROXIMATE_INDUCTANCE = } or {ANALYTICAL_INDUCTANCE = }. Current value ({self.operations['INDUCTANCE_MODE'] = }) is not allowed. Please check {self.workbook_sheet_name[2]} in file {self.workbook_name}.\n"
             )
 
         inductance_switch = {
+            CONSTANT_INDUCTANCE: self.__constant_inductance,
             ANALYTICAL_INDUCTANCE: self.__inductance_analytical_calculation,
             APPROXIMATE_INDUCTANCE: self.__inductance_approximate_calculation,
         }
 
-        inductance_switch[self.operations["INDUCTANCE_MODE"]]()
+        inductance_switch[self.operations["INDUCTANCE_MODE"]](self.operations["SELF_INDUCTANCE_MODE"])
 
         self.electric_mass_matrix[
             : self.total_elements_current_carriers,
