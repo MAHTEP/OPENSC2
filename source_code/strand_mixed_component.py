@@ -641,6 +641,19 @@ class StrandMixedComponent(StrandComponent):
                 maxiter=10,
                 disp=False,
             )
+        
+        # Tolerance on newton halley increased in case I_critical is very small,
+        # to avoid inaccuracies on the divider that could lead to potential 
+        # differences between sc and stab
+        if min(critical_current)>1e-6:
+            # Default tollerance in optimize.newton method
+            tollerance = 1.48e-8
+        else:
+            # Value found trial and error iteration
+            tollerance = 1e-12
+            # Other possible solution for the correct tollerance
+            # tollerance = min(critical_current)/1000
+
         # Evaluate superconducting with Halley's method
         sc_current = optimize.newton(
             self.__sc_current_residual,
@@ -648,6 +661,7 @@ class StrandMixedComponent(StrandComponent):
             args=(psi, current),
             fprime=self.__d_sc_current_residual,
             fprime2=self.__d2_sc_current_residual,
+            tol = tollerance,
             maxiter=1000,
         )
 
