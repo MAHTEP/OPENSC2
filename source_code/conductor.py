@@ -184,7 +184,7 @@ class Conductor:
             "INDUCTANCE_MODE",
             "ELECTRIC_SOLVER",
         ]
-        self.operations.update({key: 1 for key in keys if self.operations[key]})
+        self.operations.update({key: 1 for key in keys if self.operations[key]==True})
         self.operations.update(
             {key: 0 for key in keys if self.operations[key] == False}
         )
