@@ -3688,6 +3688,62 @@ class Conductor:
             self.total_elements_current_carriers :
         ] = self.dict_node_pt["op_current"]
 
+    # CONSTANT INDUCTANCE
+    def __constant_inductance(self, mode: int):
+        """Private method that assigns a constant value to the mutual inductance as defined by the user in sheet CONDUCTOR_operation of the input file conductor_definition.xlsx
+
+        Args:
+            mode (int): flag to select the equation for the analytical evaluation of self inductance. 0:constan value from sheet CONDUCTOR_operation of the input file conductor_definition.xlsx; 1: from method __self_inductance_mode1; 2: from method __self_inductance_mode2.
+        """
+
+        lmod = (
+            (
+                (
+                    self.nodal_coordinates.iloc[
+                        self.connectivity_matrix.loc[
+                            "StrandComponent",
+                            "end",
+                        ],
+                        :,
+                    ]
+                    - self.nodal_coordinates.iloc[
+                        self.connectivity_matrix.loc[
+                            "StrandComponent",
+                            "start",
+                        ],
+                        :,
+                    ]
+                )
+                ** 2
+            )
+            .sum(axis=1)
+            .apply(np.sqrt)
+        )
+        mutual_inductance = self.operations["MUTUAL_INDUCTANCE"] * np.ones(self.inductance_matrix.shape) 
+       
+       # The principal diagonal is set to 0
+        for ii in range(mutual_inductance.shape[0]):
+           mutual_inductance[ii, ii] = 0
+      
+        self_inductance_switch = {
+            SELF_INDUCTANCE_MODE_0: self.__constant_self_inductance_evaluation,
+            SELF_INDUCTANCE_MODE_1: self.__self_inductance_mode1,
+            SELF_INDUCTANCE_MODE_2: self.__self_inductance_mode2,
+        }
+        self_inductance = self_inductance_switch[mode](lmod)
+
+        # Evaluate internal inductance
+        internal_inductance = lmod.to_numpy() / 2.0
+
+        self.inductance_matrix = (
+            constants.mu_0
+            / (4.0 * constants.pi)
+            * (
+                np.diag(self_inductance + internal_inductance)
+                + mutual_inductance
+                + mutual_inductance.T
+            )
+        )
     # START: INDUCTANCE ANALYTICAL EVALUATION
 
     def __inductance_analytical_calculation(self, mode: int = 2):
@@ -3907,6 +3963,21 @@ class Conductor:
             .sum(axis="columns")
             .apply(np.sqrt)
         )
+
+    #  CONSTANT SELF INDUCTANCE 
+    def __constant_self_inductance_evaluation(self, lmod: np.array) -> np.ndarray:
+        """Private method that assigns a constant value to the self inductance that is defined by the user in sheet CONDICTOR_operation in the input file conductor_definition.xlsx
+
+        Args:
+            lmod (np.ndarray): array with the distance between strand component nodal nodes.
+
+        Returns:
+            np.ndarray: self inductances.
+        """
+        
+        self_inductance = np.ones(lmod.shape) * self.operations["SELF_INDUCTANCE"]
+
+        return self_inductance
 
     def __self_inductance_mode1(self, lmod: np.ndarray) -> np.ndarray:
         """Private method that analytically evaluates self inductances according to mode 1.
