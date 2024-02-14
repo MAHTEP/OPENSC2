@@ -641,6 +641,19 @@ class StrandMixedComponent(StrandComponent):
                 maxiter=10,
                 disp=False,
             )
+        
+        # Tolerance on newton halley increased in case I_critical is very small,
+        # to avoid inaccuracies on the divider that could lead to potential 
+        # differences between sc and stab
+        if min(critical_current)>1e-6:
+            # Default tollerance in optimize.newton method
+            tollerance = 1.48e-8
+        else:
+            # Value found trial and error iteration
+            tollerance = 1e-12
+            # Other possible solution for the correct tollerance
+            # tollerance = min(critical_current)/1000
+
         # Evaluate superconducting with Halley's method
         sc_current = optimize.newton(
             self.__sc_current_residual,
@@ -648,6 +661,7 @@ class StrandMixedComponent(StrandComponent):
             args=(psi, current),
             fprime=self.__d_sc_current_residual,
             fprime2=self.__d2_sc_current_residual,
+            tol = tollerance,
             maxiter=1000,
         )
 
@@ -797,149 +811,40 @@ class StrandMixedComponent(StrandComponent):
         # still identify a normal region.
         if ind_not_zero.any():
 
-            # Get index that correspond to superconducting regime.
-            ind_sc_gauss = np.nonzero(
-                self.dict_Gauss_pt["op_current_sc"][ind_not_zero] / critical_current_gauss[ind_not_zero] < 0.95
-            )[0]
-            # Get index that correspond to the normal regime.
-            ind_normal_gauss = np.nonzero(
-                self.dict_Gauss_pt["op_current_sc"][ind_not_zero] / critical_current_gauss[ind_not_zero] >= 0.95
-            )[0]
-
-            ## SUPERCONDUCTING REGIME ##
-
-            # Check if np array ind_sc_gauss is not empty.
-            if ind_sc_gauss.any():
-                # Current in superconducting regime is the carried by
-                # superconducting material only.
-                self.dict_Gauss_pt["op_current"][ind_not_zero[ind_sc_gauss]] = self.dict_Gauss_pt[
-                    "op_current_sc"
-                ][ind_not_zero[ind_sc_gauss]]
-
-                # Compute superconducting electrical resistivity only in index 
-                # for which the superconducting regime is guaranteed, using the 
-                # power low.
-                self.dict_Gauss_pt["electrical_resistivity_superconductor"][ind_not_zero[ind_sc_gauss]] = self.superconductor_power_law(
-                    self.dict_Gauss_pt["op_current"][ind_not_zero[ind_sc_gauss]],
-                    critical_current_gauss[ind_not_zero[ind_sc_gauss]],
-                    self.dict_Gauss_pt["J_critical"][ind_not_zero[ind_sc_gauss]]
+            sc_current_gauss, stab_current_gauss = self.solve_current_divider(
+                self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_not_zero],
+                critical_current_gauss[ind_not_zero],
+                self.dict_Gauss_pt["op_current"][ind_not_zero]
                 )
-
-                # Evaluate electic resistance in superconducting region 
-                # (superconductor only).
-                self.dict_Gauss_pt["electric_resistance"][ind_not_zero[
-                    ind_sc_gauss
-                ]] = self.electric_resistance(
-                    conductor, "electrical_resistivity_superconductor", "sc", ind_not_zero[ind_sc_gauss]
+            
+            self.dict_Gauss_pt["electrical_resistivity_superconductor"][
+                ind_not_zero
+            ] = self.superconductor_power_law(
+                sc_current_gauss,
+                critical_current_gauss[ind_not_zero],
+                self.dict_Gauss_pt["J_critical"][ind_not_zero],
                 )
+            # Evaluate the equivalent electric resistance in Ohm.
+            self.dict_Gauss_pt["electric_resistance"][
+                ind_not_zero] = self.parallel_electric_resistance(
+                conductor,
+                [
+                    "electrical_resistivity_superconductor",
+                    "electrical_resistivity_stabilizer",
+                ],["sc","stab"],
+                ind_not_zero,
+            )
 
-            ## NORMAL REGIME ##
-
-            # Check if np array ind_normal_gauss is not empty.
-            if ind_normal_gauss.any():
-
-                # Evaluate how the current is distributed solving the current
-                # divider problem in Gauss point.
-                sc_current_gauss, stab_current_gauss = self.solve_current_divider(
-                    self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_not_zero[ind_normal_gauss]],
-                    critical_current_gauss[ind_not_zero[ind_normal_gauss]],
-                    self.dict_Gauss_pt["op_current"][ind_not_zero[ind_normal_gauss]]
-                )
-
-                # Get index of the normal region where all the current is
-                # carried by the stabilizer, to avoid division by 0 in 
-                # evaluation of superconducting electrical resistivity with the 
-                # power law.
-                ind_stab_gauss = np.nonzero(
-                    (
-                        stab_current_gauss / self.dict_Gauss_pt["op_current"][ind_not_zero[ind_normal_gauss]]
-                        > 0.999999
-                    )
-                    | (sc_current_gauss < 1.0)
-                )[0]
-
-                ## CURRENT CARRIED BY THE STABILIZER ##
-                # Check if np array ind_stab_gauss is not empty.
-                if ind_stab_gauss.any():
-                    # Get the index of location of current sharing region, if 
-                    # any.
-                    ind_sh_gauss = np.nonzero(
-                        (
-                            stab_current_gauss
-                            / self.dict_Gauss_pt["op_current"][ind_not_zero[ind_normal_gauss]]
-                            <= 0.999999
-                        )
-                        | (sc_current_gauss >= 1.0)
-                    )[0]
-                    
-                    # Check if nparray ind_sh_gauss is not empty.
-                    if ind_sh_gauss.any():
-                        # ind_sh_gauss is not empty.
-                        # Get final index of the location of the current 
-                        # sharing zone, keeping into account that 
-                        # sc_current_gauss is already filtered on 
-                        # ind_not_zero[ind_normal_gauss].
-                        ind_shf_gauss = {1:ind_sh_gauss,2:ind_not_zero[ind_normal_gauss[ind_sh_gauss]]}
-                    else:
-                        # ind_sh_gauss is empty.
-                        # Get final index of the location of the current 
-                        # sharing zone, keeping into account that 
-                        # sc_current_gauss is already filtered on 
-                        # ind_not_zero[ind_normal_gauss] and that ind_sh_gauss 
-                        # is empty.
-                        ind_shf_gauss = {1:ind_sh_gauss,2:ind_not_zero[ind_normal_gauss]}
-
-                    # Evaluate electic resistance in normal region (stabilizer 
-                    # only).
-                    self.dict_Gauss_pt["electric_resistance"][
-                        ind_shf_gauss[2]
-                    ] = self.electric_resistance(
-                        conductor, "electrical_resistivity_stabilizer", "stab", ind_shf_gauss[2]
-                    )
-                else:
-                    # Get final index of the location of the current sharing 
-                    # zone, keeping into account that sc_current_gauss is 
-                    # already filtered on ind_not_zero[ind_normal_gauss]. In 
-                    # this case the current is shared between the 
-                    # superconductor and the stabilizer, so we need to exploit 
-                    # all the index in array ind_normal_gauss for the array 
-                    # sc_current_gauss.
-                    ind_shf_gauss = {1:np.nonzero(ind_normal_gauss>=0)[0],2:ind_not_zero[ind_normal_gauss]}
-
-                ## CURRENT SHARED BY THE SUPERCONDUCTOR AND THE STABILIZER ##
-                if ind_shf_gauss[1].any():
-                    # Evaluate the electrical resistivity of the superconductor
-                    # according to the power low in Gauss point in Ohm*m.
-                    self.dict_Gauss_pt["electrical_resistivity_superconductor"][
-                        ind_shf_gauss[2]
-                    ] = self.superconductor_power_law(
-                        sc_current_gauss[ind_shf_gauss[1]],
-                        critical_current_gauss[ind_shf_gauss[2]],
-                        self.dict_Gauss_pt["J_critical"][ind_shf_gauss[2]],
-                    )
-
-                    # Evaluate the equivalent electric resistance in Ohm.
-                    self.dict_Gauss_pt["electric_resistance"][
-                        ind_shf_gauss[2]
-                    ] = self.parallel_electric_resistance(
-                        conductor,
-                        [
-                            "electrical_resistivity_superconductor",
-                            "electrical_resistivity_stabilizer",
-                        ],["sc","stab"],
-                        ind_shf_gauss[2],
-                    )
-                    
-                    # Compute voltage along stabilizer.
-                    v_stab = self.dict_Gauss_pt["electrical_resistivity_stabilizer"][
-                        ind_shf_gauss[2]
-                    ] * stab_current_gauss[ind_shf_gauss[1]] / self.cross_section["stab"]
-                    # Compute voltage along superconductor
-                    v_sc = self.inputs["E0"] * (sc_current_gauss[ind_shf_gauss[1]] / critical_current_gauss[ind_shf_gauss[2]]) ** self.inputs["nn"]
-                    # Check that the voltage along stabilizer is equal to the 
-                    # voltage along superconductor (i.e, check the reliability 
-                    # of the current divider).
-                    if all(np.isclose(v_stab,v_sc)) == False:
-                        raise ValueError(f"Voltage difference along superconductor and stabilizer must be the same.")
+            # Compute voltage along stabilizer.
+            v_stab = self.dict_Gauss_pt["electrical_resistivity_stabilizer"][
+                ind_not_zero
+            ] * stab_current_gauss / self.cross_section["stab"]
+            # Compute voltage along superconductor
+            v_sc = self.inputs["E0"] * (sc_current_gauss / critical_current_gauss[ind_not_zero]) ** self.inputs["nn"]
+            # Check that the voltage along stabilizer is equal to the 
+            # voltage along superconductor (i.e, check the reliability 
+            # of the current divider).
+            if all(np.isclose(v_stab,v_sc)) == False:
+                raise ValueError(f"Voltage difference along superconductor and stabilizer must be the same.")
 
         return self.dict_Gauss_pt["electric_resistance"]
