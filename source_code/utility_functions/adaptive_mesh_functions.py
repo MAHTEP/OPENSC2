@@ -12,3 +12,61 @@ from strand_component import StrandComponent
 from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
 from cylindrical_helix import CylindricalHelix
+
+def detect_quench_front(conductor:Conductor)->dict:
+    """Function that detects the quench fronts comparing for each StackComponent and StrandMixedComponent the current sharing temperature and its own temperature. Where these temperature crosses each other quench fronts are identified and a local mesh adaptation (refinement/coarsening) may be necessary.
+    The index of the quench fronts are stored in a dictionary (front_idx).
+
+    Args:
+        conductor (Conductor): object with all information to detect the quench fronts.
+
+    Returns:
+        dict: collection of quench fronts indices for each StackComponent and StrandMixedComponent for which the temperature crosses the current sharing temperature. Keys of the dictionary are object identifiers; values of the dictionaries are ndarrays with the quench fronts indices.
+    """
+
+    # Inialize data structure collecting index of quench fronts (if any)
+    front_idx = dict()
+
+    # Loop on StackComponent to identify the index corresponding to quench 
+    # front coordinates. Can be converted into a function/method.
+    for obj in conductor.inventory["StackComponent"].collection:
+        
+        # Evaluate the sign of the difference between the current sharign 
+        # temperature and the temperature of the object.
+        sign_Tcs_minus_T = np.sign(
+            obj.dict_node_pt["T_cur_sharing"] - obj.dict_node_pt["temperature"]
+        )
+        
+        # Compute the elementwise difference of array sign_Tcs_minus_T. Where 
+        # this difference is > 0 a left quench front can be identified; where b 
+        # < 0 a right quench front can be identified.
+        sign_diff = np.sign(sign_Tcs_minus_T[1:] - sign_Tcs_minus_T[:-1])
+        
+        # Where the value in array sign_diff is != 0 a quench front can be 
+        # identified. Get the index of values != 0 in array sign_diff
+        front_idx[obj.identifier] = np.nonzero(sign_diff)[0]
+
+    # Loop on StrandMixedComponent to identify the index corresponding to 
+    # quench front coordinates. Can be converted into a function/method.
+    for obj in conductor.inventory["StrandMixedComponent"].collection:
+        
+        # Evaluate the sign of the difference between the current sharign 
+        # temperature and the temperature of the object.
+        sign_Tcs_minus_T = np.sign(
+            obj.dict_node_pt["T_cur_sharing"] - obj.dict_node_pt["temperature"]
+        )
+        
+        # Compute the elementwise difference of array sign_Tcs_minus_T. Where 
+        # this difference is > 0 a left quench front can be identified; where b 
+        # < 0 a right quench front can be identified.
+        sign_diff = np.sign(sign_Tcs_minus_T[1:] - sign_Tcs_minus_T[:-1])
+        
+        # Where the value in array sign_diff is != 0 a quench front can be 
+        # identified. Get the index of values != 0 in array sign_diff
+        front_idx[obj.identifier] = np.nonzero(sign_diff)[0]
+
+    # Remove keys in front_idx that are not associated with qench fronts 
+    # exploiting dictionary comprehension.
+    front_idx = {key:value for key,value in front_idx.items() if value.size > 0}
+
+    return front_idx
