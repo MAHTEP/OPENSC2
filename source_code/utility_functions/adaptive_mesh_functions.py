@@ -70,3 +70,44 @@ def detect_quench_front(conductor:Conductor)->dict:
     front_idx = {key:value for key,value in front_idx.items() if value.size > 0}
 
     return front_idx
+
+def eval_gaussian_mesh_density(conductor:Conductor, front_idx:dict)->np.ndarray:
+    """Function that evaluates the mesh density according to a gaussian distribution centered around each quench front coordinate. A combination of all these mesh density is returned.
+
+    Args:
+        conductor (Conductor): object with all information to evaluate the gaussian mesh density.
+        front_idx (dict): dictonary with the quench fronts coordinates for each StackComponent and StrandMixedComponent object as returned from function detect_quench_front
+
+    Returns:
+        np.ndarray: updated nparray with the gaussian mesh density centered around the quench front coordinates, to be used as criterion to locally adapt the mesh.
+    """
+
+    # Alias
+    zcoord = conductor.grid_features["zcoord"]
+    zcoord_gauss = conductor.grid_features["zcoord_gauss"]
+    sigma = conductor.grid_features["sigma"]
+    exp_lim = conductor.grid_features["exp_lim"]
+    rho_mesh = conductor.grid_features["rho_mesh"]
+    dz_min = conductor.grid_input["SIZMIN"]
+
+    # Loop on each item of dictionary front_idx to evaluate the mesh density 
+    # associated to each quench front coordinate.
+    for value in front_idx.values():
+        for idx in value:
+
+            # Identify the coordinate of the quench front.
+            z_front = (zcoord(idx) + zcoord(idx+1)) / 2
+
+            # Compute exponent of the gaussian distribution centered in 
+            # z_front; used to evaluate the mesh density
+            e_gauss = (zcoord_gauss - z_front) ** 2 / (2 * sigma ** 2)
+            
+            # Filter the exponent of the gaussian distribution wrt the minimum 
+            # accepted value.
+            e_gauss = np.minimum(e_gauss,exp_lim)
+            
+            # Update mesh density; used to understand if the mesh should be 
+            # refined, coarsened or left as it is.
+            rho_mesh = np.maximum(np.exp(-e_gauss)/dz_min,rho_mesh)
+
+    return rho_mesh
