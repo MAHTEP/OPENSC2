@@ -288,3 +288,44 @@ def set_node(grid_feat:dict,grid_input:dict,jj:int)->dict:
     grid_feat["hard_node_flag_new"].append(grid_feat["hard_node_flag"][jj+1])
     
     return grid_feat
+
+def refine_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
+    """Function that locally refines the mesh splitting the j-th element of the old mesh into N evenly spaced intervals, where N is the number of element for local mesh refinement as defined by the user for variable NELEMS_REFINEMENT of input file conductor_grid.xlsx.
+    The set_node function is also called to correctly deal with the end node of the element.
+
+    Args:
+        grid_feat (dict): dictionary that stores all the features of the mesh.
+        grid_input (dict): dictonary that stores all the input values used to build the initial mesh.
+        jj (int): index that identify the present element of the mesh that is queried for coarsening or refinement.
+
+        N.B. Input argument grid_input is not used but it is required in order to have the function set_node, refine_mesh and coarse_mesh with the same signature for future refactoring.
+
+    Returns:
+        dict: dictionary grid_feat with all the info associated to the new mesh. Updated dictionary key-value pairs:
+            * nn_new -> the total number of nodes of the new mesh.
+            * zcoord_new -> the spatial discretization of the new mesh.
+            * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
+    """
+
+    # Alias
+    nelems_refinement = grid_input["NELEMS_REFINEMENT"]
+    zcoord = grid_feat["zcoord"]
+
+    # Update the total number of nodes after local refinement.
+    grid_feat["N_nod_new"] += nelems_refinement - 1
+    
+    # Evaluate the nodes to be added in the localli refined element.
+    zz_ref_loc = np.linspace(zcoord[jj],zcoord[jj+1],nelems_refinement+1)
+
+    # Loop to refine the mesh.
+    for zz in zz_ref_loc[1:-1]:
+        # Add a (soft) node to the new mesh.
+        grid_feat["zcoord_new"].append(zz)
+        # Specify that the new added node is soft (set flag to False).
+        grid_feat["hard_node_flag_new"].append(SOFT_NODE)
+
+    # Call function set_node to set the end node of the current interval 
+    # as an hard node.
+    grid_feat = set_node(grid_feat,grid_input,jj)
+
+    return grid_feat
