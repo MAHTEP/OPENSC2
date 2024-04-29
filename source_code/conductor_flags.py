@@ -128,3 +128,12 @@ SHEET_NAME = dict(
     environment_input = Env_sheet_name(environment = "ENVIRONMENT"),
     transitory_input = Trans_sheet_name(transient = "TRANSIENT"),
 )
+
+# Flag for mesh definition.
+UNIFORM_MESH = 0
+REFINED_MESH = 1
+# Adaptive mesh from initial uniform mesh.
+ADAPTIVE_UNIFORM_MESH = 2
+# Adaptive mesh from initial refined mesh.
+ADAPTIVE_REFINED_MESH = 3
+MESH_FROM_FILE = -1
