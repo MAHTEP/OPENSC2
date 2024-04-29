@@ -142,8 +142,8 @@ def update_mesh(conductor:Conductor)->dict:
             * N_nod_new -> the total number of nodes of the new mesh.
             * zcoord_new -> the spatial discretization of the new mesh.
             * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
-            * n_added_node -> total number of added (soft) node in the new mesh due to refinement needs.
-            * n_removed_node -> total number of removed (soft) node in the new mesh due to coarsening needs.
+            * N_added_node -> total number of added (soft) node in the new mesh due to refinement needs.
+            * N_removed_node -> total number of removed (soft) node in the new mesh due to coarsening needs.
     """
     
     # Alias
@@ -179,10 +179,10 @@ def update_mesh(conductor:Conductor)->dict:
     n_marked = np.sum(n_ref > 1.)
     
     # Total number of added nodes
-    grid_features["n_added_node"].append(n_marked * (nelems_refinement - 1))
+    grid_features["N_added_node"].append(n_marked * (nelems_refinement - 1))
 
     # Compute the total number of nodes that characterize the new mesh.
-    tot_node = nnode + grid_features["n_added_node"]
+    tot_node = nnode + grid_features["N_added_node"]
 
     if tot_node >= nnode_max:
         
@@ -344,7 +344,7 @@ def coarse_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
             * N_nod_new -> the total number of nodes of the new mesh.
             * zcoord_new -> the spatial discretization of the new mesh.
             * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
-            * n_removed_node -> total number of removed (soft) node in the new mesh due to coarsening needs.
+            * N_removed_node -> total number of removed (soft) node in the new mesh due to coarsening needs.
     """
 
     # Alias
@@ -366,7 +366,7 @@ def coarse_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
         # used in the old mesh.
         grid_feat["hard_node_flag_new"].append(node_flag_old)
         # Update the counter of the removed nodes.
-        grid_feat["n_removed_node"][-1] += 1
+        grid_feat["N_removed_node"][-1] += 1
         print("Coarsened mesh.\n")
 
     elif node_flag_new and node_flag_old == False:
@@ -376,7 +376,7 @@ def coarse_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
         # Update the counter of the removed nodes to keep track of the fact 
         # that at the next call of function set_node the soft node will be 
         # removed.
-        grid_feat["n_removed_node"][-1] += 1
+        grid_feat["N_removed_node"][-1] += 1
         print("Coarsened mesh.\n")
     
     elif node_flag_new == False and node_flag_old == False:
@@ -386,7 +386,7 @@ def coarse_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
         # used in the old mesh.
         grid_feat["hard_node_flag_new"].append(node_flag_old)
         # Update the counter of the removed nodes.
-        grid_feat["n_removed_node"][-1] += 1
+        grid_feat["N_removed_node"][-1] += 1
         print("Coarsened mesh.\n")
 
     return grid_feat
