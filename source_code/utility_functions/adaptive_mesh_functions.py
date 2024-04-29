@@ -139,7 +139,7 @@ def update_mesh(conductor:Conductor)->dict:
 
     Returns:
         dict: dictionary grid_features with all the info associated to the new mesh. Updated dictionary key-value pairs:
-            * nn_new -> the total number of nodes of the new mesh.
+            * N_nod_new -> the total number of nodes of the new mesh.
             * zcoord_new -> the spatial discretization of the new mesh.
             * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
             * n_added_node -> total number of added (soft) node in the new mesh due to refinement needs.
@@ -222,7 +222,7 @@ def update_mesh(conductor:Conductor)->dict:
     # Set to 1 the curren value of the number of nodes of the new mesh. The 
     # total number of nodes of the new spatial discretization is computed 
     # iteratively while updating the mesh.
-    grid_features["nnode_new"] = 1
+    grid_features["N_nod_new"] = 1
 
     # Loop on the elements of the current mesh (old mesh).
     for jj, mesh_flag in enumerate(mesh_quality_flag):
@@ -273,7 +273,7 @@ def set_node(grid_feat:dict,grid_input:dict,jj:int)->dict:
 
     Returns:
         dict: dictionary grid_feat with all the info associated to the new mesh. Updated dictionary key-value pairs:
-            * nn_new -> the total number of nodes of the new mesh.
+            * N_nod_new -> the total number of nodes of the new mesh.
             * zcoord_new -> the spatial discretization of the new mesh.
             * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
     """
@@ -302,7 +302,7 @@ def refine_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
 
     Returns:
         dict: dictionary grid_feat with all the info associated to the new mesh. Updated dictionary key-value pairs:
-            * nn_new -> the total number of nodes of the new mesh.
+            * N_nod_new -> the total number of nodes of the new mesh.
             * zcoord_new -> the spatial discretization of the new mesh.
             * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
     """
@@ -341,7 +341,7 @@ def coarse_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
 
     Returns:
         dict: dictionary grid_feat with all the info associated to the new mesh. Updated dictionary key-value pairs:
-            * nn_new -> the total number of nodes of the new mesh.
+            * N_nod_new -> the total number of nodes of the new mesh.
             * zcoord_new -> the spatial discretization of the new mesh.
             * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
             * n_removed_node -> total number of removed (soft) node in the new mesh due to coarsening needs.
