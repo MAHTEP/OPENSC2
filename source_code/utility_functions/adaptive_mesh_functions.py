@@ -260,3 +260,31 @@ def update_mesh(conductor:Conductor)->dict:
             raise ValueError(f"Not valid value for mesh quality flag:\n{mesh_flag = }\n")
 
     return grid_features
+
+def set_node(grid_feat:dict,grid_input:dict,jj:int)->dict:
+    """Function that adds a new node in the new mesh according to the info available in the old mesh. The added node corresponds to the upper boundary of the j-th element of the mesh (at index j+1). The node is characterized as soft or hard according to the information stored in key "hard_node_value" of dictionary grid_feat.
+
+    Args:
+        grid_feat (dict): dictionary that stores all the features of the mesh.
+        grid_input (dict): dictonary that stores all the input values used to build the initial mesh.
+        jj (int): index that identify the present element of the mesh that is queried for coarsening or refinement.
+
+        N.B. Input argument grid_input is not used but it is required in order to have the function set_node, refine_mesh and coarse_mesh with the same signature for future refactoring.
+
+    Returns:
+        dict: dictionary grid_feat with all the info associated to the new mesh. Updated dictionary key-value pairs:
+            * nn_new -> the total number of nodes of the new mesh.
+            * zcoord_new -> the spatial discretization of the new mesh.
+            * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
+    """
+
+    # Update node counter of the new spatial discretization.
+    grid_feat["N_nod_new"] += 1
+    
+    # Insert a node in the new mesh
+    grid_feat["zcoord_new"].append(grid_feat["zcoord"][jj+1])
+    # Classify the new node according to the classification used in the old 
+    # mesh. Possible category: 1 = hard node, 0 = soft node.
+    grid_feat["hard_node_flag_new"].append(grid_feat["hard_node_flag"][jj+1])
+    
+    return grid_feat
