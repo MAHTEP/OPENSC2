@@ -13,6 +13,16 @@ from strand_mixed_component import StrandMixedComponent
 from strand_stabilizer_component import StrandStabilizerComponent
 from cylindrical_helix import CylindricalHelix
 
+# Alias for flag values
+OK_MESH = 0 # no need of mesh refinement/coarsening
+REFINE_MESH = 1 # need to refine the mesh
+COARSE_MESH = -1 # need to coarse the mesh
+HARD_NODE = True # an hard node is a node that belong to the initial mesh
+# A soft node is a node added with mesh refinement. False is referred to 
+# the name of the variable: hard_node_flag which is True for hard nodes and 
+# False for soft nodes.
+SOFT_NODE = False
+
 def detect_quench_front(conductor:Conductor)->dict:
     """Function that detects the quench fronts comparing for each StackComponent and StrandMixedComponent the current sharing temperature and its own temperature. Where these temperature crosses each other quench fronts are identified and a local mesh adaptation (refinement/coarsening) may be necessary.
     The index of the quench fronts are stored in a dictionary (front_idx).
@@ -111,3 +121,142 @@ def eval_gaussian_mesh_density(conductor:Conductor, front_idx:dict)->np.ndarray:
             rho_mesh = np.maximum(np.exp(-e_gauss)/dz_min,rho_mesh)
 
     return rho_mesh
+
+def update_mesh(conductor:Conductor)->dict:
+    """Function that identifies regions of the mesh that need refinement and regions of the mesh that need coarsening, performing the corresponding adjustment of the mesh.
+    Regions requiring coarsening or refinement are identified by comparing the actual mesh density wrt the "ideal" mesh density computed with the eval_gaussian_mesh_density function.
+    For each element of the mesh:
+        * coarsening is performed by calling the coarse_mesh function;
+        * refinement is performed by calling the refine_mesh function;
+        * regions that do not require coarsening/refinement are treated with the set_node function.
+
+    Args:
+        conductor (Conductor): object with all information to update the mesh according to the result of the comparision of the actual mesh density wrt the "ideal" mesh density from function eval_gaussian_mesh_density.
+
+    Raises:
+        ValueError: if the updated number of nodes is larger than the maximum allowed number of nodes defined by the user (MAXNOD).
+        ValueError: if flags in array mesh_quality_flag is different from -1 (COARSE_MESH), 0 (OK_MESH) and 1 (REFINE_MESH).
+
+    Returns:
+        dict: dictionary grid_features with all the info associated to the new mesh. Updated dictionary key-value pairs:
+            * nn_new -> the total number of nodes of the new mesh.
+            * zcoord_new -> the spatial discretization of the new mesh.
+            * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
+            * n_added_node -> total number of added (soft) node in the new mesh due to refinement needs.
+            * n_removed_node -> total number of removed (soft) node in the new mesh due to coarsening needs.
+    """
+    
+    # Alias
+    cond_id = conductor.identifier
+    nelems = conductor.grid_input["NELEMS"]
+    nelems_refinement = conductor.grid_input["NELEMS_REFINEMENT"]
+    nnode_max = conductor.grid_input["MAXNOD"]
+    grid_features = conductor.grid_features
+    zcoord = conductor.grid_features["zcoord"]
+    nnode = conductor.grid_features["N_nod"]
+    rho_mesh = conductor.grid_features["rho_mesh"]
+
+    # Build path to input file conductor_grid.xlsx
+    f_path = os.path.join(
+            conductor.BASE_PATH,
+            conductor.file_input["GRID_DEFINITION"]
+        )
+
+    mesh_quality_flag = np.zeros(nelems)
+    # Evaluate the actual mesh density
+    actual_rho_mesh = 1. / (zcoord[1:] - zcoord[:-1])
+    # Evaluate the desidered number of elements in which each element of the 
+    # mesh should actually be discretized. If > 1 refinement is needed.
+    n_ref = np.round(rho_mesh / actual_rho_mesh)
+    # Evaluate the inverse of the desidered number of elements in which each 
+    # element of the mesh should actually be distretized. If > 1 coarsening is 
+    # needed.
+    n_coa = round(actual_rho_mesh / rho_mesh)
+
+    # Set mesh_quality_flag = 1 where refinement is needed (n_ref > 1)
+    mesh_quality_flag[n_ref > 1.] = REFINE_MESH
+    # Compute the number of elements that needs refinement
+    n_marked = np.sum(n_ref > 1.)
+    
+    # Total number of added nodes
+    grid_features["n_added_node"].append(n_marked * (nelems_refinement - 1))
+
+    # Compute the total number of nodes that characterize the new mesh.
+    tot_node = nnode + grid_features["n_added_node"]
+
+    if tot_node >= nnode_max:
+        
+        raise ValueError(f"Unable to refine mesh. Total number of nodes is larger than the maximum number of nodes {nnode_max}. Plesae check sheet GRID in input file {f_path} for conductor {cond_id}.\n")
+
+    # Set mesh_quality_flag = -1 where coarsening is needed (n_coa > 1)
+    mesh_quality_flag[n_coa > 1.] = COARSE_MESH
+
+    # Check on mesh coarsening: avoid to remove more than 2 consecutive nodes 
+    # at a time.
+    # Sum triplets of consecutive values of flag in mesh_quality_flag
+    mesh_quality_sum = (
+        mesh_quality_flag[:-2]
+        + mesh_quality_flag[1:-1]
+        + mesh_quality_flag[2:]
+    )
+    # Find index in mesh_quality_sum = -3: it means that there are at least a 
+    # triplet of nodes that is going to be removed.
+    indx = np.nonzero(mesh_quality_sum == -3)
+    # Check if there are index corresponding to mesh_quality_sum = -3
+    if indx.size > 0:
+        # Array indx is not empty: it means that there is at least a 
+        # triplet of nodes that is going to be removed, and this should be 
+        # avoided. Set central value of the triplet to 0 in mesh_quality_flag.
+        
+        # To get the central value of the triplet (second addend) indx should 
+        # be increased by 1, since values in indx refers to the first addend in 
+        # mesh_quality_flag.
+        mesh_quality_flag[indx+1] = OK_MESH
+
+    # Set the first item of zcoord_new to 0 (the first axial coordinates is 
+    # always z = 0 m).
+    grid_features["zcoord_new"][0] = 0.0
+    # Set the first item of hard_node_flag_new to 1 (the first axial coordinate 
+    # is aways an hard node).
+    grid_features["hard_node_flag_new"][0] = HARD_NODE
+    # Set to 1 the curren value of the number of nodes of the new mesh. The 
+    # total number of nodes of the new spatial discretization is computed 
+    # iteratively while updating the mesh.
+    grid_features["nnode_new"] = 1
+
+    # Loop on the elements of the current mesh (old mesh).
+    for jj, mesh_flag in enumerate(mesh_quality_flag):
+
+        # Check if each element of the current mesh needs refinement, 
+        # coarsenign or if it of the proper size.
+        if mesh_flag == OK_MESH:
+            # Elment j-th of the current mesh does not need refinement or 
+            # coarsening: call function set_node.
+            grid_features = set_node(
+                grid_features,
+                conductor.grid_input,
+                jj,
+            )
+
+        elif mesh_flag == REFINE_MESH:
+            # Elment j-th of the current mesh needs refinement: call function 
+            # refine_mesh.
+            grid_features = refine_mesh(
+                grid_features,
+                conductor.grid_input,
+                jj,
+            )
+
+        elif mesh_flag == COARSE_MESH:
+            # Elment j-th of the current mesh needs coarsening: call function 
+            # coarse_mesh.
+            grid_features = coarse_mesh(
+                grid_features,
+                conductor.grid_input,
+                jj,
+            )
+
+        else:
+            raise ValueError(f"Not valid value for mesh quality flag:\n{mesh_flag = }\n")
+
+    return grid_features
