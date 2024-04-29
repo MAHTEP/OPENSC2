@@ -329,3 +329,64 @@ def refine_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
     grid_feat = set_node(grid_feat,grid_input,jj)
 
     return grid_feat
+
+def coarse_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
+    """Function that locally coarsen the mesh removing nodes only if they are soft. If nodes are hard, they are not removed as they correspond to the nodes of the initial mesh.
+    The set_node function is also called to correctly deal with the end node of the element.
+
+    Args:
+        grid_feat (dict): dictionary that stores all the features of the mesh.
+        grid_input (dict): dictonary that stores all the input values used to build the initial mesh.
+        jj (int): index that identify the present element of the mesh that is queried for coarsening or refinement.
+
+    Returns:
+        dict: dictionary grid_feat with all the info associated to the new mesh. Updated dictionary key-value pairs:
+            * nn_new -> the total number of nodes of the new mesh.
+            * zcoord_new -> the spatial discretization of the new mesh.
+            * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
+            * n_removed_node -> total number of removed (soft) node in the new mesh due to coarsening needs.
+    """
+
+    # Alias
+    zcoord = grid_feat["zcoord"]
+    hard_node_flag = grid_feat["hard_node_flag"]
+    node_flag_new = grid_feat["hard_node_flag_new"][grid_feat["N_nod_new"]]
+    node_flag_old = hard_node_flag[jj+1]
+
+    if node_flag_new and node_flag_old:
+        # Both nodes are hard, it is not possible to coarsen the mesh. Set the 
+        # node corresponding to the upper bound of the current element of the 
+        # mesh as an hard node.
+        grid_feat = set_node(grid_feat,grid_input,jj)
+
+    elif node_flag_new == False and node_flag_old:
+        # Start node is soft and should be removed.
+        grid_feat["zcoord_new"].append(zcoord[jj+1])
+        # Mark the new node in the new mesh according to the caracterization 
+        # used in the old mesh.
+        grid_feat["hard_node_flag_new"].append(node_flag_old)
+        # Update the counter of the removed nodes.
+        grid_feat["n_removed_node"][-1] += 1
+        print("Coarsened mesh.\n")
+
+    elif node_flag_new and node_flag_old == False:
+        # No action needed: the soft node at the end of the element will be 
+        # removed with the next call of function set_node.
+        
+        # Update the counter of the removed nodes to keep track of the fact 
+        # that at the next call of function set_node the soft node will be 
+        # removed.
+        grid_feat["n_removed_node"][-1] += 1
+        print("Coarsened mesh.\n")
+    
+    elif node_flag_new == False and node_flag_old == False:
+        # Start node is soft and should be removed.
+        grid_feat["zcoord_new"].append(zcoord[jj+1])
+        # Mark the new node in the new mesh according to the caracterization 
+        # used in the old mesh.
+        grid_feat["hard_node_flag_new"].append(node_flag_old)
+        # Update the counter of the removed nodes.
+        grid_feat["n_removed_node"][-1] += 1
+        print("Coarsened mesh.\n")
+
+    return grid_feat
