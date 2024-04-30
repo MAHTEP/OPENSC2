@@ -33,6 +33,9 @@ from conductor_flags import (
     SHEET_NAME,
     ADAPTIVE_UNIFORM_MESH,
     ADAPTIVE_REFINED_MESH,
+    UNIFORM_MESH,
+    REFINED_MESH,
+    MESH_FROM_FILE,
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -7000,3 +7003,51 @@ class Conductor:
             raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
 
         return (grid_input, grid_features, dict_N_equation, dict_Step)
+
+    def update_dict_step_on_static_mesh(self)->dict:
+
+        """Method that updates arrays SYSLOD and SYSVAR stored in attribute dictionary dict_Step in the case of a static mesh is selected by the user (attribute dictionary grid_input["ITYMSH"] = 0 or grid_input["ITYMSH"] = 1 or grid_input["ITYMSH"] = -1).
+
+        Raises:
+            NotImplementedError: if Adams Moulton is selected as method to solve the ordinary differential equation in time.
+
+        Returns:
+            dict: dictioary dict_Step with updated keys:
+                * SYSVAR_old
+                * SYSLOD
+        """
+
+        # Alias
+        inputs = self.inputs
+        grid_input = self.grid_input
+        dict_Step = self.dict_Step
+        
+        # Check if mesh is static or adaptive
+        if (
+            grid_input["ITYMSH"] == UNIFORM_MESH
+            or grid_input["ITYMSH"] == REFINED_MESH
+            or grid_input["ITYMSH"] == MESH_FROM_FILE
+        ):
+            # The mesh is static.
+            # N.B. The case of adaptive mesh is dealt with calling conductor methods
+            # interp_solution_on_new_mesh and update_cond_mesh_related_features for 
+            # SYSVAR, and calling update_syslod_on_new_mesh for SYSLOD.
+
+            # Save an hard copy of the thermal-hydraulic problem solution at the 
+            # previous time step.
+            dict_Step["SYSVAR_old"] = dict_Step["SYSVAR"][:, 0].copy()
+
+            if (
+                inputs["METHOD"] == "BE"
+                or inputs["METHOD"] == "CN"
+            ):
+                # Backward Euler or Crank-Nicolson
+                if self.cond_num_step > 1:
+                    # Copy the load vector at the previous time step in the second 
+                    # column to correctly apply the theta method.
+                    dict_Step["SYSLOD"][:, 1] = dict_Step["SYSLOD"][:, 0].copy()
+                    dict_Step["SYSLOD"][:, 0] = 0.0
+            elif inputs["METHOD"] == "AM4":
+                raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
+        
+        return dict_Step
