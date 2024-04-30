@@ -375,15 +375,7 @@ def step(conductor, envionment, qsource, num_step):
     # Known terms vector initilaization
     Known = np.zeros_like(ASCALING)
     
-    if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
-        # Backward Euler or Crank-Nicolson (cdp, 10/2020)
-        if conductor.cond_num_step > 1:
-            # Copy the load vector at the previous time step in the second column to \
-            # correctly apply the theta method (cdp, 10/2020)
-            conductor.dict_Step["SYSLOD"][:, 1] = conductor.dict_Step["SYSLOD"][
-                :, 0
-            ].copy()
-            conductor.dict_Step["SYSLOD"][:, 0] = 0.0
+    conductor.dict_Step = conductor.update_dict_step_on_static_mesh()
 
     # qsource initialization to zeros (cdp, 07/2020)
     # questa inizializzazione è provvisoria, da capire cosa succede quando ci \
@@ -703,10 +695,6 @@ def step(conductor, envionment, qsource, num_step):
             for obj in conductor.inventory["SolidComponent"].collection
         }
     )
-    
-    # Save an hard copy of the thermal-hydraulic problem solution at the 
-    # previous time step.
-    prv_sysvar = conductor.dict_Step["SYSVAR"][:, 0].copy()
 
     SYSMAT = gredub(conductor, SYSMAT)
     # Compute the solution at current time stepand overwrite key SYSVAR of \
