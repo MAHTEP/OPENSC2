@@ -719,7 +719,7 @@ def step(conductor, envionment, qsource, num_step):
 
     # Those are arrays
     # Solution change
-    CHG = conductor.dict_Step["SYSVAR"][:, 0] - prv_sysvar
+    CHG = conductor.dict_Step["SYSVAR"][:, 0] - conductor.dict_Step["SYSVAR_old"]
     # Eigenvalues (sort of??)
     EIG = (
         abs(CHG / conductor.time_step)
