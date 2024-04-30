@@ -31,6 +31,8 @@ from conductor_flags import (
     VARIABLE_CONTACT_PERIMETER,
     CONSTANT_CONTACT_PERIMETER,
     SHEET_NAME,
+    ADAPTIVE_UNIFORM_MESH,
+    ADAPTIVE_REFINED_MESH,
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -6851,3 +6853,42 @@ class Conductor:
         times = np.unique(times)
         self.__check_event_time_aux_input(times,simulation,file_path)
         return np.append(self.events_time,times)
+
+    def interp_solution_on_new_mesh(self):
+        
+        """Method that interpolates the thermal-hydraulic solution on the new mesh. To be used whit adaptive mesh. Properties are updated inplace.
+        """
+        
+        # Alias
+        zcoord = self.grid_features["zcoord"]
+        zcoord_new = self.grid_features["zcoord_new"]
+
+        fo_props = ("pressure","temperature","velocity")
+        # Loop on FluidComponent.
+        for obj in self.inventory["FluidComponent"].collection:
+            
+            for prop in fo_props:
+
+                obj.coolant.dict_node_pt[prop] = np.interp(
+                    zcoord_new,
+                    zcoord,
+                    obj.coolant.dict_node_pt[prop],
+                )
+        
+        # Devo interpolare anche soluzione elettrica?
+        # Loop on SolidComponent.
+        for obj in self.inventory["SolidComponent"].collection:
+            obj.dict_node_pt["temperature"] = np.interp(
+                zcoord_new,
+                zcoord,
+                obj.dict_node_pt["temperature"],
+            )
+
+        # Interpolate the whole thermal-hydraulic solution on the new mesh 
+        # before the next thermal-hydraulic time step and store it in key 
+        # SYSVAR_old of attribute dict_Step.
+        self.dict_Step["SYSVAR_old"] = np.interp(
+            zcoord_new,
+            zcoord,
+            self.dict_Step["SYSVAR"][:, 0],
+        )
