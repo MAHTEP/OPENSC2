@@ -709,13 +709,6 @@ def step(conductor, envionment, qsource, num_step):
     CHG = np.zeros(conductor.dict_N_equation["Total"])
     EIG = np.zeros(conductor.dict_N_equation["Total"])
 
-    # Compute the variation of the solution wrt the solution at the previous 
-    # time step.
-    sol_var = (
-        (conductor.dict_Step["SYSVAR"][:, 0] - prv_sysvar)
-        / (prv_sysvar + TINY)
-    )
-
     # Evaluate the norm of the solution.
     conductor.dict_norm["Solution"] = eval_sub_array_norm(
         conductor.dict_Step["SYSVAR"][:, 0],conductor
