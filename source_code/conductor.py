@@ -6855,7 +6855,7 @@ class Conductor:
         return np.append(self.events_time,times)
 
     def interp_solution_on_new_mesh(self):
-        
+
         """Method that interpolates the thermal-hydraulic solution on the new mesh. To be used whit adaptive mesh. Properties are updated inplace.
         """
         
@@ -6892,3 +6892,41 @@ class Conductor:
             zcoord,
             self.dict_Step["SYSVAR"][:, 0],
         )
+
+    def update_syslod_on_new_mesh(self)->np.ndarray:
+        """Method that updates array SYSLOD on the new mesh. To be used whit adaptive mesh. To be called after, and called after method interp_solution_on_new_mesh.
+
+        Raises:
+            NotImplementedError: if Adams Moulton is selected as method to solve the ordinary differential equation in time.
+
+        Returns:
+            dict: updated ndarray SYSLOD suitably interpolated on the new mesh.
+        """
+
+        # Alias
+        dict_Step = self.dict_Step["SYSLOD"]
+
+        if self.inputs["METHOD"] == "BE" or self.inputs["METHOD"] == "CN":
+            # Backward Euler or Crank-Nicolson
+            if self.cond_num_step > 1:
+
+                # Hard copy of array SYSLOD on dummy variable.
+                syslod = dict_Step["SYSLOD"]
+                # Update dimension of array SYSLOD consistently with the new 
+                # mesh size.
+                dict_Step["SYSLOD"] = np.zeros(
+                    (self.dict_N_equation["Total"], 2)
+                )
+                # Interpolate the load vector at the previous time step on the 
+                # new mesh and store the outcome in the second comlumn to 
+                # correctly apply the theta method.
+                dict_Step["SYSLOD"][:, 1] = np.interp(
+                    self.grid_features["zcoord_new"],
+                    self.grid_features["zcoord"],
+                    syslod[:,0],
+                )
+                
+            elif self.inputs["METHOD"] == "AM4":
+                raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
+        
+        return dict_Step["SYSLOD"]
