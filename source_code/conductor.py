@@ -6930,3 +6930,73 @@ class Conductor:
                 raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
         
         return dict_Step["SYSLOD"]
+
+    def update_cond_mesh_related_features(self)->tuple:
+
+        """Method that updates keys in dictionary attributes grid_input, grid_features, dict_N_equation, and dict_Step that are related to the mesh. To be used whit adaptive mesh, and called after method update_syslod_on_new_mesh.
+
+        Raises:
+            NotImplementedError: if Adams Moulton is selected as method to solve the ordinary differential equation in time.
+
+        Returns:
+            tuple: collection of dictionaries with the updated keys as below.
+                * grid_input:
+                    * NELEMS
+                * grid_features:
+                    * zcoord
+                    * N_nod
+                    * hard_node_flag
+                    * N_nod_lst
+                    * N_removed_node
+                    * delta_z
+                    * delta_z_tilde
+                    * zcoord_gauss
+                * dict_N_equation:
+                    * Total
+                * dict_Step
+                    * SYSVAR
+        """
+
+        # Alias
+        grid_features = self.grid_features
+        grid_input = self.grid_input
+        dict_N_equation = self.dict_N_equation
+        dict_Step = self.dict_Step
+
+        grid_features["zcoord"] = np.array(grid_features["zcoord_new"])
+        grid_features["N_nod"] = grid_features["N_nod_new"]
+        grid_input["NELEMS"] = grid_features["N_nod"] - 1
+        grid_features["hard_node_flag"] = np.array(
+            grid_features["hard_node_flag_new"]
+        )
+        # Reset zcoord_new to empty list in order to adapt the mesh at the next 
+        # thermal hydraulic time step.
+        grid_features["zcoord_new"] = list()
+        # Reset hard_node_flag_new to empty list in order to adapt the mesh at 
+        # the next thermal hydraulic time step.
+        grid_features["hard_node_flag_new"] = list()
+        grid_features["N_nod_lst"].append(grid_features["N_nod"])
+        # Append item 0 to key N_removed_node in order to suitably count the 
+        # number of removed nodes at the next mesh adaptation.
+        grid_features["N_removed_node"].append(0)
+
+        # Update keys delta_z, delta_z_tilde and zcoord_gauss calling method 
+        # self.__update_grid_features.
+        grid_features = self.__update_grid_features(grid_features)
+
+        # Update the total number of equations.
+        dict_N_equation["Total"] = (
+                dict_N_equation["NODOFS"]
+                * grid_features["N_nod"]
+            )
+        
+        if self.inputs["METHOD"] == "BE" or self.inputs["METHOD"] == "CN":
+            # Backward Euler or Crank-Nicolson
+            # Update dimension of array SYSVAR consistently with the new mesh 
+            # size.
+            dict_Step["SYSVAR"] = np.zeros((self.dict_N_equation["Total"], 1))
+
+        elif self.inputs["METHOD"] == "AM4":
+            raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
+
+        return (grid_input, grid_features, dict_N_equation, dict_Step)
