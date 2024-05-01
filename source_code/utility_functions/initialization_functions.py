@@ -699,6 +699,7 @@ def helicoidal_coordinates(
         if np.isclose(comp.inputs["X_barycenter"], 0.0) and np.isclose(comp.inputs["Y_barycenter"], 0.0):
             # Straight strand component: call function straight_coordinates.
             straight_coordinates(sim, cond, comp, comp.inputs["X_barycenter"], comp.inputs["Y_barycenter"])
+            comp.tau = np.zeros(cond.grid_features["N_nod"])
             return
         # Evaluate the angular discretization according to the value of flag
         # ITYMSH.
@@ -707,9 +708,9 @@ def helicoidal_coordinates(
             or cond.grid_input["ITYMSH"] == 2
             or abs(cond.grid_input["XEREFI"] - cond.grid_input["XBREFI"]) <= 1e-3
         ):
-            tau = uniform_angular_discretization(cond, comp)
+            comp.tau = uniform_angular_discretization(cond, comp)
         elif cond.grid_input["ITYMSH"] == 1 or cond.grid_input["ITYMSH"] == 3:
-            tau = fixed_refined_angular_discretization(
+            comp.tau = fixed_refined_angular_discretization(
                 cond, comp, tau=np.zeros(cond.grid_features["N_nod"])
             )
         # Evalute coordinates exploiting the helix parametrization.
@@ -717,7 +718,7 @@ def helicoidal_coordinates(
             comp.coordinate["x"],
             comp.coordinate["y"],
             comp.coordinate["z"],
-        ) = comp.cyl_helix.helix_parametrization(tau)
+        ) = comp.cyl_helix.helix_parametrization(comp.tau)
     else:
         if cond.grid_input["ITYMSH"] == -1:
             # User defined mesh
@@ -770,6 +771,7 @@ def build_coordinates_of_barycenter(
         # Evaluate straight spatial coordinates. The coordinates are assinged
         # directly to the component in the function.
         straight_coordinates(sim, cond, comp, xb, yb)
+        comp.tau = np.zeros(cond.grid_features["N_nod"])
     else:
         if isinstance(comp, StrandComponent):
             if cond.inventory["StrandComponent"].number > 1:
@@ -783,6 +785,7 @@ def build_coordinates_of_barycenter(
                     "User defined only one strand component, it is considered straight since there is no need to evaluate the inductances."
                 )
                 straight_coordinates(sim, cond, comp, xb, yb)
+                comp.tau = np.zeros(cond.grid_features["N_nod"])
         else:
             raise ValueError(
                 r"$Cos(\theta)$"
