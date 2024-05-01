@@ -7051,3 +7051,45 @@ class Conductor:
                 raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
         
         return dict_Step
+
+    def __update_grid_features_adapt_mesh(self)->dict:
+        """Private method that updates attribute dictionary grid_features initializing keys relevant for the adaptive mesh.
+
+        Returns:
+            dict: dictionary grid_features updated with the following keys:
+                * sigma -> Standard deviation for the mesh density evaluation according to the Gaussian distribution
+                * exp_lim -> limit value for the exponent of the Gaussian distribution
+                * hard_node_flag -> ndarray of boolean used to mark initial nodes of the mesh as hard (True)
+                * rho_mesh -> initialized ndarray of the mesh density according to the Gaussian distribution.
+                * N_nod_new -> counter of the node of the adapted mesh
+                * zcoord_new -> list that will store the new nodes of the adapted mesh
+                * hard_node_flag_new -> list of boolean use to keep track of the node marked as hard (True) and of the added soft node (False).
+                * N_added_node -> conter of the added node in the mesh at each thermal hydraulic time step, used for debug
+                * N_removed_node -> conter of the removed node in the mesh at each thermal hydraulic time step, used for debug
+                * N_nod_lst -> list that stores the total number of nodes at each thermal hydraulic time step.
+        """
+
+        # Alias
+        grid_input = self.grid_input
+        grid_feat = self.grid_features
+
+        grid_feat["sigma"] = 2 * grid_feat["dz_max"]
+        grid_feat["exp_lim"] = -np.log(
+            grid_input["SIZMIN"] / grid_input["SIZMAX"]
+        )
+        grid_feat["hard_node_flag"] = np.array([True] * grid_feat["N_nod"])
+        grid_feat["rho_mesh"] = 1. / grid_input["SIZMAX"] * np.ones(
+            grid_input["NELEMS"]
+        )
+        grid_feat["N_nod_new"] = 0
+
+        keys = {
+            "zcoord_new",
+            "hard_node_flag_new",
+            "N_added_node",
+            "N_removed_node",
+            "N_nod_lst"
+        }
+        grid_feat.update({key: list() for key in keys})
+    
+        return grid_feat
