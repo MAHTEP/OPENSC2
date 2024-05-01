@@ -23,6 +23,103 @@ HARD_NODE = True # an hard node is a node that belong to the initial mesh
 # False for soft nodes.
 SOFT_NODE = False
 
+def adaptive_mesh(conductor:Conductor)->Conductor:
+    """Function that manages the mesh adaptivity according to an algorithm based on quench front detection. When the temperature of an instance of class StackComponent or StrandMixedComponent crosses the current sharing temperature, a quench front is found. The regions in the nearby a quench front are typically characterized by strong gradients and needs mesh refinement. Thus, in those regions the mesh is locally refined adding (soft) nodes. Since the quench front propagates, the added soft nodes may also be removed when they are no longer needed. This process is called mesh coarsening. For more info on the algorithm contact laura.savoldi@polito.it.
+
+    Args:
+        conductor (Conductor): object with all information to carry out mesh refinement.
+
+    Returns:
+        Conductor: instance of class conductor with updated dictionaryes as below.
+            * grid_input:
+                * NELEMS
+            * grid_features:
+                * zcoord
+                * N_nod
+                * hard_node_flag
+                * N_nod_lst
+                * N_removed_node
+            * dict_N_equation:
+                * Total
+            * dict_Step
+                * SYSVAR
+        Each conductor component updates the array of the solution (pressure, temperature, velocity for FluidComponent and temperature for SolidComponent) in dictionary dict_node_pt as well as attribute tau on the new mesh exploiting linear interpolation. 
+    """
+
+    # Initialize array with the "ideal" shape of the mesh density.
+    conductor.grid_features["rho_mesh"] = 1. / conductor.grid_input["SIZMAX"] * np.ones(conductor.grid_input["NELEMS"])
+
+    # Call function detect_quench_front to indentify, for each StackComponent 
+    # and StrandMixedComponent, the index of the mesh that correspond to a 
+    # quench front.
+    front_index = detect_quench_front(conductor)
+
+    # Check if dictionary front index is not empty:
+    if front_index:
+        # Front index is not empty: perform mesh adaptivity.
+
+        # Call function eval_gaussian_mesh_density to evaluate the mesh density 
+        # according to a gaussian distribution centered in each quench front 
+        # identified with function detect_quench_front.
+        conductor.grid_features["rho_mesh"] = eval_gaussian_mesh_density(
+            conductor, front_index
+        )
+
+        # Identify regions that need mesh coarsening/refinement and build a new 
+        # mesh accordingly.
+        conductor.grid_features = update_mesh(conductor)
+
+        # Interpolate conductor solution on the new mesh.
+        conductor.interp_solution_on_new_mesh()
+        # Update the load therm vector SYSLOD on the new mesh to correctly 
+        # solve the next thermal-hydraulic time step.
+        conductor.dict_Step["SYSLOD"] = conductor.update_syslod_on_new_mesh()
+
+        # Loop on conductor component to update the angular discretization,
+        # used to update the coordinates of the barycenter of each conductor 
+        # component.
+        for comp in conductor.inventory["all_component"].collection:
+            # Interpolate the angular discretization on the new mesh.
+            comp.tau = np.interp(
+                conductor.grid_features["zcoord_new"],
+                conductor.grid_features["zcoord"],
+                comp.tau,
+            )
+
+        # Update conductor features attributes that are related to the mesh.
+        (
+            conductor.grid_input,
+            conductor.grid_features,
+            conductor.dict_N_equation,
+            conductor.dict_Step,
+        ) = conductor.update_cond_mesh_related_features()
+
+        # Loop on conductor component to update the coordinates of the 
+        # barycenter used to build the matrices of inductances and conductances 
+        # for the electric module.
+        for comp in conductor.inventory["all_component"].collection:
+            (
+                comp.coordinate["x"],
+                comp.coordinate["y"],
+                comp.coordinate["z"],
+            ) = comp.update_coordinates_of_barycenter(
+                conductor.grid_features["N_nod"],
+                conductor.grid_features["zcoord"],
+                conductor.inventory["StrandComponent"].number,
+            )
+
+        return conductor
+    else:
+        if (
+            conductor.inventory["StackComponent"] == 0
+            and conductor.inventory["StrandMixedComponent"] == 0
+        ):
+            warnings.warn("There are no instances of class StackComponent and of class StrandMixedComponent, therefore the adaptive mesh cannot be exploited. The simulation is carried out with the initial mesh.")
+        else:
+            warnings.warn("The adaptive mesh is not activated at this thermal hydraulic time step because any of the instances of class StackComponent and StrandMixedComponent do not manifest quench front.")
+
+        return conductor
+
 def detect_quench_front(conductor:Conductor)->dict:
     """Function that detects the quench fronts comparing for each StackComponent and StrandMixedComponent the current sharing temperature and its own temperature. Where these temperature crosses each other quench fronts are identified and a local mesh adaptation (refinement/coarsening) may be necessary.
     The index of the quench fronts are stored in a dictionary (front_idx).
