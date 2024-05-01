@@ -1,9 +1,11 @@
 from pickle import DICT
-from solid_component import SolidComponent
 import pandas as pd
 import numpy as np
 from typing import Union
 
+from solid_component import SolidComponent
+from fluid_component import FluidComponent
+from strand_component import StrandComponent
 
 # Stainless steel properties
 from properties_of_materials.stainless_steel import (
@@ -527,3 +529,63 @@ class JacketComponent(SolidComponent):
             store_sd_node,
             store_sd_gauss,
         )
+
+    def update_coordinates_of_barycenter(
+        self,
+        n_nod:int,
+        zcoord: np.ndarray,
+        N_strandcomp:int,
+    )->tuple:
+
+        """Method that updates the coordindate of the barycenter according to the new mesh. To be used with mesh adaptivity, and called after call to method onductor.update_cond_mesh_related_features.
+
+        Args:
+            n_nod (int): updated number of nodes of the spatial discretization.
+            zcoord (np.ndarray): updated mesh.
+            N_strandcomp (int): number of used defined StrandComponent objects (StackComponent + StrandMixedComponent + StrandStabilizerComponent).
+
+        Raises:
+            ValueError: if costetha is not equal to 1 for FluidComponent and JacketComponent.
+        
+        Note:
+            If user defines only one component of type StrandMixedComponent or StrandStabilizerComponent or StackComponent, the straight spatial discretization is used, i.e function straight_coordinates is called instead of helicoidal_coordinates.
+
+        Returns:
+            tuple: collection of ndarrays with the updated coordinate of the barycenter of the component.
+        """
+
+        # This is a workaround not a clean solution.
+        if isinstance(self, FluidComponent):
+            costheta = self.coolant.inputs["COSTETA"]
+            xb = self.coolant.inputs["X_barycenter"]
+            yb = self.coolant.inputs["Y_barycenter"]
+        else:
+            costheta = self.inputs["COSTETA"]
+            xb = self.inputs["X_barycenter"]
+            yb = self.inputs["Y_barycenter"]
+
+        if np.isclose(costheta,1.):
+            # Update straight spatial coordinates.
+            xx = xb * np.ones(n_nod)
+            yy = yb * np.ones(n_nod)
+            zz = zcoord.copy()
+
+        elif costheta >= 0. and costheta < 1.:
+            
+            if isinstance(self, StrandComponent):
+                if N_strandcomp > 1:
+                    # Update helicoidal spatial coordinates.
+                    xx,yy,zz = self.cyl_helix.helix_parametrization(self.tau)
+                elif N_strandcomp == 1:
+                    # Use straight spatial discretization in this case.
+                    # Update straight spatial coordinates.
+                    xx = xb * np.ones(n_nod)
+                    yy = yb * np.ones(n_nod)
+                    zz = zcoord.copy()
+            else:
+                raise ValueError(
+                    r"$Cos(\theta)$"
+                    + f"for {self.__class__.__name__} must be 1.0; current value {costheta = }\n"
+                )
+
+        return (xx,yy,zz)

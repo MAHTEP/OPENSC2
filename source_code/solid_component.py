@@ -1024,3 +1024,23 @@ class SolidComponent:
             NotImplementedError: the method is not implemented in the base class
         """
         raise NotImplementedError("Method __initialize_store_sd is not implemented in the base class.")
+
+    def update_coordinates_of_barycenter(
+        self,
+        n_nod:int,
+        zcoord: np.ndarray,
+        N_strandcomp:int,
+    )->tuple:
+
+        """Method that updates the coordindate of the barycenter according to the new mesh. To be used with mesh adaptivity, and called after call to method onductor.update_cond_mesh_related_features.
+
+        Args:
+            n_nod (int): updated number of nodes of the spatial discretization.
+            zcoord (np.ndarray): updated mesh.
+            N_strandcomp (int): number of used defined StrandComponent objects (StackComponent + StrandMixedComponent + StrandStabilizerComponent).
+
+        Raises:
+            NotImplementedError: the method is not implemented in the base class.
+        """
+
+        raise NotImplementedError("Method update_coordinates_of_barycenter is not implemented in the base class.")
