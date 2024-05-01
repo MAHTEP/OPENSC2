@@ -312,6 +312,15 @@ class Conductor:
 
         self.__update_grid_features()
 
+        # Check if the mesh is adaptive.
+        if (
+            self.grid_input["ITYMSH"] == ADAPTIVE_UNIFORM_MESH
+            or self.grid_input["ITYMSH"] == ADAPTIVE_REFINED_MESH
+        ):
+            # The mesh is adaptive: add useful keys for mesh adaptivity in 
+            # attribute dictionary grid_features.
+            self.grid_features = self.__update_grid_features_adapt_mesh()
+
         # Call private method __initialize_attributes to initialize all the other useful and necessary attributes of class Conductor.
         # conductorlogger.debug(
         #     f"Before call method {self.__initialize_attributes.__name__}"
