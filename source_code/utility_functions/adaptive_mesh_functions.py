@@ -318,10 +318,10 @@ def update_mesh(conductor:Conductor)->dict:
 
     # Set the first item of zcoord_new to 0 (the first axial coordinates is 
     # always z = 0 m).
-    grid_features["zcoord_new"][0] = 0.0
+    grid_features["zcoord_new"].append(0.0)
     # Set the first item of hard_node_flag_new to 1 (the first axial coordinate 
     # is aways an hard node).
-    grid_features["hard_node_flag_new"][0] = HARD_NODE
+    grid_features["hard_node_flag_new"].append(HARD_NODE)
     # Set to 1 the curren value of the number of nodes of the new mesh. The 
     # total number of nodes of the new spatial discretization is computed 
     # iteratively while updating the mesh.
