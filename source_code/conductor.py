@@ -5345,7 +5345,7 @@ class Conductor:
                             htc_full_transient = (htc_Kapitza * htc_transient) / (
                                 htc_Kapitza + htc_transient
                             )
-                        # Assign to the HTC key of dictionary dict_dummy the dictionary whit the information about heat trasfer coefficient betweent channel fluid_comp_r and solid s_comp. Interface identification is given by the key name itself: f"{fluid_comp_r.identifier}_{s_comp.identifier}". This inner dictionary consists of a single key-value pair. (cdp, 07/2020)
+                        # Assign to the HTC key of dictionary dict_dummy the dictionary with the information about heat trasfer coefficient betweent channel fluid_comp_r and solid s_comp. Interface identification is given by the key name itself: f"{fluid_comp_r.identifier}_{s_comp.identifier}". This inner dictionary consists of a single key-value pair. (cdp, 07/2020)
                         dict_dummy["HTC"]["ch_sol"][
                             self.dict_topology["ch_sol"][fluid_comp_r.identifier][
                                 s_comp.identifier
@@ -6486,14 +6486,14 @@ class Conductor:
         # Alias
         interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
         
-        # Initialize attribute variable_htc_interf keys to empty list whith 
+        # Initialize attribute variable_htc_interf keys to empty list with 
         # dictionary comprehension. Start from second item (index 1) because 
         # "zcoord" is not related to heat transfer coefficients
         self.variable_htc_intef = {
             key:[] for key in self.relevant_prop_sd["node"]["Conductor"][1:]
         }
 
-        # Initialize attribute costant_htc_interf keys to empty list whith 
+        # Initialize attribute costant_htc_interf keys to empty list with 
         # dictionary comprehension. Start from second item (index 1) because 
         # "zcoord" is not related to heat transfer coefficients
         self.costant_htc_intef = {
@@ -6945,7 +6945,7 @@ class Conductor:
             ] = obj.dict_node_pt["temperature"]
 
     def update_syslod_on_new_mesh(self)->np.ndarray:
-        """Method that updates array SYSLOD on the new mesh. To be used whit adaptive mesh. To be called after, and called after method interp_solution_on_new_mesh.
+        """Method that updates array SYSLOD on the new mesh. To be used with adaptive mesh. To be called after, and called after method interp_solution_on_new_mesh.
 
         Raises:
             NotImplementedError: if Adams Moulton is selected as method to solve the ordinary differential equation in time.
@@ -6984,7 +6984,7 @@ class Conductor:
 
     def update_cond_mesh_related_features(self)->tuple:
 
-        """Method that updates keys in dictionary attributes grid_input, grid_features, dict_N_equation, and dict_Step that are related to the mesh. To be used whit adaptive mesh, and called after method update_syslod_on_new_mesh.
+        """Method that updates keys in dictionary attributes grid_input, grid_features, dict_N_equation, and dict_Step that are related to the mesh. To be used with adaptive mesh, and called after method update_syslod_on_new_mesh.
 
         Raises:
             NotImplementedError: if Adams Moulton is selected as method to solve the ordinary differential equation in time.

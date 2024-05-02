@@ -24,7 +24,7 @@ def conductor_spatial_discretization(simulation: object, conductor: object):
 
     Args:
         simulation (object): simulation object, has all the information to the function to be load in case of user defined mesh.
-        conductor (object): object whit the information to evaluate the spatial discretization and of which the spatial discretization should be evaluated.
+        conductor (object): object with the information to evaluate the spatial discretization and of which the spatial discretization should be evaluated.
     """
 
     # COMPUTE THE COORDINATES IN THE FIRST TURN
