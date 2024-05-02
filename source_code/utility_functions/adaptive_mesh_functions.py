@@ -304,7 +304,7 @@ def update_mesh(conductor:Conductor)->dict:
     )
     # Find index in mesh_quality_sum = -3: it means that there are at least a 
     # triplet of nodes that is going to be removed.
-    indx = np.nonzero(mesh_quality_sum == -3)
+    indx = np.nonzero(mesh_quality_sum == -3)[0]
     # Check if there are index corresponding to mesh_quality_sum = -3
     if indx.size > 0:
         # Array indx is not empty: it means that there is at least a 
