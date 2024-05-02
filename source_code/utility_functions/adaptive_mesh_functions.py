@@ -274,7 +274,7 @@ def update_mesh(conductor:Conductor)->dict:
     # Evaluate the inverse of the desidered number of elements in which each 
     # element of the mesh should actually be distretized. If > 1 coarsening is 
     # needed.
-    n_coa = round(actual_rho_mesh / rho_mesh)
+    n_coa = np.round(actual_rho_mesh / rho_mesh)
 
     # Set mesh_quality_flag = 1 where refinement is needed (n_ref > 1)
     mesh_quality_flag[n_ref > 1.] = REFINE_MESH
