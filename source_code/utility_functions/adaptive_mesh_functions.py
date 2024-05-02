@@ -285,7 +285,7 @@ def update_mesh(conductor:Conductor)->dict:
     grid_features["N_added_node"].append(n_marked * (nelems_refinement - 1))
 
     # Compute the total number of nodes that characterize the new mesh.
-    tot_node = nnode + grid_features["N_added_node"]
+    tot_node = nnode + grid_features["N_added_node"][-1]
 
     if tot_node >= nnode_max:
         
