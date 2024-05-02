@@ -7099,7 +7099,7 @@ class Conductor:
         grid_feat["rho_mesh"] = 1. / grid_input["SIZMAX"] * np.ones(
             grid_input["NELEMS"]
         )
-        grid_feat["N_nod_new"] = 0
+        grid_feat["N_nod_new"] = None
 
         keys = {
             "zcoord_new",
