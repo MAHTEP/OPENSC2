@@ -6999,8 +6999,6 @@ class Conductor:
                     * hard_node_flag
                     * N_nod_lst
                     * N_removed_node
-                * dict_N_equation:
-                    * Total
                 * dict_Step
                     * SYSVAR
         """
@@ -7008,7 +7006,6 @@ class Conductor:
         # Alias
         grid_features = self.grid_features
         grid_input = self.grid_input
-        dict_N_equation = self.dict_N_equation
         dict_Step = self.dict_Step
 
         grid_features["zcoord"] = np.array(grid_features["zcoord_new"])
@@ -7027,12 +7024,6 @@ class Conductor:
         # Append item 0 to key N_removed_node in order to suitably count the 
         # number of removed nodes at the next mesh adaptation.
         grid_features["N_removed_node"].append(0)
-
-        # Update the total number of equations.
-        dict_N_equation["Total"] = (
-                dict_N_equation["NODOFS"]
-                * grid_features["N_nod"]
-            )
         
         if self.inputs["METHOD"] == "BE" or self.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson
@@ -7043,7 +7034,7 @@ class Conductor:
         elif self.inputs["METHOD"] == "AM4":
             raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
 
-        return (grid_input, grid_features, dict_N_equation, dict_Step)
+        return (grid_input, grid_features, dict_Step)
 
     def update_dict_step_on_static_mesh(self)->dict:
 
