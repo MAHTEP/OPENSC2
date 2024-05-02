@@ -6976,9 +6976,6 @@ class Conductor:
                     * hard_node_flag
                     * N_nod_lst
                     * N_removed_node
-                    * delta_z
-                    * delta_z_tilde
-                    * zcoord_gauss
                 * dict_N_equation:
                     * Total
                 * dict_Step
@@ -7007,10 +7004,6 @@ class Conductor:
         # Append item 0 to key N_removed_node in order to suitably count the 
         # number of removed nodes at the next mesh adaptation.
         grid_features["N_removed_node"].append(0)
-
-        # Update keys delta_z, delta_z_tilde and zcoord_gauss calling method 
-        # self.__update_grid_features.
-        grid_features = self.__update_grid_features(grid_features)
 
         # Update the total number of equations.
         dict_N_equation["Total"] = (
