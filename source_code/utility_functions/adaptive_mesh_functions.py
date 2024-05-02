@@ -322,10 +322,10 @@ def update_mesh(conductor:Conductor)->dict:
     # Set the first item of hard_node_flag_new to 1 (the first axial coordinate 
     # is aways an hard node).
     grid_features["hard_node_flag_new"].append(HARD_NODE)
-    # Set to 1 the curren value of the number of nodes of the new mesh. The 
+    # Set to 0 the current value of the number of nodes of the new mesh. The 
     # total number of nodes of the new spatial discretization is computed 
     # iteratively while updating the mesh.
-    grid_features["N_nod_new"] = 1
+    grid_features["N_nod_new"] = 0
 
     # Loop on the elements of the current mesh (old mesh).
     for jj, mesh_flag in enumerate(mesh_quality_flag):
