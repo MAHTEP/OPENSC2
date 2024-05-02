@@ -23,11 +23,12 @@ HARD_NODE = True # an hard node is a node that belong to the initial mesh
 # False for soft nodes.
 SOFT_NODE = False
 
-def adaptive_mesh(conductor:Conductor)->Conductor:
+def adaptive_mesh(conductor:Conductor,environment:object)->Conductor:
     """Function that manages the mesh adaptivity according to an algorithm based on quench front detection. When the temperature of an instance of class StackComponent or StrandMixedComponent crosses the current sharing temperature, a quench front is found. The regions in the nearby a quench front are typically characterized by strong gradients and needs mesh refinement. Thus, in those regions the mesh is locally refined adding (soft) nodes. Since the quench front propagates, the added soft nodes may also be removed when they are no longer needed. This process is called mesh coarsening. For more info on the algorithm contact laura.savoldi@polito.it.
 
     Args:
         conductor (Conductor): object with all information to carry out mesh refinement.
+        environment (object): object with all the info that characterize the environment.
 
     Returns:
         Conductor: instance of class conductor with updated dictionaryes as below.
@@ -107,6 +108,11 @@ def adaptive_mesh(conductor:Conductor)->Conductor:
                 conductor.grid_features["zcoord"],
                 conductor.inventory["StrandComponent"].number,
             )
+        
+        # Update contact perimeters calling method update_contact_perimeters
+        conductor.dict_interf_peri = conductor.update_contact_perimeters(
+            environment
+        )
 
         return conductor
     else:
