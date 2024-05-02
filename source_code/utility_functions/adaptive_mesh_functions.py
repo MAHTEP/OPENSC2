@@ -91,7 +91,6 @@ def adaptive_mesh(conductor:Conductor,environment:object)->Conductor:
         (
             conductor.grid_input,
             conductor.grid_features,
-            conductor.dict_N_equation,
             conductor.dict_Step,
         ) = conductor.update_cond_mesh_related_features()
 
