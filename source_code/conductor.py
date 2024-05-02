@@ -6884,24 +6884,48 @@ class Conductor:
 
     def interp_solution_on_new_mesh(self):
 
-        """Method that interpolates the thermal-hydraulic solution on the new mesh. To be used whit adaptive mesh. Properties are updated inplace.
+        """Method that interpolates the thermal-hydraulic solution on the new mesh. The method also interpolates the whole thermal-hydraulic solution on the new mesh before the next thermal-hydraulic time step and stores it in key SYSVAR_old of attribute dict_Step.
+        To perform the latter evaluation, key Total of attribute dictionary dict_N_equation is also updated.
+        To be used with adaptive mesh. Properties are updated inplace.
         """
         
         # Alias
         zcoord = self.grid_features["zcoord"]
         zcoord_new = self.grid_features["zcoord_new"]
+        ndf = self.dict_N_equation["NODOFS"]
+        eq_idx = self.equation_index
 
+        # Update the total number of equations.
+        self.dict_N_equation["Total"] = (ndf * self.grid_features["N_nod_new"])
+
+        # Initialize SYSVAR_old according to the new number of the total 
+        # equations.
+        self.dict_Step["SYSVAR_old"] = np.zeros(
+            self.dict_N_equation["Total"]
+        )
+        
         fo_props = ("pressure","temperature","velocity")
         # Loop on FluidComponent.
         for obj in self.inventory["FluidComponent"].collection:
             
+            obj_id = obj.identifier
             for prop in fo_props:
+                
+                # Get the equation index corresponding to field prop calling 
+                # function getattr.
+                idx = getattr(eq_idx[obj_id],prop)
 
+                # Interpolate property on the new mesh
                 obj.coolant.dict_node_pt[prop] = np.interp(
                     zcoord_new,
                     zcoord,
                     obj.coolant.dict_node_pt[prop],
                 )
+
+                # Fill SYSVAR_old with the interpolated values.
+                self.dict_Step["SYSVAR_old"][
+                    idx::ndf
+                ] = obj.coolant.dict_node_pt[prop]
         
         # Devo interpolare anche soluzione elettrica?
         # Loop on SolidComponent.
@@ -6912,14 +6936,13 @@ class Conductor:
                 obj.dict_node_pt["temperature"],
             )
 
-        # Interpolate the whole thermal-hydraulic solution on the new mesh 
-        # before the next thermal-hydraulic time step and store it in key 
-        # SYSVAR_old of attribute dict_Step.
-        self.dict_Step["SYSVAR_old"] = np.interp(
-            zcoord_new,
-            zcoord,
-            self.dict_Step["SYSVAR"][:, 0],
-        )
+            # Equation index of SolidComponent objects.
+            idx = eq_idx[obj.identifier]
+
+            # Fill SYSVAR_old with the interpolated values.
+            self.dict_Step["SYSVAR_old"][
+                idx::ndf
+            ] = obj.dict_node_pt["temperature"]
 
     def update_syslod_on_new_mesh(self)->np.ndarray:
         """Method that updates array SYSLOD on the new mesh. To be used whit adaptive mesh. To be called after, and called after method interp_solution_on_new_mesh.
