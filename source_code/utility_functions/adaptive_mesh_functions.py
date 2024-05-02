@@ -363,6 +363,10 @@ def update_mesh(conductor:Conductor)->dict:
         else:
             raise ValueError(f"Not valid value for mesh quality flag:\n{mesh_flag = }\n")
 
+    # This last update is necessary to compensate the fact that this index 
+    # should start from 0 to be correctly used. Adding 1 to the current value 
+    # guarantees consistency between this counter and the lenght of zcoord_new.
+    grid_features["N_nod_new"] += 1
     return grid_features
 
 def set_node(grid_feat:dict,grid_input:dict,jj:int)->dict:
