@@ -3023,12 +3023,14 @@ class Conductor:
             self.dict_Step = dict(
                 SYSLOD=np.zeros((self.dict_N_equation["Total"], 2)),
                 SYSVAR=np.zeros((self.dict_N_equation["Total"], 1)),
+                SYSVAR_old=np.zeros((self.dict_N_equation["Total"], 1)),
             )
         elif self.inputs["METHOD"] == "AM4":
             # Adams-Moulton order 4 (cdp, 10/2020)
             self.dict_Step = dict(
                 SYSLOD=np.zeros((self.dict_N_equation["Total"], 4)),
                 SYSVAR=np.zeros((self.dict_N_equation["Total"], 3)),
+                SYSVAR_old=np.zeros((self.dict_N_equation["Total"], 3)),
                 # AM4_AA: four matrices of size Full * Total
                 AM4_AA=np.zeros(
                     (4,self.dict_band["Full"],self.dict_N_equation["Total"])
