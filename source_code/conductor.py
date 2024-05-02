@@ -7116,3 +7116,104 @@ class Conductor:
         grid_feat.update({key: list() for key in keys})
     
         return grid_feat
+
+    def update_contact_perimeters(self, environment:object)-> dict:
+        """Method that updates contact perimeters between FluidComponent objects, FluidComponent and SolidComponent objects and between SolidComponent objects on the new mesh. To be used with adaptive mesh, and called after method update_cond_mesh_related_features. For each interface, contact perimeters are evaluated both in nodal points and in Gauss points.
+
+        Args:
+            environment (object): object with all the info that characterize the environment.
+
+        Raises:
+            NotImplementedError: if an interface between a Jacket component of kind different from outer_insulation and whole_enclosure and Environment is defined by the user.
+
+        Returns:
+            dict: contact perimeters updated on the new mesh in dictionary dict_interf_peri.
+        """
+
+        # Alias
+        interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+        dict_interf_peri = self.dict_interf_peri
+
+        # Nested loop channel-channel.
+        for rr, fluid_comp_r in enumerate(self.inventory["FluidComponent"].collection):
+            for fluid_comp_c in self.inventory["FluidComponent"].collection[
+                rr + 1 :
+            ]:
+                if (
+                    abs(interf_flag.at[
+                        fluid_comp_r.identifier, fluid_comp_c.identifier
+                    ]
+                    ) == 1
+                ):
+                    # There is at least thermal contact between fluid_comp_r 
+                    # and fluid_comp_c
+                    # Assign the contact perimeter value
+                    (
+                        dict_interf_peri["ch_ch"]["Close"],
+                        dict_interf_peri["ch_ch"]["Open"]
+                    ) = self.__assign_contact_perimeter_fluid_comps(
+                        fluid_comp_r.identifier,
+                        fluid_comp_c.identifier,
+                    )
+            # end for cc
+            
+        # Nested loop channel-solid
+        for fluid_comp_r in self.inventory["FluidComponent"].collection:
+            for s_comp_c in self.inventory["SolidComponent"].collection:
+                if (
+                    abs(interf_flag.at[
+                            fluid_comp_r.identifier, s_comp_c.identifier
+                        ]
+                    ) == 1
+                ):
+                    # There is contact between fluid_comp_r and s_comp_c
+                    dict_interf_peri["ch_sol"] = self.__assign_contact_perimeter_not_fluid_only(
+                        fluid_comp_r.identifier,
+                        s_comp_c.identifier,
+                        "ch_sol",
+                    )
+            # end for cc
+        # end for rr
+        
+        # Nested loop solid-solid.
+        for rr, s_comp_r in enumerate(self.inventory["SolidComponent"].collection):
+            for s_comp_c in self.inventory["SolidComponent"].collection[
+                rr + 1 :
+            ]:
+                if (
+                    abs(interf_flag.at[
+                            s_comp_r.identifier, s_comp_c.identifier
+                        ]
+                    ) == 1
+                ):
+                    # There is contact between s_comp_r and s_comp_c 
+                    dict_interf_peri["sol_sol"] = self.__assign_contact_perimeter_not_fluid_only(
+                        s_comp_r.identifier,
+                        s_comp_c.identifier,
+                        "sol_sol",
+                    )
+            # end for cc.
+
+            if (
+                abs(interf_flag.at[environment.KIND,s_comp_r.identifier]) == 1
+            ):
+                if (
+                    s_comp_r.inputs["Jacket_kind"] == "outer_insulation"
+                    or s_comp_r.inputs["Jacket_kind"] == "whole_enclosure"
+                ):
+                    # There is an interface between environment and s_comp_r.
+                    dict_interf_peri["env_sol"] = self.__assign_contact_perimeter_not_fluid_only(
+                        environment.KIND,
+                        s_comp_r.identifier,
+                        "env_sol",
+                    )
+                else:
+                    # Raise error
+                    raise NotImplementedError(
+                        f"JacketComponent of kind {s_comp_r.inputs['Jacket_kind']} can not have and interface with the environment.\n"
+                    )
+                
+            # end for cc
+        # end for rr
+
+        return dict_interf_peri
