@@ -12,7 +12,13 @@ from pstats import SortKey
 from line_profiler import LineProfiler
 
 from conductor import Conductor
-from conductor_flags import (IOP_NOT_DEFINED, SHEET_NAME)
+from conductor_flags import (
+    IOP_NOT_DEFINED,
+    SHEET_NAME,
+    ADAPTIVE_UNIFORM_MESH,
+    ADAPTIVE_REFINED_MESH,
+)
+
 from environment import Environment
 from utility_functions.auxiliary_functions import (
     check_repeated_headings,
@@ -40,6 +46,8 @@ from utility_functions.plots import (
     create_real_time_plots,
     update_real_time_plots,
 )
+from utility_functions.adaptive_mesh_functions import adaptive_mesh
+
 from simulation_global_info import MLT_DEFAULT_VALUE
 from utility_functions.utils_global_info import VALID_FLAG_VALUES
 
@@ -639,6 +647,17 @@ class Simulation:
                         conductor,
                         self.transient_input["STPMIN"],
                     )
+
+                # Check if an adaptive mesh is used.
+                if (
+                    conductor.grid_input["ITYMSH"] == ADAPTIVE_UNIFORM_MESH 
+                    or conductor.grid_input["ITYMSH"] == ADAPTIVE_REFINED_MESH
+                ):
+                    # The mesh is adaptive, update mesh and all relevant mesh 
+                    # parameters calling function adaptive_mesh. The function 
+                    # update also parameters and quantities that depend on the 
+                    # mesh and/or on the number of nodes/elements of the mesh.
+                    conductor = adaptive_mesh(conductor, self.environment)
 
             # End for conductor (cdp, 07/2020)
         # end while (cdp, 07/2020)
