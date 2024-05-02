@@ -349,6 +349,7 @@ def update_mesh(conductor:Conductor)->dict:
                 conductor.grid_input,
                 jj,
             )
+            print("Refined mesh.\n")
 
         elif mesh_flag == COARSE_MESH:
             # Elment j-th of the current mesh needs coarsening: call function 
