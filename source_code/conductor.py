@@ -4630,44 +4630,56 @@ class Conductor:
         # objects.
         self.get_total_joule_power_electric_conductance()
 
-    def __update_grid_features(self):
+    def __update_grid_features(self,grid_features:dict)->dict:
+        
         """Private method that updates dictionary grid_features evaluating arrays delta_z, delta_z_tilde and zcoord_gauss as keys of dictionary self.grid_features. These arrays are used:
-        * in method self.__assign_contact_perimeter_not_fluid_comps and self.__assign_contact_perimeter_not_fluid_only (zcoord_gauss);
-        * in function step (delta_z);
-        * in the joule power evaluation associated to electric resistance between StrandComponent objects (delta_z);
-        * in the joule power evaluation associated to electric conductance between StrandComponent objects (delta_z_tilde);
-        * in function step of module transient_solution_functions (zcoord_gauss);
+            * in method self.__assign_contact_perimeter_not_fluid_comps and self.__assign_contact_perimeter_not_fluid_only (zcoord_gauss);
+            * in function step (delta_z);
+            * in the joule power evaluation associated to electric resistance between StrandComponent objects (delta_z);
+            * in the joule power evaluation associated to electric conductance between StrandComponent objects (delta_z_tilde);
+            * in function step of module transient_solution_functions (zcoord_gauss);
+
+        Args:
+            grid_features (dict): dictionary with the features of the grid to be updated (refers to attribute dictionary self.grid_features)
+
+        Returns:
+            dict: grid_features with updated keys
+                * delta_z
+                * delta_z_tilde
+                * zcoord_gauss
         """
 
-        # Define new key delta_z in dictionay self.grid_features (m).
-        self.grid_features["delta_z"] = (
-            self.grid_features["zcoord"][1:] - self.grid_features["zcoord"][:-1]
+        # Define new key delta_z in dictionay grid_features (m).
+        grid_features["delta_z"] = (
+            grid_features["zcoord"][1:] - grid_features["zcoord"][:-1]
         )
 
-        self.grid_features["dz_max"] = self.grid_features["delta_z"].max()
-        self.grid_features["dz_min"] = self.grid_features["delta_z"].min()
+        grid_features["dz_max"] = grid_features["delta_z"].max()
+        grid_features["dz_min"] = grid_features["delta_z"].min()
         # Get the number of digits for rounding coordinates in order to find
         # indexes.
-        self.__count_sigfigs(str(self.grid_features["dz_min"]))
+        self.__count_sigfigs(str(grid_features["dz_min"]))
 
         # Compute the coordintate of the Gauss point.
-        self.grid_features["zcoord_gauss"] = (
-            self.grid_features["zcoord"][:-1] + self.grid_features["zcoord"][1:]
+        grid_features["zcoord_gauss"] = (
+            grid_features["zcoord"][:-1] + grid_features["zcoord"][1:]
         ) / 2
 
-        # Define new key delta_z_tilde in dictionay self.grid_features (m).
-        self.grid_features["delta_z_tilde"] = np.zeros(self.grid_features["N_nod"])
-        self.grid_features["delta_z_tilde"][0] = (
-            self.grid_features["zcoord"][1] - self.grid_features["zcoord"][0]
+        # Define new key delta_z_tilde in dictionay grid_features (m).
+        grid_features["delta_z_tilde"] = np.zeros(grid_features["N_nod"])
+        grid_features["delta_z_tilde"][0] = (
+            grid_features["zcoord"][1] - grid_features["zcoord"][0]
         ) / 2
 
-        self.grid_features["delta_z_tilde"][1:-1] = (
-            self.grid_features["zcoord"][2:] - self.grid_features["zcoord"][:-2]
+        grid_features["delta_z_tilde"][1:-1] = (
+            grid_features["zcoord"][2:] - grid_features["zcoord"][:-2]
         ) / 2
 
-        self.grid_features["delta_z_tilde"][-1] = (
-            self.grid_features["zcoord"][-1] - self.grid_features["zcoord"][-2]
+        grid_features["delta_z_tilde"][-1] = (
+            grid_features["zcoord"][-1] - grid_features["zcoord"][-2]
         ) / 2
+
+        return grid_features
 
     def __count_sigfigs(self,numstr:str):
         """Private method that counts the number of significant digits.
