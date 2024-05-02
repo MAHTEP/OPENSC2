@@ -310,7 +310,7 @@ class Conductor:
         self.__coordinates(simulation)
         # conductorlogger.debug(f"After call method {self.__coordinates.__name__}")
 
-        self.__update_grid_features()
+        self.grid_features = self.__update_grid_features(self.grid_features)
 
         # Check if the mesh is adaptive.
         if (
@@ -4631,7 +4631,7 @@ class Conductor:
         self.get_total_joule_power_electric_conductance()
 
     def __update_grid_features(self,grid_features:dict)->dict:
-        
+
         """Private method that updates dictionary grid_features evaluating arrays delta_z, delta_z_tilde and zcoord_gauss as keys of dictionary self.grid_features. These arrays are used:
             * in method self.__assign_contact_perimeter_not_fluid_comps and self.__assign_contact_perimeter_not_fluid_only (zcoord_gauss);
             * in function step (delta_z);
