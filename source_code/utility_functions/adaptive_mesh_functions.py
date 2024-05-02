@@ -209,7 +209,7 @@ def eval_gaussian_mesh_density(conductor:Conductor, front_idx:dict)->np.ndarray:
         for idx in value:
 
             # Identify the coordinate of the quench front.
-            z_front = (zcoord(idx) + zcoord(idx+1)) / 2
+            z_front = (zcoord[idx] + zcoord[idx+1]) / 2
 
             # Compute exponent of the gaussian distribution centered in 
             # z_front; used to evaluate the mesh density
