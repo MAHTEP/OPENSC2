@@ -6884,7 +6884,7 @@ class Conductor:
 
     def interp_solution_on_new_mesh(self):
 
-        """Method that interpolates the thermal-hydraulic solution on the new mesh. The method also interpolates the whole thermal-hydraulic solution on the new mesh before the next thermal-hydraulic time step and stores it in key SYSVAR_old of attribute dict_Step.
+        """Method that interpolates the thermal-hydraulic solution on the new mesh and on the Gauss points that are associated to the new mesh. The method also interpolates the whole thermal-hydraulic solution on the new mesh before the next thermal-hydraulic time step and stores it in key SYSVAR_old of attribute dict_Step.
         To perform the latter evaluation, key Total of attribute dictionary dict_N_equation is also updated.
         To be used with adaptive mesh. Properties are updated inplace.
         """
@@ -6892,6 +6892,8 @@ class Conductor:
         # Alias
         zcoord = self.grid_features["zcoord"]
         zcoord_new = self.grid_features["zcoord_new"]
+        zcoord_gauss = self.grid_features["zcoord_gauss"]
+        zcoord_gauss_new = self.grid_features["zcoord_gauss_new"]
         ndf = self.dict_N_equation["NODOFS"]
         eq_idx = self.equation_index
 
@@ -6915,11 +6917,17 @@ class Conductor:
                 # function getattr.
                 idx = getattr(eq_idx[obj_id],prop)
 
-                # Interpolate property on the new mesh
+                # Interpolate property on the new mesh.
                 obj.coolant.dict_node_pt[prop] = np.interp(
                     zcoord_new,
                     zcoord,
                     obj.coolant.dict_node_pt[prop],
+                )
+                # Interpolate property on the Gauss points of the new mesh.
+                obj.coolant.dict_Gauss_pt[prop] = np.interp(
+                    zcoord_gauss_new,
+                    zcoord_gauss,
+                    obj.coolant.dict_Gauss_pt[prop],
                 )
 
                 # Fill SYSVAR_old with the interpolated values.
@@ -6934,6 +6942,12 @@ class Conductor:
                 zcoord_new,
                 zcoord,
                 obj.dict_node_pt["temperature"],
+            )
+            # Interpolate property on the Gauss points of the new mesh.
+            obj.dict_Gauss_pt["temperature"] = np.interp(
+                zcoord_gauss_new,
+                zcoord_gauss,
+                obj.dict_Gauss_pt["temperature"],
             )
 
             # Equation index of SolidComponent objects.
