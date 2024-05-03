@@ -4637,7 +4637,9 @@ class Conductor:
             * in function step (delta_z);
             * in the joule power evaluation associated to electric resistance between StrandComponent objects (delta_z);
             * in the joule power evaluation associated to electric conductance between StrandComponent objects (delta_z_tilde);
-            * in function step of module transient_solution_functions (zcoord_gauss);
+            * in function step of module transient_solution_functions (zcoord_gauss).
+
+        N.B. Array zcoord_gauss is evaluated by this functin only at the instatiation/initialization phase. For the remaining of the simulation, this method is called only if the mesh is adaptive. If it is the case, the updated values of zcoord_gauss are computed in function update_mesh and temporarily stored in array zcoord_gauss_new, which is used to perform interpolations. When all interpolations are done, array zcoord_gauss is updated with values in zcoord_gauss_new calling method self.update_cond_mesh_related_features in function adapt_mesh.
 
         Args:
             grid_features (dict): dictionary with the features of the grid to be updated (refers to attribute dictionary self.grid_features)
@@ -4660,10 +4662,24 @@ class Conductor:
         # indexes.
         self.__count_sigfigs(str(grid_features["dz_min"]))
 
-        # Compute the coordintate of the Gauss point.
-        grid_features["zcoord_gauss"] = (
-            grid_features["zcoord"][:-1] + grid_features["zcoord"][1:]
-        ) / 2
+        if self.cond_num_step == 0:
+
+            # When this method is called in the instantiation/initialization 
+            # phase, array zcoord_gauss is needed to carry out the first 
+            # themral hydraulic time step of the simulation regardless of the 
+            # kind of mesh. Thus, it is evaluated in this if statement.
+            # For the remaining of the simulation, this method is called only 
+            # if the mesh is adaptive. If it is the case, the updated values of 
+            # zcoord_gauss are computed in function update_mesh and temporarily # stored in array zcoord_gauss_new, which is used to perform 
+            # interpolations. When all interpolations are done, array 
+            # zcoord_gauss is updated with values in zcoord_gauss_new calling 
+            # method self.update_cond_mesh_related_features in function 
+            # adapt_mesh.
+            
+            # Compute the coordintate of the Gauss point.
+            grid_features["zcoord_gauss"] = (
+                grid_features["zcoord"][:-1] + grid_features["zcoord"][1:]
+            ) / 2
 
         # Define new key delta_z_tilde in dictionay grid_features (m).
         grid_features["delta_z_tilde"] = np.zeros(grid_features["N_nod"])
