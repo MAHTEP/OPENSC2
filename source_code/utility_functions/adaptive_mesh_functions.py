@@ -76,6 +76,10 @@ def adaptive_mesh(conductor:Conductor,environment:object)->Conductor:
         # solve the next thermal-hydraulic time step.
         conductor.dict_Step["SYSLOD"] = conductor.update_syslod_on_new_mesh()
 
+        # Interpolate current sharing temperature on the new mesh (both nodal 
+        # and Gauss points) if flag TCS_EVALUATION is set to False.
+        conductor.interp_tcs_on_new_mesh()
+
         # Loop on conductor component to update the angular discretization,
         # used to update the coordinates of the barycenter of each conductor 
         # component.
