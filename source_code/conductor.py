@@ -7307,3 +7307,52 @@ class Conductor:
         # end for rr
 
         return dict_interf_peri
+    
+    def interp_tcs_on_new_mesh(self):
+
+        """Method that interpolates the current sharing temperature on the new mesh if flag TCS_EVALUATION is set to False in both nodal and Gauss points, in order to evaluate material properties that depend on this parameter. This is done to avoid a mismatch between the size of the temperature array and the size of the current sharing temperature array. The minimum current sharing temperature for the time being is set equal to the current sharing temperature as already done in method get_tcs of class Strand.
+        If flag TCS_EVALUATION is set to True, the TCS is evaluated before the calculation of the other material properties and no mismatch is found.
+        Attribute dictionaries dict_node_pt and dict_Gauss_pt of instances of class StackComponent and StrandMixedComponent are updated inplace.
+        """
+
+        zcoord_new = self.grid_features["zcoord_new"]
+        zcoord = self.grid_features["zcoord"]
+        zcoord_gauss_new = self.grid_features["zcoord_gauss_new"]
+        zcoord_gauss = self.grid_features["zcoord_gauss"]
+
+        for obj in self.inventory["StackComponent"].collection:
+
+            if obj.operations["TCS_EVALUATION"] == False:
+                # Interpolate current sharing temperature in nodal points.
+                obj.dict_node_pt["T_cur_sharing"] = np.interp(
+                    zcoord_new,
+                    zcoord,
+                    obj.dict_node_pt["T_cur_sharing"]
+                )
+
+                obj.dict_node_pt["T_cur_sharing_min"] = obj.dict_node_pt["T_cur_sharing"].copy()
+                # Interpolate current sharing temperature in Gauss points.
+                obj.dict_Gauss_pt["T_cur_sharing"] = np.interp(
+                    zcoord_gauss_new,
+                    zcoord_gauss,
+                    obj.dict_Gauss_pt["T_cur_sharing"]
+                )
+                obj.dict_Gauss_pt["T_cur_sharing_min"] = obj.dict_Gauss_pt["T_cur_sharing"].copy()
+        
+        for obj in self.inventory["StrandMixedComponent"].collection:
+
+            if obj.operations["TCS_EVALUATION"] == False:
+                # Interpolate current sharing temperature in nodal points.
+                obj.dict_node_pt["T_cur_sharing"] = np.interp(
+                    zcoord_new,
+                    zcoord,
+                    obj.dict_node_pt["T_cur_sharing"]
+                )
+                obj.dict_node_pt["T_cur_sharing_min"] = obj.dict_node_pt["T_cur_sharing"].copy()
+                # Interpolate current sharing temperature in Gauss points.
+                obj.dict_Gauss_pt["T_cur_sharing"] = np.interp(
+                    zcoord_gauss_new,
+                    zcoord_gauss,
+                    obj.dict_Gauss_pt["T_cur_sharing"]
+                )
+                obj.dict_Gauss_pt["T_cur_sharing_min"] = obj.dict_Gauss_pt["T_cur_sharing"].copy()
