@@ -7125,11 +7125,12 @@ class Conductor:
                 * exp_lim -> limit value for the exponent of the Gaussian distribution
                 * hard_node_flag -> ndarray of boolean used to mark initial nodes of the mesh as hard (True)
                 * rho_mesh -> initialized ndarray of the mesh density according to the Gaussian distribution.
-                * N_nod_new -> counter of the node of the adapted mesh
-                * zcoord_new -> list that will store the new nodes of the adapted mesh
+                * N_nod_new -> counter of the node of the adapted mesh.
+                * zcoord_new -> list that will store the new nodes of the adapted mesh.
+                * zcoord_gauss_new -> ndarray that will store the new Gauss points of the adapted mesh.
                 * hard_node_flag_new -> list of boolean use to keep track of the node marked as hard (True) and of the added soft node (False).
-                * N_added_node -> conter of the added node in the mesh at each thermal hydraulic time step, used for debug
-                * N_removed_node -> conter of the removed node in the mesh at each thermal hydraulic time step, used for debug
+                * N_added_node -> conter of the added node in the mesh at each thermal hydraulic time step, used for debug.
+                * N_removed_node -> conter of the removed node in the mesh at each thermal hydraulic time step, used for debug.
                 * N_nod_lst -> list that stores the total number of nodes at each thermal hydraulic time step.
         """
 
@@ -7146,13 +7147,14 @@ class Conductor:
             grid_input["NELEMS"]
         )
         grid_feat["N_nod_new"] = None
+        grid_feat["zcoord_gauss_new"] = np.array([])
 
         keys = {
             "zcoord_new",
             "hard_node_flag_new",
             "N_added_node",
             "N_removed_node",
-            "N_nod_lst"
+            "N_nod_lst",
         }
         grid_feat.update({key: list() for key in keys})
     
