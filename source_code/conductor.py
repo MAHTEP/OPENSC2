@@ -5014,11 +5014,7 @@ class Conductor:
     def operating_conditions_th(self,simulation):
         """Method that evaluates thermal hydraulic (th) operating conditions also in Gauss points."""
 
-        # Update keys delta_z, delta_z_tilde and zcoord_gauss calling method 
-        # self.__update_grid_features.
-        self.grid_features = self.__update_grid_features(self.grid_features)
         self.get_transp_coeff(simulation)
-
         self.__eval_gauss_point_th(simulation)
 
     def operating_conditions_em(self):
