@@ -310,6 +310,10 @@ class Conductor:
         self.__coordinates(simulation)
         # conductorlogger.debug(f"After call method {self.__coordinates.__name__}")
 
+        # Initialize conductor time step counter. Moved here from method 
+        # self.initialization since attribute self.cond_num_step is used in 
+        # method self.__update_grid_features.
+        self.cond_num_step = 0
         self.grid_features = self.__update_grid_features(self.grid_features)
 
         # Check if the mesh is adaptive.
@@ -329,6 +333,8 @@ class Conductor:
         # conductorlogger.debug(
         #     f"After call method {self.__initialize_attributes.__name__}"
         # )
+
+        pass
 
 
     # end method __init__ (cdp, 11/2020)
@@ -2815,8 +2821,6 @@ class Conductor:
         # initialize conductor time values, it can be different for different \
         # conductors since the conductor time step can be different (cdp, 10/202)
         self.cond_time = [time_simulation]
-        # Initialize conductor time step counter
-        self.cond_num_step = 0
 
         """
     if (imsourcefun.eq.0) then
