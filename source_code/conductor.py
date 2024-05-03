@@ -7041,6 +7041,7 @@ class Conductor:
                     * NELEMS
                 * grid_features:
                     * zcoord
+                    * zcoord_gauss
                     * N_nod
                     * hard_node_flag
                     * N_nod_lst
@@ -7054,7 +7055,8 @@ class Conductor:
         grid_input = self.grid_input
         dict_Step = self.dict_Step
 
-        grid_features["zcoord"] = np.array(grid_features["zcoord_new"])
+        grid_features["zcoord"] = grid_features["zcoord_new"]
+        grid_features["zcoord_gauss"] = grid_features["zcoord_gauss_new"]
         grid_features["N_nod"] = grid_features["N_nod_new"]
         grid_input["NELEMS"] = grid_features["N_nod"] - 1
         grid_features["hard_node_flag"] = np.array(
@@ -7063,6 +7065,9 @@ class Conductor:
         # Reset zcoord_new to empty list in order to adapt the mesh at the next 
         # thermal hydraulic time step.
         grid_features["zcoord_new"] = list()
+        # Reset zcoord_gauss_new to empty ndarray for the nex thermal-hydraulic 
+        # time step.
+        grid_features["zcoord_gauss_new"] = np.array([])
         # Reset hard_node_flag_new to empty list in order to adapt the mesh at 
         # the next thermal hydraulic time step.
         grid_features["hard_node_flag_new"] = list()
