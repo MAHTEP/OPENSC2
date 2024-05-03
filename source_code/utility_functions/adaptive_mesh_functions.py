@@ -231,6 +231,7 @@ def update_mesh(conductor:Conductor)->dict:
         * coarsening is performed by calling the coarse_mesh function;
         * refinement is performed by calling the refine_mesh function;
         * regions that do not require coarsening/refinement are treated with the set_node function.
+    With the new mesh, the function also evaluates the new Gauss points storing them in temporary ndarray zcoord_gauss_new.
 
     Args:
         conductor (Conductor): object with all information to update the mesh according to the result of the comparision of the actual mesh density wrt the "ideal" mesh density from function eval_gaussian_mesh_density.
@@ -243,6 +244,7 @@ def update_mesh(conductor:Conductor)->dict:
         dict: dictionary grid_features with all the info associated to the new mesh. Updated dictionary key-value pairs:
             * N_nod_new -> the total number of nodes of the new mesh.
             * zcoord_new -> the spatial discretization of the new mesh.
+            * zcoord_gauss_new -> the Gauss points of the new mesh.
             * hard_node_flag_new -> the list of flags that specify whether a node of the new mesh is hard (True) or soft (False).
             * N_added_node -> total number of added (soft) node in the new mesh due to refinement needs.
             * N_removed_node -> total number of removed (soft) node in the new mesh due to coarsening needs.
@@ -366,6 +368,15 @@ def update_mesh(conductor:Conductor)->dict:
     # should start from 0 to be correctly used. Adding 1 to the current value 
     # guarantees consistency between this counter and the lenght of zcoord_new.
     grid_features["N_nod_new"] += 1
+
+    # Convert list zcoord_new to ndarray
+    grid_features["zcoord_new"] =np.array(grid_features["zcoord_new"])
+    # Compute the Gauss nodal points associated to the new mesh.
+    grid_features["zcoord_gauss_new"] = (
+        grid_features["zcoord_new"][1:] 
+        + grid_features["zcoord_new"][:-1]
+    ) / 2.
+
     return grid_features
 
 def set_node(grid_feat:dict,grid_input:dict,jj:int)->dict:
