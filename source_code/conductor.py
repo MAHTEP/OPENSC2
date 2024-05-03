@@ -7062,6 +7062,10 @@ class Conductor:
                     * hard_node_flag
                     * N_nod_lst
                     * N_removed_node
+                    * delta_z
+                    * delta_z_tilde
+                    * dz_min
+                    * dz_max
                 * dict_Step
                     * SYSVAR
         """
@@ -7091,6 +7095,14 @@ class Conductor:
         # Append item 0 to key N_removed_node in order to suitably count the 
         # number of removed nodes at the next mesh adaptation.
         grid_features["N_removed_node"].append(0)
+
+        # Call method __update_grid_features to update keys delta_z, 
+        # delta_z_tilde, dz_min and dz_max of dictionary grid_features.
+        # N.B remember that key zcoord_gauss is not updated in this method 
+        # except when cond_num_step = 0, as it is updated in this method 
+        # (update_cond_mesh_related_features) exploiting info available on the 
+        # temporary variable zcoord_gauss_new.
+        grid_features = self.__update_grid_features(grid_features)
         
         if self.inputs["METHOD"] == "BE" or self.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson
