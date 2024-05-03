@@ -6955,7 +6955,7 @@ class Conductor:
         """
 
         # Alias
-        dict_Step = self.dict_Step["SYSLOD"]
+        dict_Step = self.dict_Step
 
         if self.inputs["METHOD"] == "BE" or self.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson
