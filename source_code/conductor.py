@@ -4730,9 +4730,6 @@ class Conductor:
         # Loop on StrandComponent objects.
         for strand in self.inventory["StrandComponent"].collection:
             strand.get_heat(self)
-            # Call method jhtflx_new_0 to initialize JHTFLX to zeros for each 
-            # conductor solid components.
-            strand.jhtflx_new_0(self)
             # Call set_energy_counters to initialize EEXT and EJHT to zeros for 
             # each conductor solid components.
             strand.set_energy_counters(self)
@@ -4741,9 +4738,6 @@ class Conductor:
         for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
             jacket.get_heat(self)
 
-            # Call method jhtflx_new_0 to initialize JHTFLX to zeros for each 
-            # conductor solid components.
-            jacket.jhtflx_new_0(self)
             # Call set_energy_counters to initialize EEXT and EJHT to zeros for 
             # each conductor solid components.
             jacket.set_energy_counters(self)
@@ -4824,9 +4818,6 @@ class Conductor:
                 # heating is on.
                 strand.get_heat(self)
             
-            # Call method jhtflx_new_0 to initialize JHTFLX to zeros for each 
-            # conductor solid components.
-            strand.jhtflx_new_0(self)
             # Evaluate joule power due to electric resistance along strand 
             # object.
             strand.get_joule_power_along(self)
@@ -4848,9 +4839,6 @@ class Conductor:
                 # heating is on.
                 jacket.get_heat(self)
 
-            # Call method jhtflx_new_0 to initialize JHTFLX to zeros for each 
-            # conductor solid components.
-            jacket.jhtflx_new_0(self)
             # Call set_energy_counters to initialize EEXT and EJHT to zeros for 
             # each conductor solid components.
             jacket.set_energy_counters(self)
@@ -4893,14 +4881,12 @@ class Conductor:
         for strand in self.inventory["StrandComponent"].collection:
 
             strand.dict_Gauss_pt["Q1"] = (
-                strand.dict_node_pt["JHTFLX"][:-1]
                 + strand.dict_node_pt["EXTFLX"][:-1]
                 + strand.dict_node_pt["total_linear_power_el_cond"][:-1]
                 + strand.dict_Gauss_pt["linear_power_el_resistance"]
             )
 
             strand.dict_Gauss_pt["Q2"] = (
-                strand.dict_node_pt["JHTFLX"][1:]
                 + strand.dict_node_pt["EXTFLX"][1:]
                 + strand.dict_node_pt["total_linear_power_el_cond"][1:]
                 + strand.dict_Gauss_pt["linear_power_el_resistance"]
@@ -4910,17 +4896,10 @@ class Conductor:
         for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
 
             jacket.dict_Gauss_pt["Q1"] = (
-                jacket.dict_node_pt["JHTFLX"][:-1] + jacket.dict_node_pt["EXTFLX"][:-1]
+                jacket.radiative_heat_env[:-1] + jacket.dict_node_pt["EXTFLX"][:-1]
             )
             jacket.dict_Gauss_pt["Q2"] = (
-                jacket.dict_node_pt["JHTFLX"][1:] + jacket.dict_node_pt["EXTFLX"][1:]
-            )
-            # Add the radiative heat contribution with the environment.
-            jacket.dict_Gauss_pt["Q1"] = (
-                jacket.dict_Gauss_pt["Q1"] + jacket.radiative_heat_env[:-1]
-            )
-            jacket.dict_Gauss_pt["Q2"] = (
-                jacket.dict_Gauss_pt["Q2"] + jacket.radiative_heat_env[1:]
+                jacket.radiative_heat_env[1:] + jacket.dict_node_pt["EXTFLX"][1:]
             )
 
         # Separate nested loop is needed in order to define quantities 
