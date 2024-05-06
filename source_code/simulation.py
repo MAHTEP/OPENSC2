@@ -659,6 +659,12 @@ class Simulation:
                     # mesh and/or on the number of nodes/elements of the mesh.
                     conductor = adaptive_mesh(conductor, self.environment)
 
+                for obj in conductor.inventory["StrandComponent"].collection:
+                    # Set arrays strand.dict_Gauss_pt["integral_power_el_res"] 
+                    # and strand.dict_node_pt["integral_power_el_cond"] to zero 
+                    # for the next evaluation.
+                    obj.set_power_array_to_zeros(conductor)
+
             # End for conductor (cdp, 07/2020)
         # end while (cdp, 07/2020)
         print("End simulation called " + self.transient_input["SIMULATION"] + "\n")

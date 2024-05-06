@@ -4905,11 +4905,6 @@ class Conductor:
                 + strand.dict_node_pt["total_linear_power_el_cond"][1:]
                 + strand.dict_Gauss_pt["linear_power_el_resistance"]
             )
-
-            # Set arrays strand.dict_Gauss_pt["integral_power_el_res"] and 
-            # strand.dict_node_pt["integral_power_el_cond"] to zero for the 
-            # next evaluation.
-            strand.set_power_array_to_zeros(self)
         
         # Loop on JacketComponents objects.
         for rr, jacket in enumerate(self.inventory["JacketComponent"].collection):
