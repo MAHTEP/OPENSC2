@@ -7401,3 +7401,33 @@ class Conductor:
             obj.dict_Gauss_pt["linear_power_el_resistance"] = foo_el_res
             # Update array total_linear_power_el_cond.
             obj.dict_node_pt["total_linear_power_el_cond"] = foo_el_cond
+
+    def interp_radiative_heat_on_new_mesh(self):
+        """Method that interpolates array radiative_heat_env on the new mesh to correctly evaluate the radiative heat power contribution to the source therm. To be used with adaptive mesh and called after method interp_solution_on_new_mesh.
+        """
+
+        # Alias
+        zcoord = self.grid_features["zcoord"]
+        zcoord_new = self.grid_features["zcoord_new"]
+        nnod_new = zcoord_new.size
+
+        for obj in self.inventory["JacketComponent"].collection:
+
+            ncol = obj.radiative_heat_env.shape[1]
+            # Update dimension of array foo_el_cond (alias for 
+            # total_linear_power_el_cond) consistently with the new mesh size.
+            foo = np.zeros(
+                (nnod_new, ncol)
+            )
+
+            for ii in range(ncol):
+                # Interpolate array foo_el_cond at the previous time step on 
+                # the new mesh.
+                foo[:,ii] = np.interp(
+                    zcoord_new,
+                    zcoord,
+                    obj.radiative_heat_env[:,ii],
+                )
+            
+            # Update array total_linear_power_el_cond.
+            obj.radiative_heat_env = foo
