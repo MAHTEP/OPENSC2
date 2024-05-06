@@ -7351,3 +7351,53 @@ class Conductor:
                     obj.dict_Gauss_pt["T_cur_sharing"]
                 )
                 obj.dict_Gauss_pt["T_cur_sharing_min"] = obj.dict_Gauss_pt["T_cur_sharing"].copy()
+
+
+    def interp_joule_power_on_new_mesh(self):
+        """Method that updates arrays linear_power_el_resistance and total_linear_power_el_cond on the new mesh to correctly evaluate the Joule power contribution to the source therm. To be used with adaptive mesh and called after method interp_solution_on_new_mesh.
+        """
+
+        # Alias
+        zcoord = self.grid_features["zcoord"]
+        zcoord_new = self.grid_features["zcoord_new"]
+        zcoord_gauss = self.grid_features["zcoord_gauss"]
+        zcoord_gauss_new = self.grid_features["zcoord_gauss_new"]
+        nelem_new = zcoord_gauss_new.size
+        nnod_new = zcoord_new.size
+
+        for obj in self.inventory["StrandComponent"].collection:
+
+            lin_pow_el_res_old = obj.dict_Gauss_pt["linear_power_el_resistance"]
+            lin_pow_el_cond_old = obj.dict_node_pt["total_linear_power_el_cond"]
+            ncol = lin_pow_el_res_old.shape[1]
+            # Update dimension of array foo_el_res (alias for 
+            # linear_power_el_resistance) consistently with the new mesh size.
+            foo_el_res = np.zeros(
+                (nelem_new, ncol)
+            )
+            # Update dimension of array foo_el_cond (alias for 
+            # total_linear_power_el_cond) consistently with the new mesh size.
+            foo_el_cond = np.zeros(
+                (nnod_new, ncol)
+            )
+
+            for ii in range(ncol):
+                # Interpolate array foo_el_res at the previous time step on the 
+                # new mesh.
+                foo_el_res[:,ii] = np.interp(
+                    zcoord_gauss_new,
+                    zcoord_gauss,
+                    lin_pow_el_res_old[:,ii],
+                )
+                # Interpolate array foo_el_cond at the previous time step on 
+                # the new mesh.
+                foo_el_cond[:,ii] = np.interp(
+                    zcoord_new,
+                    zcoord,
+                    lin_pow_el_cond_old[:,ii],
+                )
+            
+            # Update array linear_power_el_resistance.
+            obj.dict_Gauss_pt["linear_power_el_resistance"] = foo_el_res
+            # Update array total_linear_power_el_cond.
+            obj.dict_node_pt["total_linear_power_el_cond"] = foo_el_cond
