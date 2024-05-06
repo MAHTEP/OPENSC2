@@ -7410,3 +7410,33 @@ class Conductor:
             
             # Update array total_linear_power_el_cond.
             obj.radiative_heat_env = foo
+
+    def interp_extflx_on_new_mesh(self):
+        """Method that interpolates array EXTFLX on the new mesh to correctly evaluate the external heat power contribution to the source therm. To be used with adaptive mesh and called after method interp_solution_on_new_mesh.
+        """
+
+        # Alias
+        zcoord = self.grid_features["zcoord"]
+        zcoord_new = self.grid_features["zcoord_new"]
+        nnod_new = zcoord_new.size
+
+        for obj in self.inventory["SolidComponent"].collection:
+
+            ncol = obj.dict_node_pt["EXTFLX"].shape[1]
+            # Update dimension of array foo_el_cond (alias for 
+            # total_linear_power_el_cond) consistently with the new mesh size.
+            foo = np.zeros(
+                (nnod_new, ncol)
+            )
+
+            for ii in range(ncol):
+                # Interpolate array foo_el_cond at the previous time step on 
+                # the new mesh.
+                foo[:,ii] = np.interp(
+                    zcoord_new,
+                    zcoord,
+                    obj.dict_node_pt["EXTFLX"][:,ii],
+                )
+            
+            # Update array total_linear_power_el_cond.
+            obj.dict_node_pt["EXTFLX"] = foo
