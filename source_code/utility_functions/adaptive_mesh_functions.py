@@ -87,6 +87,9 @@ def adaptive_mesh(conductor:Conductor,environment:object)->Conductor:
         # Interpolate ndarray radiative_heat_env on the new mesh.
         conductor.interp_radiative_heat_on_new_mesh()
 
+        # Interpolate ndarray EXTFLX on the new mesh.
+        conductor.interp_extflx_on_new_mesh()
+
         # Loop on conductor component to update the angular discretization,
         # used to update the coordinates of the barycenter of each conductor 
         # component.
