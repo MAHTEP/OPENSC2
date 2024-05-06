@@ -273,10 +273,8 @@ class Channel(FluidComponentInput):
         self.dict_friction_factor[nodal]["laminar"] = np.zeros(reynolds.shape)
         # Turbulent friction factor initialization
         self.dict_friction_factor[nodal]["turbulent"] = np.zeros(reynolds.shape)
-        # Friction factor initialization, use ones instead one zeros to avoid overvriting the guess value if nodal = None (gen_flow)
-        self.dict_friction_factor[nodal]["total"] = self.dict_friction_factor[nodal][
-            "total"
-        ] * np.ones(reynolds.shape)
+        # Total friction factor initialization
+        self.dict_friction_factor[nodal]["total"] = np.zeros(reynolds.shape)
         return reynolds
 
     # End method _quantities_initialization.
