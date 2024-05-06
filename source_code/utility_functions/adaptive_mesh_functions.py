@@ -80,6 +80,12 @@ def adaptive_mesh(conductor:Conductor,environment:object)->Conductor:
         # and Gauss points) if flag TCS_EVALUATION is set to False.
         conductor.interp_tcs_on_new_mesh()
 
+        # Interpolate ndarrays linear_power_el_resistance and 
+        # total_linear_power_el_cond on the new mesh.
+        conductor.interp_joule_power_on_new_mesh()
+
+        
+
         # Loop on conductor component to update the angular discretization,
         # used to update the coordinates of the barycenter of each conductor 
         # component.
