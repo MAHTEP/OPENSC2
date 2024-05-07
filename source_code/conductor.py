@@ -6161,9 +6161,14 @@ class Conductor:
         self.store_sd_gauss["zcoord_gauss"][t_save_key] = (
             self.grid_features["zcoord_gauss"]
         )
-        self.store_sd_gauss["heat_rad_jk"][t_save_key] = self.heat_rad_jk
-        self.store_sd_gauss["heat_exchange_jk_env"][t_save_key] = (
-            self.heat_exchange_jk_env
+        
+        # Exploit methods update and copy to avoid problems with shallow copy.
+        self.store_sd_gauss["heat_rad_jk"][t_save_key].update(
+            {key:val.copy() for key,val in self.heat_rad_jk.items()}
+        )
+        # Exploit methods update and copy to avoid problems with shallow copy.
+        self.store_sd_gauss["heat_exchange_jk_env"][t_save_key].update(
+            {key:val.copy() for key,val in self.heat_exchange_jk_env.items()}
         )
 
     def store_spatial_distributions_t0(self,t_save_key:str="t_save"):
