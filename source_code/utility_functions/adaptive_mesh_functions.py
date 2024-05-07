@@ -90,6 +90,12 @@ def adaptive_mesh(conductor:Conductor,simulation:object)->Conductor:
         # Interpolate ndarray EXTFLX on the new mesh.
         conductor.interp_extflx_on_new_mesh()
 
+        # Interpolate ndaray qsource (storing the heat exchanged between 
+        # conductors) on the new mesh.
+        simulation.dict_qsource[conductor.identifier] = (
+            simulation.interp_heat_btw_cond_on_new_mesh(conductor)
+        )
+
         # Loop on conductor component to update the angular discretization,
         # used to update the coordinates of the barycenter of each conductor 
         # component.
