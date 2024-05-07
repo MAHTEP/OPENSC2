@@ -6224,6 +6224,99 @@ class Conductor:
         t1 = self.t_save_left
         t2 = self.t_save_right
 
+        # Check if mesh is adaptive.
+        if (
+            self.grid_input["ITYMSH"] == ADAPTIVE_UNIFORM_MESH 
+            or self.grid_input["ITYMSH"] == ADAPTIVE_REFINED_MESH
+        ):
+            # Mesh is adaptive: need to interpolate in space before the 
+            # performing the interpolation in time in order to have the same 
+            # lenght of the spatial distributions at t_save_left and at the 
+            # current time. If this is not the case a "ValueError: operands 
+            # could not be broadcast together with shapes" well be raised.
+            
+            key_list = (
+                "htc_ch_ch_open",
+                "htc_ch_ch_close",
+                "htc_ch_sol",
+                "htc_sol_sol_cond",
+                "htc_sol_sol_rad",
+            )
+
+            # Interpolate val on the new mesh for all keys in key_list an for 
+            # all i_id (interface identifiers) 
+            for key in key_list:
+                for i_id, val in self.store_sd_node[key]["t_save_left"].items():
+                    self.store_sd_node[key]["t_save_left"][i_id] = np.interp(
+                        self.grid_features["zcoord"],
+                        self.store_sd_node["zcoord"]["t_save_left"],
+                        val,
+                    )
+
+            # Loop on FluidComponent and SolidComponent to interpolate 
+            # properties stored in attribute store_sd_node on the new mesh.
+            for obj in self.inventory["all_component"].collection:
+                for prop, val in obj.store_sd_node.items():
+                    obj.store_sd_node[prop]["t_save_left"] = np.interp(
+                        self.grid_features["zcoord"],
+                        self.store_sd_node["zcoord"]["t_save_left"],
+                        val["t_save_left"],
+                    )
+
+            key_list_gauss = (
+                "heat_rad_jk",
+                "heat_exchange_jk_env",
+            )
+
+            # Interpolate val on the new mesh for all keys in key_list_gauss an 
+            # for all i_id (interface identifiers) 
+            for key in key_list_gauss:
+                for i_id, val in self.store_sd_gauss[key][
+                    "t_save_left"
+                ].items():
+                    self.store_sd_gauss[key]["t_save_left"][i_id] = np.interp(
+                        self.grid_features["zcoord_gauss"],
+                        self.store_sd_gauss["zcoord_gauss"]["t_save_left"],
+                        val,
+                    )
+
+            # Loop on SolidComponent to interpolate to interpolate 
+            # properties stored in attribute store_sd_gauss on the new mesh.
+            for obj in self.inventory["SolidComponent"].collection:
+                for prop, val in obj.store_sd_gauss.items():
+                    obj.store_sd_gauss[prop]["t_save_left"] = np.interp(
+                        self.grid_features["zcoord_gauss"],
+                        self.store_sd_gauss["zcoord_gauss"]["t_save_left"],
+                        val["t_save_left"],
+                    )
+
+            # Interpolate the old mesh stored in attribute store_sd_node on the 
+            # new one (to be understood if this is actually useful and correct).
+            xx = np.array(range(self.grid_features["zcoord"].size))
+            xx_old = np.array(range(
+                self.store_sd_node["zcoord"]["t_save_left"].size
+                )
+            )
+            self.store_sd_node["zcoord"]["t_save_left"] = np.interp(
+                xx,
+                xx_old,
+                self.store_sd_node["zcoord"]["t_save_left"],
+            )
+
+            # Interpolate the old mesh (Gauss points) stored in attribute 
+            # store_sd_gauss on the new one (to be understood if this is 
+            # actually useful and correct).
+            xx = np.array(range(self.grid_features["zcoord_gauss"].size))
+            xx_old = np.array(range(
+                self.store_sd_gauss["zcoord_gauss"]["t_save_left"].size
+                )
+            )
+            self.store_sd_gauss["zcoord_gauss"]["t_save_left"] = np.interp(
+                xx,
+                xx_old,
+                self.store_sd_gauss["zcoord_gauss"]["t_save_left"],
+            )
+
         self.store_sd_node["zcoord"]["t_save"] = interp_at_t_save(
             tt,
             t1,
