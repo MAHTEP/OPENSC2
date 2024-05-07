@@ -974,3 +974,41 @@ class Simulation:
             lp.disable_by_count()
             # Save binary file with the outcomes of the line profiler.
             lp.dump_stats(file_name_lp_bin)
+
+    def interp_heat_btw_cond_on_new_mesh(
+        self,
+        conductor:Conductor
+    )->np.ndarray:
+        """Method that interpolates ndarray qsource on the new mesh to correctly evaluate the heat power exchanged bewteen conductor as contribution to the source therm. To be used with adaptive mesh and called after method interp_solution_on_new_mesh.
+
+        N.B. This method in implemented as a temporary solution. A different strategy and a different structure of ndarray qsource may be adopted when this feature will be actually implemented.
+
+        Args:
+            conductor (Conductor): object with all information to carry out interpolation of qsource.
+
+        Returns:
+            np.ndarray: interpolated array qsource.
+        """
+
+        # Alias
+        zcoord = conductor.grid_features["zcoord"]
+        zcoord_new = conductor.grid_features["zcoord_new"]
+        nnod_new = zcoord_new.size
+
+        qsource = self.dict_qsource[conductor.identifier]
+        ncol = qsource.shape[1]
+        # Update dimension of array qsource_new consistently with the new mesh 
+        # size.
+        qsource_new = np.zeros((nnod_new, ncol))
+
+        # Loop to interpolate each column of qsource
+        for ii in range(ncol):
+            # Interpolate array qsource at the previous time step on the new 
+            # mesh.
+            qsource_new[:,ii] = np.interp(
+                zcoord_new,
+                zcoord,
+                qsource[:,ii],
+            )
+            
+        return qsource_new
