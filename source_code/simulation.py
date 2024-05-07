@@ -657,7 +657,7 @@ class Simulation:
                     # parameters calling function adaptive_mesh. The function 
                     # update also parameters and quantities that depend on the 
                     # mesh and/or on the number of nodes/elements of the mesh.
-                    conductor = adaptive_mesh(conductor, self.environment)
+                    conductor = adaptive_mesh(conductor, self)
 
                 for obj in conductor.inventory["StrandComponent"].collection:
                     # Set arrays strand.dict_Gauss_pt["integral_power_el_res"] 
