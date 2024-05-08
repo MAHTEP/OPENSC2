@@ -7432,6 +7432,8 @@ class Conductor:
 
     def interp_joule_power_on_new_mesh(self):
         """Method that updates arrays linear_power_el_resistance and total_linear_power_el_cond on the new mesh to correctly evaluate the Joule power contribution to the source therm. To be used with adaptive mesh and called after method interp_solution_on_new_mesh.
+
+        As JacketComponent does not carry current, the Joule power for this component is always zero; thus the method simply re-initializes ndarray linear_power_el_resistance to zero with the correct shape. This improves performance wrt interpolation.
         """
 
         # Alias
@@ -7478,6 +7480,19 @@ class Conductor:
             obj.dict_Gauss_pt["linear_power_el_resistance"] = foo_el_res
             # Update array total_linear_power_el_cond.
             obj.dict_node_pt["total_linear_power_el_cond"] = foo_el_cond
+
+        # Loop on JacketComponent. Since at the time being this component does 
+        # not carry current, the joule power is always 0. Therefore, instead of 
+        # performing a linear interpolation, an re-initialization to 0 is done # for better performance.
+        for obj in self.inventory["JacketComponent"].collection:
+
+            ncol = obj.dict_Gauss_pt["linear_power_el_resistance"].shape[1]
+            obj.dict_Gauss_pt["linear_power_el_resistance"] = np.zeros(
+                (nelem_new, ncol)
+            )
+            obj.dict_node_pt["total_linear_power_el_cond"] = np.zeros(
+                (nnod_new, ncol)
+            )
 
     def interp_radiative_heat_on_new_mesh(self):
         """Method that interpolates array radiative_heat_env on the new mesh to correctly evaluate the radiative heat power contribution to the source therm. To be used with adaptive mesh and called after method interp_solution_on_new_mesh.
