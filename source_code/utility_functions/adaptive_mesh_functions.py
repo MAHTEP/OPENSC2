@@ -136,7 +136,10 @@ def adaptive_mesh(conductor:Conductor,simulation:object)->Conductor:
         # Loop on SolidComponent to update the voltage differen along each 
         # object exploiting method update_delta_voltage_along_on_new_mesh.
         for obj in conductor.inventory["SolidComponent"].collection:
-            obj.dict_Gauss_pt["delta_voltage_along"] = (
+            (
+                obj.dict_Gauss_pt["delta_voltage_along"],
+                obj.dict_Gauss_pt["delta_voltage_along_sum"]
+            ) = (
                 obj.update_delta_voltage_along_on_new_mesh(conductor)
             )
 

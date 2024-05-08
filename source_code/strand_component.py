@@ -631,17 +631,20 @@ class StrandComponent(SolidComponent):
     def update_delta_voltage_along_on_new_mesh(
             self,
             conductor:object
-            )->np.ndarray:
-        """Method that updates the voltage difference along StrandComponent on the new mesh. If the simulation if purely thermal hydraulic, the voltage is zero in along the whole conductor, so array delta_voltage_along is set to 0 accounting for the new number of nodes in the mesh.
+            )->tuple:
+        """Method that updates the voltage difference along StrandComponent on the new mesh. If the simulation if purely thermal hydraulic, the voltage is zero in along the whole conductor, so ndarrays delta_voltage_along and delta_voltage_along_sum are set to 0 accounting for the new shape of the mesh.
 
         Args:
             conductor (object): object with all information to update ndarray delta_voltage_along.
 
         Returns:
-            np.ndarray: updated array delta_voltage_along on the new mesh.
+            tuple: collection of the updated array delta_voltage_along delta_voltage_along_sum on the new mesh.
         """
         if (
             conductor.inputs["I0_OP_MODE"] == IOP_NOT_DEFINED
             or self.operations["IOP_MODE"] == IOP_NOT_DEFINED
         ):
-            return np.zeros(conductor.grid_input["NELEMS"])
+            return (
+                np.zeros(conductor.grid_input["NELEMS"]),
+                np.zeros(conductor.grid_input["NELEMS"])
+            )
