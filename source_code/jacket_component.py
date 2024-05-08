@@ -589,3 +589,19 @@ class JacketComponent(SolidComponent):
                 )
 
         return (xx,yy,zz)
+    
+    def update_delta_voltage_along_on_new_mesh(
+            self,
+            conductor:object
+            )->np.ndarray:
+        """Method that updates the voltage difference along JacketComponent on the new mesh. 
+        JacketComponent does not carry current so the voltage difference is always zero. Therefore the method returns always an array filled with zeros and consistent with the mesh shape.
+
+        Args:
+            conductor (object): object with all information to update ndarray delta_voltage_along.
+
+        Returns:
+            np.ndarray: updated array delta_voltage_along on the new mesh.
+        """
+        
+        return np.zeros(conductor.grid_input["NELEMS"])

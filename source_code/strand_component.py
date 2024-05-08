@@ -36,6 +36,7 @@ from properties_of_materials.magnesium_diboride import (
     current_sharing_temperature_mgb2,
 )
 
+from conductor_flags import IOP_NOT_DEFINED
 
 class StrandComponent(SolidComponent):
 
@@ -626,3 +627,21 @@ class StrandComponent(SolidComponent):
         # FIX_POTENTIAL_FLAG is True; self.delete_fixed_potential_inputs if
         # FIX_POTENTIAL_FLAG is False.
         methods[self.operations["FIX_POTENTIAL_FLAG"]](length)
+
+    def update_delta_voltage_along_on_new_mesh(
+            self,
+            conductor:object
+            )->np.ndarray:
+        """Method that updates the voltage difference along StrandComponent on the new mesh. If the simulation if purely thermal hydraulic, the voltage is zero in along the whole conductor, so array delta_voltage_along is set to 0 accounting for the new number of nodes in the mesh.
+
+        Args:
+            conductor (object): object with all information to update ndarray delta_voltage_along.
+
+        Returns:
+            np.ndarray: updated array delta_voltage_along on the new mesh.
+        """
+        if (
+            conductor.inputs["I0_OP_MODE"] == IOP_NOT_DEFINED
+            or self.operations["IOP_MODE"] == IOP_NOT_DEFINED
+        ):
+            return np.zeros(conductor.grid_input["NELEMS"])

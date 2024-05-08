@@ -975,3 +975,21 @@ class SolidComponent:
         """
 
         raise NotImplementedError("Method update_coordinates_of_barycenter is not implemented in the base class.")
+    
+    def update_delta_voltage_along_on_new_mesh(
+            self,
+            conductor:object
+            )->np.ndarray:
+        """Method that updates the voltage difference along on the new mesh. If the simulation if purely thermal hydraulic, the voltage is zero in along the whole conductor, so array delta_voltage_along is set to 0 accounting for the new number of nodes in the mesh.
+
+        Args:
+            conductor (object): object with all information to update ndarray delta_voltage_along.
+
+        Raises:
+            NotImplementedError: the method is not implemented in the base class.
+
+        Returns:
+            np.ndarray: updated array delta_voltage_along on the new mesh.
+        """
+
+        raise NotImplementedError("Method update_delta_voltage_along_on_new_mesh is not implemented in the base class.")
