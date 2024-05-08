@@ -42,8 +42,7 @@ def adaptive_mesh(conductor:Conductor,simulation:object)->Conductor:
                 * N_removed_node
             * dict_N_equation:
                 * Total
-            * dict_Step
-                * SYSVAR
+
         Each conductor component updates the array of the solution (pressure, temperature, velocity for FluidComponent and temperature for SolidComponent) in dictionary dict_node_pt as well as attribute tau on the new mesh exploiting linear interpolation. 
     """
 
@@ -111,7 +110,6 @@ def adaptive_mesh(conductor:Conductor,simulation:object)->Conductor:
         (
             conductor.grid_input,
             conductor.grid_features,
-            conductor.dict_Step,
         ) = conductor.update_cond_mesh_related_features()
 
         # Loop on conductor component to update the coordinates of the 

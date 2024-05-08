@@ -6972,7 +6972,7 @@ class Conductor:
 
     def interp_solution_on_new_mesh(self):
 
-        """Method that interpolates the thermal-hydraulic solution on the new mesh and on the Gauss points that are associated to the new mesh. The method also interpolates the whole thermal-hydraulic solution on the new mesh before the next thermal-hydraulic time step and stores it in key SYSVAR_old of attribute dict_Step.
+        """Method that interpolates the thermal-hydraulic solution on the new mesh and on the Gauss points that are associated to the new mesh. The method also interpolates the whole thermal-hydraulic solution on the new mesh before the next thermal-hydraulic time step and stores it in key SYSVAR of attribute dict_Step. Key SYSVAR_old is also updated as an hard copy of key SYSVAR.
         To perform the latter evaluation, key Total of attribute dictionary dict_N_equation is also updated.
         To be used with adaptive mesh. Properties are updated inplace.
         """
@@ -6988,11 +6988,12 @@ class Conductor:
         # Update the total number of equations.
         self.dict_N_equation["Total"] = (ndf * self.grid_features["N_nod_new"])
 
-        # Initialize SYSVAR_old according to the new number of the total 
-        # equations.
-        self.dict_Step["SYSVAR_old"] = np.zeros(
-            self.dict_N_equation["Total"]
-        )
+        if self.inputs["METHOD"] == "BE" or self.inputs["METHOD"] == "CN":
+            # Initialize SYSVAR_old according to the new number of the total 
+            # equations.
+            sysvar = np.zeros(
+                (self.dict_N_equation["Total"],1)
+            )
         
         fo_props = ("pressure","temperature","velocity")
         # Loop on FluidComponent.
@@ -7018,10 +7019,8 @@ class Conductor:
                     obj.coolant.dict_Gauss_pt[prop],
                 )
 
-                # Fill SYSVAR_old with the interpolated values.
-                self.dict_Step["SYSVAR_old"][
-                    idx::ndf
-                ] = obj.coolant.dict_node_pt[prop]
+                # Fill SYSVAR with the interpolated values.
+                sysvar[idx::ndf,0] = obj.coolant.dict_node_pt[prop]
         
         # Devo interpolare anche soluzione elettrica?
         # Loop on SolidComponent.
@@ -7041,10 +7040,14 @@ class Conductor:
             # Equation index of SolidComponent objects.
             idx = eq_idx[obj.identifier]
 
-            # Fill SYSVAR_old with the interpolated values.
-            self.dict_Step["SYSVAR_old"][
-                idx::ndf
-            ] = obj.dict_node_pt["temperature"]
+            # Fill SYSVAR with the interpolated values.
+            sysvar[idx::ndf,0] = obj.dict_node_pt["temperature"]
+        
+        self.dict_Step["SYSVAR"] = sysvar
+        # Save an hard copy of the thermal-hydraulic problem solution at the 
+        # previous time step; used to evaluate the variation of the solution in 
+        # time to compute the adaptive time step.
+        self.dict_Step["SYSVAR_old"] = self.dict_Step["SYSVAR"][:, 0].copy()
 
     def update_syslod_on_new_mesh(self)->np.ndarray:
         """Method that updates array SYSLOD on the new mesh. To be used with adaptive mesh. To be called after, and called after method interp_solution_on_new_mesh.
@@ -7118,7 +7121,7 @@ class Conductor:
 
     def update_cond_mesh_related_features(self)->tuple:
 
-        """Method that updates keys in dictionary attributes grid_input, grid_features, dict_N_equation, and dict_Step that are related to the mesh. To be used with adaptive mesh, and called after method update_syslod_on_new_mesh.
+        """Method that updates keys in dictionary attributes grid_input and grid_features that are related to the mesh. To be used with adaptive mesh, and called after method update_syslod_on_new_mesh.
 
         Raises:
             NotImplementedError: if Adams Moulton is selected as method to solve the ordinary differential equation in time.
@@ -7138,14 +7141,11 @@ class Conductor:
                     * delta_z_tilde
                     * dz_min
                     * dz_max
-                * dict_Step
-                    * SYSVAR
         """
 
         # Alias
         grid_features = self.grid_features
         grid_input = self.grid_input
-        dict_Step = self.dict_Step
 
         grid_features["zcoord"] = grid_features["zcoord_new"]
         grid_features["zcoord_gauss"] = grid_features["zcoord_gauss_new"]
@@ -7175,17 +7175,8 @@ class Conductor:
         # (update_cond_mesh_related_features) exploiting info available on the 
         # temporary variable zcoord_gauss_new.
         grid_features = self.__update_grid_features(grid_features)
-        
-        if self.inputs["METHOD"] == "BE" or self.inputs["METHOD"] == "CN":
-            # Backward Euler or Crank-Nicolson
-            # Update dimension of array SYSVAR consistently with the new mesh 
-            # size.
-            dict_Step["SYSVAR"] = np.zeros((self.dict_N_equation["Total"], 1))
 
-        elif self.inputs["METHOD"] == "AM4":
-            raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
-
-        return (grid_input, grid_features, dict_Step)
+        return (grid_input, grid_features)
 
     def update_dict_step_on_static_mesh(self)->dict:
 
