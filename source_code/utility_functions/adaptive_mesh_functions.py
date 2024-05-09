@@ -141,7 +141,6 @@ def adaptive_mesh(conductor:Conductor,simulation:object)->Conductor:
                 obj.update_delta_voltage_along_on_new_mesh(conductor)
             )
 
-        return conductor
     else:
         if (
             conductor.inventory["StackComponent"] == 0
@@ -151,7 +150,9 @@ def adaptive_mesh(conductor:Conductor,simulation:object)->Conductor:
         else:
             warnings.warn("The adaptive mesh is not activated at this thermal hydraulic time step because any of the instances of class StackComponent and StrandMixedComponent do not manifest quench front.")
 
-        return conductor
+        conductor.dict_Step = conductor.update_dict_step_on_static_mesh()
+    
+    return conductor
 
 def detect_quench_front(conductor:Conductor)->dict:
     """Function that detects the quench fronts comparing for each StackComponent and StrandMixedComponent the current sharing temperature and its own temperature. Where these temperature crosses each other quench fronts are identified and a local mesh adaptation (refinement/coarsening) may be necessary.

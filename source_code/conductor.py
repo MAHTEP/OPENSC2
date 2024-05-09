@@ -3086,6 +3086,14 @@ class Conductor:
             # end for cc (cdp, 10/2020)
         # end if self.dict_Step["SYSVAR"].shape[-1] (cdp, 10/2020)
 
+        # Save an hard copy of the thermal-hydraulic problem solution at 
+        # the previous time step. Necessary to correctly evaluate the variation 
+        # of the solution in time at the first thermal hydraulic time step. For 
+        # all the other thermal hydraulic time step this update is managed by 
+        # methods self.update_dict_step_on_static_mesh and 
+        # self.interp_solution_on_new_mesh.
+        self.dict_Step["SYSVAR_old"] = self.dict_Step["SYSVAR"][:, 0].copy()
+
         conductorlogger.debug(
             f"Before call function {save_geometry_discretization.__name__}.\n"
         )
@@ -7181,6 +7189,7 @@ class Conductor:
     def update_dict_step_on_static_mesh(self)->dict:
 
         """Method that updates arrays SYSLOD and SYSVAR stored in attribute dictionary dict_Step in the case of a static mesh is selected by the user (attribute dictionary grid_input["ITYMSH"] = 0 or grid_input["ITYMSH"] = 1 or grid_input["ITYMSH"] = -1).
+        This method is alsol used if the mesh is adaptive but from a two consecutive time step it is not adapted.
 
         Raises:
             NotImplementedError: if Adams Moulton is selected as method to solve the ordinary differential equation in time.
@@ -7193,37 +7202,24 @@ class Conductor:
 
         # Alias
         inputs = self.inputs
-        grid_input = self.grid_input
         dict_Step = self.dict_Step
-        
-        # Check if mesh is static or adaptive
-        if (
-            grid_input["ITYMSH"] == UNIFORM_MESH
-            or grid_input["ITYMSH"] == REFINED_MESH
-            or grid_input["ITYMSH"] == MESH_FROM_FILE
-        ):
-            # The mesh is static.
-            # N.B. The case of adaptive mesh is dealt with calling conductor methods
-            # interp_solution_on_new_mesh and update_cond_mesh_related_features for 
-            # SYSVAR, and calling update_syslod_on_new_mesh for SYSLOD.
 
-            # Save an hard copy of the thermal-hydraulic problem solution at the 
-            # previous time step.
-            dict_Step["SYSVAR_old"] = dict_Step["SYSVAR"][:, 0].copy()
-
+        if self.cond_num_step > 1:
             if (
                 inputs["METHOD"] == "BE"
                 or inputs["METHOD"] == "CN"
             ):
                 # Backward Euler or Crank-Nicolson
-                if self.cond_num_step > 1:
-                    # Copy the load vector at the previous time step in the second 
-                    # column to correctly apply the theta method.
-                    dict_Step["SYSLOD"][:, 1] = dict_Step["SYSLOD"][:, 0].copy()
-                    dict_Step["SYSLOD"][:, 0] = 0.0
+                # Copy the load vector at the previous time step in the second 
+                # column to correctly apply the theta method.
+                dict_Step["SYSLOD"][:, 1] = dict_Step["SYSLOD"][:, 0].copy()
+                dict_Step["SYSLOD"][:, 0] = 0.0
             elif inputs["METHOD"] == "AM4":
                 raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
         
+            # Save an hard copy of the thermal-hydraulic problem solution at 
+            # the previous time step.
+            dict_Step["SYSVAR_old"] = dict_Step["SYSVAR"][:, 0].copy()
         return dict_Step
 
     def __update_grid_features_adapt_mesh(self)->dict:
