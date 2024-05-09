@@ -506,11 +506,12 @@ def coarse_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
         grid_feat = set_node(grid_feat,grid_input,jj)
 
     elif node_flag_new == False and node_flag_old:
-        # Start node is soft and should be removed.
-        grid_feat["zcoord_new"].append(zcoord[jj+1])
+        # Start node (the last item in zcoord_new) is soft and should be 
+        # removed. (It is replaced with element j+1 of zcoord).
+        grid_feat["zcoord_new"][-1] = zcoord[jj+1]
         # Mark the new node in the new mesh according to the caracterization 
         # used in the old mesh.
-        grid_feat["hard_node_flag_new"].append(node_flag_old)
+        grid_feat["hard_node_flag_new"][-1] = node_flag_old
         # Update the counter of the removed nodes.
         grid_feat["N_removed_node"][-1] += 1
         print("Coarsened mesh.\n")
@@ -526,11 +527,12 @@ def coarse_mesh(grid_feat:dict,grid_input:dict,jj:int)->dict:
         print("Coarsened mesh.\n")
     
     elif node_flag_new == False and node_flag_old == False:
-        # Start node is soft and should be removed.
-        grid_feat["zcoord_new"].append(zcoord[jj+1])
+        # Start node (the last item in zcoord_new) is soft and should be 
+        # removed. (It is replaced with element j+1 of zcoord).
+        grid_feat["zcoord_new"][-1] = zcoord[jj+1]
         # Mark the new node in the new mesh according to the caracterization 
         # used in the old mesh.
-        grid_feat["hard_node_flag_new"].append(node_flag_old)
+        grid_feat["hard_node_flag_new"][-1] = node_flag_old
         # Update the counter of the removed nodes.
         grid_feat["N_removed_node"][-1] += 1
         print("Coarsened mesh.\n")
