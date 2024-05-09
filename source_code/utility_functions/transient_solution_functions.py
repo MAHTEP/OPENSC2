@@ -34,6 +34,12 @@ from utility_functions.step_matrix_construction import (
     build_known_therm_vector,
 )
 
+from conductor_flags import (
+    UNIFORM_MESH,
+    REFINED_MESH,
+    MESH_FROM_FILE,
+)
+
 def get_time_step(
     conductor:Conductor,
     transient_input:dict,
@@ -375,7 +381,21 @@ def step(conductor, envionment, qsource, num_step):
     # Known terms vector initilaization
     Known = np.zeros_like(ASCALING)
     
-    conductor.dict_Step = conductor.update_dict_step_on_static_mesh()
+    # Check if mesh is static or adaptive.
+    if (
+            conductor.grid_input["ITYMSH"] == UNIFORM_MESH
+            or conductor.grid_input["ITYMSH"] == REFINED_MESH
+            or conductor.grid_input["ITYMSH"] == MESH_FROM_FILE
+        ):
+
+        # The mesh is static.
+        # N.B. The case of adaptive mesh is dealt with calling conductor methods
+        # interp_solution_on_new_mesh and update_cond_mesh_related_features for 
+        # SYSVAR, and calling update_syslod_on_new_mesh for SYSLOD.
+
+        # Save an hard copy of the thermal-hydraulic problem solution at the 
+        # previous time step.
+        conductor.dict_Step = conductor.update_dict_step_on_static_mesh()
 
     # qsource initialization to zeros (cdp, 07/2020)
     # questa inizializzazione è provvisoria, da capire cosa succede quando ci \
