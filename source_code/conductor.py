@@ -1293,6 +1293,9 @@ class Conductor:
             )
         # End if self.Time_save.max() > self.inputs["ZLENGTH"]
 
+        # Total number of user defined sensor + the time variable.
+        self.n_sensor_tot = self.Time_save.size + 1
+
         # Initialize attributes events_time, i_event and i_event_max
         self.__collect_event_time(simulation)
         ## Attributes to deal with adaptive time step
