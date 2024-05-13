@@ -1265,42 +1265,53 @@ def update_values(val, prop, time, ind_zcoord):
 # End function update_values.
 
 
-def save_te_on_file(conductor, val, file_name, tend, ind_zcoord):
-    """Function that saves the time evolution of selectet variables at given saptial coordinates.
+def save_te_on_file(
+        conductor:object,
+        t_evol:dict,
+        file_name:str,
+        tend:float
+    )->dict:
+    """Function that saves the time evolution of selectet variables at given saptial coordinates. If arrays have reached a lenght equal to CHUNK_SIZE, their values are stored in appropriate files and the conten of the array is cleared (new empty list are created) to perform a new storage cycle. This allows to reduce the number of times the code reads and writes files.
 
     Args:
-        conductor ([type]): [description]
-        df ([type]): [description]
-        file_name ([type]): [description]
-        tend ([type]): [description]
+        conductor (object): object with all information on the conductor.
+        t_evol (dict): dictionary that collects the time evolution in all the user defined sensor coordinates of the property.
+        file_name (str): name of the file where to save time evolutions at user defined sensor coordinates.
+        tend (float): end time of the simulation.
 
     Returns:
-        [type]: [description]
+        dict: re-initialized dictionary t_evol if list lenght is equal to the CHUNCK_SIZE; else the not modified dictionary t_evol.
     """
-    if len(val["time (s)"]) == conductor.CHUNCK_SIZE:
-        pd.DataFrame(val, columns=list(val.keys()), dtype=float).to_csv(
+
+    # Alias
+    key_zcoord = conductor.key_zcoord
+    chunck_size = conductor.CHUNCK_SIZE
+    time = conductor.cond_time[-1]
+
+    if len(t_evol["time (s)"]) == chunck_size:
+        pd.DataFrame(t_evol, columns=list(t_evol.keys()), dtype=float).to_csv(
             file_name,
             sep="\t",
             mode="a",
-            chunksize=conductor.CHUNCK_SIZE,
+            chunksize=chunck_size,
             index=False,
             header=False,
         )
-        val = initialize_dictionaty_te(val, ind_zcoord)
-    elif abs(conductor.cond_time[-1] - tend) / tend <= 1e-6:
-        pd.DataFrame(val, columns=list(val.keys()), dtype=float).to_csv(
+        # Initiazlie t_evol with empty list to start a new saving cycle.
+        t_evol = {z_keys: list() for z_keys in key_zcoord}
+
+    elif np.isclose(time, tend):
+        pd.DataFrame(t_evol, columns=list(t_evol.keys()), dtype=float).to_csv(
             file_name,
             sep="\t",
             mode="a",
-            chunksize=conductor.CHUNCK_SIZE,
+            chunksize=chunck_size,
             index=False,
             header=False,
         )
-    # End if len(df.index).
-    return val
 
+    return t_evol
 
-# End function save_te_on_file.
 
 def save_geometry_discretization(collection: list, file_path: str):
     """Function used to save the coordinates of the barycenter of each conductor component in file with .tsv extension.
