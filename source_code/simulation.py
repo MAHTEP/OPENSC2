@@ -37,8 +37,9 @@ from utility_functions.transient_solution_functions import (
 from utility_functions.output import (
     save_simulation_space,
     reorganize_spatial_distribution,
-    save_simulation_time,
     save_properties,
+    save_time_evolution_init,
+    save_time_evolution,
 )
 from utility_functions.plots import (
     plot_properties,
@@ -304,7 +305,8 @@ class Simulation:
 
             # plot conductor initialization spatial distribution (cdp, 12/2020)
             plot_properties(self, cond)
-            save_simulation_time(self, cond)
+            cond.key_zcoord = save_time_evolution_init(self, cond)
+            save_time_evolution(self, cond)
             # ** END INITIALIZATION **
         # end for cond (cdp, 12/202)
         # dictionary declaration (cdp,07/2020)
@@ -614,7 +616,7 @@ class Simulation:
                 # end if isave
                 # Save variables time evolution at given spatial coordinates \
                 # (cdp, 08/2020)
-                save_simulation_time(self, conductor)
+                save_time_evolution(self, conductor)
                 # call sensor to plot results at any time the user asks (cdp, 07/2020)
 
                 # Call function get_time_step to compute the new time step used 
