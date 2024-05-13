@@ -874,6 +874,38 @@ def save_time_evolution(simulation:object, conductor:object):
             index=False,
         )
 
+def update_time_evolution(
+        t_evol:dict,
+        prop_te:np.ndarray,
+        zz:np.ndarray,
+        zp:np.ndarray,
+        prop:np.ndarray
+    )-> dict:
+    """Function that updates the dictionary that stores the time evolutions of the property at each user defined sensor coordinates. Time evolution of the properties in those coordiantes are evaluated by means of linear interpolation.
+
+    Args:
+        t_evol (dict): dictionary that collects the time evolution in all the user defined sensor coordinates of the property
+        prop_te (np.ndarray): array that stores the interpolated time evolution of the properties; it is filled in this function.
+        zz (np.ndarray): the coordinates at which evaluate the interpolated time evolution of the properties.
+        zp (np.ndarray): the coordinates of the data points with which carry out the interpolation.
+        prop (np.ndarray): the vaules of the properties used to carry out the interpolation.
+
+    Returns:
+        dict: dictionary with the updated time evolution of the properties in all the user defined sensor coordinates; the time at which this values are evaluated is also stored in the dictionary.
+    """
+
+    # Get the time evolution of the quantity of interest (prop) at sensor 
+    # location (z_sensor) interpolatin on the mesh. Remember that in index 0 is 
+    # stored the value of the time at which time evolution is saved.
+    prop_te[1:] = np.interp(zz,zp,prop)
+    
+    # Update each list with the corresponding value of the time evolution 
+    # stored in array prop_te.
+    for ii, te_val in enumerate(t_evol.values()):
+        te_val.append(prop_te[ii])
+
+    return t_evol
+
 def save_simulation_time(simulation, conductor):
 
     """
