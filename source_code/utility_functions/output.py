@@ -1357,6 +1357,60 @@ def update_time_evolution_io(obj:FluidComponent, time:float)->dict:
 
     return obj.coolant.time_evol_io
 
+def save_te_on_file_io(
+        conductor:object,
+        t_evol:dict,
+        file_name:str,
+        tend:float,
+        )->dict:
+    """Function that saves the time evolution of selectet variables at given the inlet and at the outletof the conductor channel. If arrays have reached a lenght equal to CHUNK_SIZE, their values are stored in appropriate files and the conten of the array is cleared (new empty list are created) to perform a new storage cycle. This allows to reduce the number of times the code reads and writes files.
+    This function is introduced as a special case of function save_te_on_file because in this case the keys of dictionaries t_evol are not the coordinates but directly the properti names, as opposed to all the ther cases where another nested dictionary is exploited.
+
+    Args:
+        conductor (object): object with all information on the conductor.
+        t_evol (dict): dictionary that collects the time evolution at the inlet and the outlet for the quantities of interest.
+        file_name (str): name of the file where to save inlet and outlet time.
+        tend (float): end time of the simulation.
+
+    Returns:
+        dict: re-initialized dictionary t_evol if list lenght is equal to the CHUNCK_SIZE; else the not modified dictionary t_evol.
+    """
+
+    # Alias
+    chunck_size = conductor.CHUNCK_SIZE
+    time = conductor.cond_time[-1]
+
+    if len(t_evol["time (s)"]) == chunck_size:
+        pd.DataFrame(
+            t_evol,
+            columns=list(t_evol.keys()),
+            dtype=float,
+        ).to_csv(
+            file_name,
+            sep="\t",
+            mode="a",
+            chunksize=chunck_size,
+            index=False,
+            header=False,
+        )
+        # Initialize empty dictionary.
+        t_evol.update(
+            {key: list() for key in t_evol.keys()}
+        )
+    elif np.isclose(time, tend):
+        pd.DataFrame(
+            t_evol,
+            columns=list(t_evol.keys()),
+            dtype=float,
+        ).to_csv(
+            file_name,
+            sep="\t",
+            mode="a",
+            chunksize=chunck_size,
+            index=False,
+            header=False,
+        )
+    return t_evol
 
 def save_geometry_discretization(collection: list, file_path: str):
     """Function used to save the coordinates of the barycenter of each conductor component in file with .tsv extension.
