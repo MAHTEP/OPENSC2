@@ -576,6 +576,144 @@ def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit_time):
 # end function reorganize_heat_sd.
 
 
+def save_time_evolution_init(simulation:object, conductor:object)-> tuple:
+    """Function that performs the initialization steps needed to carry out the saving of time evolutions at the user defined spatial coordinates.
+    The function:
+        1. initializes the dictionaryies assiciated to each quantity of interest with empty lists, one for each spatial coordinates ad which saving the time evolutions. Those are updated inplace as they are attributes of conductor component instances.
+        2. creates the files where the time evolutions will be stored, writing the header of the file only once.
+
+    Args:
+        simulation (object): object with all information on the simulation
+        conductor (object): object with all information on the conductor
+
+    Returns:
+        tuple: collection of strings representing the coordinates at which saving the time evolution of each quantities of interest for each conductor component.
+    """
+
+    # Alias
+    base_path = simulation.dict_path[
+        f"Output_Time_evolution_{conductor.identifier}_dir"
+    ]
+
+    # Build keys of the dictionaries that will store the values of the time 
+    # evolutions of each quantity of interest. Each key will store a list 
+    # (array) with the values of a quantity evaluated at a given spatial 
+    # coordinate. The first key of is collection is "time (s)" that will store 
+    # the time at which the quantities are saved.
+    key_zcoord = (
+        "time (s)",
+        *(
+            f"zcoord = {conductor.Time_save[ii]} (m)"
+            for ii in range(conductor.Time_save.size)
+        ),
+    )
+
+    # Construct the header of the file with input and output quantities of 
+    # interest only once.
+    headers_inl_out = (
+        "time (s)",
+        "velocity_inl (m/s)",
+        "pressure_inl (Pa)",
+        "temperature_inl (K)",
+        "total_density_inl (kg/m^3)",
+        "mass_flow_rate_inl (kg/s)",
+        "velocity_out (m/s)",
+        "pressure_out (Pa)",
+        "temperature_out (K)",
+        "total_density_out (kg/m^3)",
+        "mass_flow_rate_out (kg/s)",
+    )
+
+    # For each conductor component, initialize dictionaries and save heading 
+    # for all the quantities of interest.
+
+    for f_comp in conductor.inventory["FluidComponent"].collection:
+        # Loop on velocity, pressure, temperature and total density.
+        for prop_name in f_comp.coolant.time_evol.keys():
+            # Inizialize the dictionary corresponding to key prop_name to a 
+            # dictionary of empty lists for the first time.
+            f_comp.coolant.time_evol[prop_name].update(
+                {key: list() for key in key_zcoord}
+            )
+            # Save the headings only ones.
+            pd.DataFrame(columns=key_zcoord).to_csv(
+                os.path.join(
+                    base_path,
+                    f"{f_comp.identifier}_{prop_name}_te.tsv"
+                ),
+                sep="\t",
+                index=False,
+                header=True,
+            )
+
+        # Inizialize the dictionary corresponding to key friction_factor to a 
+        # dictionary of empty lists for the first time.
+        f_comp.channel.time_evol["friction_factor"].update(
+            {key: list() for key in key_zcoord}
+        )
+        
+        # Save the headings only ones.
+        pd.DataFrame(columns=key_zcoord).to_csv(
+            os.path.join(
+                base_path,
+                f"{f_comp.identifier}_friction_factor_te.tsv",
+            ),
+            sep="\t",
+            index=False,
+            header=True,
+        )
+        # Save the headings for inlet and outlet quantities only ones.
+        pd.DataFrame(columns=headers_inl_out).to_csv(
+            os.path.join(
+                base_path,
+                f"{f_comp.identifier}_inlet_outlet_te.tsv",
+            ),
+            sep="\t",
+            index=False,
+            header=True,
+        )
+
+    for s_comp in conductor.inventory["SolidComponent"].collection:
+        # Loop on temperature, magnetic field and current sharing temperature
+        # (if available).
+        for prop_name in s_comp.time_evol.keys():
+            # Inizialize the dictionary corresponding to key prop_name to a 
+            # dictionary of empty lists for the first time.
+            s_comp.time_evol[prop_name].update(
+                {key: list() for key in key_zcoord}
+            )
+            # Save the headings only ones.
+            pd.DataFrame(columns=key_zcoord).to_csv(
+                os.path.join(
+                    base_path,
+                    f"{s_comp.identifier}_{prop_name}_te.tsv"
+                ),
+                sep="\t",
+                index=False,
+                header=True,
+            )
+
+        # Loop on current, voltage difference and linear joule power (if 
+        # available)
+        for prop_name in s_comp.time_evol_gauss.keys():
+            # Inizialize the dictionary corresponding to key prop_name to a 
+            #  dictionary of empty lists for the first time.
+            s_comp.time_evol_gauss[prop_name].update(
+                {key: list() for key in key_zcoord}
+            )
+            # Save the headings only ones.
+            pd.DataFrame(columns=key_zcoord).to_csv(
+                os.path.join(
+                    base_path,
+                    f"{s_comp.identifier}_{prop_name}_gauss_te.tsv",
+                ),
+                sep="\t",
+                index=False,
+                header=True,
+            )
+
+    return key_zcoord
+
 def save_simulation_time(simulation, conductor):
 
     """
