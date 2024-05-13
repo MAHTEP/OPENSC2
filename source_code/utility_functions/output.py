@@ -4,6 +4,8 @@ import os
 
 from collections import namedtuple
 
+from fluid_component import FluidComponent
+
 
 def save_properties(conductor, f_path):
 
@@ -1311,6 +1313,49 @@ def save_te_on_file(
         )
 
     return t_evol
+
+def update_time_evolution_io(obj:FluidComponent, time:float)->dict:
+    """Function that updates the dictionary time_evol_io that stores the time evolutions of the property at the inlet and at the outlet. Since these coordinates are fixed and correspont to indez 0 and -1, there is no need to carry out interpolation to evaluate the values. This function can be used only with instances of class FluidComponent.
+
+    Args:
+        obj (FluidComponent): instance of class FluidComponent
+        time (float): time at which time evolution should be saved
+
+    Raises:
+        TypeError: if obj is not an instance of class FluidComponent
+        KeyError: if not valid keys are assigned to dictionary time_evol_io.
+
+    Returns:
+        dict: updated dictionary time_evol_io with time evolution of quantities of interest at the inlet and at the outlet.
+    """
+
+    if not isinstance(obj,FluidComponent):
+        raise TypeError("obj should be an instance of class FluidComponent")
+
+    if obj.channel.flow_dir[0] == "forward":
+        index_inl = 0
+        index_out = -1
+    elif obj.channel.flow_dir[0] == "backward":
+        index_inl = -1
+        index_out = 0
+
+    # Inlet and outlet quantities
+
+    for key, val in obj.coolant.time_evol_io.items():
+        if "inl" in key:
+            val.append(
+                obj.coolant.dict_node_pt[key.split("_inl")[0]][index_inl]
+            )
+        elif "out" in key:
+            val.append(
+                obj.coolant.dict_node_pt[key.split("_out")[0]][index_out]
+            )
+        elif "time" in key:
+            val.append(time)
+        else:
+            raise KeyError(f"Not valid key {key} in dictionary time_evol_io.")
+
+    return obj.coolant.time_evol_io
 
 
 def save_geometry_discretization(collection: list, file_path: str):
