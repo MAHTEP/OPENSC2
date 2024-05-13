@@ -714,6 +714,166 @@ def save_time_evolution_init(simulation:object, conductor:object)-> tuple:
 
     return key_zcoord
 
+def save_time_evolution(simulation:object, conductor:object):
+    """Function that saves the time evolution of the quantities of interest at user defined spatial coordinates (sensor location). The value of the quantities of interest in these coordinates are obtained by interpolation on the mesh. The function updates a dictionary of list of values for each quantity of interest and for each conductor component. When the lenght of these list becomes equal to the CHUNCK_SIZE parameter, the content of these list is written in the corresponding files. This allows to reduce the number of writing process during the simulation.
+    The dictionary of conductor componet are updated inplace; therefore this function does not have a return.
+
+    Args:
+        simulation (object): object with all information on the simulation
+        conductor (object): object with all information on the conductor
+    """
+
+    # Alias
+    z_sensor = conductor.Time_save
+    zcoord = conductor.grid_features["zcoord"]
+    zcoord_gauss = conductor.grid_features["zcoord_gauss"]
+    base_path = simulation.dict_path[
+        f"Output_Time_evolution_{conductor.identifier}_dir"
+    ]
+    tend = simulation.transient_input["TEND"]
+
+    # Convert conductor.cond_time list to np.array
+    time = np.array(conductor.cond_time[-1])
+
+    prop_te = np.zeros(conductor.n_sensor_tot)
+    prop_te[0] = time
+
+    # FluidComponent objects
+    for f_comp in conductor.inventory["FluidComponent"].collection:
+        
+        # Loop on velocity, pressure, temperature and total density.
+        for prop_name in f_comp.coolant.time_evol.keys():
+            
+            f_comp.coolant.time_evol[prop_name] = update_time_evolution(
+                f_comp.coolant.time_evol[prop_name],
+                prop_te,
+                z_sensor,
+                zcoord,
+                f_comp.coolant.dict_node_pt[prop_name]
+            )
+
+            # Write the content of the dictionary to file, if conditions are 
+            # satisfied.
+            f_comp.coolant.time_evol[prop_name] = save_te_on_file(
+                conductor,
+                f_comp.coolant.time_evol[prop_name],
+                os.path.join(
+                    base_path,
+                    f"{f_comp.identifier}_{prop_name}_te.tsv",
+                ),
+                tend,
+            )
+
+        # Save friction factor time evolution.
+        # Update the contend of the dictionary of lists with propertiy values 
+        # at selected zcoord and current time.
+        f_comp.channel.time_evol["friction_factor"] = update_time_evolution(
+            f_comp.channel.time_evol["friction_factor"],
+            prop_te,
+            z_sensor,
+            zcoord,
+            f_comp.channel.dict_friction_factor[True]["total"]
+        )
+
+        # Write the content of the dictionary to file, if conditions are 
+        # satisfied.
+        f_comp.channel.time_evol["friction_factor"] = save_te_on_file(
+            conductor,
+            f_comp.channel.time_evol["friction_factor"],
+            os.path.join(
+                base_path,
+                f"{f_comp.identifier}_friction_factor_te.tsv",
+            ),
+            tend,
+        )
+
+        f_comp.coolant.time_evol_io = update_time_evolution_io(
+            f_comp,
+            time,
+        )
+        
+        f_comp.coolant.time_evol_io = save_te_on_file_io(
+            conductor,
+            f_comp.coolant.time_evol_io,
+            os.path.join(
+                base_path,
+                f"{f_comp.identifier}_inlet_outlet_te.tsv",
+            ),
+            tend
+        )
+
+    # SolidComponent objects
+    for s_comp in conductor.inventory["SolidComponent"].collection:
+
+        for prop_name in s_comp.time_evol.keys():
+
+            s_comp.time_evol[prop_name] = update_time_evolution(
+                s_comp.time_evol[prop_name],
+                prop_te,
+                z_sensor,
+                zcoord,
+                s_comp.dict_node_pt[prop_name]
+            )
+
+            # Write the content of the dictionary to file, if conditions are 
+            # satisfied.
+            s_comp.time_evol[prop_name] = save_te_on_file(
+                conductor,
+                s_comp.time_evol[prop_name],
+                os.path.join(
+                    base_path,
+                    f"{s_comp.identifier}_{prop_name}_te.tsv",
+                ),
+                tend,
+            )
+
+        for prop_name in s_comp.time_evol_gauss.keys():
+            # Update the contend of the dictionary of lists with propertiy
+            # values at selected zcoord and current time.
+            if prop_name == "linear_power_el_resistance":
+
+                s_comp.time_evol_gauss[prop_name] = update_time_evolution(
+                    s_comp.time_evol_gauss[prop_name],
+                    prop_te,
+                    z_sensor,
+                    zcoord_gauss,
+                    s_comp.dict_Gauss_pt[prop_name][:, 0]
+                )
+
+            else:
+                s_comp.time_evol_gauss[prop_name] = update_time_evolution(
+                    s_comp.time_evol_gauss[prop_name],
+                    prop_te,
+                    z_sensor,
+                    zcoord_gauss,
+                    s_comp.dict_Gauss_pt[prop_name]
+                )
+            # Write the content of the dictionary to file, if conditions are
+            # satisfied.
+            s_comp.time_evol_gauss[prop_name] = save_te_on_file(
+                conductor,
+                s_comp.time_evol_gauss[prop_name],
+                os.path.join(
+                    base_path,
+                    f"{s_comp.identifier}_{prop_name}_te.tsv",
+                ),
+                tend,
+            )
+
+
+    if np.isclose(time, tend):
+        # TEND is reached: save the conductor time in file Time.tsv exploiting 
+        # pandas series.
+        pd.Series(conductor.cond_time, name="time (s)", dtype=float).to_csv(
+            os.path.join(
+                base_path,
+                "Time.tsv",
+            ),
+            sep="\t",
+            header=True,
+            index=False,
+        )
+
 def save_simulation_time(simulation, conductor):
 
     """
