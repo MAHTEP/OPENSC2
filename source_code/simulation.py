@@ -643,15 +643,13 @@ class Simulation:
                     self.transient_input["STPMIN"],
                 )
                 # Force the time step to not miss the next event.
-                conductor = force_time_step(
+                conductor,forced_time_step = force_time_step(
                         conductor,
                         self.transient_input["STPMIN"],
                     )
 
-                # Check if I did not forced the time step. This can be 
-                # checked quering the state of flag conductr.appended_time_flag 
-                # that is set to True if the time step was forced.
-                if conductor.appended_time_flag == False:
+                # Check if I did not forced the time step.
+                if forced_time_step == False:
                     # The time step is not force, there could be the need to 
                     # synchronine the time and the event.
                     conductor = time_and_event_synchronization(
