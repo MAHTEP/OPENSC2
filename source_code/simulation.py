@@ -32,6 +32,7 @@ from utility_functions.transient_solution_functions import (
     get_time_step,
     step,
     force_time_step,
+    force_min_time_step,
     time_and_event_synchronization,
 )
 from utility_functions.output import (
@@ -633,20 +634,29 @@ class Simulation:
                     self.starter_file_path,
                 )
 
-                conductor = time_and_event_synchronization(
+                # Try to force the minimum time step before the beginning of a 
+                # event to limit the possibility of overshooting or 
+                # undershooting in the thermal hydraulic solution.
+                conductor = force_min_time_step(
                     conductor,
-                    self.epsilon,
+                    self.transient_input["STPMAX"],
                     self.transient_input["STPMIN"],
                 )
-
-                # Check if I did not synchronize time and event. This can be 
-                # checked quering the state of flag conductr.appended_time_flag 
-                # that is set to True if the synchronization was performed.
-                if conductor.appended_time_flag == False:
-                    # Synchronization not performed, there could be the need to 
-                    # force the time step.
-                    conductor = force_time_step(
+                # Force the time step to not miss the next event.
+                conductor = force_time_step(
                         conductor,
+                        self.transient_input["STPMIN"],
+                    )
+
+                # Check if I did not forced the time step. This can be 
+                # checked quering the state of flag conductr.appended_time_flag 
+                # that is set to True if the time step was forced.
+                if conductor.appended_time_flag == False:
+                    # The time step is not force, there could be the need to 
+                    # synchronine the time and the event.
+                    conductor = time_and_event_synchronization(
+                        conductor,
+                        self.epsilon,
                         self.transient_input["STPMIN"],
                     )
 
