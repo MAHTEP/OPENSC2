@@ -255,7 +255,7 @@ def time_and_event_synchronization(
 def force_time_step(
     conductor: Conductor,
     t_step_min: float,
-    ) -> Conductor:
+    ) -> tuple:
     
     """Function that forces the time step if the value of the time step 
     computed with function get_time_step is such that the next event in the 
@@ -272,13 +272,15 @@ def force_time_step(
     t_{k+2} = t_e + dt_f
     The value of dt_f is controlled with tstep_min_lb, see the description for 
     further details.
+    If the time step is forced, flag force_t_step is set to True.
 
     Args:
         conductor (Conductor): object with all the information of the conductor.
         t_step_min (float): minimum value for the time step as defined by the user.
 
     Returns:
-        Conductor: conductor object with the following updated attributes
+        tuple: collection composed of conductor object and flag force_t_step.
+        The updated attributes of conductor object are:
             * cond_time
             * cond_num_step
             * appended_time_flag
@@ -300,6 +302,8 @@ def force_time_step(
     i_event = conductor.i_event
     # Time at which the next event should occur
     time_e = conductor.events_time[i_event]
+
+    force_t_step = False
 
     # Check if t_k < t_e < t_{k+1}
     if time_k < time_e and time_kp1 > time_e:
@@ -330,7 +334,9 @@ def force_time_step(
         # Ask to update i_event if possible.
         conductor.move_to_next_event()
 
-    return conductor
+        force_t_step = True
+
+    return (conductor, force_t_step)
 
 def force_min_time_step(
     conductor: Conductor,
