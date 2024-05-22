@@ -332,6 +332,46 @@ def force_time_step(
 
     return conductor
 
+def force_min_time_step(
+    conductor: Conductor,
+    t_step_max: float,
+    t_step_min: float,
+) -> Conductor:
+    """Function that forces the time step to the minimum value when the simulation get closer to an event, to avoid strong discontinuity in the solution due to switching on/off heating or changing the value of the current. This is forced when, with the present time step lenght, the number of time steps necessary to reach the time of the event is smaller or equal than 2. This value is chosen to avoid forcing the minimum time step lenght too early, i.e. when the distance to the event is smaller or equal than the maximum time step lenght.
+
+    Args:
+        conductor (Conductor): object with all the information of the conductor.
+        t_step_max (float): maximum value for the time step as defined by the user.
+        t_step_min (float): minimum value for the time step as defined by the user.
+
+    Returns:
+        Conductor: conductor object with the following updated attributes
+            * time_step
+    """
+
+    # Alias
+    # The last evaluated time (t_k)
+    time_k = conductor.cond_time[-1]
+    # Index of the time event that should occur in the timeline
+    i_event = conductor.i_event
+    # Time at which the next event should occur
+    time_e = conductor.events_time[i_event]
+
+    delta_t_e = time_e - time_k
+
+    if delta_t_e >= 0 and delta_t_e <= t_step_max:
+
+        nn = np.floor(delta_t_e / conductor.time_step)
+
+        if nn <= 2:
+
+            print(
+                f"Forced {conductor.identifier} time step: {t_step_min} s\n"
+            )
+            conductor.time_step = t_step_min
+    
+    return conductor
+
 def step(conductor, envionment, qsource, num_step):
 
     """
