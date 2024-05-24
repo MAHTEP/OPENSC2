@@ -1260,9 +1260,10 @@ class Conductor:
         # End if self.Space_save.max() > simulation.transient_input["TEND"]
         # index pointer to save solution spatial distribution (cdp, 12/2020)
         self.i_save = 0
+        NN = len(self.Space_save)
         # list of number of time steps at wich save the spatial discretization
-        self.num_step_save = np.zeros(self.Space_save.shape, dtype=int)
-        self.i_save_max = len(self.Space_save) - 1
+        self.num_step_save = np.linspace(-1,-NN,NN,dtype=int)
+        self.i_save_max = NN - 1
 
         self.__get_cost_and_var_htc_interfaces(simulation)
         
