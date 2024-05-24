@@ -417,6 +417,13 @@ class Simulation:
                     f"Output_Spatial_distribution_{conductor.identifier}_dir"
                 ]
             )
+            mask = np.isin(
+                conductor.space_save_diff,
+                conductor.Space_save[conductor.i_save],
+            )
+            if any(mask):
+                # Move to the next time in array space_save_diff.
+                conductor.i_save_diff += 1
             conductor.i_save += 1
         # end for ii (cdp, 10/2020)
         # while loop to solve transient at each timestep (cdp, 07/2020)
@@ -613,6 +620,13 @@ class Simulation:
                                 f"Output_Spatial_distribution_{conductor.identifier}_dir"
                             ],
                         )
+                        mask = np.isin(
+                            conductor.space_save_diff,
+                            conductor.Space_save[conductor.i_save]
+                        )
+                        if any(mask):
+                            # Move to the next time in array space_save_diff.
+                            conductor.i_save_diff += 1
                         conductor.i_save += 1
                 # end if isave
                 # Save variables time evolution at given spatial coordinates \
