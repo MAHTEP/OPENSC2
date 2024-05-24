@@ -98,7 +98,12 @@ def get_time_step(
         return conductor.next_time_step
 
     if iadaptime == 0:
-        
+
+        time_step = check_t_step_wrt_t_save(
+            transient_input["TIME_STEP"],
+            prv_time_step,
+            conductor
+        )
         time_step = min(
             transient_input["TIME_STEP"], t_end - conductor.cond_time[-1]
         )
@@ -139,6 +144,12 @@ def get_time_step(
         else:
             time_step = prv_time_step
         
+        time_step = check_t_step_wrt_t_save(
+            time_step,
+            prv_time_step,
+            conductor
+        )
+
         # Limit the time step in the window allowed by the user
         time_step = max(time_step, t_step_min)
         time_step = min(time_step, transient_input["STPMAX"])
