@@ -416,7 +416,7 @@ def force_min_time_step(
 
     if delta_t_e >= 0 and delta_t_e <= t_step_max:
 
-        nn = np.floor(delta_t_e / conductor.time_step)
+        nn = round(delta_t_e / conductor.time_step)
 
         if nn <= 2:
 
