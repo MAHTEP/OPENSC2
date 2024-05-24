@@ -1304,6 +1304,19 @@ class Conductor:
         self.next_time_step = 0.0
         self.force_next_tstep_flag = False
 
+        # Create an array of times at which saving the spatial distributions as 
+        # the set difference between self.Save_space and self.events_time. This 
+        # arrays contains all the values in self.Save_space that are not 
+        # included in array self.events_time.
+        self.space_save_diff = np.setdiff1d(self.Space_save,self.events_time)
+        self.i_save_diff = 0
+        # i_save_diff_max is defined as len - 1 as it is used in a contex in 
+        # which, being at i_save_diff = i, I will exploit the value at i+1 to 
+        # carry out a check on the time step computed with function 
+        # get_time_step. Since Python starts counting from 0, the last value of # i such that i+1 does not exched the lenght of array space_save_diff 
+        # is len - 1
+        self.i_save_diff_max = len(self.space_save_diff) - 1
+
         # declare dictionaries to store Figure and axes objects to constructi real \
         # time figures (cdp, 10/2020)
         self.dict_Figure_animation = dict(T_max=dict(), mfr=dict())
