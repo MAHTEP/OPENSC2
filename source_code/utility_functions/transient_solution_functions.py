@@ -194,6 +194,47 @@ def user_adaptive_time_step(conductor:Conductor,transient_input:dict)->float:
 
     return time_step
 
+def check_t_step_wrt_t_save(
+    t_step:float,
+    prv_t_step:float,
+    conductor:Conductor
+)->float:
+    
+    """Function that checks if the selected time step in function get_time_step is suitable to perform the saving of the spatial distributions at user defined times. If the time step is such that one or more saving times are missed, it is corrected to avoid this behavior.
+
+    Args:
+        t_step (float): present time step as evaluated from function get_time_step.
+        prv_t_step (float): the value of the previous time step used for the generic conductor component.
+        conductor (Conductor): object with all the information of the conductor.
+
+    Returns:
+        float: value of the time step for the generic conductor eventually modified to account for missing saving times.
+    """
+
+    # Alias
+    time_k = conductor.cond_time[-1]
+    i_save_diff = conductor.i_save_diff
+    
+    tmp_time = time_k + t_step
+
+    # Check if value of i_save_diff is valid
+    if i_save_diff < conductor.i_save_diff_max:
+        # Input variable t_step could be modified.
+        if tmp_time >= conductor.space_save_diff[i_save_diff + 1]:
+            # i_save_diff is the pointer to the next time at which user 
+            # wants to save spatial distributions.
+            # i_save_diff + 1 is the pointer to the time at which user 
+            # wants to save spatial distributions after the time 
+            # corresponding to i_save_diff.
+            # If temporary time tmp_time is larger than the time 
+            # corresponding to pointer i_save_diff + 1 I have missed 
+            # the saving at i_save_diff, so I should modify the time 
+            # step accordingly: update the value of input argument t_step.
+            dt_save = conductor.space_save_diff[i_save_diff] - time_k
+            t_step = min(dt_save,prv_t_step)
+    
+    return t_step
+
 def time_and_event_synchronization(
     conductor: Conductor,
     epsilon: float,
