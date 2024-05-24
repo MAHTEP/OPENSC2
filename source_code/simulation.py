@@ -628,6 +628,12 @@ class Simulation:
                             # Move to the next time in array space_save_diff.
                             conductor.i_save_diff += 1
                         conductor.i_save += 1
+
+                        # Update the value of t_save_left to the present time 
+                        # in order to reduce the interpolation error for the 
+                        # saving of spatial distributions at user defined times.
+                        conductor.t_save_left = conductor.cond_time[-1]
+
                 # end if isave
                 # Save variables time evolution at given spatial coordinates \
                 # (cdp, 08/2020)
