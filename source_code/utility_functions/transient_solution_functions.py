@@ -69,6 +69,7 @@ def get_time_step(
     iadaptime = transient_input["IADAPTIME"]
     t_step_min = transient_input["STPMIN"]
     t_end = transient_input["TEND"]
+    time_k = conductor.cond_time[-1]
     # Previous time step
     prv_time_step = conductor.time_step
 
@@ -104,9 +105,7 @@ def get_time_step(
             prv_time_step,
             conductor
         )
-        time_step = min(
-            transient_input["TIME_STEP"], t_end - conductor.cond_time[-1]
-        )
+        time_step = min(transient_input["TIME_STEP"], t_end - time_k)
         return time_step
     elif iadaptime > 0:
 
@@ -153,9 +152,7 @@ def get_time_step(
         # Limit the time step in the window allowed by the user
         time_step = max(time_step, t_step_min)
         time_step = min(time_step, transient_input["STPMAX"])
-        time_step = min(
-            time_step, t_end - conductor.cond_time[-1]
-        )
+        time_step = min(time_step, t_end - time_k)
         
         print(f"Selected conductor time step is: {time_step}\n")
 
