@@ -303,6 +303,13 @@ class Conductor:
         #     f"After call method {self.conductor_components_instance.__name__}"
         # )
 
+        # Loop to check if the simulation is purely thermal-hydraulic or 
+        # involves also the electric method and to check the values and 
+        # relations between flags IOP_MODE of the generic SolidComponent and 
+        # I0_OP_MODE of the conductor.
+        for obj in self.inventory["SolidComponent"].collection:
+            obj.operations["IOP_MODE"] = self.__check_current_mode(obj)
+
         self.__get_total_cross_section()
 
         # Call private method __coordinates to build grid coordinates.
