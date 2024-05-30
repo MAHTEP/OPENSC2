@@ -210,11 +210,6 @@ class SolidComponent:
             ValueError: if a not valid value is given to flag I0_OP_MODE.
         """
 
-        # Check consistency between flags conductor.inputs['I0_OP_MODE']
-        # and self.operations['IOP_MODE'] only the first time.
-        if conductor.cond_time[-1] == 0:
-            self.__check_current_mode(conductor)
-
         # Get current.
         if self.operations["IOP_MODE"] != None:
             # The object carryes a current and its value is defied as below.
@@ -309,18 +304,6 @@ class SolidComponent:
                         + self.dict_node_pt["op_current_sc"][1:]
                     ) / 2.0
 
-            elif conductor.inputs["I0_OP_MODE"] == IOP_NOT_DEFINED:
-                # User does not specify a current: set current carrient 
-                # operating current to zero only the first time in both nodal 
-                # and gauss points.
-                if conductor.cond_num_step == 0:
-                    self.dict_node_pt["op_current"] = np.zeros(conductor.grid_features["N_nod"])
-                    self.dict_Gauss_pt["op_current"] = np.zeros(conductor.grid_input["NELEMS"])
-                    # initialize current along to 0 at t=0 to avoid KeyError in 
-                    # method eval_tcs.
-                    self.dict_node_pt["current_along"] = self.dict_node_pt["op_current"]
-                    self.dict_Gauss_pt["current_along"] = self.dict_Gauss_pt["op_current"]
-            
             elif conductor.inputs["I0_OP_MODE"] == IOP_FROM_EXT_FUNCTION:
                 raise ValueError(
                     f"Current from external function to be implemented!"
