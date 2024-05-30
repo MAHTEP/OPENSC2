@@ -7557,3 +7557,47 @@ class Conductor:
             
             # Update array total_linear_power_el_cond.
             obj.dict_node_pt["EXTFLX"] = foo
+
+
+    def __check_current_mode(self, scomp: object)->int:
+        """Private method that checks consistency between flags self.inputs['I0_OP_MODE'] and scomp.operations['IOP_MODE'] to deal with current definition.
+        The method checks whether the simulation involves or not the electric module; if not (self.inputs['I0_OP_MODE'] = IOP_NOT_DEFINED) the function returns the value in IOP_NOT_DEFINED to update flag IOP_MODE of the generic SolidComponent instance.
+
+        Args:
+            scomp (object): SolidComponent object with all informations to make the check.
+
+        Raises:
+            ValueError: scomp.operations["IOP_MODE"] != None and self.inputs["I0_OP_MODE"] == -1 and scomp.operations["IOP_MODE"] != -1.
+            ValueError: scomp.operations["IOP_MODE"] != None and self.inputs["I0_OP_MODE"] == 0 and scomp.operations["IOP_MODE"] != 0.
+
+        Returns:
+            Union[int,None]: value of flag scomp.operations["IOP_MODE"]
+        """
+
+        # Check if the electric module should be used in the simulation.
+        if self.inputs["I0_OP_MODE"] == IOP_NOT_DEFINED:
+            # Flag I0_OP_MODE is set to None; there is no need to use the 
+            # electric module: set flag IOP_MODE of scomp to None to avoid 
+            # errors in method get_current of class SolidComponents.
+            return IOP_NOT_DEFINED
+        
+        # Initialize dictionary with error message to be printed.
+        message_switch = {
+            -1: f"{self.inputs['I0_OP_MODE']=} implies that current carried by object {scomp.identifier = } should be read from file. Flag scomp.operations['IOP_MODE'] should be set to -1; current value is {scomp.operations['IOP_MODE']=}. Please check sheet {scomp.identifier} of input file conductor_operation.xlsx.\n",
+            0: f"{self.inputs['I0_OP_MODE']=} implies that current carried by object {scomp.identifier = } is evaluated from the code since the total current carried by the conductor is assigned. Flag scomp.operations['IOP_MODE'] should be set to 0; current value is {scomp.operations['IOP_MODE']=}. Please check sheet {scomp.identifier} of input file conductor_operation.xlsx.\n",
+        }
+
+        # Check consistency between flags self.inputs['I0_OP_MODE'] and
+        # scomp.operations['IOP_MODE'].
+        if scomp.operations["IOP_MODE"] != None:
+            if (
+                self.inputs["I0_OP_MODE"] == -1
+                and scomp.operations["IOP_MODE"] != -1
+            ):
+                raise ValueError(message_switch[self.inputs["I0_OP_MODE"]])
+            elif (
+                self.inputs["I0_OP_MODE"] == 0 and scomp.operations["IOP_MODE"] != 0
+            ):
+                raise ValueError(message_switch[self.inputs["I0_OP_MODE"]])
+
+        return scomp.operations["IOP_MODE"]
