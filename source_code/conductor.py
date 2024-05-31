@@ -6412,6 +6412,37 @@ class Conductor:
                 )
             )
 
+        # Update values of the costant htc stored in dictionary named "t_save" 
+        # to be consistent with the shape of the arrays of the variable htc 
+        # (stored in the same dictioary "t_save") to avoid error on dimension 
+        # while calling function save_conductor_sd from module output.py.
+        for interf_id in self.costant_htc_intef["htc_ch_ch_open"]:
+            self.store_sd_node["htc_ch_ch_open"]["t_save"][interf_id] = (
+                self.dict_node_pt["HTC"]["ch_ch"]["Open"][interf_id]
+            )
+
+        for interf_id in self.costant_htc_intef["htc_ch_ch_close"]:
+            self.store_sd_node["htc_ch_ch_close"]["t_save"][interf_id] = (
+                self.dict_node_pt["HTC"]["ch_ch"]["Close"][interf_id]
+            )
+
+        for interf_id in self.costant_htc_intef["htc_ch_sol"]:
+            self.store_sd_node["htc_ch_sol"]["t_save"][interf_id] = (
+                self.dict_node_pt["HTC"]["ch_sol"][interf_id]
+            )
+        
+        for interf_id in self.costant_htc_intef["htc_sol_sol_cond"]:
+            self.store_sd_node["htc_sol_sol_cond"]["t_save"][interf_id] = (
+                self.dict_node_pt["HTC"]["sol_sol"]["cond"][interf_id]
+            )
+        
+        for interf_id in self.costant_htc_intef["htc_sol_sol_rad"]:
+            self.store_sd_node["htc_sol_sol_rad"]["t_save"][interf_id] = (
+                self.dict_node_pt["HTC"]["sol_sol"]["rad"][interf_id]
+            )
+
+
+
         self.store_sd_gauss["zcoord_gauss"]["t_save"] = interp_at_t_save(
             tt,
             t1,
