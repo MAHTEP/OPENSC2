@@ -6216,8 +6216,8 @@ class Conductor:
         # Costant vales of the htc are stored directy in keyword t_save since 
         # there is no need for linear interpolation. These values will be no 
         # longer updated during the simulation
-        self.__store_sd_htc_conductor(self.costant_htc_intef,t_save_key)
-        self.__store_sd_htc_conductor(self.variable_htc_intef,t_save_key)
+        self.__store_sd_htc_conductor(self.costant_htc_interf,t_save_key)
+        self.__store_sd_htc_conductor(self.variable_htc_interf,t_save_key)
 
     def store_spatial_distributions(self, t_save_key:str="t_save_left"):
         """Method that stores spatial distribution values of selected properties in datastructure store_sd_node and store_sd_gauss.
@@ -6243,7 +6243,7 @@ class Conductor:
         # componetns in the selected keyword (t_save_key). These stored values 
         # will be used to evaluate the value of the htc at the user defined 
         # time step to save spatial distributions.
-        self.__store_sd_htc_conductor(self.variable_htc_intef,t_save_key)
+        self.__store_sd_htc_conductor(self.variable_htc_interf,t_save_key)
 
 
     def store_interp_spatial_distributions(self):
@@ -6283,7 +6283,7 @@ class Conductor:
             # Interpolate val on the new mesh for all keys in key_list an for 
             # all i_id (interface identifiers).
             for key in key_list:
-                for i_id in self.variable_htc_intef[key]:
+                for i_id in self.variable_htc_interf[key]:
                     # In case of variable htc (in time) bouble interpolation in 
                     # both space and time is required; the interpolation in 
                     # space is carried out on the values stored in key 
@@ -6352,7 +6352,7 @@ class Conductor:
             zcoord,
         )
 
-        for interf_id in self.variable_htc_intef["htc_ch_ch_open"]:
+        for interf_id in self.variable_htc_interf["htc_ch_ch_open"]:
             self.store_sd_node["htc_ch_ch_open"]["t_save"][interf_id] = (
                 interp_at_t_save(
                     tt,
@@ -6363,7 +6363,7 @@ class Conductor:
                 )
             )
 
-        for interf_id in self.variable_htc_intef["htc_ch_ch_close"]:
+        for interf_id in self.variable_htc_interf["htc_ch_ch_close"]:
             self.store_sd_node["htc_ch_ch_close"]["t_save"][interf_id] = (
                 interp_at_t_save(
                     tt,
@@ -6374,7 +6374,7 @@ class Conductor:
                 )
             )
         
-        for interf_id in self.variable_htc_intef["htc_ch_sol"]:
+        for interf_id in self.variable_htc_interf["htc_ch_sol"]:
             self.store_sd_node["htc_ch_sol"]["t_save"][interf_id] = (
                 interp_at_t_save(
                     tt,
@@ -6385,7 +6385,7 @@ class Conductor:
                 )
             )
         
-        for interf_id in self.variable_htc_intef["htc_sol_sol_cond"]:
+        for interf_id in self.variable_htc_interf["htc_sol_sol_cond"]:
             self.store_sd_node["htc_sol_sol_cond"]["t_save"][interf_id] = (
                 interp_at_t_save(
                     tt,
@@ -6396,7 +6396,7 @@ class Conductor:
                 )
             )
         
-        for interf_id in self.variable_htc_intef["htc_sol_sol_rad"]:
+        for interf_id in self.variable_htc_interf["htc_sol_sol_rad"]:
             self.store_sd_node["htc_sol_sol_rad"]["t_save"][interf_id] = (
                 interp_at_t_save(
                     tt,
@@ -6411,27 +6411,27 @@ class Conductor:
         # to be consistent with the shape of the arrays of the variable htc 
         # (stored in the same dictioary "t_save") to avoid error on dimension 
         # while calling function save_conductor_sd from module output.py.
-        for interf_id in self.costant_htc_intef["htc_ch_ch_open"]:
+        for interf_id in self.costant_htc_interf["htc_ch_ch_open"]:
             self.store_sd_node["htc_ch_ch_open"]["t_save"][interf_id] = (
                 self.dict_node_pt["HTC"]["ch_ch"]["Open"][interf_id]
             )
 
-        for interf_id in self.costant_htc_intef["htc_ch_ch_close"]:
+        for interf_id in self.costant_htc_interf["htc_ch_ch_close"]:
             self.store_sd_node["htc_ch_ch_close"]["t_save"][interf_id] = (
                 self.dict_node_pt["HTC"]["ch_ch"]["Close"][interf_id]
             )
 
-        for interf_id in self.costant_htc_intef["htc_ch_sol"]:
+        for interf_id in self.costant_htc_interf["htc_ch_sol"]:
             self.store_sd_node["htc_ch_sol"]["t_save"][interf_id] = (
                 self.dict_node_pt["HTC"]["ch_sol"][interf_id]
             )
         
-        for interf_id in self.costant_htc_intef["htc_sol_sol_cond"]:
+        for interf_id in self.costant_htc_interf["htc_sol_sol_cond"]:
             self.store_sd_node["htc_sol_sol_cond"]["t_save"][interf_id] = (
                 self.dict_node_pt["HTC"]["sol_sol"]["cond"][interf_id]
             )
         
-        for interf_id in self.costant_htc_intef["htc_sol_sol_rad"]:
+        for interf_id in self.costant_htc_interf["htc_sol_sol_rad"]:
             self.store_sd_node["htc_sol_sol_rad"]["t_save"][interf_id] = (
                 self.dict_node_pt["HTC"]["sol_sol"]["rad"][interf_id]
             )
@@ -6639,14 +6639,14 @@ class Conductor:
         # Initialize attribute variable_htc_interf keys to empty list with 
         # dictionary comprehension. Start from second item (index 1) because 
         # "zcoord" is not related to heat transfer coefficients
-        self.variable_htc_intef = {
+        self.variable_htc_interf = {
             key:[] for key in self.relevant_prop_sd["node"]["Conductor"][1:]
         }
 
         # Initialize attribute costant_htc_interf keys to empty list with 
         # dictionary comprehension. Start from second item (index 1) because 
         # "zcoord" is not related to heat transfer coefficients
-        self.costant_htc_intef = {
+        self.costant_htc_interf = {
             key:[] for key in self.relevant_prop_sd["node"]["Conductor"][1:]
         }
 
@@ -6671,11 +6671,11 @@ class Conductor:
                         s_comp.identifier
                     ]
                     if flag_coupling == 2:
-                        self.variable_htc_intef["htc_ch_sol"].append(
+                        self.variable_htc_interf["htc_ch_sol"].append(
                             interf_id
                         )
                     elif flag_coupling == -2:
-                        self.costant_htc_intef["htc_ch_sol"].append(
+                        self.costant_htc_interf["htc_ch_sol"].append(
                             interf_id
                         )
 
@@ -6699,18 +6699,18 @@ class Conductor:
                     interf_id = f"{fluid_comp_r.identifier}_{fluid_comp_c.identifier}"
                     if flag_coupling == 2:
                         # Heat transfer by convection.
-                        self.variable_htc_intef["htc_ch_ch_close"].append(
+                        self.variable_htc_interf["htc_ch_ch_close"].append(
                             interf_id
                         )
-                        self.variable_htc_intef["htc_ch_ch_open"].append(
+                        self.variable_htc_interf["htc_ch_ch_open"].append(
                             interf_id
                         )
                     elif flag_coupling == -2:
                         # Heat transfer by convection.
-                        self.costant_htc_intef["htc_ch_ch_close"].append(
+                        self.costant_htc_interf["htc_ch_ch_close"].append(
                             interf_id
                         )
-                        self.costant_htc_intef["htc_ch_ch_open"].append(
+                        self.costant_htc_interf["htc_ch_ch_open"].append(
                             interf_id
                         )
         # end for loop rr
@@ -6736,22 +6736,22 @@ class Conductor:
                     ]
                     if flag_coupling == 1:
                         # Heat transfer by conduction.
-                        self.variable_htc_intef["htc_sol_sol_cond"].append(
+                        self.variable_htc_interf["htc_sol_sol_cond"].append(
                             interf_id
                         )
                     elif flag_coupling == -1:
                         # Heat transfer by conduction.
-                        self.costant_htc_intef["htc_sol_sol_cond"].append(
+                        self.costant_htc_interf["htc_sol_sol_cond"].append(
                             interf_id
                         )
                     elif flag_coupling == 3:
                         # Heat transfer by radiation.
-                        self.variable_htc_intef["htc_sol_sol_rad"].append(
+                        self.variable_htc_interf["htc_sol_sol_rad"].append(
                             interf_id
                         )
                     elif flag_coupling == -3:
                         # Heat transfer by radiation.
-                        self.costant_htc_intef["htc_sol_sol_rad"].append(
+                        self.costant_htc_interf["htc_sol_sol_rad"].append(
                             interf_id
                         )
             # end for loop cc
@@ -6768,31 +6768,31 @@ class Conductor:
                         ]
                 if flag_coupling == 2:
                     # Heat transfer by convection.
-                    self.variable_htc_intef["htc_env_sol_conv"].append(key)
+                    self.variable_htc_interf["htc_env_sol_conv"].append(key)
                 elif flag_coupling == -2:
                     # Heat transfer by convection.
-                    self.costant_htc_intef["htc_env_sol_conv"].append(key)
+                    self.costant_htc_interf["htc_env_sol_conv"].append(key)
 
                 if (flag_coupling == 3 or flag_coupling == 4):
                     # Heat tranfer by radiation (|flag_coupling| = 3) or by 
                     # radiation and convection (|flag_coupling| = 4).
-                    self.variable_htc_intef["htc_env_sol_rad"].append(key)
+                    self.variable_htc_interf["htc_env_sol_rad"].append(key)
                 elif flag_coupling == -3 or flag_coupling == -4:
                     # Heat tranfer by radiation (|flag_coupling| = 3) or by 
                     # radiation and convection (|flag_coupling| = 4).
-                    self.costant_htc_intef["htc_env_sol_rad"].append(key)
+                    self.costant_htc_interf["htc_env_sol_rad"].append(key)
         # end for loop rr
 
         # Convert list into tuple to have an immutable collection of interfaces 
         # identifiers.
-        self.variable_htc_intef = {
-            key:tuple(val) for key,val in self.variable_htc_intef.items()
+        self.variable_htc_interf = {
+            key:tuple(val) for key,val in self.variable_htc_interf.items()
         }
 
         # Convert list into tuple to have an immutable collection of interfaces 
         # identifiers.
-        self.costant_htc_intef = {
-            key:tuple(val) for key,val in self.costant_htc_intef.items()
+        self.costant_htc_interf = {
+            key:tuple(val) for key,val in self.costant_htc_interf.items()
         }
 
     def __collect_event_time(self,simulation):
