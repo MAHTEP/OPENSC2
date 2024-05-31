@@ -6256,6 +6256,11 @@ class Conductor:
         t1 = self.t_save_left
         t2 = self.t_save_right
 
+        zcoord = self.grid_features["zcoord"]
+        zcoord_old = self.store_sd_node["zcoord"]["t_save_left"]
+        zcoord_gauss = self.grid_features["zcoord_gauss"]
+        zcoord_gauss_old = self.store_sd_gauss["zcoord_gauss"]["t_save_left"]
+
         # Check if mesh is adaptive.
         if (
             self.grid_input["ITYMSH"] == ADAPTIVE_UNIFORM_MESH 
@@ -6276,13 +6281,17 @@ class Conductor:
             )
 
             # Interpolate val on the new mesh for all keys in key_list an for 
-            # all i_id (interface identifiers) 
+            # all i_id (interface identifiers).
             for key in key_list:
-                for i_id, val in self.store_sd_node[key]["t_save_left"].items():
+                for i_id in self.variable_htc_intef[key]:
+                    # In case of variable htc (in time) bouble interpolation in 
+                    # both space and time is required; the interpolation in 
+                    # space is carried out on the values stored in key 
+                    # t_save_left.
                     self.store_sd_node[key]["t_save_left"][i_id] = np.interp(
-                        self.grid_features["zcoord"],
-                        self.store_sd_node["zcoord"]["t_save_left"],
-                        val,
+                        zcoord,
+                        zcoord_old,
+                        self.store_sd_node[key]["t_save_left"][i_id],
                     )
 
             # Loop on FluidComponent and SolidComponent to interpolate 
@@ -6290,8 +6299,8 @@ class Conductor:
             for obj in self.inventory["all_component"].collection:
                 for prop, val in obj.store_sd_node.items():
                     obj.store_sd_node[prop]["t_save_left"] = np.interp(
-                        self.grid_features["zcoord"],
-                        self.store_sd_node["zcoord"]["t_save_left"],
+                        zcoord,
+                        zcoord_old,
                         val["t_save_left"],
                     )
 
@@ -6307,8 +6316,8 @@ class Conductor:
                     "t_save_left"
                 ].items():
                     self.store_sd_gauss[key]["t_save_left"][i_id] = np.interp(
-                        self.grid_features["zcoord_gauss"],
-                        self.store_sd_gauss["zcoord_gauss"]["t_save_left"],
+                        zcoord_gauss,
+                        zcoord_gauss_old,
                         val,
                     )
 
@@ -6317,44 +6326,30 @@ class Conductor:
             for obj in self.inventory["SolidComponent"].collection:
                 for prop, val in obj.store_sd_gauss.items():
                     obj.store_sd_gauss[prop]["t_save_left"] = np.interp(
-                        self.grid_features["zcoord_gauss"],
-                        self.store_sd_gauss["zcoord_gauss"]["t_save_left"],
+                        zcoord_gauss,
+                        zcoord_gauss_old,
                         val["t_save_left"],
                     )
 
             # Interpolate the old mesh stored in attribute store_sd_node on the 
             # new one (to be understood if this is actually useful and correct).
-            xx = np.array(range(self.grid_features["zcoord"].size))
-            xx_old = np.array(range(
-                self.store_sd_node["zcoord"]["t_save_left"].size
-                )
-            )
-            self.store_sd_node["zcoord"]["t_save_left"] = np.interp(
-                xx,
-                xx_old,
-                self.store_sd_node["zcoord"]["t_save_left"],
-            )
+            xx = np.array(range(zcoord.size))
+            xx_old = np.array(range(zcoord_old.size))
+            zcoord_old = np.interp(xx,xx_old,zcoord_old)
 
             # Interpolate the old mesh (Gauss points) stored in attribute 
             # store_sd_gauss on the new one (to be understood if this is 
             # actually useful and correct).
-            xx = np.array(range(self.grid_features["zcoord_gauss"].size))
-            xx_old = np.array(range(
-                self.store_sd_gauss["zcoord_gauss"]["t_save_left"].size
-                )
-            )
-            self.store_sd_gauss["zcoord_gauss"]["t_save_left"] = np.interp(
-                xx,
-                xx_old,
-                self.store_sd_gauss["zcoord_gauss"]["t_save_left"],
-            )
+            xx = np.array(range(zcoord_gauss.size))
+            xx_old = np.array(range(zcoord_gauss_old.size))
+            zcoord_gauss_old = np.interp(xx,xx_old,zcoord_gauss_old)
 
         self.store_sd_node["zcoord"]["t_save"] = interp_at_t_save(
             tt,
             t1,
             t2,
-            self.store_sd_node["zcoord"]["t_save_left"],
-            self.grid_features["zcoord"],
+            zcoord_old,
+            zcoord,
         )
 
         for interf_id in self.variable_htc_intef["htc_ch_ch_open"]:
@@ -6447,8 +6442,8 @@ class Conductor:
             tt,
             t1,
             t2,
-            self.store_sd_gauss["zcoord_gauss"]["t_save_left"],
-            self.grid_features["zcoord_gauss"],
+            zcoord_gauss_old,
+            zcoord_gauss,
         )
         
         for kk,vv in self.heat_rad_jk.items():
@@ -6522,6 +6517,10 @@ class Conductor:
                         obj.store_sd_gauss[key]["t_save_left"],
                         vv,
                     )
+                
+        self.store_sd_node["zcoord"]["t_save_left"] = zcoord_old
+        self.store_sd_gauss["zcoord_gauss"]["t_save_left"] = zcoord_gauss_old
+
 
     def __initialize_store_sd(self):
         """Private method that initializes datastructures store_sd_node and store_sd_gauss that stores spatial distribution (nodal/Gauss points) at 
