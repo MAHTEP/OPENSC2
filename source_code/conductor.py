@@ -2912,9 +2912,6 @@ class Conductor:
         # Nested loop jacket - jacket.
         for rr, jacket_r in enumerate(self.inventory["JacketComponent"].collection):
             # np array of shape (Node, 1) to avoid broadcasting error.
-            jacket_r.radiative_heat_env = np.zeros(
-                (jacket_r.dict_node_pt["temperature"].size, 1)
-            )
             for _, jacket_c in enumerate(
                 self.inventory["JacketComponent"].collection[rr + 1 :]
             ):
@@ -4773,14 +4770,11 @@ class Conductor:
             # Call set_energy_counters to initialize EEXT and EJHT to zeros for 
             # each conductor solid components.
             jacket.set_energy_counters(self)
-            if (
-                abs(interf_flag.at[
-                    simulation.environment.KIND, jacket.identifier
-                ]) == 1
-            ):
-                # Evaluate the external heat by radiation in nodal points.
-                jacket._radiative_source_therm_env(self, simulation.environment)
-            # End if abb(interf_flag)
+            
+            # Initialize the external heat by radiation in nodal points.
+            jacket.radiative_heat_env = jacket._init_radiative_source_therm_env(
+                self
+            )
             for _, jacket_c in enumerate(
                 self.inventory["JacketComponent"].collection[rr + 1 :]
             ):
@@ -4880,7 +4874,10 @@ class Conductor:
                 ]) == 1
             ):
                 # Evaluate the external heat by radiation in nodal points.
-                jacket._radiative_source_therm_env(self, simulation.environment)
+                jacket.radiative_heat_env = jacket._radiative_source_therm_env(
+                    self,
+                    simulation.environment
+                )
             # End if abb(interf_flag)
             for _, jacket_c in enumerate(
                 self.inventory["JacketComponent"].collection[rr + 1 :]
