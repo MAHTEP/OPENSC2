@@ -174,6 +174,20 @@ class JacketComponent(SolidComponent):
 
     # End method _radiative_source_therm.
 
+    def _init_radiative_source_therm_env(self, conductor:object)->np.ndarray:
+        """Method that initializes the heat transferred by radiation with the external environment to a matrix (ndarray) of zeros with N_nod rows and a number of columns that depends on the selected method for the integration in time: 2 columns if BE or CN; 4 columns if AM4.
+
+        Args:
+            conductor (object): object with all information to initialize ndarray radiative_heat_env.
+
+        Returns:
+            np.ndarray: ndarray radiative_heat_env initialized to a matrix of zeros.
+        """
+        if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
+            return np.zeros((conductor.grid_features["N_nod"], 2))
+        elif conductor.inputs["METHOD"] == "AM4":
+            return np.zeros((conductor.grid_features["N_nod"], 4))
+
     def _radiative_heat_exc_inner(self, conductor, jk_inner):
         """Method that evaluates the heat transferred by radiation with the inner surface of the enclosure and the inner jackets.
 
