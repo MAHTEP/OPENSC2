@@ -120,57 +120,47 @@ class JacketComponent(SolidComponent):
     def __str__(self):
         pass
 
-    def _radiative_source_therm_env(self, conductor, environment):
+    def _radiative_source_therm_env(
+            self,
+            conductor:object,
+            environment:object
+        )->np.ndarray:
         """Method that evaluates the heat transferred by radiation with the external environment.
 
         Args:
-            conductor ([type]): [description]
-            environment ([type]): [description]
+            conductor (object): object with all information to update ndarray radiative_heat_env.
+            environment (object): object with all information to update ndarray radiative_heat_env.
+        
+        Returns:
+            np.ndarray: updated ndarray radiative_heat_env (as foo).
         """
         key = f"{environment.KIND}_{self.identifier}"
-        if conductor.inputs["METHOD"] == "BE" or conductor.inputs["METHOD"] == "CN":
-            # Backward Euler or Crank-Nicolson.
-            if conductor.cond_time[-1] == 0:
-                # Initialization.
-                self.radiative_heat_env = np.zeros(
-                    (conductor.grid_features["N_nod"], 2)
-                )
-            elif conductor.cond_time[-1] > 0:
-                if conductor.cond_num_step == 1:
-                    # Store the old values only immediately after the initializzation, \
-                    # since after that the whole SYSLOD array is saved and there is no \
-                    # need to compute twice the same values.
-                    self.radiative_heat_env[:, 1] = self.radiative_heat_env[:, 0].copy()
-                # Update value at the current time step.
-                self.radiative_heat_env[:, 0] = (
-                    conductor.dict_interf_peri["env_sol"]["nodal"][key]
-                    * conductor.dict_node_pt["HTC"]["env_sol"][key]["rad"]
-                    * (
-                        environment.inputs["Temperature"]
-                        - self.dict_node_pt["temperature"]
-                    )
-                )
-            # end if conductor.cond_time[-1].
+        # Alias for temporary variable
+        foo = self.radiative_heat_env
+        if (
+            conductor.inputs["METHOD"] == "BE"
+            or conductor.inputs["METHOD"] == "CN"
+        ):
+            if conductor.cond_num_step == 1:
+                # Store the old values only immediately after the 
+                # initializzation, since after that the whole SYSLOD array is 
+                # saved and there is no need to compute twice the same values.
+                foo[:, 1] = foo[:, 0].copy()
         elif conductor.inputs["METHOD"] == "AM4":
             # Adams-Moulton 4.
-            if conductor.cond_time[-1] == 0:
-                # Initialization.
-                self.radiative_heat_env = np.zeros(
-                    (conductor.grid_features["N_nod"], 4)
-                )
-            elif conductor.cond_time[-1] > 0:
-                self.radiative_heat_env[:, 1:4] = self.radiative_heat_env[:, 0:3].copy()
-                # Update value at the current time step.
-                self.radiative_heat_env[:, 0] = (
-                    conductor.dict_interf_peri["env_sol"]["nodal"][key]
-                    * conductor.dict_node_pt["HTC"]["env_sol"][key]["rad"]
-                    * (
-                        environment.inputs["Temperature"]
-                        - self.dict_node_pt["temperature"]
-                    )
-                )
-            # end if conductor.cond_time[-1].
-        # end if conductor.inputs["METHOD"].
+            foo[:, 1:4] = foo[:, 0:3].copy()
+        
+        # Compute values at the current time step.
+        foo[:, 0] = (
+            conductor.dict_interf_peri["env_sol"]["nodal"][key]
+            * conductor.dict_node_pt["HTC"]["env_sol"][key]["rad"]
+            * (
+                environment.inputs["Temperature"]
+                - self.dict_node_pt["temperature"]
+            )
+        )
+
+        return foo
 
     # End method _radiative_source_therm.
 
