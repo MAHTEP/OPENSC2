@@ -4941,18 +4941,16 @@ class Conductor:
             ):
                 key = f"{jacket.identifier}_{jacket_c.identifier}"
                 # Add the radiative heat contribution between inner surface of the enclosure and inner jackets.
-                jacket.dict_Gauss_pt["Q1"] = (
-                    jacket.dict_Gauss_pt["Q1"] + jacket.radiative_heat_inn[key][:-1]
+                jacket.dict_Gauss_pt["Q1"] += (
+                    jacket.radiative_heat_inn[key][:-1]
                 )
-                jacket.dict_Gauss_pt["Q2"] = (
-                    jacket.dict_Gauss_pt["Q2"] + jacket.radiative_heat_inn[key][1:]
-                )
+                jacket.dict_Gauss_pt["Q2"] += jacket.radiative_heat_inn[key][1:]
 
-                jacket_c.dict_Gauss_pt["Q1"] = (
-                    jacket_c.dict_Gauss_pt["Q1"] + jacket_c.radiative_heat_inn[key][:-1]
+                jacket_c.dict_Gauss_pt["Q1"] += (
+                    jacket_c.radiative_heat_inn[key][:-1]
                 )
-                jacket_c.dict_Gauss_pt["Q2"] = (
-                    jacket_c.dict_Gauss_pt["Q2"] + jacket_c.radiative_heat_inn[key][1:]
+                jacket_c.dict_Gauss_pt["Q2"] += (
+                    jacket_c.radiative_heat_inn[key][1:]
                 )
             # End for jacket_c.
         # end for jacket.
