@@ -640,60 +640,77 @@ class Simulation:
                 save_time_evolution(self, conductor)
                 # call sensor to plot results at any time the user asks (cdp, 07/2020)
 
-                # Call function get_time_step to compute the new time step used 
-                # to compute the next value of the time at which the next 
-                # thermal-hydraulic solution will be evaluated. Moving the call 
-                # to function get_time_step after the call to funciton step 
-                # allows to avoid checking if num_step > 1 for each time step 
-                # and for each conductor. The initial value of the time step 
-                # for each conductor is defined at conductor instance and it is 
-                # equal to the user define time step.
-                conductor.time_step = get_time_step(
-                    conductor,
-                    self.transient_input,
-                    self.starter_file_path,
-                )
+                if self.simulation_time[-1] < self.transient_input["TEND"]:
 
-                # Try to force the minimum time step before the beginning of a 
-                # event to limit the possibility of overshooting or 
-                # undershooting in the thermal hydraulic solution.
-                conductor = force_min_time_step(
-                    conductor,
-                    self.transient_input["STPMAX"],
-                    self.transient_input["STPMIN"],
-                )
-                # Force the time step to not miss the next event.
-                conductor,forced_time_step = force_time_step(
+                    # Call function get_time_step to compute the new time step 
+                    # used to compute the next value of the time at which the 
+                    # next thermal-hydraulic solution will be evaluated. Moving 
+                    # the call to function get_time_step after the call to 
+                    # funciton step allows to avoid checking if num_step > 1 
+                    # for each time step and for each conductor. The initial 
+                    # value of the time step for each conductor is defined at 
+                    # conductor instance and it is equal to the user define 
+                    # time step.
+                    conductor.time_step = get_time_step(
                         conductor,
-                        self.transient_input["STPMIN"],
+                        self.transient_input,
+                        self.starter_file_path,
                     )
 
-                # Check if I did not forced the time step.
-                if forced_time_step == False:
-                    # The time step is not force, there could be the need to 
-                    # synchronine the time and the event.
-                    conductor = time_and_event_synchronization(
+                    # Try to force the minimum time step before the beginning 
+                    # of an event to limit the possibility of overshooting or 
+                    # undershooting in the thermal hydraulic solution.
+                    conductor = force_min_time_step(
                         conductor,
-                        self.epsilon,
+                        self.transient_input["STPMAX"],
                         self.transient_input["STPMIN"],
                     )
+                    # Force the time step to not miss the next event.
+                    conductor,forced_time_step = force_time_step(
+                            conductor,
+                            self.transient_input["STPMIN"],
+                        )
 
-                # Check if an adaptive mesh is used.
-                if (
-                    conductor.grid_input["ITYMSH"] == ADAPTIVE_UNIFORM_MESH 
-                    or conductor.grid_input["ITYMSH"] == ADAPTIVE_REFINED_MESH
-                ):
-                    # The mesh is adaptive, update mesh and all relevant mesh 
-                    # parameters calling function adaptive_mesh. The function 
-                    # update also parameters and quantities that depend on the 
-                    # mesh and/or on the number of nodes/elements of the mesh.
-                    conductor = adaptive_mesh(conductor, self)
+                    # Check if I did not forced the time step.
+                    if forced_time_step == False:
+                        # The time step is not force, there could be the need 
+                        # to synchronine the time and the event.
+                        conductor = time_and_event_synchronization(
+                            conductor,
+                            self.epsilon,
+                            self.transient_input["STPMIN"],
+                        )
 
-                for obj in conductor.inventory["StrandComponent"].collection:
-                    # Set arrays strand.dict_Gauss_pt["integral_power_el_res"] 
-                    # and strand.dict_node_pt["integral_power_el_cond"] to zero 
-                    # for the next evaluation.
-                    obj.set_power_array_to_zeros(conductor)
+                    # Check if an adaptive mesh is used.
+                    if (
+                        conductor.grid_input["ITYMSH"] == ADAPTIVE_UNIFORM_MESH 
+                        or conductor.grid_input["ITYMSH"] == ADAPTIVE_REFINED_MESH
+                    ):
+                        # The mesh is adaptive, update mesh and all relevant 
+                        # mesh parameters calling function adaptive_mesh. The 
+                        # function update also parameters and quantities that 
+                        # depend on the mesh and/or on the number of nodes/
+                        # elements of the mesh.
+                        conductor = adaptive_mesh(conductor, self)
+
+                    for obj in conductor.inventory["StrandComponent"].collection:
+                        # Set arrays 
+                        # strand.dict_Gauss_pt["integral_power_el_res"] 
+                        # and strand.dict_node_pt["integral_power_el_cond"] to # zero for the next evaluation.
+                        obj.set_power_array_to_zeros(conductor)
+                else:
+                    
+                    # Update SolidComponent properties explointing the final 
+                    # solution of the simulation (see the comment above).
+                    conductor.operating_conditions_em()
+                    # Evaluate thermal hydraulic properties and quantities in 
+                    # Gauss points, method __eval_Gauss_point_th is invoked 
+                    # inside method operating_conditions_th.
+                    conductor.operating_conditions_th(self)
+                    # Upadate keyword t_save of attributes store_sd_node and 
+                    # store_sd_Gauss of conductor instance and sub components 
+                    # with the final solution of the simulation.
+                    conductor.store_spatial_distributions("t_save")
 
             # End for conductor (cdp, 07/2020)
         # end while (cdp, 07/2020)
