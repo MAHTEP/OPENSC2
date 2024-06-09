@@ -403,6 +403,11 @@ class Simulation:
             # Compute radiative heat exchanged outer jacket and environment.
             conductor.compute_heat_exchange_jk_env(self.environment)
 
+            # Store simulation spatial distributions in keyword t_save_left of
+            # datastructure store_sd. These values are used to perform a linear 
+            # interpolation in order to make an extimation of the spatial 
+            # distribution values at the user defined time steps.
+            conductor.store_spatial_distributions_t0("t_save_left")
             # Store values of selected quantities at 0.0 s. These stored 
             # quantities will be saved in file as spatial distributions by 
             # calling function save_simulation_space.
