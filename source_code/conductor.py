@@ -6326,26 +6326,7 @@ class Conductor:
                         val["t_save_left"],
                     )
 
-            # Interpolate the old mesh stored in attribute store_sd_node on the 
-            # new one (to be understood if this is actually useful and correct).
-            xx = np.array(range(zcoord.size))
-            xx_old = np.array(range(zcoord_old.size))
-            zcoord_old = np.interp(xx,xx_old,zcoord_old)
-
-            # Interpolate the old mesh (Gauss points) stored in attribute 
-            # store_sd_gauss on the new one (to be understood if this is 
-            # actually useful and correct).
-            xx = np.array(range(zcoord_gauss.size))
-            xx_old = np.array(range(zcoord_gauss_old.size))
-            zcoord_gauss_old = np.interp(xx,xx_old,zcoord_gauss_old)
-
-        self.store_sd_node["zcoord"]["t_save"] = interp_at_t_save(
-            tt,
-            t1,
-            t2,
-            zcoord_old,
-            zcoord,
-        )
+        self.store_sd_node["zcoord"]["t_save"] = zcoord
 
         for interf_id in self.variable_htc_interf["htc_ch_ch_open"]:
             self.store_sd_node["htc_ch_ch_open"]["t_save"][interf_id] = (
@@ -6431,15 +6412,7 @@ class Conductor:
                 self.dict_node_pt["HTC"]["sol_sol"]["rad"][interf_id]
             )
 
-
-
-        self.store_sd_gauss["zcoord_gauss"]["t_save"] = interp_at_t_save(
-            tt,
-            t1,
-            t2,
-            zcoord_gauss_old,
-            zcoord_gauss,
-        )
+        self.store_sd_gauss["zcoord_gauss"]["t_save"] = zcoord_gauss
         
         for kk,vv in self.heat_rad_jk.items():
             self.store_sd_gauss["heat_rad_jk"]["t_save"][kk] = (
@@ -6513,8 +6486,8 @@ class Conductor:
                         vv,
                     )
                 
-        self.store_sd_node["zcoord"]["t_save_left"] = zcoord_old
-        self.store_sd_gauss["zcoord_gauss"]["t_save_left"] = zcoord_gauss_old
+        self.store_sd_node["zcoord"]["t_save_left"] = zcoord
+        self.store_sd_gauss["zcoord_gauss"]["t_save_left"] = zcoord_gauss
 
 
     def __initialize_store_sd(self):
