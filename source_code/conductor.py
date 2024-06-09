@@ -360,6 +360,8 @@ class Conductor:
             * self.relevant_prop_sd_num
         """
 
+        self.t_save_left = 0.0
+
         self.relevant_prop_sd = dict(
             # Collection of the relevant properties to be saved as spatial 
             # distribution (nodal points) at user defined time steps.
