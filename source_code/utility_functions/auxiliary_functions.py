@@ -30,10 +30,15 @@ def check_repeated_headings(input_file, sheet):
             values_only=True,
         )
     )[0][4:]
-    # Buil dictionay exploiting dict comprehension: each key as the numer of repetitions of the column as the corresponding value.
-    dict_colum = {column: columns.count(column) for column in columns}
+    # Buil dictionay exploiting dict comprehension: each key as the numer of 
+    # repetitions of the column as the corresponding value excluding components 
+    # with _0 in its identifier.
+    dict_colum = {
+        column: columns.count(column) for column in columns
+        if int(column.split("_")[-1]) > 0
+    }
     # Raise error message
-    if max(list(dict_colum.values())) > 1:
+    if dict_colum and max(list(dict_colum.values())) > 1:
         raise ValueError(
             f"ERROR! Different objects of the same kind ({sheet['A1'].value}) can not have the same identifier.\nUser defines the following:\n{dict_colum.items()}.\nPlease check the headers in sheet {sheet.title} of file {input_file}"
         )
