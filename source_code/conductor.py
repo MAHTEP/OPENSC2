@@ -7100,42 +7100,26 @@ class Conductor:
 
         if self.inputs["METHOD"] == "BE" or self.inputs["METHOD"] == "CN":
             # Backward Euler or Crank-Nicolson
-            if self.cond_num_step > 1:
 
-                # Hard copy of array SYSLOD on dummy variable.
-                syslod = dict_Step["SYSLOD"]
-                # Update dimension of array SYSLOD consistently with the new 
-                # mesh size.
-                dict_Step["SYSLOD"] = np.zeros(
-                    (self.dict_N_equation["Total"], 2)
-                )
+            # Hard copy of array SYSLOD on dummy variable.
+            syslod = dict_Step["SYSLOD"]
+            # Update dimension of array SYSLOD consistently with the new 
+            # mesh size.
+            dict_Step["SYSLOD"] = np.zeros(
+                (self.dict_N_equation["Total"], 2)
+            )
 
-                fo_props = ("pressure","temperature","velocity")
+            fo_props = ("pressure","temperature","velocity")
 
-                # Loop on FluidComponent.
-                for obj in self.inventory["FluidComponent"].collection:
+            # Loop on FluidComponent.
+            for obj in self.inventory["FluidComponent"].collection:
+                
+                obj_id = obj.identifier
+                for prop in fo_props:
                     
-                    obj_id = obj.identifier
-                    for prop in fo_props:
-                        
-                        # Get the equation index corresponding to field prop calling 
-                        # function getattr.
-                        idx = getattr(eq_idx[obj_id],prop)
-
-                        # Interpolate the load vector at the previous time step 
-                        # on the new mesh and store the outcome in the second 
-                        # column to correctly apply the theta method.
-                        dict_Step["SYSLOD"][idx::ndf,1] = np.interp(
-                            zcoord_new,
-                            zcoord,
-                            syslod[idx::ndf,0],
-                        )
-
-                # Loop on SolidComponent.
-                for obj in self.inventory["SolidComponent"].collection:
-
-                    # Equation index of SolidComponent objects.
-                    idx = eq_idx[obj.identifier]
+                    # Get the equation index corresponding to field prop calling 
+                    # function getattr.
+                    idx = getattr(eq_idx[obj_id],prop)
 
                     # Interpolate the load vector at the previous time step 
                     # on the new mesh and store the outcome in the second 
@@ -7146,8 +7130,23 @@ class Conductor:
                         syslod[idx::ndf,0],
                     )
 
-            elif self.inputs["METHOD"] == "AM4":
-                raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
+            # Loop on SolidComponent.
+            for obj in self.inventory["SolidComponent"].collection:
+
+                # Equation index of SolidComponent objects.
+                idx = eq_idx[obj.identifier]
+
+                # Interpolate the load vector at the previous time step 
+                # on the new mesh and store the outcome in the second 
+                # column to correctly apply the theta method.
+                dict_Step["SYSLOD"][idx::ndf,1] = np.interp(
+                    zcoord_new,
+                    zcoord,
+                    syslod[idx::ndf,0],
+                )
+
+        elif self.inputs["METHOD"] == "AM4":
+            raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
         
         return dict_Step["SYSLOD"]
 
@@ -7228,18 +7227,14 @@ class Conductor:
         inputs = self.inputs
         dict_Step = self.dict_Step
 
-        if self.cond_num_step > 1:
-            if (
-                inputs["METHOD"] == "BE"
-                or inputs["METHOD"] == "CN"
-            ):
-                # Backward Euler or Crank-Nicolson
-                # Copy the load vector at the previous time step in the second 
-                # column to correctly apply the theta method.
-                dict_Step["SYSLOD"][:, 1] = dict_Step["SYSLOD"][:, 0].copy()
-                dict_Step["SYSLOD"][:, 0] = 0.0
-            elif inputs["METHOD"] == "AM4":
-                raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
+        if (inputs["METHOD"] == "BE" or inputs["METHOD"] == "CN"):
+            # Backward Euler or Crank-Nicolson
+            # Copy the load vector at the previous time step in the second 
+            # column to correctly apply the theta method.
+            dict_Step["SYSLOD"][:, 1] = dict_Step["SYSLOD"][:, 0].copy()
+            dict_Step["SYSLOD"][:, 0] = 0.0
+        elif inputs["METHOD"] == "AM4":
+            raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
         
             # Save an hard copy of the thermal-hydraulic problem solution at 
             # the previous time step.
