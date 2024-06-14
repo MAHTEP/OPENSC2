@@ -638,6 +638,10 @@ class Simulation:
                         # in order to reduce the interpolation error for the 
                         # saving of spatial distributions at user defined times.
                         conductor.t_save_left = conductor.cond_time[-1]
+                        # Update all the arrays stored in keywords t_save_left # of attributes store_sd_node and store_sd_gauss to 
+                        # reduce interpolation error for the savings of spatial 
+                        # distributions at user defined times.
+                        conductor.store_spatial_distributions()
 
                 # end if isave
                 # Save variables time evolution at given spatial coordinates \
