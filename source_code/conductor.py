@@ -2836,7 +2836,7 @@ class Conductor:
     ############################################################################### this method initialize the Conductor on the base of the input parameters
     ##############################################################################
 
-    def initialization(self, simulation, gui):
+    def initialization(self, simulation):
 
         time_simulation = simulation.simulation_time[-1]
         sim_name = simulation.transient_input["SIMULATION"]
