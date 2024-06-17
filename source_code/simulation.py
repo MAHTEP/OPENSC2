@@ -419,7 +419,7 @@ class Simulation:
             save_simulation_space(
                 conductor,
                 self.dict_path[
-                    f"Output_Spatial_distribution_{conductor.identifier}_dir"
+                    f"{conductor.identifier}_Output_Spatial_distribution_dir"
                 ]
             )
             mask = np.isin(
@@ -622,7 +622,7 @@ class Simulation:
                         save_simulation_space(
                             conductor,
                             self.dict_path[
-                                f"Output_Spatial_distribution_{conductor.identifier}_dir"
+                                f"{conductor.identifier}_Output_Spatial_distribution_dir"
                             ],
                         )
                         mask = np.isin(
@@ -737,18 +737,18 @@ class Simulation:
             # save simulation spatial distribution at TEND.
             save_simulation_space(
                 cond,
-                self.dict_path[f"Output_Spatial_distribution_{cond.identifier}_dir"],
+                self.dict_path[f"{cond.identifier}_Output_Spatial_distribution_dir"],
             )
             # Call function Save_properties to save the conductor final 
             # solution.
             save_properties(
-                cond, self.dict_path[f"Output_Solution_{cond.identifier}_dir"]
+                cond, self.dict_path[f"{cond.identifier}_Output_Solution_dir"]
             )
             print("Saved final solution\n")
 
             reorganize_spatial_distribution(
                 cond,
-                self.dict_path[f"Output_Spatial_distribution_{cond.identifier}_dir"],
+                self.dict_path[f"{cond.identifier}_Output_Spatial_distribution_dir"],
                 self.n_digit_time,
             )
             # Plot conductor solution spatial distribution (cdp, 12/2020)
@@ -784,19 +784,21 @@ class Simulation:
             list_f_names ([type]): [description]
             dict_make ([type]): [description]
         """
-        # Loop to create sub folders initialization, Spatial_distribution, Time_evolution and Benchmark in Output and Figures directories; each folder in f_names_list, will contain folder conductor.identifier.
+        # Loop to create sub folders Initialization, Spatial_distribution, 
+        # Time_evolution and Solution in Output and Figures directories. Those 
+        # folders are created inside a folder named as the conductor identifier.
         for f_name in list_f_names:
             for conductor in self.list_of_Conductors:
                 # Build list_key_val exploiting list comprehension. List of tuples: index [0] is the key of the dictionary, index [1] is the corresponding value that is the path to Output or Figures sub directories.
                 list_key_val = [
                     (
-                        f"{folder.capitalize()}_{f_name}_{conductor.identifier}_dir",
+                        f"{conductor.identifier}_{folder.capitalize()}_{f_name}_dir",
                         os.path.join(
                             self.dict_path["Sub_dir"],
                             self.transient_input["SIMULATION"],
+                            conductor.identifier,
                             folder.capitalize(),
                             f_name,
-                            conductor.identifier,
                         ),
                     )
                     for folder in list_folder

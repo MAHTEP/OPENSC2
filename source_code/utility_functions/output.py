@@ -594,7 +594,7 @@ def save_time_evolution_init(simulation:object, conductor:object)-> tuple:
 
     # Alias
     base_path = simulation.dict_path[
-        f"Output_Time_evolution_{conductor.identifier}_dir"
+        f"{conductor.identifier}_Output_Time_evolution_dir"
     ]
 
     # Build keys of the dictionaries that will store the values of the time 
@@ -730,7 +730,7 @@ def save_time_evolution(simulation:object, conductor:object):
     zcoord = conductor.grid_features["zcoord"]
     zcoord_gauss = conductor.grid_features["zcoord_gauss"]
     base_path = simulation.dict_path[
-        f"Output_Time_evolution_{conductor.identifier}_dir"
+        f"{conductor.identifier}_Output_Time_evolution_dir"
     ]
     tend = simulation.transient_input["TEND"]
 

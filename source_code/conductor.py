@@ -3122,7 +3122,7 @@ class Conductor:
         )
         save_geometry_discretization(
             self.inventory["all_component"].collection,
-            simulation.dict_path[f"Output_Initialization_{self.identifier}_dir"],
+            simulation.dict_path[f"{self.identifier}_Output_Initialization_dir"],
         )
         conductorlogger.debug(
             f"After call function {save_geometry_discretization.__name__}.\n"
@@ -3131,7 +3131,7 @@ class Conductor:
         conductorlogger.debug(f"Before call function {save_properties.__name__}.\n")
         # Call function Save_properties to save conductor inizialization
         save_properties(
-            self, simulation.dict_path[f"Output_Initialization_{self.identifier}_dir"]
+            self, simulation.dict_path[f"{self.identifier}_Output_Initialization_dir"]
         )
         conductorlogger.debug(f"After call function {save_properties.__name__}.\n")
 

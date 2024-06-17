@@ -17,13 +17,13 @@ def plot_properties(simulation, cond, what="initialization"):
     flag_chan = False
     if what == "initialization":
         dict_path = dict(
-            Load=simulation.dict_path[f"Output_Initialization_{cond.identifier}_dir"],
-            Save=simulation.dict_path[f"Figures_Initialization_{cond.identifier}_dir"],
+            Load=simulation.dict_path[f"{cond.identifier}_Output_Initialization_dir"],
+            Save=simulation.dict_path[f"{cond.identifier}_Figures_Initialization_dir"],
         )
     elif what == "solution":
         dict_path = dict(
-            Load=simulation.dict_path[f"Output_Solution_{cond.identifier}_dir"],
-            Save=simulation.dict_path[f"Figures_Solution_{cond.identifier}_dir"],
+            Load=simulation.dict_path[f"{cond.identifier}_Output_Solution_dir"],
+            Save=simulation.dict_path[f"{cond.identifier}_Figures_Solution_dir"],
         )
     # end if what (cdp, 12/2020)
     # Loop on FluidComponent (cdp, 12/2020)
@@ -208,11 +208,11 @@ def make_plots(simulation, kind="Space_distr"):
             # unify the array (cdp, 11/2020)
             kind_save = np.around(cond.Space_save, simulation.n_digit_time)
             root_load_path = simulation.dict_path[
-                f"Output_Spatial_distribution_{cond.identifier}_dir"
+                f"{cond.identifier}_Output_Spatial_distribution_dir"
             ]
             des = "sd"
             root_save_path = simulation.dict_path[
-                f"Figures_Spatial_distribution_{cond.identifier}_dir"
+                f"{cond.identifier}_Figures_Spatial_distribution_dir"
             ]
             abscissa = pd.read_csv(
                 os.path.join(root_load_path, "zcoord.tsv"), delimiter="\t"
@@ -230,11 +230,11 @@ def make_plots(simulation, kind="Space_distr"):
             # unify the array (cdp, 11/2020)
             kind_save = cond.Time_save
             root_load_path = simulation.dict_path[
-                f"Output_Time_evolution_{cond.identifier}_dir"
+                f"{cond.identifier}_Output_Time_evolution_dir"
             ]
             des = "te"
             root_save_path = simulation.dict_path[
-                f"Figures_Time_evolution_{cond.identifier}_dir"
+                f"{cond.identifier}_Figures_Time_evolution_dir"
             ]
             # plot features (cdp, 01/2021)
             # unify the array (cdp, 11/2020)
