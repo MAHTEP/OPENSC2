@@ -255,4 +255,5 @@ source_code/Description_of_Components/**/ # Input files
 Simulations_results/**/ # code output directory
 source_code/opensc2/**/ # virtual environment
 source_code/GUI_icons/**/ # graphical user interface images
+source_code/io_path.yaml
 TDD_examples/**/ # input files template for the three selected cases used whitin the Test Driven Development approach
