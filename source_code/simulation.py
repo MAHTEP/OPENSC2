@@ -73,7 +73,7 @@ class Simulation:
         # loop inside self.basePath (cdp, 10/2020)
         input_files = os.listdir(self.basePath)
         for f_name in input_files:
-            if "transitory_input" in f_name:
+            if "transient_input" in f_name:
                 self.starter_file = f_name
         
         # Path of the starting file (master input file)
