@@ -1,3 +1,4 @@
+from collections import namedtuple
 from decimal import Decimal
 from openpyxl import load_workbook
 import numpy as np
@@ -841,17 +842,25 @@ class Simulation:
             self.dict_path["Main_dir"],
             dict_int_method[self.list_of_Conductors[0].inputs["METHOD"]],
         )
-        list_folder = ["output", "figures"]
+        folders = ("Output","Figures")
         # Print a warning if os.path.exists() returns True, build the directories if returns False.
         dict_make = {True: self._make_warnings, False: self._make_directories}
-        list_f_names = [
-            "Initialization",
-            "Spatial_distribution",
-            "Time_evolution",
-            "Solution",
-        ]
+        
+        Folders_name = namedtuple(
+            "Folders_name",
+            ("ini","sd","te","sol"),
+        )
+
+        # Lower level folders name
+        folders_low = Folders_name(
+            ini = "Initialization",
+            sd = "Spatial_distribution",
+            te = "Time_evolution",
+            sol = "Solution",
+        )
+        
         # Create subfolders path invocking method _subfolders_paths
-        self._subfolders_paths(list_folder, list_f_names, dict_make)
+        self._subfolders_paths(folders, folders_low, dict_make)
 
         # Path to save the input files of the simulation in read olny mode as
         # metadata for the simulation itself.
