@@ -501,91 +501,40 @@ def reorganize_spatial_distribution(
             dict_df_new[prop].to_csv(path_save, sep="\t", index=False)
     # end for s_comp (cdp, 11/2020)
 
-    # Manage files with heat exhanged between inner jackets by radiation.
-    reorganize_heat_sd(
-        cond,
-        f_path_load,
-        f_path_save,
-        "Heat_rad_inner",
-        "Heat_rad",
-        n_digit_time,
-    )
-    # Manage files with heat exhanged between outer conductor surface and environment by convection and/or radiation.
-    reorganize_heat_sd(
-        cond,
-        f_path_load,
-        f_path_save,
-        "Heat_exch_env",
-        "Heat_exch",
-        n_digit_time,
+    # old radix in file name
+    radix_old = (
+        "Heat_rad_inner", # heat exch btw inner jk by rad
+        "Heat_exch_env", # heat exch btw outer cond surface and env by convection and/or radiation
+        "HTC_ch_ch_o", # open htc btw fluid components
+        "HTC_ch_ch_c", # close htc btw fluid components
+        "HTC_ch_sol", # htc btw fluid and solid components
+        "HTC_sol_sol_cond", # conductive htc btw solid components
+        "HTC_sol_sol_rad", # radiative htc btw solid components
+        "HTC_env_sol_conv", # convective htc btw env and solid components
+        "HTC_env_sol_rad", # radiative htc btw env and solid components
     )
 
-    # Manage files with open heat transfer coefficients between fluid components.
-    reorganize_heat_sd(
-        cond,
-        f_path_load,
-        f_path_save,
-        "HTC_ch_ch_o",
-        "HTC_open",
-        n_digit_time,
+    # new radix in file name
+    radix_new = (
+        "Heat_rad", # heat exch btw inner jk by rad
+        "Heat_exch", # heat exch btw outer cond surface and env by convection and/or radiation
+        "HTC_open", # open htc btw fluid components
+        "HTC_close", # close htc btw fluid components
+        "HTC", # htc btw fluid and solid components
+        "HTC_cond", # conductive htc btw solid components
+        "HTC_rad", # radiative htc btw solid components
+        "HTC_conv", # convective htc btw env and solid components
+        "HTC_rad", # radiative htc btw env and solid components
     )
-    # Manage files with close heat transfer coefficients between fluid components.
-    reorganize_heat_sd(
-        cond,
-        f_path_load,
-        f_path_save,
-        "HTC_ch_ch_c",
-        "HTC_close",
-        n_digit_time,
-    )
-    # Manage files with heat transfer coefficient between fluid and solid components.
-    reorganize_heat_sd(
-        cond,
-        f_path_load,
-        f_path_save,
-        "HTC_ch_sol",
-        "HTC",
-        n_digit_time,
-    )
-    # Manage files with conductive heat transfer coefficients between solid components.
-    reorganize_heat_sd(
-        cond,
-        f_path_load,
-        f_path_save,
-        "HTC_sol_sol_cond",
-        "HTC_cond",
-        n_digit_time,
-    )
-    # Manage files with radiative heat transfer coefficients between solid components.
-    reorganize_heat_sd(
-        cond,
-        f_path_load,
-        f_path_save,
-        "HTC_sol_sol_rad",
-        "HTC_rad",
-        n_digit_time,
-    )
-
-    # Manage files with convective heat transfer coefficients between 
-    # environment and solid components.
-    reorganize_heat_sd(
-        cond,
-        f_path_load,
-        f_path_save,
-        "HTC_env_sol_conv",
-        "HTC_conv",
-        n_digit_time,
-    )
-    # Manage files with radiative heat transfer coefficients between 
-    # environment and solid components.
-    reorganize_heat_sd(
-        cond,
-        f_path_load,
-        f_path_save,
-        "HTC_env_sol_rad",
-        "HTC_rad",
-        n_digit_time,
-    )
+    for rad_old, rad_new in zip(radix_old,radix_new):
+        reorganize_heat_sd(
+            cond,
+            f_path_load,
+            f_path_save,
+            rad_old,
+            rad_new,
+            n_digit_time,
+        )
 
     shutil.make_archive(f_path_load,"zip",f_path_load)
     shutil.rmtree(f_path_load)
