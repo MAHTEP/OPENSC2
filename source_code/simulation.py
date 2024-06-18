@@ -855,7 +855,7 @@ class Simulation:
         )
         folders = ("Output","Figures")
         # Print a warning if os.path.exists() returns True, build the directories if returns False.
-        dict_make = {True: self._make_warnings, False: self._make_directories}
+        dict_make = {True: self._make_warnings, False: os.makedirs}
         
         Folders_name = namedtuple(
             "Folders_name",
