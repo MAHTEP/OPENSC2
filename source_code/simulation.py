@@ -762,21 +762,6 @@ class Simulation:
 
     # end method Conductor_post_processing (cdp, 09/2020)
 
-    def _make_directories(self, list_key_val, exist_ok=False):
-        """[summary]
-
-        Args:
-            list_key_val ([type]): [description]
-            exist_ok (bool, optional): [description]. Defaults to False.
-        """
-        # Loop to create the folders.
-        for ii in range(len(list_key_val)):
-            # Create the folders in list_key_val[ii][0].
-            os.makedirs(self.dict_path[list_key_val[ii][0]], exist_ok=exist_ok)
-        # End for ii.
-
-    # End method _make_directories.
-
     def _subfolders_paths(
         self,
         high_level:Union[list,set,tuple],
