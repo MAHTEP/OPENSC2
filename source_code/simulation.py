@@ -831,15 +831,15 @@ class Simulation:
 
     # End method _subfolders_paths.
 
-    def _make_warnings(self, list_key_val):
-        """[summary]
+    def _make_warnings(self, path:str):
+        """Method that shows a waring message if folders already exist in the main directory where simulation outcomes are saved. It may means that the simulation was already performed in the past and data are overwritten.
 
         Args:
-            list_key_val ([type]): [description]
+            path (str): path of the already existing folder.
         """
         # Da sistemare nella GUI!
         warnings.warn(
-            f"Directories\n{self.dict_path[list_key_val[0][0]]}\n{self.dict_path[list_key_val[1][0]]} already exist.\nProbably you have already performed a simulation with the same input data.\nPlease check and confirm if you want to continue with the simulation or not."
+            f"Directory\n{path} already exist.\nProbably you have already performed a simulation with the same input data.\nPlease check and confirm if you want to continue with the simulation or not."
         )
 
     # End method _make_warnings.
