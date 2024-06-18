@@ -749,6 +749,7 @@ class Simulation:
 
             reorganize_spatial_distribution(
                 cond,
+                self.dict_path[f"{cond.identifier}_Output_Spatial_distribution_tmp_dir"],
                 self.dict_path[f"{cond.identifier}_Output_Spatial_distribution_dir"],
                 self.n_digit_time,
             )
