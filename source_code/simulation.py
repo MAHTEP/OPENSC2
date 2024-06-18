@@ -777,46 +777,57 @@ class Simulation:
 
     # End method _make_directories.
 
-    def _subfolders_paths(self, list_folder, list_f_names, dict_make):
-        """[summary]
+    def _subfolders_paths(
+        self,
+        high_level:Union[list,set,tuple],
+        low_level:Union[list,set,tuple],
+        dict_make:dict,
+        ):
+        """Method that creates paths to the folders where the outcome of the simulation is stored for each conductor component defined by the user.
+        For the i-th conductor, with identifier CONDUCTOR_i, the folder tree is as follows:
+            CONDUCTOR_i
+                Output
+                    Initialization
+                    Solution
+                    Spatial_distribution
+                    Time_evolution
+                Figures
+                    Initialization
+                    Solution
+                    Spatial_distribution
+                    Time_evolution
 
         Args:
-            list_folder ([type]): [description]
-            list_f_names ([type]): [description]
-            dict_make ([type]): [description]
+            high_level (Union[list,set,tuple]): iterable with high level folders name Output and Figures.
+            low_level (Union[list,set,tuple]): iterable with low level folders name Initialization, Solution, Spatial_distribution, Time_evolution.
+            dict_make (dict): switch to method self._make_warinigs and self._make_directories.
         """
+
         # Loop to create sub folders Initialization, Spatial_distribution, 
         # Time_evolution and Solution in Output and Figures directories. Those 
         # folders are created inside a folder named as the conductor identifier.
-        for f_name in list_f_names:
-            for conductor in self.list_of_Conductors:
-                # Build list_key_val exploiting list comprehension. List of tuples: index [0] is the key of the dictionary, index [1] is the corresponding value that is the path to Output or Figures sub directories.
-                list_key_val = [
+        for conductor in self.list_of_Conductors:
+
+            cond_path = os.path.join(
+                self.dict_path["Sub_dir"],
+                self.transient_input["SIMULATION"],
+                conductor.identifier,
+            )
+
+            for high_f in high_level:
+                # Build key_val exploiting generator expression. Tuple of tuples: index [0] is the key of the dictionary, index [1] is the corresponding value that is the path to Output or Figures sub directories.
+                key_val = (
                     (
-                        f"{conductor.identifier}_{folder.capitalize()}_{f_name}_dir",
-                        os.path.join(
-                            self.dict_path["Sub_dir"],
-                            self.transient_input["SIMULATION"],
-                            conductor.identifier,
-                            folder.capitalize(),
-                            f_name,
-                        ),
+                        f"{conductor.identifier}_{high_f}_{low_f}_dir",
+                        os.path.join(cond_path,high_f,low_f),
                     )
-                    for folder in list_folder
-                ]
-                # Update the dictionary self.dict_path with keys and values from dictionary comprehension, which may be either a mapping or an iterable of key/value pairs. The values of dictionary comprehension take priority when self.dict_path0 and other share keys.
-                self.dict_path.update(
-                    {
-                        list_key_val[ii][0]: list_key_val[ii][1]
-                        for ii in range(len(list_key_val))
-                    }
+                    for low_f in low_level
                 )
-                # Invocke method self._make_warnings if path exists, self._make_directories if path does not exist.
-                dict_make[os.path.exists(self.dict_path[list_key_val[0][0]])](
-                    list_key_val
-                )
-            # End for conductor.
-        # End for f_name.
+
+                for kv in key_val:
+                    flag_make_dir = os.path.exists(kv[1])
+                    dict_make[flag_make_dir](kv[1])
+                    self.dict_path[kv[0]] = kv[1]
 
     # End method _subfolders_paths.
 
