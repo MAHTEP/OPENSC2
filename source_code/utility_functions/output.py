@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import shutil
 
 from collections import namedtuple
 
@@ -274,9 +275,20 @@ def save_simulation_space(conductor, f_path:str):
 # end function save_simulation_space
 
 
-def reorganize_spatial_distribution(cond, f_path, n_digit_time):
-    """
-    Function that reorganizes the files of the spatial distribution collecting in a single file for each property the spatial distribution at user defined times. In this way the file format is like the ones of the time evolution and this should simplify plots and furter data analysis. (cdp, 11/2020)
+def reorganize_spatial_distribution(
+        cond: object,
+        f_path_load:str,
+        f_path_save:str,
+        n_digit_time: int,
+    ):
+    """Function that reorganizes the files of the spatial distribution collecting in a single file for each property the spatial distribution at user defined times. In this way the file format is like the ones of the time evolution and this should simplify plots and furter data analysis.
+    The f_path_load folder is converted to a zip file to keep track of the temporary file and limit disk usage.
+
+    Args:
+        cond (object): conductor object
+        f_path_load (str): path to the folder where to load temporary files with the spatial distributions.
+        f_path_save (str): path to the folder where to save the final version of the spatial distributions
+        n_digit_time (int): number of digit used for time.
     """
     list_ch_key = [
         "velocity",
@@ -317,7 +329,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             comp = cond.inventory["SolidComponent"].collection[0]
 
         file_name = f"{comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
-        file_load = os.path.join(f_path, file_name)
+        file_load = os.path.join(f_path_load, file_name)
         # Load dataframe.
         df = pd.read_csv(file_load, delimiter="\t")
         # store the spatial discretizations at each required time step in file 
@@ -327,7 +339,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     df_zcoord = pd.DataFrame(dict_zcoord)
     # build file name
     file_name = f"zcoord.tsv"
-    path_save = os.path.join(f_path, file_name)
+    path_save = os.path.join(f_path_save, file_name)
     # save the DataFrame as file zcoord.tsv
     df_zcoord.to_csv(path_save, sep="\t", index=False)
 
@@ -342,14 +354,12 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         dict_df_new = dict()
         for ii, _ in enumerate(cond.Space_save):
             file_name = f"{fluid_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
-            file_load = os.path.join(f_path, file_name)
+            file_load = os.path.join(f_path_load, file_name)
             # Load file file_name as data frame as a value of dictionary \
             # corresponding to key file_name (cdp, 11/2020)
             dict_df[file_name] = pd.read_csv(
                 filepath_or_buffer=file_load, delimiter="\t"
             )
-            # Delete the old file format.
-            os.remove(file_load)
             if ii == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
@@ -384,7 +394,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             # build file name (cdp, 11/2020)
             file_name = f"{fluid_comp.identifier}_{prop}_sd.tsv"
             # build path to save the file (cdp, 11/2020)
-            path_save = os.path.join(f_path, file_name)
+            path_save = os.path.join(f_path_save, file_name)
             # save the data frame, without the row index name (cdp, 11/2020)
             dict_df_new[prop].to_csv(path_save, sep="\t", index=False)
         # end for prop (cdp, 11/2020)
@@ -399,8 +409,8 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             file_name_gauss = (
                 f"{s_comp.identifier}_({cond.num_step_save[ii]})_gauss_sd.tsv"
             )
-            file_load = os.path.join(f_path, file_name)
-            file_load_gauss = os.path.join(f_path, file_name_gauss)
+            file_load = os.path.join(f_path_load, file_name)
+            file_load_gauss = os.path.join(f_path_load, file_name_gauss)
             # Load file file_name as data frame as a value of dictionary \
             # corresponding to key file_name (cdp, 11/2020)
             dict_df[file_name] = pd.read_csv(
@@ -409,9 +419,6 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             dict_df[file_name_gauss] = pd.read_csv(
                 filepath_or_buffer=file_load_gauss, delimiter="\t"
             )
-            # Delete the old file format.
-            os.remove(file_load)
-            os.remove(file_load_gauss)
             if ii == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
@@ -482,54 +489,129 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             # build file name (cdp, 11/2020)
             file_name = f"{s_comp.identifier}_{prop}_sd.tsv"
             # build path to save the file (cdp, 11/2020)
-            path_save = os.path.join(f_path, file_name)
+            path_save = os.path.join(f_path_save, file_name)
             # save the data frame, without the row index name (cdp, 11/2020)
             dict_df_new[prop].to_csv(path_save, sep="\t", index=False)
         for prop in list_sol_key_gauss:
             # build file name (cdp, 11/2020)
             file_name = f"{s_comp.identifier}_{prop}_sd.tsv"
             # build path to save the file (cdp, 11/2020)
-            path_save = os.path.join(f_path, file_name)
+            path_save = os.path.join(f_path_save, file_name)
             # save the data frame, without the row index name (cdp, 11/2020)
             dict_df_new[prop].to_csv(path_save, sep="\t", index=False)
     # end for s_comp (cdp, 11/2020)
 
     # Manage files with heat exhanged between inner jackets by radiation.
-    reorganize_heat_sd(cond, f_path, "Heat_rad_inner", "Heat_rad", n_digit_time)
+    reorganize_heat_sd(
+        cond,
+        f_path_load,
+        f_path_save,
+        "Heat_rad_inner",
+        "Heat_rad",
+        n_digit_time,
+    )
     # Manage files with heat exhanged between outer conductor surface and environment by convection and/or radiation.
-    reorganize_heat_sd(cond, f_path, "Heat_exch_env", "Heat_exch", n_digit_time)
+    reorganize_heat_sd(
+        cond,
+        f_path_load,
+        f_path_save,
+        "Heat_exch_env",
+        "Heat_exch",
+        n_digit_time,
+    )
 
     # Manage files with open heat transfer coefficients between fluid components.
-    reorganize_heat_sd(cond, f_path, "HTC_ch_ch_o", "HTC_open", n_digit_time)
+    reorganize_heat_sd(
+        cond,
+        f_path_load,
+        f_path_save,
+        "HTC_ch_ch_o",
+        "HTC_open",
+        n_digit_time,
+    )
     # Manage files with close heat transfer coefficients between fluid components.
-    reorganize_heat_sd(cond, f_path, "HTC_ch_ch_c", "HTC_close", n_digit_time)
+    reorganize_heat_sd(
+        cond,
+        f_path_load,
+        f_path_save,
+        "HTC_ch_ch_c",
+        "HTC_close",
+        n_digit_time,
+    )
     # Manage files with heat transfer coefficient between fluid and solid components.
-    reorganize_heat_sd(cond, f_path, "HTC_ch_sol", "HTC", n_digit_time)
+    reorganize_heat_sd(
+        cond,
+        f_path_load,
+        f_path_save,
+        "HTC_ch_sol",
+        "HTC",
+        n_digit_time,
+    )
     # Manage files with conductive heat transfer coefficients between solid components.
-    reorganize_heat_sd(cond, f_path, "HTC_sol_sol_cond", "HTC_cond", n_digit_time)
+    reorganize_heat_sd(
+        cond,
+        f_path_load,
+        f_path_save,
+        "HTC_sol_sol_cond",
+        "HTC_cond",
+        n_digit_time,
+    )
     # Manage files with radiative heat transfer coefficients between solid components.
-    reorganize_heat_sd(cond, f_path, "HTC_sol_sol_rad", "HTC_rad", n_digit_time)
+    reorganize_heat_sd(
+        cond,
+        f_path_load,
+        f_path_save,
+        "HTC_sol_sol_rad",
+        "HTC_rad",
+        n_digit_time,
+    )
 
     # Manage files with convective heat transfer coefficients between 
     # environment and solid components.
-    reorganize_heat_sd(cond, f_path, "HTC_env_sol_conv", "HTC_conv", n_digit_time)
+    reorganize_heat_sd(
+        cond,
+        f_path_load,
+        f_path_save,
+        "HTC_env_sol_conv",
+        "HTC_conv",
+        n_digit_time,
+    )
     # Manage files with radiative heat transfer coefficients between 
     # environment and solid components.
-    reorganize_heat_sd(cond, f_path, "HTC_env_sol_rad", "HTC_rad", n_digit_time)
+    reorganize_heat_sd(
+        cond,
+        f_path_load,
+        f_path_save,
+        "HTC_env_sol_rad",
+        "HTC_rad",
+        n_digit_time,
+    )
+
+    shutil.make_archive(f_path_load,"zip",f_path_load)
+    shutil.rmtree(f_path_load)
 
 # end function Reorganize_spatial_distribution (cdp, 11/2020)
 
 
-def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit_time):
+def reorganize_heat_sd(
+    cond:object,
+    f_path_load:str,
+    f_path_save:str,
+    radix_old:str,
+    radix_new:str,
+    n_digit_time:int,
+    ):
     """Function that reorganizes the files with the spatial distribution of the heat exchanged between inner jackets by radiation and between the outer surface of the conductor and the environment by convection and/or radiation.
 
     N.B. Questa funzione potrebbe essere adattata anche per riorganizzare i file delle distribuzioni spaziali dei componenti (deriva da questa con qualche semplificazione). Mi sembra troppo complicata: vedere se possibile semplificare.
 
     Args:
-        cond ([type]): [description]
-        f_path ([type]): [description]
-        radix_old ([type]): [description]
-        radix_new ([type]): [description]
+        cond (object): conductor object
+        f_path_load (str): path to the folder where to load temporary files with the spatial distributions.
+        f_path_save (str): path to the folder where to save the final version of the spatial distributions
+        radix_old (str): string in the temporary name of the file
+        radix_new (str): string used to rename the file with the final name
+        n_digit_time (int): number of digit used for time.
     """
     old = dict()
     new = dict()
@@ -537,12 +619,10 @@ def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit_time):
     time = np.around(cond.Space_save, n_digit_time)
     for ii, _ in enumerate(cond.Space_save):
         file_name = f"{radix_old}_({cond.num_step_save[ii]})_sd.tsv"
-        file_load = os.path.join(f_path, file_name)
+        file_load = os.path.join(f_path_load, file_name)
         # Check if file exist and if True load it.
         if os.path.isfile(file_load):
             old[file_name] = pd.read_csv(file_load, delimiter="\t")
-            # Delete the old file format.
-            os.remove(file_load)
             if ii == 0:
                 # get columns names only the first time.
                 cols = old[file_name].columns.values.tolist()
@@ -570,7 +650,7 @@ def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit_time):
         # build file name (cdp, 11/2020)
         file_name = f"{radix_new}_{col}_sd.tsv"
         # build path to save the file (cdp, 11/2020)
-        path_save = os.path.join(f_path, file_name)
+        path_save = os.path.join(f_path_save, file_name)
         # save the data frame, without the row index name (cdp, 11/2020)
         new[col].to_csv(path_save, sep="\t", index=False)
 
