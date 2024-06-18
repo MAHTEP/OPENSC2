@@ -420,7 +420,7 @@ class Simulation:
             save_simulation_space(
                 conductor,
                 self.dict_path[
-                    f"{conductor.identifier}_Output_Spatial_distribution_dir"
+                    f"{conductor.identifier}_Output_Spatial_distribution_tmp_dir"
                 ]
             )
             mask = np.isin(
@@ -623,7 +623,7 @@ class Simulation:
                         save_simulation_space(
                             conductor,
                             self.dict_path[
-                                f"{conductor.identifier}_Output_Spatial_distribution_dir"
+                                f"{conductor.identifier}_Output_Spatial_distribution_tmp_dir"
                             ],
                         )
                         mask = np.isin(
@@ -738,7 +738,7 @@ class Simulation:
             # save simulation spatial distribution at TEND.
             save_simulation_space(
                 cond,
-                self.dict_path[f"{cond.identifier}_Output_Spatial_distribution_dir"],
+                self.dict_path[f"{cond.identifier}_Output_Spatial_distribution_tmp_dir"],
             )
             # Call function Save_properties to save the conductor final 
             # solution.
@@ -775,6 +775,7 @@ class Simulation:
                     Initialization
                     Solution
                     Spatial_distribution
+                        tmp
                     Time_evolution
                 Figures
                     Initialization
@@ -800,19 +801,26 @@ class Simulation:
             )
 
             for high_f in high_level:
-                # Build key_val exploiting generator expression. Tuple of tuples: index [0] is the key of the dictionary, index [1] is the corresponding value that is the path to Output or Figures sub directories.
-                key_val = (
-                    (
-                        f"{conductor.identifier}_{high_f}_{low_f}_dir",
-                        os.path.join(cond_path,high_f,low_f),
-                    )
-                    for low_f in low_level
-                )
 
-                for kv in key_val:
-                    flag_make_dir = os.path.exists(kv[1])
-                    dict_make[flag_make_dir](kv[1])
-                    self.dict_path[kv[0]] = kv[1]
+                for low_f in low_level:
+
+                    key = f"{conductor.identifier}_{high_f}_{low_f}_dir"
+                    path = os.path.join(cond_path,high_f,low_f)
+
+                    flag_make_dir = os.path.exists(path)
+                    dict_make[flag_make_dir](path)
+                    self.dict_path[key] = path
+
+            key_sd = f"{conductor.identifier}_Output_{low_level.sd}_dir"
+            # Key to corresponding to the path of the folder where temporary 
+            # spatial distributions are stored before reorganization.
+            key_tmp = f"{conductor.identifier}_Output_{low_level.sd}_tmp_dir"
+            # Path to the folder where temporary spatial distributions are 
+            # stored before reorganization.
+            path_tmp = os.path.join(self.dict_path[key_sd],"tmp")
+            flag_make_dir = os.path.exists(path_tmp)
+            dict_make[flag_make_dir](path_tmp)
+            self.dict_path[key_tmp] = path_tmp
 
     # End method _subfolders_paths.
 
