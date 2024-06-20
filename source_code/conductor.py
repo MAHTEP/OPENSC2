@@ -7236,9 +7236,9 @@ class Conductor:
         elif inputs["METHOD"] == "AM4":
             raise NotImplementedError("Adams Moulton method of fourth order not yet implemented in OpenSc2.\n")
         
-            # Save an hard copy of the thermal-hydraulic problem solution at 
-            # the previous time step.
-            dict_Step["SYSVAR_old"] = dict_Step["SYSVAR"][:, 0].copy()
+        # Save an hard copy of the thermal-hydraulic problem solution at 
+        # the previous time step.
+        dict_Step["SYSVAR_old"] = dict_Step["SYSVAR"][:, 0].copy()
         return dict_Step
 
     def __update_grid_features_adapt_mesh(self)->dict:
