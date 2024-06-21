@@ -19,10 +19,6 @@ if __name__ == "__main__":
     # Create an instance of class Simulation
     simulation = Simulation(io_path)
 
-    # Save the path to the folder where to save the output of the simulation 
-    # in an attribute of class Simulation
-    simulation.dict_path["Main_dir"] = io_path["output"]
-
     # Create and instance of class Conductor for each user defined conductor.
     simulation.conductor_instance()
     # Create the whole tree of folders to store the simulation data invoking 

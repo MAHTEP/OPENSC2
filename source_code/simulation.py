@@ -67,6 +67,9 @@ class Simulation:
         self.dict_path = dict(
             Current_work_dir=self.CWD,
             Results_dir=os.path.join(self.CWD, "..", "Simulations_results"),
+            # Save the path to the folder where to save the output of the 
+            # simulation.
+            Main_dir=io_path["output"],
         )
         # Create directory Simulations_results if it does not exist yet
         os.makedirs(self.dict_path["Results_dir"], exist_ok=True)
