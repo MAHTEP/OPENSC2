@@ -17,7 +17,7 @@ if __name__ == "__main__":
         io_path = yaml.safe_load(read_file)
 
     # Create an instance of class Simulation
-    simulation = Simulation(io_path["input"])
+    simulation = Simulation(io_path)
 
     # Save the path to the folder where to save the output of the simulation 
     # in an attribute of class Simulation

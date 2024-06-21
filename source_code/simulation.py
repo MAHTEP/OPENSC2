@@ -59,7 +59,7 @@ class Simulation:
     # Current working directory
     CWD = os.getcwd()
 
-    def __init__(self, base_path):
+    def __init__(self, io_path):
 
         # Current working directory: SCMagnetCode (cdp, 10/2020)
         # self.cwd = os.getcwd()
@@ -70,7 +70,9 @@ class Simulation:
         )
         # Create directory Simulations_results if it does not exist yet
         os.makedirs(self.dict_path["Results_dir"], exist_ok=True)
-        self.basePath = base_path
+
+        self.input_file_folder = io_path["input_folder"]
+        self.basePath = io_path["input"]
         # loop inside self.basePath (cdp, 10/2020)
         input_files = os.listdir(self.basePath)
         for f_name in input_files:
@@ -872,7 +874,7 @@ class Simulation:
         self.dict_path["Save_input"] = os.path.join(
             self.dict_path["Sub_dir"],
             self.transient_input["SIMULATION"],
-            self.basePath.split("/")[-1],
+            self.input_file_folder,
         )
         os.makedirs(self.dict_path["Save_input"], exist_ok=True)
 
