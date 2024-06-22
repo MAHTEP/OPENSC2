@@ -1417,6 +1417,16 @@ class Conductor:
             dtype=float,
         )
 
+        self.electric_stiffness_matrix = lil_matrix(
+            (
+                self.total_elements_current_carriers
+                + self.total_nodes_current_carriers,
+                self.total_elements_current_carriers
+                + self.total_nodes_current_carriers,
+            ),
+            dtype=float,
+        )
+
         self.equipotential_node_index = np.zeros(
             (
                 self.operations["EQUIPOTENTIAL_SURFACE_NUMBER"],
@@ -3723,22 +3733,6 @@ class Conductor:
 
     def __build_electric_stiffness_matrix(self):
         """Private method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix."""
-
-        # Electric stiffness matrix initialization. Moved here from private
-        # method __initialize_attributes because of matrix reduction carried
-        # out in function fixed_value of module electric_auxiliary_functions.py.
-        # Need to think about this part since, at the state of the art of the
-        # code, the only matrix that will change at each thermal time step is
-        # the elctric resistance matrix.
-        self.electric_stiffness_matrix = lil_matrix(
-            (
-                self.total_elements_current_carriers
-                + self.total_nodes_current_carriers,
-                self.total_elements_current_carriers
-                + self.total_nodes_current_carriers,
-            ),
-            dtype=float,
-        )
 
         self.electric_stiffness_matrix[
             : self.total_elements_current_carriers,
