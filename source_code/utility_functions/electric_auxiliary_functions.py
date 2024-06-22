@@ -169,13 +169,19 @@ def electric_steady_state_solution(conductor: object):
     conductor.build_electric_known_term_vector()
 
     # Apply Diriclet boundary conditions
-    idx = fixed_value(conductor)
+    (
+        conductor.fixed_potential_idx,
+        conductor.fixed_potential_value,
+        conductor.electric_known_term_vector,
+        stiffness_matrix,
+        idx,
+    ) = fixed_value(conductor)
 
     # Introduced alias to electric_known_term_vector to exploit the same
     # solution function in both the steady state and the transient case,
     conductor.electric_right_hand_side = conductor.electric_known_term_vector
     electric_solution = spsolve(
-        conductor.electric_stiffness_matrix,
+        stiffness_matrix,
         conductor.electric_right_hand_side,
         permc_spec="NATURAL",
     )
@@ -257,7 +263,13 @@ def electric_transient_solution(conductor: object):
             conductor.electric_solution_steady #conductor.electric_known_term_vector_old
         )
         # Apply Diriclet boundary conditions.
-        idx = fixed_value(conductor)
+        (
+        conductor.fixed_potential_idx,
+        conductor.fixed_potential_value,
+        conductor.electric_known_term_vector,
+        stiffness_matrix,
+        idx,
+    ) = fixed_value(conductor)
 
         # fixed_value changes the electric_known_term_vector
         electric_known_term_vector_reduced = conductor.electric_known_term_vector.copy()
@@ -273,7 +285,7 @@ def electric_transient_solution(conductor: object):
 
         # Solution.
         electric_solution = spsolve(
-            conductor.electric_stiffness_matrix,
+            stiffness_matrix,
             conductor.electric_right_hand_side,
             permc_spec="NATURAL",
         )
