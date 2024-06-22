@@ -20,32 +20,41 @@ def custom_current_function(time: Union[float, np.ndarray]) -> Union[float, np.n
     return CURRENT_AMPLITUDE * np.cos(2 * np.pi * FREQUENCY * time)
 
 
-def fixed_value(conductor: object) -> np.ndarray:
-    """Function that assigns at the fixed_potential_index the values of the potential assigned by the user. The function also modifies the dimensions of the stiffness matrix and right hand side to account for equipotential  surfaces. This final form of the matrix and vectors are used to solve the electrical problem.
+def fixed_value(conductor: object) -> tuple:
+    """Function that assigns at the fixed_potential_index the values of the potential assigned by the user. The function also modifies the dimensions of the stiffness matrix and right hand side to account for equipotential surfaces. This final form of the matrix and vectors are used to solve the electrical problem.
 
     Args:
         conductor (object): object with all the information needed to solve the electric problem.
 
     Returns:
-        np.ndarray: array with the not removed rows and columns from the stifness matrix and right and side.
+        tuple: collection of (fix_pot_idx, fix_pot_value,known, stiff_mat, idx) where
+            fix_pot_idx: np.array with the index of the nodes where the reference value for the electric potential is assigned
+            fix_pot_val: np.array with the values of the reference value for the electric potential
+            known: np.array with the updated electric known therm vector after the the reduction of the number of equations of the system due to the equipotential surface with known values of the electric potential (fix_pot_val)
+            stiff_mat: np.array with the updated electric stiffness matrix after the reduction of the number of equations of the system due to the equipotential surface with known values of the electric potential (fix_pot_val)
+            idx: np.ndarray with the not removed rows and columns from the electric stifness matrix and known therm vector.
     """
+
+    # Alias
+    fix_pot_idx = conductor.fixed_potential_index
+    fix_pot_val = conductor.fixed_potential_value
+    known = conductor.electric_known_term_vector
+    stiff_mat = conductor.electric_stiffness_matrix
+
     # Assign to certain idfix a prefixed xfix and rearrange
     # the solving matrix and rhs taking into account equivalues
 
     # Remove repeated assignments
-    conductor.fixed_potential_index, indices = np.unique(
-        conductor.fixed_potential_index, return_index=True
-    )
-    # Organize the values according to the new order of
-    # conductor.fixed_potential_index
-    conductor.fixed_potential_value = conductor.fixed_potential_value[indices]
+    fix_pot_idx, indices = np.unique(fix_pot_idx, return_index=True)
+    # Organize the values according to the new order of fix_pot_idx
+    fix_pot_val = fix_pot_val[indices]
 
     # Fixed values
-    if np.isscalar(conductor.fixed_potential_index):
-        conductor.electric_known_term_vector = (
-            conductor.electric_known_term_vector
-            - conductor.electric_stiffness_matrix[:, conductor.fixed_potential_index]
-            @ conductor.fixed_potential_value
+    if np.isscalar(fix_pot_idx):
+        known = (
+            known
+            - stiff_mat[:, fix_pot_idx]
+            @ fix_pot_val
         )
 
     # EQUIPOTENTIAL SECTIONS
@@ -61,41 +70,41 @@ def fixed_value(conductor: object) -> np.ndarray:
         for ii, row in enumerate(conductor.equipotential_node_index):
 
             # Sum columns
-            conductor.electric_stiffness_matrix[:, row[0]] = np.sum(
-                conductor.electric_stiffness_matrix[:, row], axis=1
-            )
+            stiff_mat[:, row[0]] = np.sum(stiff_mat[:, row], axis=1)
             removed_index[ii * row[1:].shape[0] : (ii + 1) * row[1:].shape[0]] = row[1:]
 
             # Sum rows
-            conductor.electric_stiffness_matrix[row[0], :] = np.sum(
-                conductor.electric_stiffness_matrix[row, :], axis=0
-            )
-            conductor.electric_known_term_vector[row[0]] = np.sum(
-                conductor.electric_known_term_vector[row]
-            )
+            stiff_mat[row[0], :] = np.sum(stiff_mat[row, :], axis=0)
+            known[row[0]] = np.sum(known[row])
 
         # End for
     # End if
 
     # Delete columns and rows
     idx = np.setdiff1d(
-        np.r_[0 : conductor.electric_known_term_vector.shape[0]],
+        np.r_[0 : known.shape[0]],
         np.unique(
-            np.concatenate((conductor.fixed_potential_index, removed_index)),
+            np.concatenate((fix_pot_idx, removed_index)),
         ),
         assume_unique=True,
     )
 
     # REDUCTION of A and b.
-    conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix[:, idx]
-    conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix[idx, :]
+    stiff_mat = stiff_mat[:, idx]
+    stiff_mat = stiff_mat[idx, :]
     # To remove zero values eventually introduced diring matrix reduction.
-    conductor.electric_stiffness_matrix = sparse.csr_matrix(
-        conductor.electric_stiffness_matrix.toarray()
+    stiff_mat = sparse.csr_matrix(
+        stiff_mat.toarray()
     )
-    conductor.electric_known_term_vector = conductor.electric_known_term_vector[idx]
+    known = known[idx]
 
-    return idx
+    return (
+        fix_pot_idx,
+        fix_pot_val,
+        known,
+        stiff_mat,
+        idx,
+    )
 
 
 def solution_completion(
