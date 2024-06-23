@@ -1382,76 +1382,24 @@ class Conductor:
         )
         del self.dict_df_coupling["electric_conductance_mode"]
 
-        # Initialize resistance matrix to a dummy value (sparse matrix)
-        self.electric_resistance_matrix = diags(
-            10.0 * np.ones(self.total_elements_current_carriers),
-            offsets=0,
-            shape=(
-                self.total_elements_current_carriers,
-                self.total_elements_current_carriers,
-            ),
-            format="csr",
-            dtype=float,
-        )
-
-        self.inductance_matrix = np.zeros(
-            (
-                self.total_elements_current_carriers,
-                self.total_elements_current_carriers,
-            )
-        )
-
-        self.electric_conductance_matrix = csr_matrix(
-            (self.total_nodes_current_carriers, self.total_nodes_current_carriers),
-            dtype=float,
-        )
+        # Allocate memory for ndarrays used in the electric method.
+        (
+            self.electric_resistance_matrix,
+            self.inductance_matrix,
+            self.electric_conductance_matrix,
+            self.electric_mass_matrix,
+            self.electric_stiffness_matrix,
+            self.electric_known_term_vector,
+            self.electric_right_hand_side,
+            self.equipotential_node_index,
+            self.fixed_potential_index,
+            self.fixed_potential_value,
+        ) = self.__alloc_electric_attr()
 
         self.build_electric_mass_matrix_flag = True
-        self.electric_mass_matrix = lil_matrix(
-            (
-                self.total_elements_current_carriers
-                + self.total_nodes_current_carriers,
-                self.total_elements_current_carriers
-                + self.total_nodes_current_carriers,
-            ),
-            dtype=float,
-        )
-
-        self.electric_stiffness_matrix = lil_matrix(
-            (
-                self.total_elements_current_carriers
-                + self.total_nodes_current_carriers,
-                self.total_elements_current_carriers
-                + self.total_nodes_current_carriers,
-            ),
-            dtype=float,
-        )
-
-        self.equipotential_node_index = np.zeros(
-            (
-                self.operations["EQUIPOTENTIAL_SURFACE_NUMBER"],
-                self.inventory["StrandComponent"].number,
-            ),
-            dtype=int,
-        )
-
-        nn = 0
-        for obj in self.inventory["StrandComponent"].collection:
-            nn += obj.operations["FIX_POTENTIAL_NUMBER"]
-
-        self.fixed_potential_index = np.zeros(nn, dtype=int)
-        self.fixed_potential_value = np.zeros(nn)
 
         # Initialization moved in method build_electric_known_term_vector.
         # self.dict_node_pt["op_current"] = np.zeros(self.total_nodes_current_carriers)
-
-        self.electric_known_term_vector = np.zeros(
-            self.total_elements_current_carriers + self.total_nodes_current_carriers
-        )
-
-        self.electric_right_hand_side = np.zeros(
-            self.total_elements_current_carriers + self.total_nodes_current_carriers
-        )
 
         # Electric time initialization, to be understood where to actually do
         # this
