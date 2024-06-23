@@ -7632,3 +7632,96 @@ class Conductor:
                 raise ValueError(message_switch[self.inputs["I0_OP_MODE"]])
 
         return scomp.operations["IOP_MODE"]
+
+
+    def __alloc_electric_attr(self)->"tuple[np.ndarray]":
+        """Private method that allocates memory for the main ndarrays exploited in the electric method:
+            * electric resistance matrix
+            * electric inductance matrix
+            * electric conductance matrix
+            * electric mass matrix
+            * electric stiffness matrix
+            * electric known therm vector
+            * electric right hand side vector
+            * equipotential node index vector
+            * fixed potential node index vector
+            * fixed potentia values vector
+
+
+        Returns:
+            tuple[np.ndarray]: collection of ndarrays exploited in the electric method
+            (res_mat,
+            ind_mat,
+            cond_mat,
+            mass_mat,
+            stiff_mat,
+            ktv,
+            rhs,
+            equi_pot_node_idx,
+            fix_pot_idx,
+            fix_pot_val).
+
+                res_mat: ndarray for the electric resistance matrix
+                ind_mat: ndarray for the electric inductance matrix
+                cond_mat: ndarray for the electric conductance matrix
+                mass_mat: ndarray for the electric mass matrix 
+                stiff_mat: ndarray for the electric stiffness matrix
+                ktv: ndarray for the electric known therm vector
+                rhs: ndarray for the electric right hand side vector
+                equi_pot_node_idx: ndarray for the equipotential node index
+                fix_pot_idx: ndarray for the index of the nodes where the reference value for the electric potential is assigned
+                fix_pot_val: ndarray for the values of the reference value for the electric potential
+        """
+        
+        # Alias
+        num_elem = self.total_elements_current_carriers
+        num_node = self.total_nodes_current_carriers
+        num_sum = num_elem + num_node
+
+        res_mat = diags(
+            10.0 * np.ones(num_elem),
+            offsets=0,
+            shape=(num_elem,num_elem),
+            format="csr",
+            dtype=float,
+        )
+
+        ind_mat = np.zeros((num_elem,num_elem))
+
+        cond_mat = csr_matrix((num_node, num_node),dtype=float)
+
+        mass_mat = lil_matrix((num_sum,num_sum),dtype=float)
+
+        stiff_mat = lil_matrix((num_sum,num_sum),dtype=float)
+
+        ktv = np.zeros(num_sum)
+
+        rhs = np.zeros(num_sum)
+
+        equi_pot_node_idx = np.zeros(
+            (
+                self.operations["EQUIPOTENTIAL_SURFACE_NUMBER"],
+                self.inventory["StrandComponent"].number,
+            ),
+            dtype=int,
+        )
+
+        nn = 0
+        for obj in self.inventory["StrandComponent"].collection:
+            nn += obj.operations["FIX_POTENTIAL_NUMBER"]
+
+        fix_pot_idx = np.zeros(nn, dtype=int)
+        fix_pot_val = np.zeros(nn)
+
+        return (
+            res_mat,
+            ind_mat,
+            cond_mat,
+            mass_mat,
+            stiff_mat,
+            ktv,
+            rhs,
+            equi_pot_node_idx,
+            fix_pot_idx,
+            fix_pot_val,
+        )
