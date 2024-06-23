@@ -7751,3 +7751,12 @@ class Conductor:
         self.__assign_equivalue_surfaces()
 
         self.__assign_fix_potential()
+
+    def electric_preprocessing_static_mesh(self):
+        """Method that evaluates electric resistance matrix and electric stiffness matrix used in the electric model in the case of static mesh.
+        There is no need to re_evaluate at each thermal-hydraulic time step all the other ndarrays and data structure evaluated with method self.electric_preprocessing_initialization of class Conductor because the mesh is static. However, the electric resistance of superconducting materials is function of the current while the electric resistance of copper depends also on the magnetic fields, so this method is called at each electric time step to update values of electric resistance and consequently the electric stiffness matrix.
+        """
+
+        self.__build_electric_resistance_matrix()
+
+        self.__build_electric_stiffness_matrix()
