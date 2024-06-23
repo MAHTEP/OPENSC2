@@ -3231,31 +3231,35 @@ class Conductor:
         
         return node_distance
 
-    def __compute_gauss_node_distance(self):
-        """Private method that evaluates the distance between consecutive gauss node (the mid point of the element), thaking into account all the coordinates (x,y,z). Values are stored in attribute gauss_node_distance."""
-        self.gauss_node_distance = np.zeros(self.total_nodes)
+    def __compute_gauss_node_distance(self)->np.ndarray:
+        """Private method that evaluates the distance between consecutive gauss node (the mid point of the element), thaking into account all the coordinates (x,y,z).
+
+        Returns:
+            np.ndarray: distance between consecutive gauss node in 3D coordinates.
+        """
+
+        # Alias
+        tot_comp_num = self.inventory["all_component"].number
+
+        nod_dist_gauss = np.zeros(self.total_nodes)
         # On the first cross section there is only the contribution from the
         # firts element
-        self.gauss_node_distance[: self.inventory["all_component"].number] = (
-            self.node_distance[: self.inventory["all_component"].number] / 2
-        )
+        nod_dist_gauss[: tot_comp_num] = self.node_distance[: tot_comp_num] / 2
 
         # All the 'inner' distances are evaluated as
         # (l_k + l_(k+1))/2, for k in [0,total_nodes]
-        self.gauss_node_distance[
-            self.inventory["all_component"]
-            .number : -self.inventory["all_component"]
-            .number
-        ] = (
-            self.node_distance[: -self.inventory["all_component"].number]
-            + self.node_distance[self.inventory["all_component"].number :]
+        nod_dist_gauss[tot_comp_num : -tot_comp_num] = (
+            self.node_distance[: -tot_comp_num]
+            + self.node_distance[tot_comp_num :]
         ) / 2
 
         # On the last cross section there is only the contribution from the
         # last element
-        self.gauss_node_distance[-self.inventory["all_component"].number :] = (
-            self.node_distance[-self.inventory["all_component"].number :] / 2
+        nod_dist_gauss[-tot_comp_num :] = (
+            self.node_distance[-tot_comp_num :] / 2
         )
+
+        return nod_dist_gauss
 
     def __build_incidence_matrix(self):
         """Private method that builds the incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Value stored in attribute incidence_matrix; the transposed incidence matrix is also evaluated and stored in attribute incidence_matrix_transposed. Thake adantage of sparse matrices.
