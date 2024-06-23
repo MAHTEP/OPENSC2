@@ -154,7 +154,14 @@ def electric_steady_state_solution(conductor: object):
     # method for the integration in time is implicit.
     conductor.operating_conditions_em()
     # Evaluate all matrices needed to solve the electromagnetic problem.
-    conductor.electric_preprocessing()
+    # Called method conductor.electric_preprocessing_initialization because at 
+    # the time being the flow chart of the electic model assumes that at the 
+    # beginning of the problem (conductor.cond_num_step = 0), the seady state 
+    # version of the electric problem is solved. Then, for all the other steps, 
+    # function electric_transient_solution is used. Thus, this is the correct 
+    # place to call the method that initializes ndarrays and data structure 
+    # used in the electric problem.
+    conductor.electric_preprocessing_initialization()
 
     if conductor.electric_known_term_vector.shape[0] == []:
         conductor.electric_known_term_vector = np.zeros(
