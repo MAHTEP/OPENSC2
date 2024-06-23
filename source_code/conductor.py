@@ -3151,29 +3151,41 @@ class Conductor:
         
         return connect_mat
 
-    def __build_connectivity_current_carriers(self):
-        """Private method that builds the dataframe with the connections (start and end node of each elements) of StrandMixedComponent, StrandStabilizerComonent and StackComponent components."""
+    def __build_connectivity_current_carriers(self)->pd.DataFrame:
+        """Private method that builds the dataframe with the connections (start and end node of each elements) of StrandMixedComponent, StrandStabilizerComonent and StackComponent components.
+
+        Returns:
+            pd.DataFrame: updated dataframe with connections of all conductor components.
+        """
+
+        # Alias
+        connect_mat = self.connectivity_matrix_current_carriers
+        step = self.inventory["StrandComponent"].number
+
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
-            nodes = np.linspace(
-                ii,
-                ii + self.total_elements_current_carriers,
-                self.grid_input["NELEMS"] + 1,
-                dtype=int,
+            nodes = np.array(range(
+                    ii,
+                    ii+self.total_nodes_current_carriers,
+                    step,
+                )
             )
-            self.connectivity_matrix_current_carriers.iloc[
-                ii :: self.inventory["StrandComponent"].number,
-                self.connectivity_matrix_current_carriers.columns.get_loc("start"),
+
+            connect_mat.iloc[
+                ii :: step,
+                connect_mat.columns.get_loc("start"),
             ] = nodes[:-1]
-            self.connectivity_matrix_current_carriers.iloc[
-                ii :: self.inventory["StrandComponent"].number,
-                self.connectivity_matrix_current_carriers.columns.get_loc("end"),
+            connect_mat.iloc[
+                ii :: step,
+                connect_mat.columns.get_loc("end"),
             ] = nodes[1:]
-            self.connectivity_matrix_current_carriers.iloc[
-                ii :: self.inventory["StrandComponent"].number,
-                self.connectivity_matrix_current_carriers.columns.get_loc(
+            connect_mat.iloc[
+                ii :: step,
+                connect_mat.columns.get_loc(
                     "identifiers"
                 ),
             ] = obj.identifier
+        
+        return connect_mat
 
     def __compute_node_distance(self):
         """Private method that computes the distance between nodes thaking into account all the coordinates (x,y,z). Values are stored in attribute node_distance."""
