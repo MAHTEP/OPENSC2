@@ -3328,48 +3328,46 @@ class Conductor:
 
         return res_mat
 
-    def __contact_current_carriers_first_cross_section(self):
-        """Private method that evaluates the he contact nodes between StrandMixedComponent, StrandStabilizerComonent and StackComponent components on the first conductor cross section exploiting the contact perimeter flag value in sheet contact_perimeter_flag of input file conductor_coupling.xlsx.
-        Values stored in private attribute _contact_nodes_first.
+    def __contact_current_carriers_first_cross_section(self)->np.ndarray:
+        """Private method that evaluates the contact nodes between StrandMixedComponent, StrandStabilizerComonent and StackComponent components on the first conductor cross section exploiting the contact perimeter flag value in sheet contact_perimeter_flag of input file conductor_coupling.xlsx.
+
+        Returns:
+            np.ndarray: contact nodes on the first cross section (at z = 0 m)
         """
 
         # Alias
         interf_flag = self.dict_df_coupling["contact_perimeter_flag"]
+        fcomp_num = self.inventory["FluidComponent"].number
+        scomp_num = self.inventory["StrandComponent"].number
+        start = 1 + fcomp_num
+        stop = 1 + fcomp_num + scomp_num
 
-        self._contact_nodes_first = np.array([])
+        contact_nodes = np.array([])
         # 1+self.inventory["FluidComponent"].number keeps into account the
         # Environment component.
-        for row in range(
-            1 + self.inventory["FluidComponent"].number,
-            1
-            + self.inventory["FluidComponent"].number
-            + self.inventory["StrandComponent"].number,
-        ):
-            ind = np.nonzero(abs(interf_flag.iloc[
-                    row,
-                    1
-                    + self.inventory["FluidComponent"].number : 1
-                    + self.inventory["FluidComponent"].number
-                    + self.inventory["StrandComponent"].number,
-                ].to_numpy()
-            ) == 1
+        for row in range(start,stop):
+            ind = np.nonzero(abs(
+                    interf_flag.iloc[row,start : stop].to_numpy()
+                ) == 1
             )[0]
 
             # Reduce the row index to convert from the whole system to the
             # reduced one (only the StrandComponent components).
-            row -= 1 + self.inventory["FluidComponent"].number
+            row -= start
 
             if row == 0:
-                self._contact_nodes_first = np.array(
+                contact_nodes = np.array(
                     [row * np.ones(ind.shape, dtype=int), ind]
                 ).T
             else:
-                self._contact_nodes_first = np.concatenate(
+                contact_nodes = np.concatenate(
                     (
-                        self._contact_nodes_first,
+                        contact_nodes,
                         np.array([row * np.ones(ind.shape, dtype=int), ind]).T,
                     )
                 )
+        
+        return contact_nodes
 
     def __contact_current_carriers(self):
         """Private method that detects the contacts between components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent, starting from the information on the first cross section. For the time being the component twist is not taken into account. Values stored in attribute contact_nodes_current_carriers.
