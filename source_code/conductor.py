@@ -4393,14 +4393,19 @@ class Conductor:
 
     # END: INDUCTANCE APPROXIMATE EVALUATION
 
-    def __build_electric_mass_matrix(self):
+    def __build_electric_mass_matrix(self)->np.ndarray:
         """Private method that builds the electric mass matrix from the inductance matrix. Inductance matrix can be evaluated analytically or approximatey.
 
         Note: the other three blocks of the electric mass matrix are already set to zeros in the initialization.
 
+        Returns:
+            np.ndarray: sparse mass matrix for the electric problem.
+
         Raises:
             ValueError: raise error if mode is a not valid value.
         """
+
+        mass_mat = self.electric_mass_matrix
 
         if (
             self.operations["INDUCTANCE_MODE"] != CONSTANT_INDUCTANCE
@@ -4419,12 +4424,14 @@ class Conductor:
 
         inductance_switch[self.operations["INDUCTANCE_MODE"]](self.operations["SELF_INDUCTANCE_MODE"])
 
-        self.electric_mass_matrix[
+        mass_mat[
             : self.total_elements_current_carriers,
             : self.total_elements_current_carriers,
         ] = self.inductance_matrix
 
-        self.electric_mass_matrix = self.electric_mass_matrix.tocsr(copy=True)
+        mass_mat = mass_mat.tocsr(copy=True)
+
+        return mass_mat
 
     def __get_electric_time_step(self):
         """Private method that evaluates the electric time step according to use definition.
