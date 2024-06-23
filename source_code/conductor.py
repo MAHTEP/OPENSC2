@@ -3118,30 +3118,38 @@ class Conductor:
                     self.nodal_coordinates.columns.get_loc(coord),
                 ] = obj.coordinate[coord]
 
-    def __build_connectivity(self, nn: int, key: str):
+    def __build_connectivity(self, nn: int, key: str)->pd.DataFrame:
         """Private method that builds the dataframe with the connections (start and end node of each elements) of all conductor components.
 
         Args:
             nn (int): starting value of the index
             key (str): key of the dictionary self.inventory; can be FluidComponent, StrandComponent, JacketComponent.
+
+        Returns:
+            pd.DataFrame: updated dataframe with connections of all conductor components.
         """
+
+        # Alias
+        connect_mat = self.connectivity_matrix
+        step = self.inventory["all_component"].number
+
         for ii, obj in enumerate(self.inventory[key].collection, nn):
-            nodes = np.linspace(
-                ii, ii + self.total_elements, self.grid_input["NELEMS"] + 1, dtype=int
-            )
-            self.connectivity_matrix.iloc[
+            # Rememeber that ragne does not include stop value.
+            nodes = np.array(range(ii,ii+self.total_nodes,step))
+            connect_mat.iloc[
                 ii :: self.inventory["all_component"].number,
-                self.connectivity_matrix.columns.get_loc("start"),
+                connect_mat.columns.get_loc("start"),
             ] = nodes[:-1]
-            self.connectivity_matrix.iloc[
+            connect_mat.iloc[
                 ii :: self.inventory["all_component"].number,
-                self.connectivity_matrix.columns.get_loc("end"),
+                connect_mat.columns.get_loc("end"),
             ] = nodes[1:]
-            self.connectivity_matrix.iloc[
+            connect_mat.iloc[
                 ii :: self.inventory["all_component"].number,
-                self.connectivity_matrix.columns.get_loc("identifiers"),
+                connect_mat.columns.get_loc("identifiers"),
             ] = obj.identifier
-        # End for
+        
+        return connect_mat
 
     def __build_connectivity_current_carriers(self):
         """Private method that builds the dataframe with the connections (start and end node of each elements) of StrandMixedComponent, StrandStabilizerComonent and StackComponent components."""
