@@ -3413,8 +3413,12 @@ class Conductor:
 
         return contact_nodes_current_carriers
 
-    def __build_contact_incidence_matrix(self):
-        """Private method that builds the edge to node incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Values stored in attribute contact_incidence_matrix. Expoit sparse matrix."""
+    def __build_contact_incidence_matrix(self)->np.ndarray:
+        """Private method that builds the edge to node incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Expoit sparse matrix.
+        
+        Returns:
+            np.ndarray: sparse of edge to node contact incidence matrix for StrandComponent instances.
+        """
 
         # Edge-to-node incidence matrix (referred to En)
         row_ind = np.tile(
@@ -3423,12 +3427,14 @@ class Conductor:
         col_ind = (
             self.contact_nodes_current_carriers.to_numpy().transpose().flatten("F")
         )  # which column
-        self.contact_incidence_matrix = coo_matrix(
+        contact_incidence_mat = coo_matrix(
             (
                 np.tile([-1, 1], self.contact_nodes_current_carriers.shape[0]),
                 (row_ind, col_ind),
             )
         ).tocsr()
+
+        return contact_incidence_mat
 
     def __evaluate_transversal_distance(self) -> np.ndarray:
         """Private method that evaluates distance along the direction ortoghonal to the z direction, between nodes of components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent that are in contact.
