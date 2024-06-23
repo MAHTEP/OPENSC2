@@ -3775,8 +3775,14 @@ class Conductor:
 
         return stiff_mat
 
-    def __assign_equivalue_surfaces(self):
-        """Private method that assigns the prescribed equipotential surface of the conductor."""
+    def __assign_equivalue_surfaces(self)->np.ndarray:
+        """Private method that assigns the prescribed equipotential surface of the conductor.
+        
+        Returns:
+            np.ndarray: index of the equipotential surfaces.
+        """
+
+        equi_pot_node_idx = self.equipotential_node_index
         for ii, coord in enumerate(self.operations["EQUIPOTENTIAL_SURFACE_COORDINATE"]):
             # Find the index of the spatial discretization along z such that
             # z <= round(coord,n_digit_z); assing the last StrandComponent
@@ -3785,13 +3791,15 @@ class Conductor:
             # correct position (in the portion of the array dedicated to the
             # current).
 
-            self.equipotential_node_index[ii, :] = (
+            equi_pot_node_idx[ii, :] = (
                 np.nonzero(
                     self.nodal_coordinates.loc["StrandComponent", "z"].to_numpy()
                     <= round(coord, self.n_digit_z)
                 )[0][-self.inventory["StrandComponent"].number :]
                 + self.total_elements_current_carriers
             )
+        
+        return equi_pot_node_idx
 
     def __assign_fix_potential(self):
         """Private method that assigns the value of the fixed potential on prescribed fixed potential surfaces."""
