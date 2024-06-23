@@ -3303,7 +3303,11 @@ class Conductor:
         return (incidence_mat,incidence_mat.T)
 
     def __build_electric_resistance_matrix(self):
-        """Private method that builds the elecrtic resistance matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Value stored in attribute electric_resistance_matrix. Thake adantage of sparse matrices."""
+        """Private method that builds the elecrtic resistance matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Thake adantage of sparse matrices.
+        
+        Returns:
+            np.ndarray: sparse electric resistance matrix.
+        """
 
         resistance = np.zeros(self.total_elements_current_carriers)
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
@@ -3311,7 +3315,7 @@ class Conductor:
                 ii :: self.inventory["StrandComponent"].number
             ] = obj.get_electric_resistance(self)
 
-        self.electric_resistance_matrix = diags(
+        res_mat = diags(
             resistance,
             offsets=0,
             shape=(
@@ -3321,6 +3325,8 @@ class Conductor:
             format="csr",
             dtype=float,
         )
+
+        return res_mat
 
     def __contact_current_carriers_first_cross_section(self):
         """Private method that evaluates the he contact nodes between StrandMixedComponent, StrandStabilizerComonent and StackComponent components on the first conductor cross section exploiting the contact perimeter flag value in sheet contact_perimeter_flag of input file conductor_coupling.xlsx.
