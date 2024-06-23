@@ -7673,3 +7673,81 @@ class Conductor:
             fix_pot_idx,
             fix_pot_val,
         )
+
+    def electric_preprocessing_initialization(self):
+        """Method that evaluates quantities and data structures needed for the electric model.
+        Specifically the method builds the:
+
+            * nodal cordinates
+            * connectivity dataframes
+            * connectiviy matrix only for StrandComponent
+            * incidence matrix in the logitudinal direction
+            * incidence matrix in the transversal direction
+            * electric resistance matrix (longitudinal direction)
+            * electric conductance matrix (tranversal direction)
+            * elecctric mass matrix
+            * electric stiffmess matrix
+        
+        Moreover the method assigns the:
+            
+            * equipotential cross sections
+            * reference value to the electri potential to one of the equipotential cross sections
+        """
+
+        nn = 0
+
+        for key in ("FluidComponent", "StrandComponent", "JacketComponent"):
+            self.__build_nodal_coordinates(nn, key)
+
+            self.__build_connectivity(nn, key)
+            
+            nn += self.inventory[key].number
+
+        # Build the connectivity matrix for the reduced system of components:
+        # keeps into account only the StrandComponent ones.
+        self.__build_connectivity_current_carriers()
+
+        # Convert index to categorical
+        self.connectivity_matrix.loc[:, "identifiers"] = self.connectivity_matrix.loc[
+            :, "identifiers"
+        ].astype("category")
+        self.connectivity_matrix_current_carriers.loc[
+            :, "identifiers"
+        ] = self.connectivity_matrix_current_carriers.loc[:, "identifiers"].astype(
+            "category"
+        )
+
+        self.__compute_node_distance()
+
+        self.__compute_gauss_node_distance()
+
+        # Build incidence matrix only for StrandComponent
+        self.__build_incidence_matrix()
+        
+        # Build electric resistance matrix (for the first time)
+        self.__build_electric_resistance_matrix()
+
+        if self.inventory["StrandComponent"].number > 1:
+            # There are more than 1 StrandComponent objects, therefore there
+            # are contacts between StrandComponent objects and matrices
+            # contact_incidence_matrix and electric_conductance_matix can be
+            # built. If there is only one StrandComponent object
+            # contact_incidence_matrix can not be defined while
+            # electric_conductance_matix is full of 0 from initialization.
+
+            # Find contacts between StrandComponent objects.
+            self.__contact_current_carriers()
+            # Build contact incidence matrix: this method builds the contact 
+            # incidence matrix for current carriers only
+            self.__build_contact_incidence_matrix()
+
+            self.__build_electric_conductance_matrix()
+
+        # Build electric stiffness matrix (for the first time)
+        self.__build_electric_stiffness_matrix()
+
+        self.__build_electric_mass_matrix()
+
+        self.__assign_equivalue_surfaces()
+
+        self.__assign_fix_potential()
