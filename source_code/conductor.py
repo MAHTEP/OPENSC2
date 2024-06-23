@@ -3261,38 +3261,46 @@ class Conductor:
 
         return nod_dist_gauss
 
-    def __build_incidence_matrix(self):
-        """Private method that builds the incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Value stored in attribute incidence_matrix; the transposed incidence matrix is also evaluated and stored in attribute incidence_matrix_transposed. Thake adantage of sparse matrices.
+    def __build_incidence_matrix(self)->"tuple[np.ndarray]":
+        """Private method that builds the incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComponent and StackComponent. Thake adantage of sparse matrices.
 
         From MatLab code given by professor F. Freschi.
+
+        Returns:
+            tuple[np.ndarray]: collection of (incidence_mat,incidence_mat.T).
+                
+                * incidence_mat: sparse incidence matrix limited to StrandComponent instances.
+                * incidence_mat.T: transposed of the sparse incidence matrix.
         """
+
+        # Alias
+        n_elems = self.total_elements_current_carriers
+        connect_mat = self.connectivity_matrix_current_carriers
+
         # Row pointer: get_loc returns a boolean array, irow is build with
         # values in 0:Ne for which the boolean is True (corresponds to a
         # CurrenCarrier index).
-        irow = np.tile(
-            np.r_[0 : self.total_elements_current_carriers],
-            (2, 1),
-        ).flatten("F")
+        irow = np.tile(np.r_[0 : n_elems],(2, 1)).flatten("F")
         # Column pointer.
         jcol = (
-            self.connectivity_matrix_current_carriers.iloc[:, 0:2]
+            connect_mat.iloc[:, 0:2]
             .to_numpy()
             .copy()
             .transpose()
             .flatten("F")
         )
         # Nonzeros values
-        s = np.tile([-1, 1], self.total_elements_current_carriers)
+        s = np.tile([-1, 1], n_elems)
         # Assemble matrix
-        self.incidence_matrix = coo_matrix(
+        incidence_mat = coo_matrix(
             (s, (irow, jcol)),
             shape=(
-                self.total_elements_current_carriers,
+                n_elems,
                 self.total_nodes_current_carriers,
             ),
         ).tocsr()
 
-        self.incidence_matrix_transposed = self.incidence_matrix.T
+        return (incidence_mat,incidence_mat.T)
 
     def __build_electric_resistance_matrix(self):
         """Private method that builds the elecrtic resistance matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Value stored in attribute electric_resistance_matrix. Thake adantage of sparse matrices."""
