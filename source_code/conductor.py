@@ -3755,27 +3755,25 @@ class Conductor:
         #     f"After call method {self.__assign_fix_potential.__name__}.\n"
         # )
 
-    def __build_electric_stiffness_matrix(self):
-        """Private method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix."""
+    def __build_electric_stiffness_matrix(self)->np.ndarray:
+        """Private method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix.
 
-        self.electric_stiffness_matrix[
-            : self.total_elements_current_carriers,
-            : self.total_elements_current_carriers,
-        ] = self.electric_resistance_matrix
-        self.electric_stiffness_matrix[
-            : self.total_elements_current_carriers,
-            self.total_elements_current_carriers :,
-        ] = self.incidence_matrix
-        self.electric_stiffness_matrix[
-            self.total_elements_current_carriers :,
-            : self.total_elements_current_carriers,
-        ] = -self.incidence_matrix_transposed
-        self.electric_stiffness_matrix[
-            self.total_elements_current_carriers :,
-            self.total_elements_current_carriers :,
-        ] = self.electric_conductance_matrix
+        Returns:
+            np.ndarray: electric stiffness matrix assembled from electric resistance matrix, incidence matrix and conductance matrix.
+        """
 
-        self.electric_stiffness_matrix = self.electric_stiffness_matrix.tocsr(copy=True)
+        # Alias
+        stiff_mat = self.electric_stiffness_matrix
+        n_elems = self.total_elements_current_carriers
+
+        stiff_mat[: n_elems,: n_elems] = self.electric_resistance_matrix
+        stiff_mat[: n_elems,n_elems :] = self.incidence_matrix
+        stiff_mat[n_elems :,: n_elems] = -self.incidence_matrix_transposed
+        stiff_mat[n_elems :,n_elems :] = self.electric_conductance_matrix
+
+        stiff_mat = stiff_mat.tocsr(copy=True)
+
+        return stiff_mat
 
     def __assign_equivalue_surfaces(self):
         """Private method that assigns the prescribed equipotential surface of the conductor."""
