@@ -3370,13 +3370,18 @@ class Conductor:
         return contact_nodes
 
     def __contact_current_carriers(self):
-        """Private method that detects the contacts between components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent, starting from the information on the first cross section. For the time being the component twist is not taken into account. Values stored in attribute contact_nodes_current_carriers.
+        """Private method that detects the contacts between components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent, starting from the information on the first cross section. For the time being the component twist is not taken into account.
         Exploits method __contact_current_carriers_first_cross_section.
+
+        Returns:
+            np.ndarray: array with contacts between StrandComponent instances.
         """
-        self.__contact_current_carriers_first_cross_section()
+        self._contact_nodes_first = (
+            self.__contact_current_carriers_first_cross_section()
+        )
         contact_nodes_current_carriers = np.zeros(
             (
-                (self.grid_input["NELEMS"] + 1) * self._contact_nodes_first.shape[0],
+                (self.grid_features["N_nod"]) * self._contact_nodes_first.shape[0],
                 self._contact_nodes_first.shape[1],
             ),
             dtype=int,
@@ -3384,7 +3389,7 @@ class Conductor:
         contact_nodes_current_carriers[
             : self._contact_nodes_first.shape[0], :
         ] = self._contact_nodes_first
-        for ii in range(1, self.grid_input["NELEMS"] + 1):
+        for ii in range(1, self.grid_features["N_nod"]):
             contact_nodes_current_carriers[
                 ii
                 * self._contact_nodes_first.shape[0] : (ii + 1)
@@ -3400,11 +3405,13 @@ class Conductor:
                 + self.inventory["StrandComponent"].number
             )
 
-        self.contact_nodes_current_carriers = pd.DataFrame(
+        contact_nodes_current_carriers = pd.DataFrame(
             contact_nodes_current_carriers,
             dtype=int,
             columns=["start", "end"],
         )
+
+        return contact_nodes_current_carriers
 
     def __build_contact_incidence_matrix(self):
         """Private method that builds the edge to node incidence matrix limited to components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent. Values stored in attribute contact_incidence_matrix. Expoit sparse matrix."""
