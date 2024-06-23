@@ -3537,9 +3537,17 @@ class Conductor:
 
         return electric_conductance
 
-    def __build_electric_conductance_matrix(self):
+    def __build_electric_conductance_matrix(self)->"tuple[np.ndarray]":
         """Private method that builds the electric conductance matrix for components of kind StrandMixedComponent, StrandStabilizerComonent and StackComponent that are in contact along transverse direction. Values are stored in attribute electric_conductance_matrix.
         Exploits sparse matrix.
+
+        Returns:
+            tuple[np.ndarray]: collection of sparse matrices 
+            (cond_mat,
+            cond_diag_mat).
+
+            * cond_mat: np.ndarray of conductance matrix
+            * cond_diag_mat: diagonal matrix with the diagonal elements of the conductance matrix.
         """
 
         # reset_index is used to reset the index to numerical values instead of object identifier in order to make the correct operations and have the correct shape: distance.shape = (self.total_nodes_current_carriers,)
@@ -3550,7 +3558,7 @@ class Conductor:
             "electric_conductance_unit_length.tsv", electric_conductance, delimiter="\t"
         )
 
-        self.electric_conductance_diag_matrix = diags(
+        cond_diag_mat = diags(
             electric_conductance,
             offsets=0,
             shape=(
@@ -3561,11 +3569,13 @@ class Conductor:
             dtype=float,
         )
         # Conductance matrix
-        self.electric_conductance_matrix = (
+        cond_mat = (
             self.contact_incidence_matrix.T
-            @ self.electric_conductance_diag_matrix
+            @ cond_diag_mat
             @ self.contact_incidence_matrix
         )
+
+        return (cond_mat, cond_diag_mat)
 
     def electric_preprocessing(self):
         """Method that allows to evaluate most of the quatities and data structures needed for the electric calculation.
