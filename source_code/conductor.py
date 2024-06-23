@@ -3801,25 +3801,38 @@ class Conductor:
         
         return equi_pot_node_idx
 
-    def __assign_fix_potential(self):
-        """Private method that assigns the value of the fixed potential on prescribed fixed potential surfaces."""
+    def __assign_fix_potential(self)->"tuple[np.ndarray]":
+        """Private method that assigns the value of the fixed potential on prescribed fixed potential surfaces.
+        
+        Returns:
+            tuple[np.ndarray]: collection of (fix_pot_idx,fix_pot_val).
+                
+                * fix_pot_idx: np.ndarray with index associated to the cross section with the reference value for the electric potential.
+                * fix_pot_val: np.ndarray with the reference value for the potential on one of the equipotential surface.
+        """
+
+        fix_pot_val = self.fixed_potential_value
+        fix_pot_idx = self.fixed_potential_index
+
         jj = 0
         tol = 1e-10
         for kk, obj in enumerate(self.inventory["StrandComponent"].collection):
             if obj.operations["FIX_POTENTIAL_FLAG"]:
                 # Assign potential values.
-                self.fixed_potential_value[
+                fix_pot_val[
                     jj : jj + obj.operations["FIX_POTENTIAL_NUMBER"]
                 ] = obj.operations["FIX_POTENTIAL_VALUE"]
                 # Find and assign the index corresponding to fix potential
                 # coordinates.
                 for ii, coord in enumerate(obj.operations["FIX_POTENTIAL_COORDINATE"], jj):
-                    self.fixed_potential_index[ii] = (
+                    fix_pot_idx[ii] = (
                         (self.nodal_coordinates.loc["StrandComponent", "z"] - coord).abs()
                         <= tol
                     ).to_numpy().nonzero()[0][kk] + self.total_elements_current_carriers
 
                 jj += obj.operations["FIX_POTENTIAL_NUMBER"]
+        
+        return (fix_pot_idx,fix_pot_val)
 
     def eval_total_operating_current(self):
         """Method that evaluates the total electric current flowing in the conductor according to the value of flag I0_OP_MODE:
