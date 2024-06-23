@@ -7801,13 +7801,15 @@ class Conductor:
         for key in ("FluidComponent", "StrandComponent", "JacketComponent"):
             self.__build_nodal_coordinates(nn, key)
 
-            self.__build_connectivity(nn, key)
+            self.connectivity_matrix = self.__build_connectivity(nn, key)
             
             nn += self.inventory[key].number
 
         # Build the connectivity matrix for the reduced system of components:
         # keeps into account only the StrandComponent ones.
-        self.__build_connectivity_current_carriers()
+        self.connectivity_matrix_current_carriers = (
+            self.__build_connectivity_current_carriers()
+        )
 
         # Convert index to categorical
         self.connectivity_matrix.loc[:, "identifiers"] = self.connectivity_matrix.loc[
@@ -7819,15 +7821,20 @@ class Conductor:
             "category"
         )
 
-        self.__compute_node_distance()
+        self.node_distance = self.__compute_node_distance()
 
-        self.__compute_gauss_node_distance()
+        self.gauss_node_distance = self.__compute_gauss_node_distance()
 
         # Build incidence matrix only for StrandComponent
-        self.__build_incidence_matrix()
+        (
+            self.incidence_matrix,
+            self.incidence_matrix_transposed,
+        ) = self.__build_incidence_matrix()
         
         # Build electric resistance matrix (for the first time)
-        self.__build_electric_resistance_matrix()
+        self.electric_resistance_matrix = (
+            self.__build_electric_resistance_matrix()
+        )
 
         if self.inventory["StrandComponent"].number > 1:
             # There are more than 1 StrandComponent objects, therefore there
@@ -7838,27 +7845,43 @@ class Conductor:
             # electric_conductance_matix is full of 0 from initialization.
 
             # Find contacts between StrandComponent objects.
-            self.__contact_current_carriers()
+            self.contact_nodes_current_carriers = (
+                self.__contact_current_carriers()
+            )
             # Build contact incidence matrix: this method builds the contact 
             # incidence matrix for current carriers only
-            self.__build_contact_incidence_matrix()
+            self.contact_incidence_matrix = (
+                self.__build_contact_incidence_matrix()
+            )
 
-            self.__build_electric_conductance_matrix()
+            (
+                self.electric_conductance_matrix,
+                self.electric_conductance_diag_matrix,
+            ) = self.__build_electric_conductance_matrix()
 
         # Build electric stiffness matrix (for the first time)
-        self.__build_electric_stiffness_matrix()
+        self.electric_stiffness_matrix = (
+            self.__build_electric_stiffness_matrix()
+        )
 
-        self.__build_electric_mass_matrix()
+        self.electric_mass_matrix = self.__build_electric_mass_matrix()
 
-        self.__assign_equivalue_surfaces()
+        self.equipotential_node_index = self.__assign_equivalue_surfaces()
 
-        self.__assign_fix_potential()
+        (
+            self.fixed_potential_index,
+            self.fixed_potential_value,
+        ) = self.__assign_fix_potential()
 
     def electric_preprocessing_static_mesh(self):
         """Method that evaluates electric resistance matrix and electric stiffness matrix used in the electric model in the case of static mesh.
         There is no need to re_evaluate at each thermal-hydraulic time step all the other ndarrays and data structure evaluated with method self.electric_preprocessing_initialization of class Conductor because the mesh is static. However, the electric resistance of superconducting materials is function of the current while the electric resistance of copper depends also on the magnetic fields, so this method is called at each electric time step to update values of electric resistance and consequently the electric stiffness matrix.
         """
 
-        self.__build_electric_resistance_matrix()
+        self.electric_resistance_matrix = (
+            self.__build_electric_resistance_matrix()
+        )
 
-        self.__build_electric_stiffness_matrix()
+        self.electric_stiffness_matrix = (
+            self.__build_electric_stiffness_matrix()
+        )
