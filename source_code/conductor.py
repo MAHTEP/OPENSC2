@@ -3187,13 +3187,22 @@ class Conductor:
         
         return connect_mat
 
-    def __compute_node_distance(self):
-        """Private method that computes the distance between nodes thaking into account all the coordinates (x,y,z). Values are stored in attribute node_distance."""
-        self.node_distance = (
+    def __compute_node_distance(self)->np.ndarray:
+        """Private method that computes the distance between nodes thaking into account all the coordinates (x,y,z).
+
+        Returns:
+            np.ndarray: distance between nodes characterized by 3D coordinates x, y, and z.
+        """
+
+        # Alias
+        nodal_coord = self.nodal_coordinates
+        connect_mat = self.connectivity_matrix
+        
+        node_distance = (
             (
                 (
-                    self.nodal_coordinates.iloc[self.connectivity_matrix["end"], :]
-                    - self.nodal_coordinates.iloc[self.connectivity_matrix["start"], :]
+                    nodal_coord.iloc[connect_mat["end"], :]
+                    - nodal_coord.iloc[connect_mat["start"], :]
                 )
                 ** 2
             )
@@ -3212,7 +3221,15 @@ class Conductor:
             # inductance.
             # This is not necessary if there are more than one 
             # strand since in this case the helicoidal coordinates are used.
-            self.node_distance = self.node_distance / self.inventory["StrandComponent"].collection[0].inputs["COSTETA"]
+            
+            node_distance = (
+                node_distance
+                / self.inventory["StrandComponent"].collection[0].inputs[
+                    "COSTETA"
+                ]
+            )
+        
+        return node_distance
 
     def __compute_gauss_node_distance(self):
         """Private method that evaluates the distance between consecutive gauss node (the mid point of the element), thaking into account all the coordinates (x,y,z). Values are stored in attribute gauss_node_distance."""
