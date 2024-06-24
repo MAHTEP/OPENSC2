@@ -92,10 +92,6 @@ def fixed_value(conductor: object) -> tuple:
     # REDUCTION of A and b.
     stiff_mat = stiff_mat[:, idx]
     stiff_mat = stiff_mat[idx, :]
-    # To remove zero values eventually introduced diring matrix reduction.
-    stiff_mat = sparse.csr_matrix(
-        stiff_mat.toarray()
-    )
     known = known[idx]
 
     return (
