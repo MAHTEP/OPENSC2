@@ -475,6 +475,9 @@ class Simulation:
             )
             for conductor in self.list_of_Conductors:
                 
+                # Alias
+                MESH_MODE = conductor.grid_input["ITYMSH"]
+                
                 # Use electric method only if needed, i.e., user specifies a 
                 # current.
                 if conductor.inputs["I0_OP_MODE"] != IOP_NOT_DEFINED:
@@ -649,8 +652,25 @@ class Simulation:
                 save_time_evolution(self, conductor)
                 # call sensor to plot results at any time the user asks (cdp, 07/2020)
 
-                if self.simulation_time[-1] < self.transient_input["TEND"]:
+                if np.isclose(
+                    self.simulation_time[-1],
+                    self.transient_input["TEND"]
+                ):
 
+                    # Update SolidComponent properties explointing the final 
+                    # solution of the simulation (see the comment above).
+                    conductor.operating_conditions_em()
+                    # Evaluate thermal hydraulic properties and quantities in 
+                    # Gauss points, method __eval_Gauss_point_th is invoked 
+                    # inside method operating_conditions_th.
+                    conductor.operating_conditions_th(self)
+                    # Upadate keyword t_save of attributes store_sd_node and 
+                    # store_sd_Gauss of conductor instance and sub components 
+                    # with the final solution of the simulation.
+                    conductor.store_spatial_distributions("t_save")
+
+                else:
+                    
                     # Call function get_time_step to compute the new time step 
                     # used to compute the next value of the time at which the 
                     # next thermal-hydraulic solution will be evaluated. Moving 
@@ -676,9 +696,9 @@ class Simulation:
                     )
                     # Force the time step to not miss the next event.
                     conductor,forced_time_step = force_time_step(
-                            conductor,
-                            self.transient_input["STPMIN"],
-                        )
+                        conductor,
+                        self.transient_input["STPMIN"],
+                    )
 
                     # Check if I did not forced the time step.
                     if forced_time_step == False:
@@ -692,8 +712,8 @@ class Simulation:
 
                     # Check if an adaptive mesh is used.
                     if (
-                        conductor.grid_input["ITYMSH"] == ADAPTIVE_UNIFORM_MESH 
-                        or conductor.grid_input["ITYMSH"] == ADAPTIVE_REFINED_MESH
+                        MESH_MODE == ADAPTIVE_UNIFORM_MESH 
+                        or MESH_MODE == ADAPTIVE_REFINED_MESH
                     ):
                         # The mesh is adaptive, update mesh and all relevant 
                         # mesh parameters calling function adaptive_mesh. The 
@@ -707,19 +727,6 @@ class Simulation:
                         # strand.dict_Gauss_pt["integral_power_el_res"] 
                         # and strand.dict_node_pt["integral_power_el_cond"] to # zero for the next evaluation.
                         obj.set_power_array_to_zeros(conductor)
-                else:
-                    
-                    # Update SolidComponent properties explointing the final 
-                    # solution of the simulation (see the comment above).
-                    conductor.operating_conditions_em()
-                    # Evaluate thermal hydraulic properties and quantities in 
-                    # Gauss points, method __eval_Gauss_point_th is invoked 
-                    # inside method operating_conditions_th.
-                    conductor.operating_conditions_th(self)
-                    # Upadate keyword t_save of attributes store_sd_node and 
-                    # store_sd_Gauss of conductor instance and sub components 
-                    # with the final solution of the simulation.
-                    conductor.store_spatial_distributions("t_save")
 
             # End for conductor (cdp, 07/2020)
         # end while (cdp, 07/2020)
