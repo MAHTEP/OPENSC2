@@ -256,3 +256,10 @@ Simulations_results/**/ # code output directory
 source_code/opensc2/**/ # virtual environment
 source_code/GUI_icons/**/ # graphical user interface images
 TDD_examples/**/ # input files template for the three selected cases used whitin the Test Driven Development approach
+
+
+# === Allow new validated and template TDD input folders ===
+!TDD_template_v3.7.2/
+!TDD_template_v3.7.2/**
+!validated_TDD_examples_v3.7.2/
+!validated_TDD_examples_v3.7.2/**
