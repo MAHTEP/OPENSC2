@@ -128,3 +128,17 @@ SHEET_NAME = dict(
     environment_input = Env_sheet_name(environment = "ENVIRONMENT"),
     transitory_input = Trans_sheet_name(transient = "TRANSIENT"),
 )
+
+#region Flags for the mesh
+
+# Fixed and uniform mesh
+FIXED_UNIFORM_MESH = 0
+# fixed mesh with single local refinement
+FIXED_LOCAL_REFINED_MESH = 1
+# adptive mesh based on the detection of the quench front with initial local refinement
+ADAPTIVE_MESH = 3
+# mesh readed from external input file
+MESH_FROM_FILE = -1
+STATIC_MESH_MODES = (FIXED_UNIFORM_MESH, FIXED_LOCAL_REFINED_MESH)
+DYNAMIC_MESH_MODES = (ADAPTIVE_MESH, MESH_FROM_FILE)
+#endregion
