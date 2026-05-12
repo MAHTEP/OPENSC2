@@ -31,6 +31,7 @@ from conductor_flags import (
     VARIABLE_CONTACT_PERIMETER,
     CONSTANT_CONTACT_PERIMETER,
     SHEET_NAME,
+    DYNAMIC_MESH_MODES
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -1360,7 +1361,7 @@ class Conductor:
             dtype=float,
         )
 
-        self.build_electric_mass_matrix_flag = True
+        self.update_electric_quantities = True
         self.electric_mass_matrix = lil_matrix(
             (
                 self.total_elements_current_carriers
@@ -3497,140 +3498,140 @@ class Conductor:
         Builds nodal coordinates and connectiviy dataframes, the connectivity matrix only for StrandComponent, the inicidence matrices in both longitudinal and transversal directions, the resistance matrix (logitudinal) and the conductance matrix (transverse direction).
         """
 
-        nn = 0
+        if self.update_electric_quantities:
+            nn = 0
 
-        for key in ["FluidComponent", "StrandComponent", "JacketComponent"]:
-            # Build nodal coordinates
+            for key in ["FluidComponent", "StrandComponent", "JacketComponent"]:
+                # Build nodal coordinates
+                # conductorlogger.debug(
+                #     f"Before call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
+                # )
+                self.__build_nodal_coordinates(nn, key)
+                # conductorlogger.debug(
+                #     f"After call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
+                # )
+
+                # Build connectivity matrix
+                # conductorlogger.debug(
+                #     f"Before call method {self.__build_connectivity.__name__} for {key} objects.\n"
+                # )
+                self.__build_connectivity(nn, key)
+                # conductorlogger.debug(
+                #     f"After call method {self.__build_connectivity.__name__} for {key} objects.\n"
+                # )
+                nn += self.inventory[key].number
+                # End if
+            # End for key
+
+            # Build the connectivity matrix for the reduced system of components:
+            # keeps into account only the StrandComponent ones.
             # conductorlogger.debug(
-            #     f"Before call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
+            #     f"Before call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
             # )
-            self.__build_nodal_coordinates(nn, key)
+            self.__build_connectivity_current_carriers()
             # conductorlogger.debug(
-            #     f"After call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
-            # )
-
-            # Build connectivity matrix
-            # conductorlogger.debug(
-            #     f"Before call method {self.__build_connectivity.__name__} for {key} objects.\n"
-            # )
-            self.__build_connectivity(nn, key)
-            # conductorlogger.debug(
-            #     f"After call method {self.__build_connectivity.__name__} for {key} objects.\n"
-            # )
-            nn += self.inventory[key].number
-            # End if
-        # End for key
-
-        # Build the connectivity matrix for the reduced system of components:
-        # keeps into account only the StrandComponent ones.
-        # conductorlogger.debug(
-        #     f"Before call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
-        # )
-        self.__build_connectivity_current_carriers()
-        # conductorlogger.debug(
-        #     f"After call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
-        # )
-
-        # Convert index to categorical
-        # conductorlogger.debug(
-        #     f"Before convert index of dataframe self.connectivity_matrix to categorical.\n"
-        # )
-        self.connectivity_matrix.loc[:, "identifiers"] = self.connectivity_matrix.loc[
-            :, "identifiers"
-        ].astype("category")
-        self.connectivity_matrix_current_carriers.loc[
-            :, "identifiers"
-        ] = self.connectivity_matrix_current_carriers.loc[:, "identifiers"].astype(
-            "category"
-        )
-        # conductorlogger.debug(
-        #     f"After convert index of dataframe self.connectivity_matrix to categorical.\n"
-        # )
-
-        # Compute node distance
-        # conductorlogger.debug(
-        #     f"Before call method {self.__compute_node_distance.__name__}.\n"
-        # )
-        self.__compute_node_distance()
-        # conductorlogger.debug(
-        #     f"After call method {self.__compute_node_distance.__name__}.\n"
-        # )
-
-        # conductorlogger.debug(
-        #     f"Before call method {self.__compute_gauss_node_distance.__name__}.\n"
-        # )
-
-        # Compute gauss node distance
-        self.__compute_gauss_node_distance()
-        # conductorlogger.debug(
-        #     f"After call method {self.__compute_gauss_node_distance.__name__}.\n"
-        # )
-
-        # conductorlogger.debug(
-        #     f"Before call method {self.__build_incidence_matrix.__name__}.\n"
-        # )
-        # Build incidence matrix only for StrandComponent
-        self.__build_incidence_matrix()
-        # conductorlogger.debug(
-        #     f"After call method {self.__build_incidence_matrix.__name__}.\n"
-        # )
-
-        # Build electric resistance matrix (for the first time)
-        # conductorlogger.debug(
-        #     f"Before call method {self.__build_electric_resistance_matrix.__name__}.\n"
-        # )
-        self.__build_electric_resistance_matrix()
-        # conductorlogger.debug(
-        #     f"After call method {self.__build_electric_resistance_matrix.__name__}.\n"
-        # )
-
-        if self.inventory["StrandComponent"].number > 1:
-            # There are more than 1 StrandComponent objects, therefore there
-            # are contacts between StrandComponent objects and matrices
-            # contact_incidence_matrix and electric_conductance_matix can be
-            # built. If there is only one StrandComponent object
-            # contact_incidence_matrix can not be defined while
-            # electric_conductance_matix is full of 0 from initialization.
-
-            # Find contacts between StrandComponent objects.
-            # conductorlogger.debug(
-            #     f"Before call method {self.__contact_current_carriers.__name__}.\n"
-            # )
-            self.__contact_current_carriers()
-            # conductorlogger.debug(
-            #     f"After call method {self.__contact_current_carriers.__name__}.\n"
+            #     f"After call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
             # )
 
-            # Build contact incidence matrix
+            # Convert index to categorical
             # conductorlogger.debug(
-            #     f"Before call method {self.__build_contact_incidence_matrix.__name__}.\n"
+            #     f"Before convert index of dataframe self.connectivity_matrix to categorical.\n"
             # )
-            # this method builds the contact incidence matrix for current carriers
-            # only
-            self.__build_contact_incidence_matrix()
+            self.connectivity_matrix.loc[:, "identifiers"] = self.connectivity_matrix.loc[
+                :, "identifiers"
+            ].astype("category")
+            self.connectivity_matrix_current_carriers.loc[
+                :, "identifiers"
+            ] = self.connectivity_matrix_current_carriers.loc[:, "identifiers"].astype(
+                "category"
+            )
             # conductorlogger.debug(
-            #     f"After call method {self.__build_contact_incidence_matrix.__name__}.\n"
-            # )
-
-            # Build electric conductance matrix
-            # conductorlogger.debug(
-            #     f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
-            # )
-            self.__build_electric_conductance_matrix()
-            # conductorlogger.debug(
-            #     f"After call method {self.__build_electric_conductance_matrix.__name__}.\n"
+            #     f"After convert index of dataframe self.connectivity_matrix to categorical.\n"
             # )
 
-        # Build electric stiffness matrix (for the first time)
-        # conductorlogger.debug(
-        #     f"Before call method {self.__build_electric_stiffness_matrix.__name__}.\n"
-        # )
-        self.__build_electric_stiffness_matrix()
-        # conductorlogger.debug(
-        #     f"After call method {self.__build_electric_stiffness_matrix.__name__}.\n"
-        # )
+            # Compute node distance
+            # conductorlogger.debug(
+            #     f"Before call method {self.__compute_node_distance.__name__}.\n"
+            # )
+            self.__compute_node_distance()
+            # conductorlogger.debug(
+            #     f"After call method {self.__compute_node_distance.__name__}.\n"
+            # )
 
-        if self.build_electric_mass_matrix_flag == True:
+            # conductorlogger.debug(
+            #     f"Before call method {self.__compute_gauss_node_distance.__name__}.\n"
+            # )
+
+            # Compute gauss node distance
+            self.__compute_gauss_node_distance()
+            # conductorlogger.debug(
+            #     f"After call method {self.__compute_gauss_node_distance.__name__}.\n"
+            # )
+
+            # conductorlogger.debug(
+            #     f"Before call method {self.__build_incidence_matrix.__name__}.\n"
+            # )
+            # Build incidence matrix only for StrandComponent
+            self.__build_incidence_matrix()
+            # conductorlogger.debug(
+            #     f"After call method {self.__build_incidence_matrix.__name__}.\n"
+            # )
+
+            # Build electric resistance matrix (for the first time)
+            # conductorlogger.debug(
+            #     f"Before call method {self.__build_electric_resistance_matrix.__name__}.\n"
+            # )
+            self.__build_electric_resistance_matrix()
+            # conductorlogger.debug(
+            #     f"After call method {self.__build_electric_resistance_matrix.__name__}.\n"
+            # )
+
+            if self.inventory["StrandComponent"].number > 1:
+                # There are more than 1 StrandComponent objects, therefore there
+                # are contacts between StrandComponent objects and matrices
+                # contact_incidence_matrix and electric_conductance_matix can be
+                # built. If there is only one StrandComponent object
+                # contact_incidence_matrix can not be defined while
+                # electric_conductance_matix is full of 0 from initialization.
+
+                # Find contacts between StrandComponent objects.
+                # conductorlogger.debug(
+                #     f"Before call method {self.__contact_current_carriers.__name__}.\n"
+                # )
+                self.__contact_current_carriers()
+                # conductorlogger.debug(
+                #     f"After call method {self.__contact_current_carriers.__name__}.\n"
+                # )
+
+                # Build contact incidence matrix
+                # conductorlogger.debug(
+                #     f"Before call method {self.__build_contact_incidence_matrix.__name__}.\n"
+                # )
+                # this method builds the contact incidence matrix for current carriers
+                # only
+                self.__build_contact_incidence_matrix()
+                # conductorlogger.debug(
+                #     f"After call method {self.__build_contact_incidence_matrix.__name__}.\n"
+                # )
+
+                # Build electric conductance matrix
+                # conductorlogger.debug(
+                #     f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
+                # )
+                self.__build_electric_conductance_matrix()
+                # conductorlogger.debug(
+                #     f"After call method {self.__build_electric_conductance_matrix.__name__}.\n"
+                # )
+
+            # Build electric stiffness matrix (for the first time)
+            # conductorlogger.debug(
+            #     f"Before call method {self.__build_electric_stiffness_matrix.__name__}.\n"
+            # )
+            self.__build_electric_stiffness_matrix()
+            # conductorlogger.debug(
+            #     f"After call method {self.__build_electric_stiffness_matrix.__name__}.\n"
+            # )
+
             # Build electric mass matrix (for the first time)
             # conductorlogger.debug(
             #     f"Before call method {self.__build_electric_mass_matrix.__name__}.\n"
@@ -3640,35 +3641,41 @@ class Conductor:
             #     f"After call method {self.__build_electric_mass_matrix.__name__}.\n"
             # )
 
-        if (
-            self.grid_input["ITYMSH"]
-            != 3 | self.grid_input["ITYMSH"]
-            != -1 & self.build_electric_mass_matrix_flag
-            == True
-        ):
-            # Discretization grid does not change at each time step so there is
-            # no need to build electric mass matrix at each thermal time step
-            # because inductances will not change since they are evaluating
-            # starting from the coordinates which are constant in this case: flag build_electric_mass_matrix_flag is therefore set to False.
-            self.build_electric_mass_matrix_flag = False
+            # Assign equivalue surfaces
+            # conductorlogger.debug(
+            #     f"Before call method {self.__assign_equivalue_surfaces.__name__}.\n"
+            # )
+            self.__assign_equivalue_surfaces()
+            # conductorlogger.debug(
+            #     f"After call method {self.__assign_equivalue_surfaces.__name__}.\n"
+            # )
 
-        # Assign equivalue surfaces
-        # conductorlogger.debug(
-        #     f"Before call method {self.__assign_equivalue_surfaces.__name__}.\n"
-        # )
-        self.__assign_equivalue_surfaces()
-        # conductorlogger.debug(
-        #     f"After call method {self.__assign_equivalue_surfaces.__name__}.\n"
-        # )
+            # Assign fixed potential
+            # conductorlogger.debug(
+            #     f"Before call method {self.__assign_fix_potential.__name__}.\n"
+            # )
+            self.__assign_fix_potential()
+            # conductorlogger.debug(
+            #     f"After call method {self.__assign_fix_potential.__name__}.\n"
+            # )
 
-        # Assign fixed potential
-        # conductorlogger.debug(
-        #     f"Before call method {self.__assign_fix_potential.__name__}.\n"
-        # )
-        self.__assign_fix_potential()
-        # conductorlogger.debug(
-        #     f"After call method {self.__assign_fix_potential.__name__}.\n"
-        # )
+            if self.grid_input["ITYMSH"] not in DYNAMIC_MESH_MODES:
+                # The discretization grid is fixed throughout the simulation.
+                # Therefore, with the exception of the electric resitance matrix
+                # and the electric stiffness matrix, all the other quantities does
+                # not need to be evaluated at each electric time step after the initialization.
+                #
+                # For adaptive meshes and meshes read from file (dynamic mesh modes),
+                # the nodal coordinates may change during the transient;
+                # therefore all the electric quantities must remain rebuildable.
+                self.update_electric_quantities = False
+        else:
+            # Recompute the electric resistance matrix if the mesh is static
+            # at each electric time step.
+            self.__build_electric_resistance_matrix()
+            # Re-assemble the electric stiffness matrix if the mesh is static
+            # at each electric time step.
+            self.__build_electric_stiffness_matrix()
 
     def __build_electric_stiffness_matrix(self):
         """Private method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix."""
@@ -4995,28 +5002,13 @@ class Conductor:
                 elif strand.operations["TCS_EVALUATION"] == True:
                     if self.cond_el_num_step <= 1:
                         # Evaluate current sharing temperature only at 
-                        # initialization (0) and at the first electriC time 
+                        # initialization (0) and at the first electric time 
                         # step (1).
                         strand.get_tcs()
             if self.cond_el_num_step <= 1:
                 # Evaluate properties only at initialization (0) and at 
                 # the first electric time step (1).
                 strand.eval_sol_comp_properties(self.inventory)
-            else:
-                # Update only electrical resistivity (stabilizer) at each 
-                # electric time step.
-                if isinstance(strand,StrandMixedComponent):
-                    strand.dict_node_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity_not_sc(
-                            strand.dict_node_pt
-                        )
-                elif isinstance(strand,StackComponent):
-                    strand.dict_node_pt["electrical_resistivity_stabilizer"] = strand.stack_electrical_resistivity_not_sc(
-                            strand.dict_node_pt
-                        )
-                elif isinstance(strand, StrandStabilizerComponent):
-                    strand.dict_node_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity(
-                            strand.dict_node_pt
-                        )
 
         for jacket in self.inventory["JacketComponent"].collection:
             jacket.get_current(self)
@@ -5025,11 +5017,6 @@ class Conductor:
                 # Evaluate properties only at initialization (0) and at 
                 # the first electric time step (1).
                 jacket.eval_sol_comp_properties(self.inventory)
-            else:
-                # Update only electrical resistivity at each electri time step.
-                jacket.dict_node_pt["total_electrical_resistivity"] = jacket.jacket_electrical_resistivity(
-                        jacket.dict_node_pt
-                    )
 
         self.__eval_gauss_point_em()
 
@@ -5058,11 +5045,6 @@ class Conductor:
                 # Evaluate properties only at initialization (0) and at 
                 # the first electric time step (1).
                 jacket.eval_sol_comp_properties(self.inventory, nodal=False)
-            else:
-                # Update only electrical resistivity at each electri time step.
-                jacket.dict_Gauss_pt["total_electrical_resistivity"] = jacket.jacket_electrical_resistivity(
-                        jacket.dict_Gauss_pt
-                    )
 
         # StrandComponent
         for strand in self.inventory["StrandComponent"].collection:
@@ -5096,21 +5078,6 @@ class Conductor:
                 # Evaluate properties only at initialization (0) and at 
                 # the first electric time step (1).
                 strand.eval_sol_comp_properties(self.inventory, nodal=False)
-            else:
-                # Update only electrical resistivity (stabilizer) at each 
-                # electric time step.
-                if isinstance(strand,StrandMixedComponent):
-                    strand.dict_Gauss_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity_not_sc(
-                            strand.dict_Gauss_pt
-                        )
-                elif isinstance(strand, StackComponent):
-                    strand.dict_Gauss_pt["electrical_resistivity_stabilizer"] = strand.stack_electrical_resistivity_not_sc(
-                        strand.dict_Gauss_pt
-                        )
-                elif isinstance(strand, StrandStabilizerComponent):
-                    strand.dict_Gauss_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity(
-                            strand.dict_Gauss_pt
-                        )
 
     def __eval_temperature_solids_gauss_point(self:Self):
         """Private method that evaluate temperature of SolidComponents in Gauss points.
