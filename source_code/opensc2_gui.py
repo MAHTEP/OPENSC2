@@ -7,6 +7,7 @@ from tkinter import ttk
 from PIL import ImageTk, Image
 import os
 import subprocess
+import time
 
 from simulation import Simulation
 
@@ -453,6 +454,7 @@ class OPENSC2_GUI:
         tk.messagebox.showinfo(
             parent=self.main_window, title=f"Start Simulation", message=messaggio
         )
+        tt = time.time()
         # Create and instance of class Conductor for each user defined conductor \
         # (cdp, 08/2020)
         self.simulation.conductor_instance()
@@ -468,12 +470,28 @@ class OPENSC2_GUI:
         # Create plots of time evlustions and spatial distributions according to \
         # user requirements (cdp, 08/2020)
         self.simulation.conductor_post_processing()
+        elapsed_time = time.time() - tt
+        if elapsed_time < 60:
+            elapsed_time = elapsed_time
+            unit = "s"
+        elif elapsed_time < 3600:
+            elapsed_time = elapsed_time / 60
+            unit = "min"
+        elif elapsed_time < 86400:
+            elapsed_time = elapsed_time / 3600
+            unit = "h"
+        else:
+            elapsed_time = elapsed_time / 86400
+            unit = "days"
+        print(f"\nSimulation completed in {elapsed_time:.2f} " + unit)
         # End simulation message (cdp, 12/2020)
         messaggio = (
             "Simulation called "
             + self.simulation.transient_input["SIMULATION"]
             + " ends.\n"
             + "End of data processing and saving of figures.\n"
+            + f"\nSimulation completed in {elapsed_time:.2f} "
+            + unit
         )
         tk.messagebox.showinfo(
             parent=self.main_window, title=f"End Simulation", message=messaggio
