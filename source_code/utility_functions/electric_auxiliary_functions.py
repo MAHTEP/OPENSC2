@@ -207,17 +207,50 @@ def electric_transient_solution(conductor: object):
         conductor.electric_known_term_vector.copy()
     )
 
+    print("before electric loop")
+    print("time_step:", conductor.time_step)
+    print("electric_time_step:", conductor.electric_time_step)
+    print("electric_time:", conductor.electric_time)
     # Electric loop
     for nn in range(1, ELECTRIC_TIME_STEP_NUMBER+1):
 
-        conductor.electric_time += conductor.electric_time_step
+        conductor.electric_time = (
+            conductor.cond_time[-2] + nn * conductor.electric_time_step
+        )
+
+        if conductor.electric_time > conductor.cond_time[-1] and np.isclose(
+            conductor.electric_time,
+            conductor.cond_time[-1],
+        ):
+            conductor.electric_time = conductor.cond_time[-1]
         conductor.cond_el_num_step = nn
+        if not np.isfinite(conductor.electric_time):
+            raise ValueError(
+                f"electric_time became NaN at electric step {nn}\n"
+                f"Invalid electric_time: {conductor.electric_time}\n"
+                f"cond_el_time_step: {conductor.electric_time_step}\n"
+                f"cond_num_step = {conductor.cond_num_step}\n"
+                f"cond_el_num_step = {conductor.cond_el_num_step}\n"
+            )
+        print(
+            f"TH step={conductor.cond_num_step}, "
+            f"TH time={conductor.cond_time[-1]}, "
+            f"el_num_step={conductor.cond_el_num_step}, "
+            f"electric_time={conductor.electric_time}, "
+            f"electric_dt={conductor.electric_time_step}"
+        )
         # Evaluate electromagnetic properties and quantities in Gauss points, 
         # method __eval_Gauss_point_em is invoked inside method 
         # operating_conditions_em. Method operating_conditions_em is called at 
         # each time step before function step because the method for the 
         # integration in time is implicit.
+        
+        # for strand in conductor.inventory["StrandComponent"].collection:
+        #     strand.debug_current_state("before operating_conditions_em")
         conductor.operating_conditions_em()
+        # for strand in conductor.inventory["StrandComponent"].collection:
+        #     strand.debug_current_state("after operating_conditions_em")
+        
         # Call conductor method eval_total_operating_current after call to 
         # operating_condition_em that evaluates the operating current at the 
         # current electric time step for each conductor component.
@@ -230,7 +263,12 @@ def electric_transient_solution(conductor: object):
         # it depends also from the current, and the electrical resistivity of 
         # the copper since it also depends on the magnetic fields. Other 
         # materials should be updated only in the thermal loop.
+        
+        # for strand in conductor.inventory["StrandComponent"].collection:
+        #     strand.debug_current_state("before electric_preprocessing")
         conductor.electric_preprocessing()
+        # for strand in conductor.inventory["StrandComponent"].collection:
+        #     strand.debug_current_state("after electric_preprocessing")
 
         electric_stiffness_matrix = conductor.electric_stiffness_matrix.copy()
         # Final form of the electric stiffness matrix

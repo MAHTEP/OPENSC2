@@ -626,3 +626,26 @@ class StrandComponent(SolidComponent):
         # FIX_POTENTIAL_FLAG is True; self.delete_fixed_potential_inputs if
         # FIX_POTENTIAL_FLAG is False.
         methods[self.operations["FIX_POTENTIAL_FLAG"]](length)
+
+    def debug_current_state(self,label):
+
+        print(f"\nCURRENT DEBUG - {label}")
+        print(f"component = {self.identifier}")
+
+        for container_name in ("dict_node_pt", "dict_Gauss_pt"):
+            container = getattr(self, container_name, None)
+            if container is None:
+                continue
+
+            print(f"{container_name} keys = {list(container.keys())}")
+
+            for key in ("op_current", "current", "total_current", "transport_current"):
+                if key in container:
+                    arr = np.asarray(container[key], dtype=float)
+                    print(f"{container_name}[{key}]")
+                    print(f"  shape = {arr.shape}")
+                    print(f"  has_nan = {np.isnan(arr).any()}")
+                    if not np.all(np.isnan(arr)):
+                        print(f"  min/max = {np.nanmin(arr)}, {np.nanmax(arr)}")
+                    else:
+                        print("  min/max = all NaN")
