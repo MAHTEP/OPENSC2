@@ -13,3 +13,4 @@ opensc2/Scripts/activate
 opensc2/share/**/*.gz
 opensc2/share/**/*.1
 opensc2/*.cfg
+opensc2_gpu/
