@@ -55,6 +55,9 @@ def fixed_value(conductor: object) -> np.ndarray:
         dtype=int,
     )
 
+    if sparse.issparse(conductor.electric_stiffness_matrix):
+        conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix.tolil()
+
     # Assign Diriclet boundary conditions
     if conductor.operations["EQUIPOTENTIAL_SURFACE_FLAG"]:
 
@@ -86,13 +89,19 @@ def fixed_value(conductor: object) -> np.ndarray:
         assume_unique=True,
     )
 
+    # convert to CSR before slicing because CSR is more efficient for slicing.
+    conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix.tocsr()
+
     # REDUCTION of A and b.
     conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix[:, idx]
     conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix[idx, :]
-    # To remove zero values eventually introduced diring matrix reduction.
-    conductor.electric_stiffness_matrix = sparse.csr_matrix(
-        conductor.electric_stiffness_matrix.toarray()
-    )
+    
+    if not sparse.isspmatrix_csr(conductor.electric_stiffness_matrix):
+        # Convert to CSR only if the the electric_stiffness_matrix is nomore in CSR format
+        conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix.tocsr()
+    # Remove explicit zeros eventually introduced during matrix reduction.
+    conductor.electric_stiffness_matrix.eliminate_zeros()
+    
     conductor.electric_known_term_vector = conductor.electric_known_term_vector[idx]
 
     return idx
