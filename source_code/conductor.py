@@ -159,8 +159,19 @@ class Conductor:
         if self.inputs["UPWIND"] == True:
             self.inputs["UPWIND"] = 1
 
-        for key in ["I0_OP_MODE","ELECTRIC_TIME_STEP"]:
-            if isinstance(self.inputs[key],str) and self.inputs[key].lower() == "none":
+        # print("DEBUG raw ELECTRIC_TIME_STEP")
+        # print(self.inputs["ELECTRIC_TIME_STEP"])
+        # print(type(self.inputs["ELECTRIC_TIME_STEP"]))
+        for key in ("I0_OP_MODE", "ELECTRIC_TIME_STEP"):
+            value = self.inputs[key]
+
+            if value is None:
+                self.inputs[key] = None
+
+            elif isinstance(value, str) and value.strip().lower() in ("none", "nan", ""):
+                self.inputs[key] = None
+
+            elif pd.isna(value):
                 self.inputs[key] = None
                 
         # Set total current to 0.0 A if user specifies no current with flag 
@@ -465,7 +476,7 @@ class Conductor:
         # Get index with negative values for thermal contact resistances.
         negative_idx = np.nonzero(therm_cont_res < 0.0)
         # Check if negative_idx is not empty.
-        if negative_idx[0]:
+        if negative_idx[0].size > 0:
             # negative_idx is not empty: raise ValueError.
             raise ValueError(f"Thermal contact resistance should be >= 0.0. Please check index {negative_idx} in sheet thermal_contact_resistance of input file {self.file_input['STRUCTURE_COUPLING']}")
 
@@ -1223,7 +1234,6 @@ class Conductor:
                 skiprows=2,
                 header=0,
                 usecols=[self.identifier],
-                squeeze=True,
             )
             .dropna()
             .to_numpy()
@@ -1257,7 +1267,6 @@ class Conductor:
                 skiprows=2,
                 header=0,
                 usecols=[self.identifier],
-                squeeze=True,
             )
             .dropna()
             .to_numpy()
@@ -3250,9 +3259,11 @@ class Conductor:
 
         resistance = np.zeros(self.total_elements_current_carriers)
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
+            # obj.debug_current_state("before get_electric_resistance")
             resistance[
                 ii :: self.inventory["StrandComponent"].number
             ] = obj.get_electric_resistance(self)
+            # obj.debug_current_state("after get_electric_resistance")
 
         self.electric_resistance_matrix = diags(
             resistance,
@@ -4374,21 +4385,41 @@ class Conductor:
             ValueError: if electric time step is larger and or equal than thermal time step.
         """
 
+        if not np.isfinite(self.time_step):
+            raise ValueError(f"Invalid thermal time_step: {self.time_step}")
+
+        if self.inputs["ELECTRIC_TIME_STEP"] is not None:
+            if not np.isfinite(self.inputs["ELECTRIC_TIME_STEP"]):
+                raise ValueError(
+                    f"Invalid ELECTRIC_TIME_STEP: {self.inputs['ELECTRIC_TIME_STEP']}"
+                )
+
         # Rimuovere gli if.
-        if self.inputs["ELECTRIC_TIME_STEP"] == None:
+        electric_time_step_input = self.inputs["ELECTRIC_TIME_STEP"]
+
+        if electric_time_step_input is None or pd.isna(electric_time_step_input):
             self.electric_time_step = self.time_step / ELECTRIC_TIME_STEP_NUMBER
         else:
-            if self.inputs["ELECTRIC_TIME_STEP"] < 0.0:
-                raise ValueError[
-                    f"Electric time step must be > 0.0 s; current value is: {self.inputs['ELECTRIC_TIME_STEP']=}s\n"
-                ]
-            if self.inputs["ELECTRIC_TIME_STEP"] > self.time_step:
-                raise ValueError[
-                    f"Electric time step must be < than thermal time step; current values are: {self.time_step=}s\n; {self.inputs['ELECTRIC_TIME_STEP']=}s\n"
-                ]
-            self.electric_time_step = self.inputs["ELECTRIC_TIME_STEP"]
+            if electric_time_step_input < 0.0:
+                raise ValueError(
+                    f"Electric time step must be > 0.0 s; "
+                    f"current value is: {electric_time_step_input} s\n"
+                )
+            if electric_time_step_input > self.time_step:
+                raise ValueError(
+                    f"Electric time step must be < thermal time step; "
+                    f"time_step={self.time_step} s; "
+                    f"ELECTRIC_TIME_STEP={electric_time_step_input} s\n"
+                )
+            self.electric_time_step = electric_time_step_input
 
-        self.electric_time_end = self.time_step
+        if not np.isfinite(self.electric_time_step):
+            raise ValueError(
+                f"Invalid electric_time_step: {self.electric_time_step}\n"
+                f"time_step = {self.time_step}\n"
+                f"ELECTRIC_TIME_STEP = {self.inputs['ELECTRIC_TIME_STEP']}\n"
+                f"{ELECTRIC_TIME_STEP_NUMBER = }"
+            )
 
     def build_right_hand_side(self, foo: np.ndarray, bar: np.ndarray, idx: int):
         """Method that builds the right hand side of the transient electric equation.
@@ -4607,7 +4638,12 @@ class Conductor:
             self.__get_electric_time_step()
             # Always solve the electromagnetic problem as a transient problem. 
             # This is not general but edge cases are few and mostly "theoretic".
+            
+            # for strand in self.inventory["StrandComponent"].collection:
+            #     strand.debug_current_state("before electric_transient_solution")
             electric_transient_solution(self)
+            # for strand in self.inventory["StrandComponent"].collection:
+            #     strand.debug_current_state("after electric_transient_solution")
         
         # Call method electric_solution_reorganization: reorganize electric
         # solution and computes useful quantities used in the Joule power
@@ -4982,7 +5018,11 @@ class Conductor:
         """Method that evaluates electromagnetic (em) operating conditions also in Gauss points."""
 
         for strand in self.inventory["StrandComponent"].collection:
+            # strand.debug_current_state("before get_current")
+            # print("DEBUG electric_time before get_current:", self.electric_time)
+            # print("DEBUG cond_el_num_step:", self.cond_el_num_step)
             strand.get_current(self)
+            # strand.debug_current_state("after get_current")
             strand.get_magnetic_field(self)
             strand.get_magnetic_field_gradient(self)
             

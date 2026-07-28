@@ -604,6 +604,7 @@ class StackComponent(StrandComponent):
         rho_el_stabilizer: np.ndarray,
         critical_current: np.ndarray,
         current: np.ndarray,
+        el_num_step
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Method that solves the not linear system of the current divider between superconduting and stabilizer material in the case of current sharing regime.
 
@@ -644,7 +645,43 @@ class StackComponent(StrandComponent):
 
         # Initialize guess.
         sc_current_guess = np.zeros(current.shape)
+        # print(f"{el_num_step = }")
+
+        # print("\nDEBUG inside solve_current_divider")
+        # arr = np.asarray(current)  # usa il nome reale dell’argomento
+        # print("received current")
+        # print("type:", type(current))
+        # print("dtype:", arr.dtype)
+        # print("shape:", arr.shape)
+        # print("first 10:", arr[:10])
+        # print("has_nan:", np.isnan(arr).any())
+        # print("nan indices:", np.where(np.isnan(arr))[0][:20])
+
         for ii, val in enumerate(current):
+
+            fa = self.__sc_current_residual(0.0, psi[ii], val)
+            fb = self.__sc_current_residual(val, psi[ii], val)
+            # print("\nDEBUG bisect current divider")
+            # print(f"ii = {ii}")
+            # print(f"a = {0.0}")
+            # print(f"b = {val}")
+            # print(f"fa = {fa}")
+            # print(f"fb = {fb}")
+            # print(f"isnan fa = {np.isnan(fa)}")
+            # print(f"isnan fb = {np.isnan(fb)}")
+            # print(f"I_total = {current[ii]}")
+            # print(f"Jc = {critical_current[ii]}")
+
+            if not np.isfinite(fa) or not np.isfinite(fb):
+                raise ValueError(
+                    "\nInvalid current-divider residual before bisect:\n"
+                    f"ii = {ii}\n"
+                    f"a = {0.0}, f(a) = {fa}\n"
+                    f"b = {val}, f(b) = {fb}\n"
+                    f"I_total = {current[ii]}\n"
+                    f"Jc = {critical_current[ii]}\n"
+                )
+
             # Evaluate superconducting current guess with bisection method.
             # Set the maximum itaration to 10 and disp to False in order to not
             # rise an error due to not reached convergence.
@@ -825,11 +862,15 @@ class StackComponent(StrandComponent):
         # are outside normal zone by definition; however some of them could 
         # still identify a normal region.
         if ind_not_zero.any():
-
+            
+            # print(f"el_num_step = {conductor.cond_el_num_step}")
+            # self.debug_current_state("before solve_current_divider")
+            
             sc_current_gauss, stab_current_gauss = self.solve_current_divider(
                 self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_not_zero],
                 critical_current_gauss[ind_not_zero],
-                self.dict_Gauss_pt["op_current"][ind_not_zero]
+                self.dict_Gauss_pt["op_current"][ind_not_zero],
+                conductor.cond_el_num_step
                 )
             
             self.dict_Gauss_pt["electrical_resistivity_superconductor"][

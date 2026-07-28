@@ -221,6 +221,12 @@ class SolidComponent:
             if conductor.inputs["I0_OP_MODE"] == IOP_FROM_FILE:
 
                 if conductor.cond_time[-1] == 0:
+
+                    # print("\nDEBUG get_current internals")
+                    # print(f"component = {self.identifier}")
+                    # print(f"conductor.cond_time[-1] = {conductor.cond_time[-1]}")
+                    # print(f"conductor.cond_el_num_step = {conductor.cond_el_num_step}")
+
                     # Build file path.
                     file_path = os.path.join(
                         conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]
@@ -229,6 +235,7 @@ class SolidComponent:
                     current_df, self.flagSpecfield_current = load_auxiliary_files(
                         file_path, sheetname=self.identifier
                     )
+
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                     (
                         self.current_interpolator,
