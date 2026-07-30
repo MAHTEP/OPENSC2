@@ -74,6 +74,7 @@ class JacketComponent(SolidComponent):
             delta_voltage_along=dict(),
             linear_power_el_resistance=dict(),
         )
+        self.time_evol_max_temperature = dict()
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(
             dict_file_path["input"],

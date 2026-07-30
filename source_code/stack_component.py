@@ -171,6 +171,7 @@ class StackComponent(StrandComponent):
             linear_power_el_resistance=dict(),
             delta_voltage_along_sum=dict(),
         )
+        self.time_evol_max_temperature = dict()
         self.dict_scaling_input = dict()
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(

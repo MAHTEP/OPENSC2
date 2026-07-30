@@ -629,6 +629,11 @@ def save_simulation_time(simulation, conductor):
             "total_density_out (kg/m^3)",
             "mass_flow_rate_out (kg/s)",
         ]
+        headers_max_temperature = [
+            "time (s)",
+            "max_temperature (K)",
+            "zcoord_max_temperature (m)",
+        ]
         for f_comp in conductor.inventory["FluidComponent"].collection:
             # Loop on velocity, pressure, temperature and total density.
             for key, value in f_comp.coolant.time_evol.items():
@@ -677,6 +682,22 @@ def save_simulation_time(simulation, conductor):
                 index=False,
                 header=True,
             )
+
+            # Initialize maximum temperature time evolution.
+            f_comp.coolant.time_evol_max_temperature = initialize_max_temperature_te()
+
+            # Save the headings only once.
+            pd.DataFrame(columns=headers_max_temperature).to_csv(
+                os.path.join(
+                    simulation.dict_path[
+                        f"Output_Time_evolution_{conductor.identifier}_dir"
+                    ],
+                    f"{f_comp.identifier}_max_temperature_te.tsv",
+                ),
+                sep="\t",
+                index=False,
+                header=True,
+            )
         # End for f_comp.
         for s_comp in conductor.inventory["SolidComponent"].collection:
             # Loop on velocity, pressure, temperature and total density.
@@ -714,6 +735,21 @@ def save_simulation_time(simulation, conductor):
                     header=True,
                 )
             # End for key.
+            # Initialize maximum temperature time evolution.
+            s_comp.time_evol_max_temperature = initialize_max_temperature_te()
+
+            # Save the headings only once.
+            pd.DataFrame(columns=headers_max_temperature).to_csv(
+                os.path.join(
+                    simulation.dict_path[
+                        f"Output_Time_evolution_{conductor.identifier}_dir"
+                    ],
+                    f"{s_comp.identifier}_max_temperature_te.tsv",
+                ),
+                sep="\t",
+                index=False,
+                header=True,
+            )
         # End for s_comp.
     # End if simulation.num_step (cdp, 10/2020)
 
@@ -771,6 +807,26 @@ def save_simulation_time(simulation, conductor):
         elif fluid_comp.channel.flow_dir[0] == "backward":
             index_inl = -1
             index_out = 0
+
+        # Save maximum temperature time evolution.
+        fluid_comp.coolant.time_evol_max_temperature = update_max_temperature_te(
+            fluid_comp.coolant.time_evol_max_temperature,
+            fluid_comp.coolant.dict_node_pt["temperature"],
+            conductor.grid_features["zcoord"],
+            time,
+        )
+
+        fluid_comp.coolant.time_evol_max_temperature = save_max_temperature_te_on_file(
+            conductor,
+            fluid_comp.coolant.time_evol_max_temperature,
+            os.path.join(
+                simulation.dict_path[
+                    f"Output_Time_evolution_{conductor.identifier}_dir"
+                ],
+                f"{fluid_comp.identifier}_max_temperature_te.tsv",
+            ),
+            simulation.transient_input["TEND"],
+        )
 
         # Inlet and outlet quantities (cdp, 08/2020)
         file_name_io = os.path.join(
@@ -883,6 +939,27 @@ def save_simulation_time(simulation, conductor):
                 ind_zcoord_gauss,
             )
         # End for key.
+
+        # Save maximum temperature time evolution.
+        s_comp.time_evol_max_temperature = update_max_temperature_te(
+            s_comp.time_evol_max_temperature,
+            s_comp.dict_node_pt["temperature"],
+            conductor.grid_features["zcoord"],
+            time,
+        )
+
+        s_comp.time_evol_max_temperature = save_max_temperature_te_on_file(
+            conductor,
+            s_comp.time_evol_max_temperature,
+            os.path.join(
+                simulation.dict_path[
+                    f"Output_Time_evolution_{conductor.identifier}_dir"
+                ],
+                f"{s_comp.identifier}_max_temperature_te.tsv",
+            ),
+            simulation.transient_input["TEND"],
+        )
+
     # End for s_comp.
 
     if (
@@ -990,3 +1067,66 @@ def save_geometry_discretization(collection: list, file_path: str):
         )
         for comp in collection
     ]
+
+
+def initialize_max_temperature_te():
+    """Initialize dictionary used to store component maximum temperature time evolution."""
+    return {
+        "time": list(),
+        "max_temperature": list(),
+        "zcoord_max_temperature": list(),
+    }
+
+
+def update_max_temperature_te(val, temperature, zcoord, time):
+    """Update maximum temperature time-evolution dictionary.
+
+    The maximum temperature is evaluated on nodal values. The corresponding
+    z-coordinate is the nodal coordinate where the maximum temperature occurs.
+    """
+
+    temperature = np.asarray(temperature)
+    zcoord = np.asarray(zcoord)
+
+    if temperature.size != zcoord.size:
+        raise ValueError(
+            "Temperature and z-coordinate arrays must have the same size. "
+            f"Current sizes are: temperature.size={temperature.size}, "
+            f"zcoord.size={zcoord.size}."
+        )
+
+    idx_max = int(np.nanargmax(temperature))
+
+    val["time"].append(time)
+    val["max_temperature"].append(temperature[idx_max])
+    val["zcoord_max_temperature"].append(zcoord[idx_max])
+
+    return val
+
+
+def save_max_temperature_te_on_file(conductor, val, file_name, tend):
+    """Save component maximum temperature time evolution to file."""
+
+    if len(val["time"]) == conductor.CHUNCK_SIZE:
+        pd.DataFrame(val, columns=list(val.keys()), dtype=float).to_csv(
+            file_name,
+            sep="\t",
+            mode="a",
+            chunksize=conductor.CHUNCK_SIZE,
+            index=False,
+            header=False,
+        )
+        val = initialize_max_temperature_te()
+    elif len(val["time"]) > 0 and np.isclose(
+        conductor.cond_time[-1], tend, rtol=1e-6, atol=0.0
+    ):
+        pd.DataFrame(val, columns=list(val.keys()), dtype=float).to_csv(
+            file_name,
+            sep="\t",
+            mode="a",
+            chunksize=conductor.CHUNCK_SIZE,
+            index=False,
+            header=False,
+        )
+
+    return val
