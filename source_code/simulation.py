@@ -770,12 +770,15 @@ class Simulation:
         # Create subfolders path invocking method _subfolders_paths
         self._subfolders_paths(list_folder, list_f_names, dict_make)
 
-        # Path to save the input files of the simulation in read olny mode as
-        # metadata for the simulation itself.
+        # Path to save the input files of the simulation in read-only mode as
+        # metadata for the simulation itself. The input folder name is extracted in a
+        # platform-independent way to support both GUI and headless execution.
+        input_folder_name = os.path.basename(os.path.normpath(self.basePath))
+
         self.dict_path["Save_input"] = os.path.join(
             self.dict_path["Sub_dir"],
             self.transient_input["SIMULATION"],
-            self.basePath.split("/")[-1],
+            input_folder_name,
         )
         os.makedirs(self.dict_path["Save_input"], exist_ok=True)
 
