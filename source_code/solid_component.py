@@ -870,16 +870,16 @@ class SolidComponent:
 
         # Alias
         current = self.dict_Gauss_pt["current_along"]
-        voltage = self.dict_Gauss_pt["delta_voltage_along"]
+        electric_resistance = self.dict_Gauss_pt["electric_resistance"]
         d_z_tilde = conductor.grid_features["delta_z"] * self.inputs["COSTETA"]
 
-        # Evaluate Joule linear power along the strand in W, due
-        # to electric resistances only for current carriers:
-        # P_along = Delta_Phi_along * I_along
-        # N.B. this evaluation accounts aslo for the voltage due to the 
-        # inductance and is a conservative an more general approach. Discussed 
-        # with prof. Zach Hartwig and Dr. Nicolò Riva.
-        self.dict_Gauss_pt["integral_power_el_res"] = voltage * current
+        # Evaluate Joule power along the strand due to electric resistance only.
+        # The electric resistance is defined on each discretization element and is
+        # therefore not a linear resistance:
+        # P_elem = R_elem * I_elem**2
+        self.dict_Gauss_pt["integral_power_el_res"] = (
+            electric_resistance * current**2
+        )
 
         # Convert W in W/m keping into account the cos(theta).
         # This is independent of the time integration method since at the 

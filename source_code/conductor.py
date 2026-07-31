@@ -4951,43 +4951,63 @@ class Conductor:
     
     def eval_integral_joule_power(self):
         
-        """Method that evaluates the numerator of the expression used to evaluate the integral value of the Joule power. The Joule power along the current carriers is computed as:
-            P_Joule = \Delta_Phi * I
-        with
-            * I electric current in A
-            * \Delta_Ph electric voltage potential difference along current carriers in V
-        This approach was discussed with prof. Zach Hartwig and Dr. Nicolò Riva and is more general and coservative that the evaluation that takes into account only the contribution of the electric resistance.
-        For the Joule power due to the electric conductances between current carriers it is exploited the power computed in method get_total_joule_power_electric_conductance
-        Regardless of the kind of Joule power, the integration can be performed as follows:
-            P_Joule = 1/Delta_t_TH * int_0^Delta_t_TH (dt P_{Joule,i})
-        The above integral could be approximated as
-            P_Joule ~= 1/Delta_t_TH * sum_1^N_em dt_em P_{Joule,i}
-        Where:
-        * P_Joule: integral value of the Joule power in W
-        * P_{Joule,i}: value of the Joule power computed with the electric 
-        soltution at the i-th electric time step in W
-        * Delta_t_TH: value of the thermal hydraulic time step in s (always >= 
-        electric time step)
-        * dt_em: electric time step in s
-        * N_em: number of electric time step required to cover a full thermal 
-        hydraulic time step.
+        """Method that evaluates the numerator of the expression used to compute
+        the time-averaged Joule power over one thermal-hydraulic time step.
 
-        This method computes the numerator of the above equation, i.e.
-            sum_1^N_em dt_em P_{Joule,i}
-        The final quantities is computed in other methods (get_joule_power_along, get_joule_power_across).
+        The Joule power generated along the current carriers is computed from the
+        electric resistance of each discretization element as:
+
+            P_Joule = R * I**2
+
+        with:
+            * I electric current in A
+            * R electric resistance of the discretization element in ohm
+
+        Therefore, only the resistive contribution to the voltage drop along the
+        current carriers is accounted for in the Joule power generation. Possible
+        non-dissipative contributions associated with the inductive term are not
+        included in the heat source.
+
+        For the Joule power due to the electric conductances between current carriers,
+        the power computed in method get_total_joule_power_electric_conductance is used.
+
+        Regardless of the kind of Joule power, the time-averaged value over one
+        thermal-hydraulic time step is evaluated as:
+
+            P_Joule = 1 / Delta_t_TH * int_0^Delta_t_TH P_{Joule,i} dt
+
+        The above integral is approximated as:
+
+            P_Joule ~= 1 / Delta_t_TH * sum_1^N_em dt_em * P_{Joule,i}
+
+        where:
+            * P_Joule: time-averaged Joule power in W
+            * P_{Joule,i}: Joule power computed from the electric solution at the
+            i-th electric time step in W
+            * Delta_t_TH: thermal-hydraulic time step in s, always greater than or
+            equal to the electric time step
+            * dt_em: electric time step in s
+            * N_em: number of electric time steps required to cover one full
+            thermal-hydraulic time step
+
+        This method computes the numerator of the above expression, i.e.:
+
+            sum_1^N_em dt_em * P_{Joule,i}
+
+        The final time-averaged quantities are computed in other methods
+        (get_joule_power_along, get_joule_power_across).
         """
 
         # Loop on StrandComponent objects.
         for strand in self.inventory["StrandComponent"].collection:
             
-            # Compute the numerator of the integral Joule power along the 
+            # Compute the numerator of the time-integrated Joule power along the
             # current carrier.
-            # N.B. this evaluation accounts aslo for the voltage due to the 
-            # inductance and is a conservative an more general approach.
-            # Discussed with prof. Zach Hartwig and Dr. Nicolò Riva.
+            # The electric resistance is defined on each discretization element:
+            # P_elem = R_elem * I_elem**2
             strand.dict_Gauss_pt["integral_power_el_res"] += (
-                strand.dict_Gauss_pt["current_along"]
-                * strand.dict_Gauss_pt["delta_voltage_along"]
+                strand.dict_Gauss_pt["electric_resistance"]
+                * strand.dict_Gauss_pt["current_along"]**2
                 * self.electric_time_step
             )
 
