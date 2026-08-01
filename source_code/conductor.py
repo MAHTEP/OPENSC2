@@ -1163,9 +1163,9 @@ class Conductor:
         # **NUMERICS**
         # evaluate value of theta_method according to flag METHOD (cdo, 08/2020)
         # Adams Moulton value is temporary and maybe non correct
-        _ = dict(BE=1.0, CE=0.5, AM4=1.0 / 24.0)
-        self.theta_method = _[self.inputs["ELECTRIC_METHOD"]]
-        self.electric_theta = _[self.inputs["ELECTRIC_METHOD"]]
+        dict_theta = dict(BE=1.0, CN=0.5, AM4=1.0 / 24.0)
+        self.theta_method = dict_theta[self.inputs["METHOD"]]
+        self.electric_theta = dict_theta[self.inputs["ELECTRIC_METHOD"]]
         conductorlogger.debug(f"Defined electric_theta\n")
         ## Evaluate parameters useful in function \
         # Transient_solution_functions.py\STEP (cdp, 07/2020)
