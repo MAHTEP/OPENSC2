@@ -708,12 +708,21 @@ def step(conductor, envionment, qsource, num_step):
     # previous time step.
     prv_sysvar = conductor.dict_Step["SYSVAR"][:, 0].copy()
 
-    SYSMAT = gredub(conductor, SYSMAT)
-    # Compute the solution at current time stepand overwrite key SYSVAR of \
-    # dict_Step
-    conductor.dict_Step["SYSVAR"][:, 0] = gbacsb(conductor, SYSMAT, Known)
 
-    # SYSVAR = solve_banded((15, 15), SYSMAT, Known)
+    half_bandwidth = conductor.dict_band["Main_diag"]
+
+    # Convert the legacy banded matrix to the storage format expected by SciPy.
+    scipy_banded_sysmat = convert_legacy_banded_to_scipy(
+        SYSMAT,
+        half_bandwidth,
+    )
+
+    # Solve the system using SciPy/LAPACK.
+    conductor.dict_Step["SYSVAR"][:, 0] = solve_banded(
+        (half_bandwidth, half_bandwidth),
+        scipy_banded_sysmat,
+        Known,
+    )
 
     # COMPUTE THE NORM OF THE SOLUTION AND OF THE SOLUTION CHANGE (START)
     # array smart optimization
@@ -760,213 +769,32 @@ def step(conductor, envionment, qsource, num_step):
     # VARIABLES FROM THE SYSTEM SOLUTION (END)
 
 
-def gredub(conductor, A):
+def convert_legacy_banded_to_scipy(legacy_banded_matrix, half_bandwidth):
+    """Convert the legacy banded storage to scipy.linalg.solve_banded format."""
 
-    """
-    ##############################################################################
-    #    SUBROUTINE GREDUB(A     ,dict_N_equation["Total"],conductor.dict_band["Main_diag"] ,IERR  )
-    ##############################################################################
-    #
-    # REDUCTION OF A NON-SINGULAR SYSTEM OF EQUATIONS. COEFFICIENTS IN A
-    # STORED ONLY WITHIN THE BANDWIDTH conductor.dict_band["Main_diag"] AS FOLLOWS:
-    # A(I-conductor.dict_band["Main_diag"],I),A(I-conductor.dict_band["Main_diag"]+1,I)...A(I,I)...A(I+conductor.dict_band["Main_diag"]-1,I),A(I+conductor.dict_band["Main_diag"]+1,I)
-    #
-    #   IERR =  0 IF NO ERROR IS DETECTED
-    #   IERR =  1 THE VALUE OF THE HALF-BANDWIDTH GIVEN IS NOT CONSISTENT
-    #             WITH THE MATRIX DIMENSION
-    #   IERR <  0 MATRIX SINGULAR AT LINE -IERR
-    #
-    ##############################################################################
-    #
-    #  THIS VERSION USES THE DOUBLE PRECISION
-    #
-    ##############################################################################
-    #
-    # Translation form Frortran to Python: D.Placido PoliTo, 23/08/2020
-    # Array smart optimization: D.Placido PoliTo, 27/08/2020
-    #
-    ##############################################################################
-    """
+    scipy_banded_matrix = np.zeros_like(legacy_banded_matrix)
 
-    TINY = 1.0e-20
-    IERR = 0
-    if (
-        conductor.dict_band["Main_diag"] < 0
-        or conductor.dict_band["Main_diag"] > conductor.dict_N_equation["Total"]
-    ):
-        IERR = 1
-        if conductor.dict_band["Main_diag"] < 0:
-            raise ValueError(
-                f"""ERROR! The value of the half-band width given is not 
-      consistent with the matrix dimension:\n
-      {conductor.dict_band["Main_diag"]} < 0\nReturned error: IERR = {IERR}"""
-            )
-        elif conductor.dict_band["Main_diag"] > conductor.dict_N_equation["Total"]:
-            raise ValueError(
-                f"""ERROR! The value of the half-band width given is not 
-      consistent with the matrix dimension:\n
-      {conductor.dict_band["Main_diag"]} > {conductor.dict_N_equation["Total"]}\nReturned error: IERR = {IERR}
-      \nEnd of the program\n"""
-            )
+    # The main diagonal has the same position in both formats.
+    scipy_banded_matrix[half_bandwidth, :] = legacy_banded_matrix[
+        half_bandwidth, :
+    ]
 
-    K1 = conductor.dict_band["Main_diag"]  # 15
-    K2 = conductor.dict_band["Main_diag"] + 1  # 16
-    K21 = 2 * conductor.dict_band["Main_diag"]  # 30
-    JJ = K21
-    II = conductor.dict_N_equation["Total"] - conductor.dict_band["Main_diag"]
-    for I in range(II, conductor.dict_N_equation["Total"]):
-        A[JJ : K21 + 1, I] = np.zeros(K21 - JJ + 1)
-        JJ = JJ - 1
+    for offset in range(1, half_bandwidth + 1):
+        # Upper diagonal with the given offset.
+        scipy_banded_matrix[
+            half_bandwidth - offset, offset:
+        ] = legacy_banded_matrix[
+            half_bandwidth + offset, :-offset
+        ]
 
-    # Evaluate J1 and JK only once since they have always the same value \
-    # (cdp, 08/2020)
-    # remember that the stop value is not included (cdp, 08/2020)
-    J1 = np.arange(start=1, stop=K2, step=1, dtype=int)
-    JK = np.arange(start=conductor.dict_band["Main_diag"], stop=K21, step=1, dtype=int)
+        # Lower diagonal with the given offset.
+        scipy_banded_matrix[
+            half_bandwidth + offset, :-offset
+        ] = legacy_banded_matrix[
+            half_bandwidth - offset, offset:
+        ]
 
-    for I in range(1, conductor.dict_N_equation["Total"]):
-        # remember that the stop value is not included (cdp, 08/2020)
-        II = np.arange(
-            start=I - conductor.dict_band["Main_diag"], stop=I, step=1, dtype=int
-        )
-        # thake only positive values (cdp, 08/2020)
-        II = II[II >= 0]
-        # this is an array (cdp, 08/2020)
-        ind1 = np.nonzero(abs(A[K1, II]) <= TINY)[0]
-        # check if matrix is singular (cdp, 08/2020)
-        if len(ind1) > 0:
-            IERR = -II[ind1[0]]
-            raise ValueError(
-                f"""ERROR! Matrix is singular at line {II[ind1[0]]}: 
-      {A[K1, II[ind1[0]]]} < {TINY}\nReturned error: IERR = {IERR}\n
-      End of the program\n"""
-            )
-
-        J_min = conductor.dict_band["Main_diag"] - len(II)
-        Q = np.zeros(II.shape)
-
-        # da ragionare
-        for ii in range(len(II)):
-            Q[ii] = A[J_min + ii, I] / A[K1, II[ii]]
-            A[J1[J_min + ii] : JK[J_min + ii] + 1, I] = (
-                A[J1[J_min + ii] : JK[J_min + ii] + 1, I]
-                - A[K2 : K21 + 1, II[ii]] * Q[ii]
-            )
-        # end for ii
-        A[J_min : conductor.dict_band["Main_diag"], I] = Q
-    # end for I
-    return A
-    # end of the function GREDUB
-
-
-def gbacsb(conductor, A, B):
-
-    """
-    ##############################################################################
-        SUBROUTINE GBACSB (A, B, X IERR)
-    ##############################################################################
-    #
-    # BACK SUBSTITUION AND SOLUTION OF THE SYSTEM A X = B. THE MATRIX
-    # A HAS BEEN REDUCED BY GREDUB. X AND B CAN BE COINCIDENT
-    #
-    #   IERR =  0 IF NO ERROR IS DETECTED
-    #   IERR =  1 THE VALUE OF THE HALF-BANDWIDTH GIVEN IS NOT CONSISTENT
-    #             WITH THE MATRIX DIMENSION
-    #   IERR <  0 MATRIX SINGULAR AT LINE -IERR
-    #
-    ##############################################################################
-    #
-    #  THIS VERSION USES THE DOUBLE PRECISION
-    #
-    ##############################################################################
-    #
-    # Translation form Frortran to Python: D.Placido PoliTo, 23/08/2020
-    # Array smart optimization: D.Placido PoliTo, 27/08/2020
-    #
-    ##############################################################################
-    """
-
-    TINY = 1.0e-20
-    IERR = 0
-    if (
-        conductor.dict_band["Main_diag"] < 0
-        or conductor.dict_band["Main_diag"] > conductor.dict_N_equation["Total"]
-    ):
-        IERR = 1
-        if conductor.dict_band["Main_diag"] < 0:
-            raise ValueError(
-                f"""ERROR! The value of the half-band width given is not 
-      consistent with the matrix dimension:\n
-      {conductor.dict_band["Main_diag"]} < 0\nReturned error: IERR = {IERR}\n
-      End of the program\n"""
-            )
-        elif conductor.dict_band["Main_diag"] > conductor.dict_N_equation["Total"]:
-            raise ValueError(
-                f"""ERROR! The value of the half-band width given is not 
-      consistent with the matrix dimension:\n
-      {conductor.dict_band["Main_diag"]} > {conductor.dict_N_equation["Total"]}\nReturned error: IERR = {IERR}
-      \nEnd of the program\n"""
-            )
-
-    K1 = conductor.dict_band["Main_diag"]
-    K2 = conductor.dict_band["Main_diag"] + 1
-    for I in range(1, conductor.dict_N_equation["Total"]):
-        # remember that the stop value is not included (cdp, 08/2020)
-        II = np.arange(
-            start=I - conductor.dict_band["Main_diag"], stop=I, step=1, dtype=int
-        )
-        # thake only positive values (cdp, 08/2020)
-        II = II[II >= 0]
-        J_min = conductor.dict_band["Main_diag"] - len(II)
-        for ii in range(len(II)):
-            B[I] = B[I] - B[II[ii]] * A[J_min + ii, I]
-
-    if abs(A[K1, conductor.dict_N_equation["Total"] - 1]) <= TINY:
-        IERR = -conductor.dict_N_equation["Total"] - 1
-        raise ValueError(
-            f"""ERROR! Matrix is singular at line 
-    {conductor.dict_N_equation["Total"] - 1}: {A[K1, conductor.dict_N_equation["Total"] - 1]} < {TINY}\n
-    Returned error: IERR = {IERR}\n
-    End of the program\n"""
-        )
-
-    B[-1] = B[-1] / A[K1, -1]
-    # Index array (cdp, 08/2020)
-    II = np.arange(
-        start=conductor.dict_N_equation["Total"] - 2, stop=-1, step=-1, dtype=int
-    )
-
-    # this is an array (cdp, 08/2020)
-    ind = np.nonzero(abs(A[K1, II]) <= TINY)[0]
-    if len(ind) > 0:
-        IERR = -II[ind]
-        raise ValueError(
-            f"""ERROR! Matrix is singular at line {II[ind]}: 
-    {A[K1, II[ind]]} < {TINY}\nReturned error: IERR = {IERR}\n
-    End of the program\n"""
-        )
-
-    # Index array (cdp, 08/2020)
-    JJ = II + conductor.dict_band["Main_diag"]
-    JJ[JJ >= conductor.dict_N_equation["Total"]] = (
-        conductor.dict_N_equation["Total"] - 1
-    )
-    # Index array (cdp, 08/2020)
-    II1 = II + 1
-    L_max = JJ - II1 + 1
-
-    Q = B[II]
-
-    for ii in range(len(II)):
-        for jj in range(L_max[ii]):
-            Q[ii] = Q[ii] - A[K2 + jj, II[ii]] * B[II1[ii] + jj]
-        B[II[ii]] = Q[ii] / A[K1, II[ii]]
-
-    X = np.zeros(conductor.dict_N_equation["Total"])
-    X = B
-
-    return X
-    # end of the function GBACSB
+    return scipy_banded_matrix
 
 def eval_sub_array_norm(
     array:np.ndarray,
