@@ -1,6 +1,6 @@
 import numpy as np
-from scipy import linalg, sparse
-from scipy.sparse.linalg import spsolve
+from pypardiso import spsolve as pardiso_spsolve
+from scipy import sparse
 from typing import Union
 
 from conductor_flags import ELECTRIC_TIME_STEP_NUMBER
@@ -174,10 +174,9 @@ def electric_steady_state_solution(conductor: object):
     # Introduced alias to electric_known_term_vector to exploit the same
     # solution function in both the steady state and the transient case,
     conductor.electric_right_hand_side = conductor.electric_known_term_vector
-    electric_solution = spsolve(
+    electric_solution = pardiso_spsolve(
         conductor.electric_stiffness_matrix,
         conductor.electric_right_hand_side,
-        permc_spec="NATURAL",
     )
 
     solution_completion(conductor, idx, electric_solution)
@@ -310,10 +309,9 @@ def electric_transient_solution(conductor: object):
         conductor.build_right_hand_side(foo, electric_known_term_vector_reduced, idx)
 
         # Solution.
-        electric_solution = spsolve(
+        electric_solution = pardiso_spsolve(
             conductor.electric_stiffness_matrix,
             conductor.electric_right_hand_side,
-            permc_spec="NATURAL",
         )
 
         # Update old known therm vector.
