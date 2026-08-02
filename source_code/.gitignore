@@ -14,6 +14,7 @@ opensc2/share/**/*.gz
 opensc2/share/**/*.1
 opensc2/*.cfg
 opensc2_gpu/
+opensc2_mkl/
 
 # Local YAML file used for headless OPENSC2 runs.
 io_path_test.yaml
