@@ -25,8 +25,10 @@ from utility_functions.auxiliary_functions import (
 from utility_functions.transient_solution_functions import (
     get_time_step,
     step,
-    force_time_step,
-    time_and_event_synchronization,
+)
+from utility_functions.time_step_planning import (
+    apply_time_step_plan,
+    plan_next_time_step,
 )
 from utility_functions.output import (
     save_simulation_space,
@@ -417,25 +419,16 @@ class Simulation:
             self.num_step = self.num_step + 1
             time_step = np.zeros(self.numObj)
             for ii, conductor in enumerate(self.list_of_Conductors):
-                
-                time_step[ii] = conductor.time_step
 
-                # Check if time step is already appended to list cond_time.
-                if conductor.appended_time_flag:
-                    # Time step is already appended to list cond_time in 
-                    # function time_and_event_synchronization or 
-                    # force_time_step calling method conductor.append_time.
-                    # Set conductor.appended_time_flag = False to append 
-                    # the next time to list cond_time according to the standard 
-                    # procedure.
-                    conductor.appended_time_flag = False
-                else:
-                    # Append time according to the standard procedure.
-                    conductor.cond_time.append(
-                        conductor.cond_time[-1] + conductor.time_step
-                    )
-                    # Update time step.
-                    conductor.cond_num_step = conductor.cond_num_step + 1
+                # Plan and commit the imminent time step without placing an
+                # unresolved future time in the completed conductor history.
+                time_step_plan = plan_next_time_step(
+                    conductor,
+                    self.epsilon,
+                    self.transient_input["STPMIN"],
+                )
+                apply_time_step_plan(conductor, time_step_plan)
+                time_step[ii] = conductor.time_step
 
                 # before calling Conductor method initialization adapt mesh if \
                 # necessary as foreseen by ITYMSH. To do later (cdp, 07/2020)
@@ -622,23 +615,6 @@ class Simulation:
                     self.transient_input,
                     self.starter_file_path,
                 )
-
-                conductor = time_and_event_synchronization(
-                    conductor,
-                    self.epsilon,
-                    self.transient_input["STPMIN"],
-                )
-
-                # Check if I did not synchronize time and event. This can be 
-                # checked quering the state of flag conductr.appended_time_flag 
-                # that is set to True if the synchronization was performed.
-                if conductor.appended_time_flag == False:
-                    # Synchronization not performed, there could be the need to 
-                    # force the time step.
-                    conductor = force_time_step(
-                        conductor,
-                        self.transient_input["STPMIN"],
-                    )
 
             # End for conductor (cdp, 07/2020)
         # end while (cdp, 07/2020)

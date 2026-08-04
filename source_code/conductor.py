@@ -1286,7 +1286,6 @@ class Conductor:
         # Initialize attributes events_time, i_event and i_event_max
         self.__collect_event_time(simulation)
         ## Attributes to deal with adaptive time step
-        self.appended_time_flag = False
         self.next_time_step = 0.0
         self.force_next_tstep_flag = False
 
@@ -6751,7 +6750,6 @@ class Conductor:
         The method updates the state of the following attributes:
             * self.cond_time
             * self.cond_num_step
-            * self.appended_time_flag
 
         Args:
             time (float): time to be appended to the list
@@ -6760,8 +6758,6 @@ class Conductor:
         self.cond_time.append(time)
         # Update the counter of time steps
         self.cond_num_step += 1
-        # Keep track of the already appended item in cond_time
-        self.appended_time_flag = True
 
 
     def __check_event_time_main_input(
