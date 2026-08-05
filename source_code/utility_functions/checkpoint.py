@@ -1,15 +1,18 @@
-"""HDF5 checkpoint writing utilities.
+"""HDF5 checkpoint persistence utilities.
 
-This module intentionally implements only the persistence side of restart.
-Restoring a checkpoint into live OPENSC2 objects is handled by a later
-increment, after the initialization path has been made restart-aware.
+The reader deliberately returns a detached intermediate representation.  It
+does not receive or mutate live OPENSC2 objects.  Restoring that representation
+into a simulation is handled by a later increment, after the initialization
+path has been made restart-aware.
 """
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import os
 from pathlib import Path
+import re
 import subprocess
 from urllib.parse import quote
 
@@ -17,7 +20,7 @@ import h5py
 import numpy as np
 
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 VALID_TRIGGERS = frozenset(("periodic", "requested", "final"))
 DEFAULT_CHECKPOINT_EVERY_N_STEPS = 100
 CHECKPOINT_INTERVAL_INPUT = "CHECKPOINT_EVERY_N_STEPS"
@@ -49,6 +52,604 @@ _OUTPUT_BUFFER_ATTRIBUTES = (
 
 class CheckpointValidationError(ValueError):
     """Raised when a simulation is not at a safe checkpoint boundary."""
+
+
+class CheckpointReadError(ValueError):
+    """Raised when a checkpoint cannot be safely read or validated."""
+
+
+@dataclass(frozen=True)
+class InputManifestEntry:
+    """One input file recorded in a checkpoint manifest."""
+
+    path: str
+    sha256: str
+    size: int
+
+
+@dataclass(frozen=True)
+class InputManifestChange:
+    """One input file whose saved and current contents differ."""
+
+    checkpoint: InputManifestEntry
+    current: InputManifestEntry
+
+
+@dataclass(frozen=True)
+class InputManifestComparison:
+    """Detached report comparing saved and current simulation inputs."""
+
+    checkpoint_entries: tuple[InputManifestEntry, ...]
+    current_entries: tuple[InputManifestEntry, ...]
+    missing: tuple[InputManifestEntry, ...]
+    added: tuple[InputManifestEntry, ...]
+    modified: tuple[InputManifestChange, ...]
+
+    @property
+    def is_match(self):
+        """Return ``True`` only when both manifests are identical."""
+
+        return not (self.missing or self.added or self.modified)
+
+
+@dataclass(frozen=True)
+class ConductorCheckpointData:
+    """Detached persistent state of one conductor."""
+
+    identifier: str
+    th_method: str
+    electric_method: str
+    clock: dict
+    th_history: dict
+    electric: dict
+    balances: dict
+    components: dict
+    output_state: dict
+
+
+@dataclass(frozen=True)
+class CheckpointData:
+    """Validated checkpoint contents, independent of an open HDF5 file."""
+
+    path: Path
+    schema_version: str
+    created_utc: str
+    trigger: str
+    git_commit: str
+    input_manifest: tuple[InputManifestEntry, ...]
+    simulation_time: np.ndarray
+    num_step: int
+    conductors: dict[str, ConductorCheckpointData]
+
+
+def read_checkpoint(checkpoint_path):
+    """Read and validate a checkpoint without mutating a simulation.
+
+    All HDF5 datasets are copied into ordinary Python values or NumPy arrays
+    before the file is closed.  The returned object therefore owns no live
+    HDF5 handles.
+    """
+
+    checkpoint_path = Path(checkpoint_path)
+    if not checkpoint_path.is_file():
+        raise CheckpointReadError(
+            f"Checkpoint file does not exist: {checkpoint_path!s}."
+        )
+
+    try:
+        with h5py.File(checkpoint_path, "r") as h5file:
+            return _read_checkpoint_file(h5file, checkpoint_path.resolve())
+    except CheckpointReadError:
+        raise
+    except (KeyError, OSError, TypeError, ValueError) as exc:
+        raise CheckpointReadError(
+            f"Cannot read checkpoint {checkpoint_path!s}: {exc}"
+        ) from exc
+
+
+def compare_input_manifest(checkpoint, input_directory):
+    """Compare a checkpoint manifest with the current input directory.
+
+    The function is deliberately diagnostic: it reports every difference but
+    does not decide whether a recovery or continuation may proceed.  It also
+    does not mutate the detached checkpoint representation.
+    """
+
+    if not isinstance(checkpoint, CheckpointData):
+        raise TypeError("checkpoint must be a CheckpointData instance.")
+
+    checkpoint_entries = tuple(checkpoint.input_manifest)
+    current_entries = _build_input_manifest_entries(input_directory)
+    checkpoint_by_path = {entry.path: entry for entry in checkpoint_entries}
+    current_by_path = {entry.path: entry for entry in current_entries}
+
+    missing = tuple(
+        checkpoint_by_path[path]
+        for path in sorted(checkpoint_by_path.keys() - current_by_path.keys())
+    )
+    added = tuple(
+        current_by_path[path]
+        for path in sorted(current_by_path.keys() - checkpoint_by_path.keys())
+    )
+    modified = tuple(
+        InputManifestChange(
+            checkpoint=checkpoint_by_path[path],
+            current=current_by_path[path],
+        )
+        for path in sorted(checkpoint_by_path.keys() & current_by_path.keys())
+        if (
+            checkpoint_by_path[path].sha256 != current_by_path[path].sha256
+            or checkpoint_by_path[path].size != current_by_path[path].size
+        )
+    )
+
+    return InputManifestComparison(
+        checkpoint_entries=checkpoint_entries,
+        current_entries=current_entries,
+        missing=missing,
+        added=added,
+        modified=modified,
+    )
+
+
+def _read_checkpoint_file(h5file, checkpoint_path):
+    _require_members(
+        h5file,
+        ("metadata", "simulation", "conductors"),
+        "checkpoint root",
+    )
+
+    metadata = h5file["metadata"]
+    if not isinstance(metadata, h5py.Group):
+        raise CheckpointReadError("Checkpoint entry 'metadata' must be a group.")
+    _require_attributes(
+        metadata,
+        ("schema_version", "created_utc", "trigger", "git_commit", "complete"),
+        "metadata",
+    )
+
+    schema_version = _text(metadata.attrs["schema_version"], "schema_version")
+    if schema_version != SCHEMA_VERSION:
+        raise CheckpointReadError(
+            f"Unsupported checkpoint schema {schema_version!r}; "
+            f"expected {SCHEMA_VERSION!r}."
+        )
+    if not _strict_bool(metadata.attrs["complete"], "metadata.complete"):
+        raise CheckpointReadError("Checkpoint is incomplete.")
+
+    trigger = _text(metadata.attrs["trigger"], "trigger")
+    if trigger not in VALID_TRIGGERS:
+        raise CheckpointReadError(
+            f"Invalid checkpoint trigger {trigger!r}."
+        )
+    created_utc = _text(metadata.attrs["created_utc"], "created_utc")
+    git_commit = _text(metadata.attrs["git_commit"], "git_commit")
+    try:
+        parsed_created_utc = datetime.fromisoformat(created_utc)
+    except ValueError as exc:
+        raise CheckpointReadError(
+            "Checkpoint creation time is not valid ISO-8601 text."
+        ) from exc
+    if parsed_created_utc.tzinfo is None:
+        raise CheckpointReadError(
+            "Checkpoint creation time must include a UTC offset."
+        )
+    if not git_commit:
+        raise CheckpointReadError("Checkpoint git commit metadata is empty.")
+    manifest = _read_input_manifest(metadata)
+
+    simulation = h5file["simulation"]
+    if not isinstance(simulation, h5py.Group):
+        raise CheckpointReadError("Checkpoint entry 'simulation' must be a group.")
+    _require_members(simulation, ("simulation_time", "num_step"), "simulation")
+    simulation_time = _read_finite_time_dataset(
+        simulation["simulation_time"], "simulation/simulation_time"
+    )
+    num_step = _read_non_negative_integer(
+        simulation["num_step"], "simulation/num_step"
+    )
+
+    conductors_group = h5file["conductors"]
+    if not isinstance(conductors_group, h5py.Group):
+        raise CheckpointReadError("Checkpoint entry 'conductors' must be a group.")
+    if len(conductors_group) == 0:
+        raise CheckpointReadError("Checkpoint contains no conductors.")
+
+    conductors = {}
+    for group_name in conductors_group:
+        conductor = _read_conductor(conductors_group[group_name], group_name)
+        if conductor.identifier in conductors:
+            raise CheckpointReadError(
+                f"Duplicate conductor identifier {conductor.identifier!r}."
+            )
+        conductors[conductor.identifier] = conductor
+
+    return CheckpointData(
+        path=checkpoint_path,
+        schema_version=schema_version,
+        created_utc=created_utc,
+        trigger=trigger,
+        git_commit=git_commit,
+        input_manifest=manifest,
+        simulation_time=simulation_time,
+        num_step=num_step,
+        conductors=conductors,
+    )
+
+
+def _read_input_manifest(metadata):
+    _require_members(metadata, ("input_manifest",), "metadata")
+    group = metadata["input_manifest"]
+    if not isinstance(group, h5py.Group):
+        raise CheckpointReadError("metadata/input_manifest must be a group.")
+    _require_members(group, ("paths", "sha256", "sizes"), "input manifest")
+
+    paths = _read_string_vector(group["paths"], "input manifest paths")
+    hashes = _read_string_vector(group["sha256"], "input manifest hashes")
+    sizes = np.asarray(group["sizes"][()])
+    if sizes.ndim != 1 or not np.issubdtype(sizes.dtype, np.integer):
+        raise CheckpointReadError("Input manifest sizes must be a 1-D integer array.")
+    if not (len(paths) == len(hashes) == len(sizes)):
+        raise CheckpointReadError("Input manifest columns have different lengths.")
+
+    entries = []
+    seen_paths = set()
+    for path, sha256, size in zip(paths, hashes, sizes):
+        candidate = Path(path)
+        if (
+            not path
+            or candidate.is_absolute()
+            or ".." in candidate.parts
+            or candidate.as_posix() != path
+        ):
+            raise CheckpointReadError(
+                f"Invalid relative path in input manifest: {path!r}."
+            )
+        if path in seen_paths:
+            raise CheckpointReadError(
+                f"Duplicate path in input manifest: {path!r}."
+            )
+        if re.fullmatch(r"[0-9a-f]{64}", sha256) is None:
+            raise CheckpointReadError(
+                f"Invalid SHA-256 in input manifest for {path!r}."
+            )
+        if int(size) < 0:
+            raise CheckpointReadError(
+                f"Negative input size in manifest for {path!r}."
+            )
+        seen_paths.add(path)
+        entries.append(InputManifestEntry(path, sha256, int(size)))
+    return tuple(entries)
+
+
+def _read_conductor(group, group_name):
+    if not isinstance(group, h5py.Group):
+        raise CheckpointReadError(
+            f"conductors/{group_name} must be a group."
+        )
+    _require_attributes(group, ("identifier",), f"conductors/{group_name}")
+    identifier = _text(group.attrs["identifier"], "conductor identifier")
+    if not identifier or _safe_name(identifier) != group_name:
+        raise CheckpointReadError(
+            f"Conductor group {group_name!r} does not match identifier "
+            f"{identifier!r}."
+        )
+
+    required_groups = (
+        "metadata",
+        "clock",
+        "th_history",
+        "electric",
+        "balances",
+        "components",
+        "output_state",
+    )
+    _require_members(group, required_groups, f"conductor {identifier!r}")
+    for name in required_groups:
+        if not isinstance(group[name], h5py.Group):
+            raise CheckpointReadError(
+                f"Conductor {identifier!r} entry {name!r} must be a group."
+            )
+
+    metadata = group["metadata"]
+    _require_attributes(
+        metadata,
+        ("th_method", "electric_method"),
+        f"conductor {identifier!r} metadata",
+    )
+    clock = _read_mapping(group["clock"])
+    _validate_read_clock(clock, identifier)
+
+    th_history = _read_mapping(group["th_history"])
+    for key in ("SYSVAR", "SYSLOD"):
+        if key not in th_history:
+            raise CheckpointReadError(
+                f"Conductor {identifier!r} TH history is missing {key!r}."
+            )
+
+    electric = _read_mapping(group["electric"])
+    if electric:
+        for key in ("electric_solution", "electric_solution_steady"):
+            if key not in electric:
+                raise CheckpointReadError(
+                    f"Conductor {identifier!r} electric state is missing {key!r}."
+                )
+        for key in ("cond_el_num_step", "electric_time"):
+            if key not in clock:
+                raise CheckpointReadError(
+                    f"Conductor {identifier!r} clock is missing {key!r} for "
+                    "an active electric state."
+                )
+        electric_time = np.asarray(clock["electric_time"])
+        if electric_time.ndim != 0 or not np.isfinite(electric_time):
+            raise CheckpointReadError(
+                f"Conductor {identifier!r}: electric_time must be a finite scalar."
+            )
+        if clock["cond_num_step"] > 0 and not np.isclose(
+            float(electric_time),
+            np.asarray(clock["cond_time"])[-1],
+            rtol=1.0e-12,
+            atol=1.0e-12,
+        ):
+            raise CheckpointReadError(
+                f"Conductor {identifier!r}: electric_time must coincide with "
+                "cond_time[-1]."
+            )
+
+    balances = _read_mapping(group["balances"])
+    for key in _BALANCE_ATTRIBUTES:
+        if key not in balances:
+            raise CheckpointReadError(
+                f"Conductor {identifier!r} balances are missing {key!r}."
+            )
+
+    components = _read_components(group["components"], identifier)
+
+    output_state = _read_mapping(group["output_state"])
+    for key in ("i_save", "num_step_save", "buffers"):
+        if key not in output_state:
+            raise CheckpointReadError(
+                f"Conductor {identifier!r} output state is missing {key!r}."
+            )
+    buffers = output_state["buffers"]
+    if not isinstance(buffers, Mapping):
+        raise CheckpointReadError(
+            f"Conductor {identifier!r} output buffers must be a mapping."
+        )
+    component_buffers = buffers.get("components")
+    if not isinstance(component_buffers, Mapping):
+        raise CheckpointReadError(
+            f"Conductor {identifier!r} output buffers are missing components."
+        )
+    if set(component_buffers) != set(components):
+        raise CheckpointReadError(
+            f"Conductor {identifier!r} component inventory does not match "
+            "its component output buffers."
+        )
+
+    return ConductorCheckpointData(
+        identifier=identifier,
+        th_method=_text(metadata.attrs["th_method"], "TH method"),
+        electric_method=_text(
+            metadata.attrs["electric_method"], "electric method"
+        ),
+        clock=clock,
+        th_history=th_history,
+        electric=electric,
+        balances=balances,
+        components=components,
+        output_state=output_state,
+    )
+
+
+def _read_components(group, conductor_identifier):
+    if len(group) == 0:
+        raise CheckpointReadError(
+            f"Conductor {conductor_identifier!r} contains no components."
+        )
+
+    components = {}
+    for group_name in group:
+        component_group = group[group_name]
+        if not isinstance(component_group, h5py.Group):
+            raise CheckpointReadError(
+                f"Component entry {group_name!r} must be a group."
+            )
+        _require_attributes(
+            component_group,
+            ("identifier", "kind"),
+            f"component {group_name!r}",
+        )
+        identifier = _text(
+            component_group.attrs["identifier"], "component identifier"
+        )
+        if not identifier or _safe_name(identifier) != group_name:
+            raise CheckpointReadError(
+                f"Component group {group_name!r} does not match identifier "
+                f"{identifier!r}."
+            )
+        if identifier in components:
+            raise CheckpointReadError(
+                f"Duplicate component identifier {identifier!r}."
+            )
+
+        kind = _text(component_group.attrs["kind"], "component kind")
+        if kind not in ("fluid", "solid"):
+            raise CheckpointReadError(
+                f"Component {identifier!r} has invalid kind {kind!r}."
+            )
+        state = _read_mapping(component_group)
+        energy_history = state.get("energy_history")
+        if kind == "solid":
+            if not isinstance(energy_history, Mapping):
+                raise CheckpointReadError(
+                    f"Solid component {identifier!r} is missing energy_history."
+                )
+            for key in ("EEXT", "EJHT"):
+                if key not in energy_history:
+                    raise CheckpointReadError(
+                        f"Solid component {identifier!r} energy history is "
+                        f"missing {key!r}."
+                    )
+        elif energy_history is not None:
+            raise CheckpointReadError(
+                f"Fluid component {identifier!r} cannot contain energy_history."
+            )
+
+        components[identifier] = {"kind": kind, **state}
+    return components
+
+
+def _validate_read_clock(clock, identifier):
+    for key in ("cond_time", "cond_num_step", "time_step", "EQTEIG", "i_event", "events_time"):
+        if key not in clock:
+            raise CheckpointReadError(
+                f"Conductor {identifier!r} clock is missing {key!r}."
+            )
+    try:
+        cond_time = _finite_time_history(
+            clock["cond_time"], f"conductor {identifier!r}.cond_time"
+        )
+    except CheckpointValidationError as exc:
+        raise CheckpointReadError(str(exc)) from exc
+    cond_num_step = _python_non_negative_integer(
+        clock["cond_num_step"],
+        f"conductor {identifier!r}.cond_num_step",
+    )
+    if cond_num_step != len(cond_time) - 1:
+        raise CheckpointReadError(
+            f"Conductor {identifier!r}: cond_num_step ({cond_num_step}) must equal "
+            f"len(cond_time) - 1 ({len(cond_time) - 1})."
+        )
+    time_step = np.asarray(clock["time_step"])
+    if time_step.ndim != 0 or not np.isfinite(time_step) or float(time_step) < 0.0:
+        raise CheckpointReadError(
+            f"Conductor {identifier!r}: time_step must be a finite "
+            "non-negative scalar."
+        )
+
+
+def _read_mapping(group):
+    result = {}
+    for name in group:
+        node = group[name]
+        original_name = _text(
+            node.attrs.get("original_name", name),
+            f"original name for {node.name}",
+        )
+        if original_name in result:
+            raise CheckpointReadError(
+                f"Duplicate reconstructed key {original_name!r} in {group.name}."
+            )
+        result[original_name] = _read_node(node)
+    return result
+
+
+def _read_node(node):
+    if isinstance(node, h5py.Dataset):
+        value = node[()]
+        if isinstance(value, bytes):
+            return value.decode("utf-8")
+        if isinstance(value, np.ndarray):
+            if value.dtype.kind in ("S", "O"):
+                decoded = np.empty(value.shape, dtype=object)
+                for index in np.ndindex(value.shape):
+                    item = value[index]
+                    decoded[index] = (
+                        item.decode("utf-8") if isinstance(item, bytes) else item
+                    )
+                return decoded
+            return value.copy()
+        return value.item() if isinstance(value, np.generic) else value
+
+    if not isinstance(node, h5py.Group):
+        raise CheckpointReadError(f"Unsupported HDF5 object at {node.name}.")
+    python_type = _text(
+        node.attrs.get("python_type", "mapping"),
+        f"python_type for {node.name}",
+    )
+    if python_type == "none":
+        if len(node):
+            raise CheckpointReadError(f"None node {node.name} must be empty.")
+        return None
+    values = _read_mapping(node)
+    if python_type == "mapping":
+        return values
+    if python_type in ("list", "tuple"):
+        expected_keys = [str(index) for index in range(len(values))]
+        if set(values) != set(expected_keys):
+            raise CheckpointReadError(
+                f"Sequence node {node.name} has invalid indices."
+            )
+        sequence = [values[key] for key in expected_keys]
+        return tuple(sequence) if python_type == "tuple" else sequence
+    raise CheckpointReadError(
+        f"Unsupported python_type {python_type!r} at {node.name}."
+    )
+
+
+def _require_members(group, names, label):
+    missing = [name for name in names if name not in group]
+    if missing:
+        raise CheckpointReadError(
+            f"{label} is missing required entries: {', '.join(missing)}."
+        )
+
+
+def _require_attributes(item, names, label):
+    missing = [name for name in names if name not in item.attrs]
+    if missing:
+        raise CheckpointReadError(
+            f"{label} is missing required attributes: {', '.join(missing)}."
+        )
+
+
+def _text(value, label):
+    if isinstance(value, bytes):
+        value = value.decode("utf-8")
+    if not isinstance(value, str):
+        raise CheckpointReadError(f"{label} must be text.")
+    return value
+
+
+def _strict_bool(value, label):
+    if not isinstance(value, (bool, np.bool_)):
+        raise CheckpointReadError(f"{label} must be boolean.")
+    return bool(value)
+
+
+def _read_string_vector(dataset, label):
+    if not isinstance(dataset, h5py.Dataset):
+        raise CheckpointReadError(f"{label} must be a dataset.")
+    values = np.asarray(dataset[()])
+    if values.ndim != 1:
+        raise CheckpointReadError(f"{label} must be a 1-D array.")
+    return tuple(_text(value, label) for value in values)
+
+
+def _read_finite_time_dataset(dataset, label):
+    if not isinstance(dataset, h5py.Dataset):
+        raise CheckpointReadError(f"{label} must be a dataset.")
+    try:
+        return _finite_time_history(dataset[()], label).copy()
+    except CheckpointValidationError as exc:
+        raise CheckpointReadError(str(exc)) from exc
+
+
+def _read_non_negative_integer(dataset, label):
+    if not isinstance(dataset, h5py.Dataset):
+        raise CheckpointReadError(f"{label} must be a dataset.")
+    return _python_non_negative_integer(dataset[()], label)
+
+
+def _python_non_negative_integer(value, label):
+    array = np.asarray(value)
+    if array.ndim != 0 or not np.issubdtype(array.dtype, np.integer):
+        raise CheckpointReadError(f"{label} must be an integer scalar.")
+    result = int(array)
+    if result < 0:
+        raise CheckpointReadError(f"{label} cannot be negative.")
+    return result
 
 
 def checkpoint_interval(transient_input):
@@ -177,6 +778,22 @@ def build_input_manifest(simulation, excluded_dir=None):
     """Return deterministic SHA-256 entries for files under ``basePath``."""
 
     base_path = Path(getattr(simulation, "basePath", ""))
+    return [
+        {
+            "path": entry.path,
+            "sha256": entry.sha256,
+            "size": entry.size,
+        }
+        for entry in _build_input_manifest_entries(
+            base_path, excluded_dir=excluded_dir
+        )
+    ]
+
+
+def _build_input_manifest_entries(input_directory, excluded_dir=None):
+    """Build a deterministic, detached manifest for one input directory."""
+
+    base_path = Path(input_directory)
     if not base_path.is_dir():
         raise CheckpointValidationError(
             f"Simulation input directory does not exist: {base_path!s}."
@@ -192,13 +809,13 @@ def build_input_manifest(simulation, excluded_dir=None):
         if excluded_dir is not None and _is_relative_to(resolved_path, excluded_dir):
             continue
         manifest.append(
-            {
-                "path": path.relative_to(base_path).as_posix(),
-                "sha256": _sha256(path),
-                "size": path.stat().st_size,
-            }
+            InputManifestEntry(
+                path=path.relative_to(base_path).as_posix(),
+                sha256=_sha256(path),
+                size=path.stat().st_size,
+            )
         )
-    return manifest
+    return tuple(manifest)
 
 
 def _validate_conductor(conductor):
@@ -280,8 +897,10 @@ def _validate_conductor(conductor):
         if not hasattr(conductor, attribute):
             raise CheckpointValidationError(f"{label}: missing {attribute}.")
 
-    solid_components = _collection(conductor, "SolidComponent")
-    for component in solid_components:
+    component_inventory = _component_inventory(conductor, label)
+    for component, kind in component_inventory:
+        if kind != "solid":
+            continue
         component_label = getattr(component, "identifier", repr(component))
         node_state = getattr(component, "dict_node_pt", {})
         for key in ("EEXT", "EJHT"):
@@ -369,13 +988,17 @@ def _write_conductor(group, conductor):
         _write_value(balances, attribute, getattr(conductor, attribute))
 
     components = group.create_group("components")
-    for component in _collection(conductor, "SolidComponent"):
+    for component, kind in _component_inventory(
+        conductor, f"conductor {conductor.identifier!r}"
+    ):
         identifier = getattr(component, "identifier", component.__class__.__name__)
         component_group = components.create_group(_safe_name(identifier))
         component_group.attrs["identifier"] = identifier
-        energy_history = component_group.create_group("energy_history")
-        _write_value(energy_history, "EEXT", component.dict_node_pt["EEXT"])
-        _write_value(energy_history, "EJHT", component.dict_node_pt["EJHT"])
+        component_group.attrs["kind"] = kind
+        if kind == "solid":
+            energy_history = component_group.create_group("energy_history")
+            _write_value(energy_history, "EEXT", component.dict_node_pt["EEXT"])
+            _write_value(energy_history, "EJHT", component.dict_node_pt["EJHT"])
 
     output_state = group.create_group("output_state")
     for attribute in _OUTPUT_STATE_ATTRIBUTES:
@@ -453,6 +1076,57 @@ def _collection(conductor, key):
     inventory = getattr(conductor, "inventory", {})
     item = inventory.get(key) if isinstance(inventory, Mapping) else None
     return list(getattr(item, "collection", ()))
+
+
+def _component_inventory(conductor, label):
+    fluid_components = _collection(conductor, "FluidComponent")
+    solid_components = _collection(conductor, "SolidComponent")
+    all_components = _collection(conductor, "all_component")
+    if not all_components:
+        raise CheckpointValidationError(
+            f"{label}: all_component cannot be empty."
+        )
+
+    fluid_ids = [id(component) for component in fluid_components]
+    solid_ids = [id(component) for component in solid_components]
+    all_ids = [id(component) for component in all_components]
+    if len(set(fluid_ids)) != len(fluid_ids):
+        raise CheckpointValidationError(
+            f"{label}: FluidComponent contains duplicate objects."
+        )
+    if len(set(solid_ids)) != len(solid_ids):
+        raise CheckpointValidationError(
+            f"{label}: SolidComponent contains duplicate objects."
+        )
+    if set(fluid_ids) & set(solid_ids):
+        raise CheckpointValidationError(
+            f"{label}: a component cannot be both fluid and solid."
+        )
+    if len(set(all_ids)) != len(all_ids):
+        raise CheckpointValidationError(
+            f"{label}: all_component contains duplicate objects."
+        )
+    if set(all_ids) != set(fluid_ids) | set(solid_ids):
+        raise CheckpointValidationError(
+            f"{label}: all_component must contain exactly the fluid and solid "
+            "components."
+        )
+
+    identifiers = [getattr(component, "identifier", None) for component in all_components]
+    if any(not identifier for identifier in identifiers):
+        raise CheckpointValidationError(
+            f"{label}: every component needs an identifier."
+        )
+    if len(set(identifiers)) != len(identifiers):
+        raise CheckpointValidationError(
+            f"{label}: component identifiers must be unique."
+        )
+
+    fluid_id_set = set(fluid_ids)
+    return [
+        (component, "fluid" if id(component) in fluid_id_set else "solid")
+        for component in all_components
+    ]
 
 
 def _require_path(parent, path):

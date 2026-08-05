@@ -10,10 +10,13 @@ import h5py
 import numpy as np
 
 from utility_functions.checkpoint import (
+    CheckpointReadError,
     CheckpointValidationError,
     checkpoint_interval,
     SCHEMA_VERSION,
     build_input_manifest,
+    compare_input_manifest,
+    read_checkpoint,
     validate_checkpoint_state,
     write_checkpoint,
     write_periodic_checkpoint_if_due,
@@ -78,6 +81,7 @@ def make_simulation(base_path, *, force_next_tstep_flag=False):
         store_sd_node={"zcoord": {"t_save_left": np.array([0.0, 1.0])}},
         store_sd_gauss={},
         inventory={
+            "FluidComponent": _collection(fluid),
             "SolidComponent": _collection(solid),
             "all_component": _collection(fluid, solid),
         },
@@ -135,6 +139,15 @@ class CheckpointTests(unittest.TestCase):
                 ][:],
                 np.arange(6.0).reshape(3, 2),
             )
+            self.assertEqual(
+                conductor["components/CHAN_1"].attrs["kind"], "fluid"
+            )
+            self.assertEqual(
+                conductor["components/STACK_1"].attrs["kind"], "solid"
+            )
+            self.assertEqual(
+                set(conductor["components"]), {"CHAN_1", "STACK_1"}
+            )
             np.testing.assert_allclose(
                 conductor[
                     "output_state/buffers/components/CHAN_1/coolant/"
@@ -159,6 +172,112 @@ class CheckpointTests(unittest.TestCase):
         self.assertEqual(
             manifest[0]["sha256"], hashlib.sha256(b"0\t1\n").hexdigest()
         )
+
+    def test_manifest_comparison_accepts_identical_inputs(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint_path = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        checkpoint = read_checkpoint(checkpoint_path)
+
+        comparison = compare_input_manifest(checkpoint, self.input_dir)
+
+        self.assertTrue(comparison.is_match)
+        self.assertEqual(comparison.checkpoint_entries, checkpoint.input_manifest)
+        self.assertEqual(comparison.current_entries, checkpoint.input_manifest)
+        self.assertEqual(comparison.missing, ())
+        self.assertEqual(comparison.added, ())
+        self.assertEqual(comparison.modified, ())
+
+    def test_manifest_comparison_reports_all_difference_categories(self):
+        removed = self.input_dir / "removed.tsv"
+        removed.write_bytes(b"removed")
+        modified = self.input_dir / "modified.tsv"
+        modified.write_bytes(b"before")
+        simulation = make_simulation(self.input_dir)
+        checkpoint_path = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        checkpoint = read_checkpoint(checkpoint_path)
+
+        removed.unlink()
+        modified.write_bytes(b"after-and-longer")
+        (self.input_dir / "added.tsv").write_bytes(b"added")
+
+        comparison = compare_input_manifest(checkpoint, self.input_dir)
+
+        self.assertFalse(comparison.is_match)
+        self.assertEqual(
+            [entry.path for entry in comparison.missing], ["removed.tsv"]
+        )
+        self.assertEqual([entry.path for entry in comparison.added], ["added.tsv"])
+        self.assertEqual(
+            [change.checkpoint.path for change in comparison.modified],
+            ["modified.tsv"],
+        )
+        change = comparison.modified[0]
+        self.assertEqual(
+            change.checkpoint.sha256,
+            hashlib.sha256(b"before").hexdigest(),
+        )
+        self.assertEqual(
+            change.current.sha256,
+            hashlib.sha256(b"after-and-longer").hexdigest(),
+        )
+        self.assertEqual(change.checkpoint.size, len(b"before"))
+        self.assertEqual(change.current.size, len(b"after-and-longer"))
+
+    def test_manifest_comparison_is_deterministic(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint_path = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        checkpoint = read_checkpoint(checkpoint_path)
+        (self.input_dir / "z_added.tsv").write_bytes(b"z")
+        (self.input_dir / "a_added.tsv").write_bytes(b"a")
+
+        comparison = compare_input_manifest(checkpoint, self.input_dir)
+
+        self.assertEqual(
+            [entry.path for entry in comparison.added],
+            ["a_added.tsv", "z_added.tsv"],
+        )
+
+    def test_manifest_comparison_detects_same_size_content_change(self):
+        target = self.input_dir / "same_size.tsv"
+        target.write_bytes(b"before")
+        simulation = make_simulation(self.input_dir)
+        checkpoint_path = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        checkpoint = read_checkpoint(checkpoint_path)
+
+        target.write_bytes(b"after!")
+        comparison = compare_input_manifest(checkpoint, self.input_dir)
+
+        self.assertEqual(len(comparison.modified), 1)
+        self.assertEqual(comparison.modified[0].checkpoint.size, 6)
+        self.assertEqual(comparison.modified[0].current.size, 6)
+        self.assertNotEqual(
+            comparison.modified[0].checkpoint.sha256,
+            comparison.modified[0].current.sha256,
+        )
+
+    def test_manifest_comparison_rejects_missing_input_directory(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint_path = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        checkpoint = read_checkpoint(checkpoint_path)
+
+        with self.assertRaisesRegex(
+            CheckpointValidationError, "input directory does not exist"
+        ):
+            compare_input_manifest(checkpoint, self.root / "missing")
+
+    def test_manifest_comparison_requires_detached_checkpoint_data(self):
+        with self.assertRaisesRegex(TypeError, "CheckpointData"):
+            compare_input_manifest(object(), self.input_dir)
 
     def test_invalid_boundary_does_not_create_final_checkpoint(self):
         simulation = make_simulation(
@@ -260,6 +379,197 @@ class CheckpointTests(unittest.TestCase):
                     ValueError, "must be a non-negative integer"
                 ):
                     checkpoint_interval({"CHECKPOINT_EVERY_N_STEPS": value})
+
+    def test_reader_returns_detached_intermediate_state(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+
+        loaded = read_checkpoint(checkpoint)
+
+        self.assertEqual(loaded.path, checkpoint.resolve())
+        self.assertEqual(loaded.schema_version, SCHEMA_VERSION)
+        self.assertEqual(loaded.trigger, "periodic")
+        self.assertEqual(loaded.num_step, 1)
+        self.assertEqual(loaded.input_manifest[0].path, "transitory_input.xlsx")
+        self.assertEqual(loaded.input_manifest[0].size, len(b"input-content"))
+        np.testing.assert_allclose(loaded.simulation_time, [0.0, 0.1])
+
+        conductor = loaded.conductors["COND_1"]
+        self.assertEqual(conductor.identifier, "COND_1")
+        self.assertEqual(conductor.th_method, "AM4")
+        np.testing.assert_allclose(
+            conductor.th_history["AM4_AA"],
+            simulation.list_of_Conductors[0].dict_Step["AM4_AA"],
+        )
+        np.testing.assert_allclose(
+            conductor.electric["electric_solution"], [10.0, 20.0]
+        )
+        np.testing.assert_allclose(
+            conductor.components["STACK_1"]["energy_history"]["EJHT"],
+            np.arange(6.0, 12.0).reshape(3, 2),
+        )
+        self.assertEqual(conductor.components["CHAN_1"], {"kind": "fluid"})
+        self.assertEqual(conductor.components["STACK_1"]["kind"], "solid")
+        np.testing.assert_allclose(
+            conductor.output_state["buffers"]["components"]["CHAN_1"]
+            ["coolant"]["time_evol"]["pressure"],
+            [1.0e5, 1.01e5],
+        )
+
+        # The file is closed on return: its contents can be replaced and the
+        # detached data remain usable.
+        checkpoint.unlink()
+        np.testing.assert_allclose(conductor.clock["cond_time"], [0.0, 0.1])
+
+    def test_reader_does_not_mutate_source_simulation(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        original_time = list(simulation.simulation_time)
+        original_sysvar = simulation.list_of_Conductors[0].dict_Step[
+            "SYSVAR"
+        ].copy()
+
+        read_checkpoint(checkpoint)
+
+        self.assertEqual(simulation.simulation_time, original_time)
+        np.testing.assert_array_equal(
+            simulation.list_of_Conductors[0].dict_Step["SYSVAR"],
+            original_sysvar,
+        )
+
+    def test_reader_accepts_checkpoint_without_active_electric_model(self):
+        simulation = make_simulation(self.input_dir)
+        conductor = simulation.list_of_Conductors[0]
+        conductor.inputs["I0_OP_MODE"] = None
+        del conductor.electric_solution
+        del conductor.electric_solution_steady
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="final"
+        )
+
+        loaded = read_checkpoint(checkpoint)
+
+        self.assertEqual(loaded.conductors["COND_1"].electric, {})
+
+    def test_reader_rejects_incomplete_checkpoint(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        with h5py.File(checkpoint, "r+") as h5file:
+            h5file["metadata"].attrs["complete"] = False
+
+        with self.assertRaisesRegex(CheckpointReadError, "incomplete"):
+            read_checkpoint(checkpoint)
+
+    def test_reader_rejects_incompatible_schema(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        with h5py.File(checkpoint, "r+") as h5file:
+            h5file["metadata"].attrs["schema_version"] = "999.0"
+
+        with self.assertRaisesRegex(
+            CheckpointReadError, "Unsupported checkpoint schema"
+        ):
+            read_checkpoint(checkpoint)
+
+    def test_reader_rejects_missing_required_dataset(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        with h5py.File(checkpoint, "r+") as h5file:
+            del h5file["simulation/num_step"]
+
+        with self.assertRaisesRegex(
+            CheckpointReadError, "missing required entries: num_step"
+        ):
+            read_checkpoint(checkpoint)
+
+    def test_reader_rejects_corrupt_non_hdf5_file(self):
+        checkpoint = self.root / "corrupt.h5"
+        checkpoint.write_bytes(b"not an HDF5 checkpoint")
+
+        with self.assertRaisesRegex(CheckpointReadError, "Cannot read checkpoint"):
+            read_checkpoint(checkpoint)
+
+    def test_reader_rejects_invalid_manifest_hash(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        with h5py.File(checkpoint, "r+") as h5file:
+            h5file["metadata/input_manifest/sha256"][0] = "invalid"
+
+        with self.assertRaisesRegex(CheckpointReadError, "Invalid SHA-256"):
+            read_checkpoint(checkpoint)
+
+    def test_reader_rejects_empty_conductor_group(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        with h5py.File(checkpoint, "r+") as h5file:
+            del h5file["conductors/COND_1"]
+
+        with self.assertRaisesRegex(CheckpointReadError, "contains no conductors"):
+            read_checkpoint(checkpoint)
+
+    def test_reader_rejects_inconsistent_saved_conductor_clock(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        with h5py.File(checkpoint, "r+") as h5file:
+            h5file["conductors/COND_1/clock/cond_num_step"][...] = 2
+
+        with self.assertRaisesRegex(
+            CheckpointReadError, "must equal len\\(cond_time\\) - 1"
+        ):
+            read_checkpoint(checkpoint)
+
+    def test_validation_rejects_incomplete_component_inventory(self):
+        simulation = make_simulation(self.input_dir)
+        conductor = simulation.list_of_Conductors[0]
+        conductor.inventory["all_component"].collection.pop()
+
+        with self.assertRaisesRegex(
+            CheckpointValidationError,
+            "all_component must contain exactly the fluid and solid components",
+        ):
+            validate_checkpoint_state(simulation)
+
+    def test_reader_rejects_invalid_component_kind(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        with h5py.File(checkpoint, "r+") as h5file:
+            h5file["conductors/COND_1/components/CHAN_1"].attrs["kind"] = "gas"
+
+        with self.assertRaisesRegex(CheckpointReadError, "invalid kind"):
+            read_checkpoint(checkpoint)
+
+    def test_reader_rejects_component_buffer_mismatch(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        with h5py.File(checkpoint, "r+") as h5file:
+            del h5file[
+                "conductors/COND_1/output_state/buffers/components/CHAN_1"
+            ]
+
+        with self.assertRaisesRegex(
+            CheckpointReadError, "component inventory does not match"
+        ):
+            read_checkpoint(checkpoint)
 
 
 if __name__ == "__main__":
