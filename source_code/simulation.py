@@ -30,6 +30,7 @@ from utility_functions.time_step_planning import (
     apply_time_step_plan,
     plan_next_time_step,
 )
+from utility_functions.checkpoint import write_periodic_checkpoint_if_due
 from utility_functions.output import (
     save_simulation_space,
     reorganize_spatial_distribution,
@@ -379,8 +380,6 @@ class Simulation:
 
     def conductor_solution(self, gui):
         # ** TRANSIENT SOLUTION **
-        num_step_store = 100
-        count_store = 1
         stoptime = 0  # flag to stop simulation if some problems (like quench) \
         # arise (cdp, 07/2020)
         # Time step initialization (cdp, 08/2020)
@@ -527,11 +526,6 @@ class Simulation:
 
                 update_real_time_plots(conductor)
 
-                if self.num_step == num_step_store * count_store:
-                    # Update counter to store the state of the simulation, still to come \
-                    # (cdp, 08/2020)
-                    count_store = count_store + 1
-                
                 # Boolean flag to identify if time is the neighborhood of the 
                 # user defined save time:
                 # t in [t_save - dt_max, t_save + dt_max]
@@ -617,6 +611,9 @@ class Simulation:
                 )
 
             # End for conductor (cdp, 07/2020)
+            checkpoint_path = write_periodic_checkpoint_if_due(self)
+            if checkpoint_path is not None:
+                print(f"Checkpoint saved: {checkpoint_path}")
         # end while (cdp, 07/2020)
         print("End simulation called " + self.transient_input["SIMULATION"] + "\n")
 
@@ -757,6 +754,12 @@ class Simulation:
             input_folder_name,
         )
         os.makedirs(self.dict_path["Save_input"], exist_ok=True)
+
+        self.dict_path["Checkpoint_dir"] = os.path.join(
+            self.dict_path["Sub_dir"],
+            self.transient_input["SIMULATION"],
+            "Checkpoints",
+        )
 
     # End method Simulation_folders_manager.
 
