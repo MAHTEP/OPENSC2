@@ -104,6 +104,15 @@ class RestartCompatibilityReport:
 
 
 @dataclass(frozen=True)
+class RuntimeRestoreValidationReport:
+    """Non-destructive validation of a runtime restore destination."""
+
+    is_valid: bool
+    blocking_reasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class ConductorCheckpointData:
     """Detached persistent state of one conductor."""
 
@@ -251,6 +260,353 @@ def evaluate_restart_compatibility(
         blocking_reasons=tuple(blocking_reasons),
         warnings=(),
     )
+
+
+def validate_runtime_restore_target(checkpoint, simulation):
+    """Validate a freshly initialized runtime before applying a checkpoint.
+
+    The function checks identities, methods, component kinds, numerical-state
+    shapes, event timelines, and output ownership.  It deliberately performs
+    no assignments: every incompatibility is accumulated before the immutable
+    report is returned.
+    """
+
+    if not isinstance(checkpoint, CheckpointData):
+        raise TypeError("checkpoint must be a CheckpointData instance.")
+
+    reasons = []
+    _validate_fresh_runtime_clock(simulation, reasons)
+    runtime_conductors = list(
+        getattr(simulation, "list_of_Conductors", ())
+    )
+    runtime_by_identifier = {}
+    for conductor in runtime_conductors:
+        identifier = getattr(conductor, "identifier", None)
+        if not identifier:
+            reasons.append("Runtime conductor is missing an identifier.")
+            continue
+        if identifier in runtime_by_identifier:
+            reasons.append(
+                f"Runtime conductor identifier is duplicated: {identifier!r}."
+            )
+            continue
+        runtime_by_identifier[identifier] = conductor
+
+    checkpoint_ids = set(checkpoint.conductors)
+    runtime_ids = set(runtime_by_identifier)
+    reasons.extend(
+        f"Runtime is missing conductor {identifier!r}."
+        for identifier in sorted(checkpoint_ids - runtime_ids)
+    )
+    reasons.extend(
+        f"Runtime contains unexpected conductor {identifier!r}."
+        for identifier in sorted(runtime_ids - checkpoint_ids)
+    )
+
+    _validate_checkpoint_global_clock(checkpoint, reasons)
+    for identifier in sorted(checkpoint_ids & runtime_ids):
+        _validate_runtime_conductor_target(
+            checkpoint.conductors[identifier],
+            runtime_by_identifier[identifier],
+            reasons,
+        )
+
+    return RuntimeRestoreValidationReport(
+        is_valid=not reasons,
+        blocking_reasons=tuple(reasons),
+        warnings=(),
+    )
+
+
+def _validate_fresh_runtime_clock(simulation, reasons):
+    simulation_time = np.asarray(
+        getattr(simulation, "simulation_time", ()), dtype=float
+    )
+    if (
+        simulation_time.shape != (1,)
+        or not np.isclose(simulation_time[0], 0.0)
+    ):
+        reasons.append(
+            "Runtime simulation must be freshly initialized at time zero."
+        )
+    if getattr(simulation, "num_step", None) != 0:
+        reasons.append("Runtime simulation num_step must be zero before restore.")
+
+
+def _validate_checkpoint_global_clock(checkpoint, reasons):
+    simulation_time = np.asarray(checkpoint.simulation_time)
+    if checkpoint.num_step != simulation_time.size - 1:
+        reasons.append(
+            "Checkpoint global num_step does not equal "
+            "len(simulation_time) - 1."
+        )
+
+    conductor_times = []
+    for conductor in checkpoint.conductors.values():
+        cond_time = np.asarray(conductor.clock.get("cond_time", ()))
+        if cond_time.ndim == 1 and cond_time.size:
+            conductor_times.append(float(cond_time[-1]))
+        if conductor.clock.get("cond_num_step") != checkpoint.num_step:
+            reasons.append(
+                f"Conductor {conductor.identifier!r} checkpoint step does not "
+                "match the global checkpoint step."
+            )
+
+    if conductor_times and not np.isclose(
+        float(simulation_time[-1]),
+        max(conductor_times),
+        rtol=1.0e-12,
+        atol=1.0e-12,
+    ):
+        reasons.append(
+            "Checkpoint global time does not equal the latest conductor time."
+        )
+
+
+def _validate_runtime_conductor_target(saved, runtime, reasons):
+    label = f"Conductor {saved.identifier!r}"
+    runtime_cond_time = np.asarray(
+        getattr(runtime, "cond_time", ()), dtype=float
+    )
+    if (
+        runtime_cond_time.shape != (1,)
+        or not np.isclose(runtime_cond_time[0], 0.0)
+    ):
+        reasons.append(f"{label} runtime clock must start at time zero.")
+    if getattr(runtime, "cond_num_step", None) != 0:
+        reasons.append(f"{label} runtime cond_num_step must be zero before restore.")
+    if getattr(runtime, "i_save", None) != 0:
+        reasons.append(f"{label} runtime i_save must be zero before restore.")
+
+    runtime_inputs = getattr(runtime, "inputs", {})
+    runtime_th_method = (
+        runtime_inputs.get("METHOD")
+        if isinstance(runtime_inputs, Mapping)
+        else None
+    )
+    runtime_electric_method = (
+        runtime_inputs.get("ELECTRIC_METHOD")
+        if isinstance(runtime_inputs, Mapping)
+        else None
+    )
+    if runtime_th_method != saved.th_method:
+        reasons.append(
+            f"{label} TH method differs: checkpoint={saved.th_method!r}, "
+            f"runtime={runtime_th_method!r}."
+        )
+    if runtime_electric_method != saved.electric_method:
+        reasons.append(
+            f"{label} electric method differs: "
+            f"checkpoint={saved.electric_method!r}, "
+            f"runtime={runtime_electric_method!r}."
+        )
+
+    try:
+        runtime_inventory = _component_inventory(runtime, label)
+    except CheckpointValidationError as exc:
+        reasons.append(str(exc))
+        runtime_inventory = []
+    runtime_components = {
+        component.identifier: (component, kind)
+        for component, kind in runtime_inventory
+    }
+    saved_ids = set(saved.components)
+    runtime_ids = set(runtime_components)
+    reasons.extend(
+        f"{label} is missing component {identifier!r}."
+        for identifier in sorted(saved_ids - runtime_ids)
+    )
+    reasons.extend(
+        f"{label} contains unexpected component {identifier!r}."
+        for identifier in sorted(runtime_ids - saved_ids)
+    )
+    for identifier in sorted(saved_ids & runtime_ids):
+        saved_kind = saved.components[identifier]["kind"]
+        runtime_kind = runtime_components[identifier][1]
+        if saved_kind != runtime_kind:
+            reasons.append(
+                f"{label} component {identifier!r} kind differs: "
+                f"checkpoint={saved_kind!r}, runtime={runtime_kind!r}."
+            )
+
+    _validate_matching_mapping_shapes(
+        saved.th_history,
+        getattr(runtime, "dict_Step", None),
+        f"{label} TH history",
+        reasons,
+    )
+    _validate_matching_shape(
+        saved.clock.get("EQTEIG"),
+        getattr(runtime, "EQTEIG", None),
+        f"{label} EQTEIG",
+        reasons,
+    )
+    _validate_event_timeline(saved, runtime, label, reasons)
+    _validate_electric_target(saved, runtime, label, reasons)
+    _validate_output_target(
+        saved,
+        runtime,
+        runtime_components,
+        label,
+        reasons,
+    )
+
+
+def _validate_matching_mapping_shapes(saved, runtime, label, reasons):
+    if not isinstance(runtime, Mapping):
+        reasons.append(f"{label} is missing from the runtime.")
+        return
+    saved_keys = set(saved)
+    runtime_keys = set(runtime)
+    reasons.extend(
+        f"{label} is missing key {key!r}."
+        for key in sorted(saved_keys - runtime_keys)
+    )
+    reasons.extend(
+        f"{label} contains unexpected key {key!r}."
+        for key in sorted(runtime_keys - saved_keys)
+    )
+    for key in sorted(saved_keys & runtime_keys):
+        _validate_matching_shape(
+            saved[key], runtime[key], f"{label}[{key!r}]", reasons
+        )
+
+
+def _validate_matching_shape(saved, runtime, label, reasons):
+    if runtime is None:
+        reasons.append(f"{label} is missing from the runtime.")
+        return
+    saved_shape = np.asarray(saved).shape
+    runtime_shape = np.asarray(runtime).shape
+    if saved_shape != runtime_shape:
+        reasons.append(
+            f"{label} shape differs: checkpoint={saved_shape!r}, "
+            f"runtime={runtime_shape!r}."
+        )
+
+
+def _validate_event_timeline(saved, runtime, label, reasons):
+    saved_events = np.asarray(saved.clock.get("events_time"))
+    runtime_events = getattr(runtime, "events_time", None)
+    if runtime_events is None:
+        reasons.append(f"{label} event timeline is missing from the runtime.")
+        return
+    runtime_events = np.asarray(runtime_events)
+    if (
+        saved_events.shape != runtime_events.shape
+        or not np.allclose(
+            saved_events,
+            runtime_events,
+            rtol=1.0e-12,
+            atol=1.0e-12,
+        )
+    ):
+        reasons.append(f"{label} event timeline differs from the checkpoint.")
+    saved_i_event = saved.clock.get("i_event")
+    if not isinstance(saved_i_event, (int, np.integer)) or not (
+        0 <= int(saved_i_event) < saved_events.size
+    ):
+        reasons.append(f"{label} saved i_event is outside the event timeline.")
+
+
+def _validate_electric_target(saved, runtime, label, reasons):
+    runtime_inputs = getattr(runtime, "inputs", {})
+    runtime_active = (
+        isinstance(runtime_inputs, Mapping)
+        and runtime_inputs.get("I0_OP_MODE") is not None
+    )
+    saved_active = bool(saved.electric)
+    if saved_active != runtime_active:
+        reasons.append(
+            f"{label} electric activation differs: "
+            f"checkpoint={saved_active!r}, runtime={runtime_active!r}."
+        )
+        return
+    if not saved_active:
+        return
+    for key in ("electric_solution", "electric_solution_steady"):
+        _validate_matching_shape(
+            saved.electric.get(key),
+            getattr(runtime, key, None),
+            f"{label} {key}",
+            reasons,
+        )
+
+
+def _validate_output_target(saved, runtime, runtime_components, label, reasons):
+    saved_output = saved.output_state
+    runtime_num_step_save = getattr(runtime, "num_step_save", None)
+    _validate_matching_shape(
+        saved_output.get("num_step_save"),
+        runtime_num_step_save,
+        f"{label} num_step_save",
+        reasons,
+    )
+
+    saved_i_save = saved_output.get("i_save")
+    runtime_space_save = getattr(runtime, "Space_save", None)
+    if runtime_space_save is None:
+        reasons.append(f"{label} Space_save is missing from the runtime.")
+    elif not isinstance(saved_i_save, (int, np.integer)) or not (
+        0 <= int(saved_i_save) < np.asarray(runtime_space_save).size
+    ):
+        reasons.append(f"{label} saved i_save is outside runtime Space_save.")
+
+    saved_buffers = saved_output.get("buffers", {})
+    saved_conductor_buffer = saved_buffers.get("conductor")
+    if not isinstance(saved_conductor_buffer, Mapping):
+        reasons.append(f"{label} conductor output buffer is missing.")
+    else:
+        _validate_output_owner(
+            saved_conductor_buffer, runtime, f"{label} output owner conductor", reasons
+        )
+
+    saved_component_buffers = saved_buffers.get("components", {})
+    if not isinstance(saved_component_buffers, Mapping):
+        reasons.append(f"{label} component output buffers are missing.")
+        return
+    for identifier in sorted(set(saved_component_buffers) & set(runtime_components)):
+        saved_owners = saved_component_buffers[identifier]
+        component = runtime_components[identifier][0]
+        runtime_owners = {"object": component}
+        if hasattr(component, "coolant"):
+            runtime_owners["coolant"] = component.coolant
+        if hasattr(component, "channel"):
+            runtime_owners["channel"] = component.channel
+
+        if not isinstance(saved_owners, Mapping):
+            reasons.append(
+                f"{label} component {identifier!r} output owners are invalid."
+            )
+            continue
+        saved_owner_names = set(saved_owners)
+        runtime_owner_names = set(runtime_owners)
+        reasons.extend(
+            f"{label} component {identifier!r} is missing output owner {name!r}."
+            for name in sorted(saved_owner_names - runtime_owner_names)
+        )
+        reasons.extend(
+            f"{label} component {identifier!r} has unexpected output owner {name!r}."
+            for name in sorted(runtime_owner_names - saved_owner_names)
+        )
+        for owner_name in sorted(saved_owner_names & runtime_owner_names):
+            _validate_output_owner(
+                saved_owners[owner_name],
+                runtime_owners[owner_name],
+                f"{label} component {identifier!r} output owner {owner_name!r}",
+                reasons,
+            )
+
+
+def _validate_output_owner(saved, runtime, label, reasons):
+    if not isinstance(saved, Mapping):
+        reasons.append(f"{label} buffer is invalid.")
+        return
+    for attribute in sorted(saved):
+        if attribute not in _OUTPUT_BUFFER_ATTRIBUTES:
+            reasons.append(f"{label} has unsupported buffer {attribute!r}.")
+        elif not hasattr(runtime, attribute):
+            reasons.append(f"{label} is missing buffer {attribute!r}.")
 
 
 def _read_checkpoint_file(h5file, checkpoint_path):

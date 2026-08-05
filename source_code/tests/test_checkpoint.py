@@ -1,6 +1,6 @@
 import hashlib
 import os
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
@@ -19,6 +19,7 @@ from utility_functions.checkpoint import (
     compare_input_manifest,
     evaluate_restart_compatibility,
     read_checkpoint,
+    validate_runtime_restore_target,
     validate_checkpoint_state,
     write_checkpoint,
     write_periodic_checkpoint_if_due,
@@ -79,6 +80,7 @@ def make_simulation(base_path, *, force_next_tstep_flag=False):
         E_jk_ini=6.0,
         i_save=1,
         num_step_save=np.array([0, 1]),
+        Space_save=np.array([0.0, 0.1]),
         t_save_left=0.1,
         store_sd_node={"zcoord": {"t_save_left": np.array([0.0, 1.0])}},
         store_sd_gauss={},
@@ -94,6 +96,20 @@ def make_simulation(base_path, *, force_next_tstep_flag=False):
         num_step=1,
         list_of_Conductors=[conductor],
     )
+
+
+def make_restore_target(base_path):
+    simulation = make_simulation(base_path)
+    simulation.simulation_time = [0.0]
+    simulation.num_step = 0
+    conductor = simulation.list_of_Conductors[0]
+    conductor.cond_time = [0.0]
+    conductor.cond_num_step = 0
+    conductor.electric_time = 0.0
+    conductor.cond_el_num_step = 0
+    conductor.i_save = 0
+    conductor.num_step_save[:] = 0
+    return simulation
 
 
 class CheckpointTests(unittest.TestCase):
@@ -397,6 +413,165 @@ class CheckpointTests(unittest.TestCase):
         second = evaluate_restart_compatibility(checkpoint, self.input_dir)
 
         self.assertEqual(first, second)
+
+    def test_runtime_restore_target_accepts_matching_fresh_runtime(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+
+        report = validate_runtime_restore_target(checkpoint, target)
+
+        self.assertTrue(report.is_valid)
+        self.assertEqual(report.blocking_reasons, ())
+        self.assertEqual(report.warnings, ())
+        with self.assertRaises(FrozenInstanceError):
+            report.is_valid = False
+
+    def test_runtime_restore_target_requires_detached_checkpoint(self):
+        with self.assertRaisesRegex(TypeError, "CheckpointData"):
+            validate_runtime_restore_target(
+                object(), make_restore_target(self.input_dir)
+            )
+
+    def test_runtime_restore_target_reports_inconsistent_checkpoint_clock(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        checkpoint = replace(
+            checkpoint,
+            simulation_time=np.array([0.0, 0.2]),
+            num_step=2,
+        )
+
+        report = validate_runtime_restore_target(
+            checkpoint, make_restore_target(self.input_dir)
+        )
+
+        self.assertIn(
+            "Checkpoint global num_step does not equal "
+            "len(simulation_time) - 1.",
+            report.blocking_reasons,
+        )
+        self.assertIn(
+            "Conductor 'COND_1' checkpoint step does not match the global "
+            "checkpoint step.",
+            report.blocking_reasons,
+        )
+        self.assertIn(
+            "Checkpoint global time does not equal the latest conductor time.",
+            report.blocking_reasons,
+        )
+
+    def test_runtime_restore_target_rejects_non_fresh_runtime(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_simulation(self.input_dir)
+
+        report = validate_runtime_restore_target(checkpoint, target)
+
+        self.assertFalse(report.is_valid)
+        self.assertIn(
+            "Runtime simulation num_step must be zero before restore.",
+            report.blocking_reasons,
+        )
+        self.assertIn(
+            "Conductor 'COND_1' runtime cond_num_step must be zero before restore.",
+            report.blocking_reasons,
+        )
+
+    def test_runtime_restore_target_reports_conductor_inventory_mismatch(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        target.list_of_Conductors[0].identifier = "OTHER"
+
+        report = validate_runtime_restore_target(checkpoint, target)
+
+        self.assertEqual(
+            report.blocking_reasons,
+            (
+                "Runtime is missing conductor 'COND_1'.",
+                "Runtime contains unexpected conductor 'OTHER'.",
+            ),
+        )
+
+    def test_runtime_restore_target_reports_method_history_and_event_mismatch(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        conductor = target.list_of_Conductors[0]
+        conductor.inputs["METHOD"] = "BE"
+        conductor.inputs["ELECTRIC_METHOD"] = "BE"
+        conductor.dict_Step["SYSVAR"] = np.zeros((7, 2))
+        conductor.events_time = np.array([0.02, 1.0])
+
+        report = validate_runtime_restore_target(checkpoint, target)
+
+        self.assertFalse(report.is_valid)
+        self.assertIn("Conductor 'COND_1' TH method differs", report.blocking_reasons[0])
+        self.assertTrue(
+            any("SYSVAR" in reason and "shape differs" in reason
+                for reason in report.blocking_reasons)
+        )
+        self.assertIn(
+            "Conductor 'COND_1' event timeline differs from the checkpoint.",
+            report.blocking_reasons,
+        )
+
+    def test_runtime_restore_target_reports_component_kind_mismatch(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        conductor = target.list_of_Conductors[0]
+        fluid = conductor.inventory["FluidComponent"].collection.pop()
+        conductor.inventory["SolidComponent"].collection.insert(0, fluid)
+
+        report = validate_runtime_restore_target(checkpoint, target)
+
+        self.assertIn(
+            "Conductor 'COND_1' component 'CHAN_1' kind differs: "
+            "checkpoint='fluid', runtime='solid'.",
+            report.blocking_reasons,
+        )
+
+    def test_runtime_restore_target_reports_electric_activation_mismatch(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        target.list_of_Conductors[0].inputs["I0_OP_MODE"] = None
+
+        report = validate_runtime_restore_target(checkpoint, target)
+
+        self.assertIn(
+            "Conductor 'COND_1' electric activation differs: "
+            "checkpoint=True, runtime=False.",
+            report.blocking_reasons,
+        )
+
+    def test_runtime_restore_target_reports_output_incompatibilities(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        conductor = target.list_of_Conductors[0]
+        conductor.Space_save = np.array([0.0])
+        del conductor.inventory["SolidComponent"].collection[0].time_evol
+
+        report = validate_runtime_restore_target(checkpoint, target)
+
+        self.assertIn(
+            "Conductor 'COND_1' saved i_save is outside runtime Space_save.",
+            report.blocking_reasons,
+        )
+        self.assertTrue(
+            any("missing buffer 'time_evol'" in reason
+                for reason in report.blocking_reasons)
+        )
+
+    def test_runtime_restore_validation_is_deterministic_and_non_mutating(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        original_sysvar = target.list_of_Conductors[0].dict_Step["SYSVAR"].copy()
+        original_time = list(target.simulation_time)
+
+        first = validate_runtime_restore_target(checkpoint, target)
+        second = validate_runtime_restore_target(checkpoint, target)
+
+        self.assertEqual(first, second)
+        self.assertEqual(target.simulation_time, original_time)
+        np.testing.assert_array_equal(
+            target.list_of_Conductors[0].dict_Step["SYSVAR"], original_sysvar
+        )
 
     def _checkpoint_with_current_inputs(self):
         simulation = make_simulation(self.input_dir)
