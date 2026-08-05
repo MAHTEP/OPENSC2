@@ -93,6 +93,17 @@ class InputManifestComparison:
 
 
 @dataclass(frozen=True)
+class RestartCompatibilityReport:
+    """Non-destructive decision about whether a restart may proceed."""
+
+    mode: str
+    is_compatible: bool
+    manifest_comparison: InputManifestComparison
+    blocking_reasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class ConductorCheckpointData:
     """Detached persistent state of one conductor."""
 
@@ -189,6 +200,56 @@ def compare_input_manifest(checkpoint, input_directory):
         missing=missing,
         added=added,
         modified=modified,
+    )
+
+
+def evaluate_restart_compatibility(
+    checkpoint,
+    input_directory,
+    mode="recovery",
+):
+    """Evaluate restart compatibility without mutating runtime state.
+
+    ``recovery`` is accepted only when the current input manifest is exactly
+    equal to the one persisted in the checkpoint.  ``continuation`` is kept as
+    an explicit interface value, but is blocked until semantic input
+    compatibility has been implemented.  Unknown modes are programming or
+    user-interface errors and are rejected immediately.
+    """
+
+    valid_modes = ("recovery", "continuation")
+    if mode not in valid_modes:
+        raise ValueError(
+            f"Invalid restart mode {mode!r}; expected one of {valid_modes!r}."
+        )
+
+    comparison = compare_input_manifest(checkpoint, input_directory)
+    blocking_reasons = []
+
+    if mode == "continuation":
+        blocking_reasons.append(
+            "Restart mode 'continuation' is not supported yet."
+        )
+    else:
+        blocking_reasons.extend(
+            f"Input file is missing: {entry.path}."
+            for entry in comparison.missing
+        )
+        blocking_reasons.extend(
+            f"Unexpected input file was added: {entry.path}."
+            for entry in comparison.added
+        )
+        blocking_reasons.extend(
+            f"Input file was modified: {change.checkpoint.path}."
+            for change in comparison.modified
+        )
+
+    return RestartCompatibilityReport(
+        mode=mode,
+        is_compatible=not blocking_reasons,
+        manifest_comparison=comparison,
+        blocking_reasons=tuple(blocking_reasons),
+        warnings=(),
     )
 
 

@@ -1,5 +1,6 @@
 import hashlib
 import os
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
@@ -16,6 +17,7 @@ from utility_functions.checkpoint import (
     SCHEMA_VERSION,
     build_input_manifest,
     compare_input_manifest,
+    evaluate_restart_compatibility,
     read_checkpoint,
     validate_checkpoint_state,
     write_checkpoint,
@@ -278,6 +280,130 @@ class CheckpointTests(unittest.TestCase):
     def test_manifest_comparison_requires_detached_checkpoint_data(self):
         with self.assertRaisesRegex(TypeError, "CheckpointData"):
             compare_input_manifest(object(), self.input_dir)
+
+    def test_recovery_compatibility_accepts_identical_inputs(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint_path = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        checkpoint = read_checkpoint(checkpoint_path)
+
+        report = evaluate_restart_compatibility(
+            checkpoint, self.input_dir, mode="recovery"
+        )
+
+        self.assertEqual(report.mode, "recovery")
+        self.assertTrue(report.is_compatible)
+        self.assertTrue(report.manifest_comparison.is_match)
+        self.assertEqual(report.blocking_reasons, ())
+        self.assertEqual(report.warnings, ())
+        with self.assertRaises(FrozenInstanceError):
+            report.is_compatible = False
+
+    def test_recovery_compatibility_rejects_missing_input(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        (self.input_dir / "transitory_input.xlsx").unlink()
+
+        report = evaluate_restart_compatibility(checkpoint, self.input_dir)
+
+        self.assertFalse(report.is_compatible)
+        self.assertEqual(
+            report.blocking_reasons,
+            ("Input file is missing: transitory_input.xlsx.",),
+        )
+
+    def test_recovery_compatibility_rejects_added_input(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        (self.input_dir / "added.tsv").write_bytes(b"added")
+
+        report = evaluate_restart_compatibility(checkpoint, self.input_dir)
+
+        self.assertFalse(report.is_compatible)
+        self.assertEqual(
+            report.blocking_reasons,
+            ("Unexpected input file was added: added.tsv.",),
+        )
+
+    def test_recovery_compatibility_rejects_modified_input(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        (self.input_dir / "transitory_input.xlsx").write_bytes(b"changed")
+
+        report = evaluate_restart_compatibility(checkpoint, self.input_dir)
+
+        self.assertFalse(report.is_compatible)
+        self.assertEqual(
+            report.blocking_reasons,
+            ("Input file was modified: transitory_input.xlsx.",),
+        )
+
+    def test_recovery_compatibility_accumulates_all_incompatibilities(self):
+        (self.input_dir / "missing.tsv").write_bytes(b"missing")
+        (self.input_dir / "modified.tsv").write_bytes(b"before")
+        checkpoint = self._checkpoint_with_current_inputs()
+        (self.input_dir / "missing.tsv").unlink()
+        (self.input_dir / "modified.tsv").write_bytes(b"after")
+        (self.input_dir / "added.tsv").write_bytes(b"added")
+
+        report = evaluate_restart_compatibility(checkpoint, self.input_dir)
+
+        self.assertFalse(report.is_compatible)
+        self.assertEqual(
+            report.blocking_reasons,
+            (
+                "Input file is missing: missing.tsv.",
+                "Unexpected input file was added: added.tsv.",
+                "Input file was modified: modified.tsv.",
+            ),
+        )
+
+    def test_continuation_is_explicitly_blocked(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+
+        report = evaluate_restart_compatibility(
+            checkpoint, self.input_dir, mode="continuation"
+        )
+
+        self.assertFalse(report.is_compatible)
+        self.assertTrue(report.manifest_comparison.is_match)
+        self.assertEqual(
+            report.blocking_reasons,
+            ("Restart mode 'continuation' is not supported yet.",),
+        )
+
+    def test_unknown_restart_mode_is_rejected(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+
+        with self.assertRaisesRegex(ValueError, "Invalid restart mode"):
+            evaluate_restart_compatibility(
+                checkpoint, self.input_dir, mode="resume"
+            )
+
+    def test_compatibility_evaluation_does_not_mutate_checkpoint(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        original_manifest = checkpoint.input_manifest
+        original_time = checkpoint.simulation_time.copy()
+
+        evaluate_restart_compatibility(checkpoint, self.input_dir)
+
+        self.assertIs(checkpoint.input_manifest, original_manifest)
+        np.testing.assert_array_equal(checkpoint.simulation_time, original_time)
+
+    def test_compatibility_evaluation_is_deterministic(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        (self.input_dir / "z_added.tsv").write_bytes(b"z")
+        (self.input_dir / "a_added.tsv").write_bytes(b"a")
+
+        first = evaluate_restart_compatibility(checkpoint, self.input_dir)
+        second = evaluate_restart_compatibility(checkpoint, self.input_dir)
+
+        self.assertEqual(first, second)
+
+    def _checkpoint_with_current_inputs(self):
+        simulation = make_simulation(self.input_dir)
+        checkpoint_path = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+        return read_checkpoint(checkpoint_path)
 
     def test_invalid_boundary_does_not_create_final_checkpoint(self):
         simulation = make_simulation(
