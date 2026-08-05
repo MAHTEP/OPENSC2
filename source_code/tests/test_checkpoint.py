@@ -13,6 +13,7 @@ import numpy as np
 from utility_functions.checkpoint import (
     CheckpointReadError,
     CheckpointValidationError,
+    apply_checkpoint_to_runtime,
     checkpoint_interval,
     SCHEMA_VERSION,
     build_input_manifest,
@@ -572,6 +573,208 @@ class CheckpointTests(unittest.TestCase):
         np.testing.assert_array_equal(
             target.list_of_Conductors[0].dict_Step["SYSVAR"], original_sysvar
         )
+
+    def test_checkpoint_application_restores_persisted_runtime_state(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        conductor = target.list_of_Conductors[0]
+        solid = conductor.inventory["SolidComponent"].collection[0]
+        coolant = conductor.inventory["FluidComponent"].collection[0].coolant
+
+        conductor.dict_Step["SYSVAR"][:] = -1.0
+        conductor.electric_solution[:] = -2.0
+        conductor.enthalpy_balance = -3.0
+        solid.dict_node_pt["EEXT"][:] = -4.0
+        coolant.time_evol["pressure"] = [0.0]
+        del conductor.t_save_left
+
+        result = apply_checkpoint_to_runtime(checkpoint, target)
+
+        self.assertIsNone(result)
+        self.assertEqual(target.simulation_time, [0.0, 0.1])
+        self.assertEqual(target.num_step, 1)
+        self.assertEqual(conductor.cond_time, [0.0, 0.1])
+        self.assertEqual(conductor.cond_num_step, 1)
+        self.assertEqual(conductor.time_step, 0.1)
+        np.testing.assert_allclose(conductor.EQTEIG, [1.0, 2.0])
+        self.assertEqual(conductor.i_event, 1)
+        self.assertEqual(conductor.electric_time, 0.1)
+        self.assertEqual(conductor.cond_el_num_step, 10)
+        np.testing.assert_allclose(
+            conductor.dict_Step["SYSVAR"],
+            checkpoint.conductors["COND_1"].th_history["SYSVAR"],
+        )
+        np.testing.assert_allclose(conductor.electric_solution, [10.0, 20.0])
+        self.assertEqual(conductor.enthalpy_balance, 1.0)
+        np.testing.assert_allclose(
+            solid.dict_node_pt["EEXT"], np.arange(6.0).reshape(3, 2)
+        )
+        self.assertEqual(conductor.i_save, 1)
+        np.testing.assert_array_equal(conductor.num_step_save, [0, 1])
+        self.assertEqual(conductor.t_save_left, 0.1)
+        self.assertEqual(coolant.time_evol["pressure"], [1.0e5, 1.01e5])
+
+    def test_checkpoint_application_preserves_appendable_history_types(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        conductor = target.list_of_Conductors[0]
+        coolant = conductor.inventory["FluidComponent"].collection[0].coolant
+        original_events = conductor.events_time
+        original_space_save = conductor.Space_save
+
+        apply_checkpoint_to_runtime(checkpoint, target)
+
+        self.assertIsInstance(target.simulation_time, list)
+        self.assertIsInstance(conductor.cond_time, list)
+        self.assertIsInstance(coolant.time_evol["pressure"], list)
+        self.assertIsInstance(coolant.time_evol_io["time (s)"], list)
+        self.assertIs(conductor.events_time, original_events)
+        self.assertIs(conductor.Space_save, original_space_save)
+        target.simulation_time.append(0.2)
+        conductor.cond_time.append(0.2)
+        coolant.time_evol_io["time (s)"].append(0.2)
+
+    def test_checkpoint_application_uses_independent_deep_copies(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+
+        apply_checkpoint_to_runtime(checkpoint, target)
+
+        conductor = target.list_of_Conductors[0]
+        saved = checkpoint.conductors["COND_1"]
+        conductor.dict_Step["SYSVAR"][0, 0] = -99.0
+        conductor.inventory["SolidComponent"].collection[0].dict_node_pt[
+            "EEXT"
+        ][0, 0] = -98.0
+        conductor.inventory["FluidComponent"].collection[0].coolant.time_evol[
+            "pressure"
+        ][0] = -97.0
+
+        self.assertEqual(saved.th_history["SYSVAR"][0, 0], 0.0)
+        self.assertEqual(
+            saved.components["STACK_1"]["energy_history"]["EEXT"][0, 0],
+            0.0,
+        )
+        self.assertEqual(
+            saved.output_state["buffers"]["components"]["CHAN_1"]
+            ["coolant"]["time_evol"]["pressure"][0],
+            1.0e5,
+        )
+
+    def test_checkpoint_application_rejects_invalid_target_before_mutation(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        target.num_step = 7
+        original_time = list(target.simulation_time)
+        original_sysvar = target.list_of_Conductors[0].dict_Step[
+            "SYSVAR"
+        ].copy()
+
+        with self.assertRaisesRegex(
+            CheckpointValidationError, "Runtime restore target is not valid"
+        ):
+            apply_checkpoint_to_runtime(checkpoint, target)
+
+        self.assertEqual(target.simulation_time, original_time)
+        self.assertEqual(target.num_step, 7)
+        np.testing.assert_array_equal(
+            target.list_of_Conductors[0].dict_Step["SYSVAR"], original_sysvar
+        )
+
+    def test_checkpoint_application_rechecks_manifest_before_mutation(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        (self.input_dir / "transitory_input.xlsx").write_bytes(b"changed")
+
+        with self.assertRaisesRegex(
+            CheckpointValidationError,
+            "Checkpoint inputs are not compatible with recovery",
+        ):
+            apply_checkpoint_to_runtime(checkpoint, target)
+
+        self.assertEqual(target.simulation_time, [0.0])
+        self.assertEqual(target.num_step, 0)
+
+    def test_runtime_validation_covers_mutating_restore_destinations(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        conductor = target.list_of_Conductors[0]
+        solid = conductor.inventory["SolidComponent"].collection[0]
+        coolant = conductor.inventory["FluidComponent"].collection[0].coolant
+        del conductor.enthalpy_balance
+        solid.dict_node_pt["EEXT"] = np.zeros((1, 1))
+        coolant.time_evol["runtime_only"] = [0.0]
+
+        report = validate_runtime_restore_target(checkpoint, target)
+
+        self.assertIn(
+            "Conductor 'COND_1' is missing balance 'enthalpy_balance'.",
+            report.blocking_reasons,
+        )
+        self.assertTrue(
+            any("STACK_1" in reason and "EEXT" in reason
+                and "shape differs" in reason
+                for reason in report.blocking_reasons)
+        )
+        self.assertTrue(
+            any("runtime_only" in reason and "unexpected runtime key" in reason
+                for reason in report.blocking_reasons)
+        )
+
+    def test_checkpoint_application_restores_lazily_created_output_keys(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        conductor = target.list_of_Conductors[0]
+        saved_store = checkpoint.conductors["COND_1"].output_state[
+            "buffers"
+        ]["conductor"]["store_sd_node"]
+        saved_store["htc_ch_sol"] = {
+            "t_save": {"CHAN_1_STACK_1": np.array([10.0, 11.0])},
+            "t_save_left": {"CHAN_1_STACK_1": np.array([8.0, 9.0])},
+        }
+        conductor.store_sd_node["htc_ch_sol"] = {
+            "t_save": {},
+            "t_save_left": {},
+        }
+
+        report = validate_runtime_restore_target(checkpoint, target)
+
+        self.assertTrue(report.is_valid, report.blocking_reasons)
+        apply_checkpoint_to_runtime(checkpoint, target)
+        restored = conductor.store_sd_node["htc_ch_sol"]["t_save"][
+            "CHAN_1_STACK_1"
+        ]
+        np.testing.assert_array_equal(restored, [10.0, 11.0])
+        self.assertFalse(
+            np.shares_memory(
+                restored,
+                saved_store["htc_ch_sol"]["t_save"]["CHAN_1_STACK_1"],
+            )
+        )
+
+    def test_checkpoint_application_accepts_inactive_electric_model(self):
+        source = make_simulation(self.input_dir)
+        conductor = source.list_of_Conductors[0]
+        conductor.inputs["I0_OP_MODE"] = None
+        del conductor.electric_solution
+        del conductor.electric_solution_steady
+        checkpoint_path = write_checkpoint(
+            source, self.root / "checkpoints", trigger="periodic"
+        )
+        checkpoint = read_checkpoint(checkpoint_path)
+        source.simulation_time = [0.0]
+        source.num_step = 0
+        conductor.cond_time = [0.0]
+        conductor.cond_num_step = 0
+        conductor.i_save = 0
+        conductor.num_step_save[:] = 0
+
+        apply_checkpoint_to_runtime(checkpoint, source)
+
+        self.assertEqual(source.simulation_time, [0.0, 0.1])
+        self.assertEqual(conductor.cond_time, [0.0, 0.1])
+        self.assertFalse(hasattr(conductor, "electric_solution"))
+        self.assertFalse(hasattr(conductor, "electric_solution_steady"))
 
     def _checkpoint_with_current_inputs(self):
         simulation = make_simulation(self.input_dir)

@@ -1,11 +1,11 @@
-"""HDF5 checkpoint persistence utilities.
+"""HDF5 checkpoint persistence and recovery utilities.
 
-The reader deliberately returns a detached intermediate representation.  It
-does not receive or mutate live OPENSC2 objects.  Restoring that representation
-into a simulation is handled by a later increment, after the initialization
-path has been made restart-aware.
+The reader returns a detached intermediate representation.  Runtime validation
+and state application are separate operations so every incompatibility can be
+reported before a live OPENSC2 object is mutated.
 """
 
+import copy
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -318,6 +318,211 @@ def validate_runtime_restore_target(checkpoint, simulation):
     )
 
 
+def apply_checkpoint_to_runtime(checkpoint, simulation):
+    """Apply validated checkpoint state to a freshly initialized runtime.
+
+    This function restores only state already persisted in schema 1.1.  It
+    does not synchronize component primary variables from ``SYSVAR``, rebuild
+    derived properties, touch output files, or enter the transient loop.
+
+    All replacement values are prepared before the first assignment.  Runtime
+    container types are preserved where they are operationally significant;
+    in particular, time histories remain lists so the solver can append the
+    next completed time.
+    """
+
+    compatibility = evaluate_restart_compatibility(
+        checkpoint,
+        getattr(simulation, "basePath", None),
+        mode="recovery",
+    )
+    if not compatibility.is_compatible:
+        details = "\n".join(
+            f"- {reason}" for reason in compatibility.blocking_reasons
+        )
+        raise CheckpointValidationError(
+            "Checkpoint inputs are not compatible with recovery:\n" + details
+        )
+
+    report = validate_runtime_restore_target(checkpoint, simulation)
+    if not report.is_valid:
+        details = "\n".join(f"- {reason}" for reason in report.blocking_reasons)
+        raise CheckpointValidationError(
+            "Runtime restore target is not valid:\n" + details
+        )
+
+    runtime_by_identifier = {
+        conductor.identifier: conductor
+        for conductor in simulation.list_of_Conductors
+    }
+
+    prepared_simulation_time = _copy_for_runtime(
+        checkpoint.simulation_time,
+        simulation.simulation_time,
+    )
+    prepared_conductors = []
+    for identifier in sorted(checkpoint.conductors):
+        saved = checkpoint.conductors[identifier]
+        runtime = runtime_by_identifier[identifier]
+        runtime_components = {
+            component.identifier: component
+            for component, _kind in _component_inventory(
+                runtime, f"conductor {identifier!r}"
+            )
+        }
+
+        clock = {
+            attribute: _copy_for_runtime(
+                saved.clock[attribute], getattr(runtime, attribute)
+            )
+            for attribute in (
+                "cond_time",
+                "cond_num_step",
+                "time_step",
+                "EQTEIG",
+                "i_event",
+            )
+        }
+        for attribute in ("electric_time", "cond_el_num_step"):
+            if attribute in saved.clock:
+                clock[attribute] = _copy_for_runtime(
+                    saved.clock[attribute], getattr(runtime, attribute)
+                )
+
+        th_history = _copy_for_runtime(saved.th_history, runtime.dict_Step)
+        electric = {
+            attribute: _copy_for_runtime(value, getattr(runtime, attribute))
+            for attribute, value in saved.electric.items()
+        }
+        balances = {
+            attribute: _copy_for_runtime(value, getattr(runtime, attribute))
+            for attribute, value in saved.balances.items()
+        }
+
+        component_energy = {}
+        for component_identifier, component_state in saved.components.items():
+            if component_state["kind"] != "solid":
+                continue
+            runtime_component = runtime_components[component_identifier]
+            component_energy[component_identifier] = {
+                key: _copy_for_runtime(
+                    value, runtime_component.dict_node_pt[key]
+                )
+                for key, value in component_state["energy_history"].items()
+            }
+
+        output_attributes = {
+            attribute: _copy_for_runtime(
+                value, getattr(runtime, attribute, None)
+            )
+            for attribute, value in saved.output_state.items()
+            if attribute != "buffers"
+        }
+        output_buffers = []
+        for owner_path, owner in _runtime_output_owners(runtime):
+            saved_owner = _mapping_path(
+                saved.output_state["buffers"], owner_path
+            )
+            for attribute, value in saved_owner.items():
+                output_buffers.append(
+                    (
+                        owner,
+                        attribute,
+                        _copy_for_runtime(value, getattr(owner, attribute)),
+                    )
+                )
+
+        prepared_conductors.append(
+            (
+                runtime,
+                clock,
+                th_history,
+                electric,
+                balances,
+                runtime_components,
+                component_energy,
+                output_attributes,
+                output_buffers,
+            )
+        )
+
+    simulation.simulation_time = prepared_simulation_time
+    simulation.num_step = int(checkpoint.num_step)
+    for (
+        runtime,
+        clock,
+        th_history,
+        electric,
+        balances,
+        runtime_components,
+        component_energy,
+        output_attributes,
+        output_buffers,
+    ) in prepared_conductors:
+        for attribute, value in clock.items():
+            setattr(runtime, attribute, value)
+        runtime.dict_Step = th_history
+        for attribute, value in electric.items():
+            setattr(runtime, attribute, value)
+        for attribute, value in balances.items():
+            setattr(runtime, attribute, value)
+        for component_identifier, energy_history in component_energy.items():
+            node_state = runtime_components[component_identifier].dict_node_pt
+            for key, value in energy_history.items():
+                node_state[key] = value
+        for attribute, value in output_attributes.items():
+            setattr(runtime, attribute, value)
+        for owner, attribute, value in output_buffers:
+            setattr(owner, attribute, value)
+
+
+def _copy_for_runtime(saved, runtime_template):
+    """Deep-copy saved data while retaining mutable runtime container types."""
+
+    if isinstance(runtime_template, Mapping):
+        return {
+            key: (
+                _copy_for_runtime(value, runtime_template[key])
+                if key in runtime_template
+                else copy.deepcopy(value)
+            )
+            for key, value in saved.items()
+        }
+    if isinstance(runtime_template, list):
+        values = saved.tolist() if isinstance(saved, np.ndarray) else list(saved)
+        return copy.deepcopy(values)
+    if isinstance(runtime_template, tuple):
+        values = saved.tolist() if isinstance(saved, np.ndarray) else list(saved)
+        return tuple(copy.deepcopy(values))
+    if isinstance(runtime_template, np.ndarray):
+        return np.array(saved, dtype=runtime_template.dtype, copy=True)
+    if isinstance(runtime_template, np.generic):
+        return np.asarray(saved, dtype=runtime_template.dtype).item()
+    return copy.deepcopy(saved)
+
+
+def _runtime_output_owners(conductor):
+    """Yield runtime output owners using decoded mapping path components."""
+
+    yield ("conductor",), conductor
+    for component, _kind in _component_inventory(
+        conductor, f"conductor {conductor.identifier!r}"
+    ):
+        base_path = ("components", component.identifier)
+        yield base_path + ("object",), component
+        if hasattr(component, "coolant"):
+            yield base_path + ("coolant",), component.coolant
+        if hasattr(component, "channel"):
+            yield base_path + ("channel",), component.channel
+
+
+def _mapping_path(mapping, path):
+    value = mapping
+    for key in path:
+        value = value[key]
+    return value
+
+
 def _validate_fresh_runtime_clock(simulation, reasons):
     simulation_time = np.asarray(
         getattr(simulation, "simulation_time", ()), dtype=float
@@ -422,12 +627,29 @@ def _validate_runtime_conductor_target(saved, runtime, reasons):
     )
     for identifier in sorted(saved_ids & runtime_ids):
         saved_kind = saved.components[identifier]["kind"]
-        runtime_kind = runtime_components[identifier][1]
+        runtime_component, runtime_kind = runtime_components[identifier]
         if saved_kind != runtime_kind:
             reasons.append(
                 f"{label} component {identifier!r} kind differs: "
                 f"checkpoint={saved_kind!r}, runtime={runtime_kind!r}."
             )
+        elif saved_kind == "solid":
+            runtime_node_state = getattr(runtime_component, "dict_node_pt", {})
+            for key, saved_value in saved.components[identifier][
+                "energy_history"
+            ].items():
+                if key not in runtime_node_state:
+                    reasons.append(
+                        f"{label} solid component {identifier!r} is missing "
+                        f"runtime energy history {key!r}."
+                    )
+                else:
+                    _validate_matching_shape(
+                        saved_value,
+                        runtime_node_state[key],
+                        f"{label} solid component {identifier!r} {key}",
+                        reasons,
+                    )
 
     _validate_matching_mapping_shapes(
         saved.th_history,
@@ -443,6 +665,9 @@ def _validate_runtime_conductor_target(saved, runtime, reasons):
     )
     _validate_event_timeline(saved, runtime, label, reasons)
     _validate_electric_target(saved, runtime, label, reasons)
+    for attribute in _BALANCE_ATTRIBUTES:
+        if not hasattr(runtime, attribute):
+            reasons.append(f"{label} is missing balance {attribute!r}.")
     _validate_output_target(
         saved,
         runtime,
@@ -607,6 +832,43 @@ def _validate_output_owner(saved, runtime, label, reasons):
             reasons.append(f"{label} has unsupported buffer {attribute!r}.")
         elif not hasattr(runtime, attribute):
             reasons.append(f"{label} is missing buffer {attribute!r}.")
+        else:
+            _validate_restore_container_structure(
+                saved[attribute],
+                getattr(runtime, attribute),
+                f"{label} buffer {attribute!r}",
+                reasons,
+            )
+
+
+def _validate_restore_container_structure(saved, runtime, label, reasons):
+    """Validate restorable mappings without requiring eager runtime keys.
+
+    Output dictionaries are populated lazily during the transient.  A fresh
+    runtime may therefore lack keys that legitimately exist in a checkpoint;
+    those keys will be created by ``_copy_for_runtime``.  Runtime-only keys
+    remain blocking because they indicate that the current runtime expects
+    state that the checkpoint cannot supply.
+    """
+
+    saved_is_mapping = isinstance(saved, Mapping)
+    runtime_is_mapping = isinstance(runtime, Mapping)
+    if saved_is_mapping != runtime_is_mapping:
+        reasons.append(f"{label} container type differs from the runtime.")
+        return
+    if not saved_is_mapping:
+        return
+
+    saved_keys = set(saved)
+    runtime_keys = set(runtime)
+    reasons.extend(
+        f"{label} has unexpected runtime key {key!r}."
+        for key in sorted(runtime_keys - saved_keys)
+    )
+    for key in sorted(saved_keys & runtime_keys):
+        _validate_restore_container_structure(
+            saved[key], runtime[key], f"{label}[{key!r}]", reasons
+        )
 
 
 def _read_checkpoint_file(h5file, checkpoint_path):
