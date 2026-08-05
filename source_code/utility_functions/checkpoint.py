@@ -321,9 +321,10 @@ def validate_runtime_restore_target(checkpoint, simulation):
 def apply_checkpoint_to_runtime(checkpoint, simulation):
     """Apply validated checkpoint state to a freshly initialized runtime.
 
-    This function restores only state already persisted in schema 1.1.  It
-    does not synchronize component primary variables from ``SYSVAR``, rebuild
-    derived properties, touch output files, or enter the transient loop.
+    This function restores state persisted in schema 1.1 and synchronizes the
+    fluid and solid primary nodal variables from ``SYSVAR``.  It does not
+    rebuild derived properties, touch output files, or enter the transient
+    loop.
 
     All replacement values are prepared before the first assignment.  Runtime
     container types are preserved where they are operationally significant;
@@ -390,6 +391,9 @@ def apply_checkpoint_to_runtime(checkpoint, simulation):
                 )
 
         th_history = _copy_for_runtime(saved.th_history, runtime.dict_Step)
+        component_primary_state = _prepare_component_primary_state(
+            runtime, th_history
+        )
         electric = {
             attribute: _copy_for_runtime(value, getattr(runtime, attribute))
             for attribute, value in saved.electric.items()
@@ -440,6 +444,7 @@ def apply_checkpoint_to_runtime(checkpoint, simulation):
                 electric,
                 balances,
                 runtime_components,
+                component_primary_state,
                 component_energy,
                 output_attributes,
                 output_buffers,
@@ -455,6 +460,7 @@ def apply_checkpoint_to_runtime(checkpoint, simulation):
         electric,
         balances,
         runtime_components,
+        component_primary_state,
         component_energy,
         output_attributes,
         output_buffers,
@@ -462,6 +468,9 @@ def apply_checkpoint_to_runtime(checkpoint, simulation):
         for attribute, value in clock.items():
             setattr(runtime, attribute, value)
         runtime.dict_Step = th_history
+        for owner, values in component_primary_state:
+            for key, value in values.items():
+                owner.dict_node_pt[key] = value
         for attribute, value in electric.items():
             setattr(runtime, attribute, value)
         for attribute, value in balances.items():
@@ -474,6 +483,89 @@ def apply_checkpoint_to_runtime(checkpoint, simulation):
             setattr(runtime, attribute, value)
         for owner, attribute, value in output_buffers:
             setattr(owner, attribute, value)
+
+
+def _prepare_component_primary_state(conductor, th_history):
+    """Prepare detached primary nodal state reconstructed from ``SYSVAR``."""
+
+    sysvar = np.asarray(th_history["SYSVAR"])
+    if sysvar.ndim != 2 or sysvar.shape[1] < 1:
+        raise CheckpointValidationError(
+            f"Conductor {conductor.identifier!r} SYSVAR must be a two-"
+            "dimensional array with at least one history column."
+        )
+
+    try:
+        ndf = int(conductor.dict_N_equation["NODOFS"])
+        equation_index = conductor.equation_index
+    except (AttributeError, KeyError, TypeError, ValueError) as error:
+        raise CheckpointValidationError(
+            f"Conductor {conductor.identifier!r} lacks a valid runtime "
+            "equation mapping."
+        ) from error
+
+    if ndf <= 0:
+        raise CheckpointValidationError(
+            f"Conductor {conductor.identifier!r} NODOFS must be positive."
+        )
+
+    prepared = []
+    for component in conductor.inventory["FluidComponent"].collection:
+        try:
+            indices = equation_index[component.identifier]
+            values = {
+                name: sysvar[getattr(indices, name)::ndf, 0].copy()
+                for name in ("velocity", "pressure", "temperature")
+            }
+            owner = component.coolant
+        except (AttributeError, KeyError, TypeError) as error:
+            raise CheckpointValidationError(
+                f"Fluid component {component.identifier!r} lacks a valid "
+                "runtime equation mapping or nodal state."
+            ) from error
+        _validate_prepared_primary_shapes(component.identifier, owner, values)
+        prepared.append((owner, values))
+
+    for component in conductor.inventory["SolidComponent"].collection:
+        try:
+            values = {
+                "temperature": sysvar[
+                    equation_index[component.identifier]::ndf, 0
+                ].copy()
+            }
+        except (KeyError, TypeError) as error:
+            raise CheckpointValidationError(
+                f"Solid component {component.identifier!r} lacks a valid "
+                "runtime equation mapping or nodal state."
+            ) from error
+        _validate_prepared_primary_shapes(
+            component.identifier, component, values
+        )
+        prepared.append((component, values))
+
+    return prepared
+
+
+def _validate_prepared_primary_shapes(identifier, owner, values):
+    """Reject invalid SYSVAR slices before any runtime state is mutated."""
+
+    node_state = getattr(owner, "dict_node_pt", None)
+    if not isinstance(node_state, Mapping):
+        raise CheckpointValidationError(
+            f"Component {identifier!r} lacks a nodal state mapping."
+        )
+
+    for key, value in values.items():
+        if key not in node_state:
+            raise CheckpointValidationError(
+                f"Component {identifier!r} nodal state is missing {key!r}."
+            )
+        expected_shape = np.asarray(node_state[key]).shape
+        if value.shape != expected_shape:
+            raise CheckpointValidationError(
+                f"Component {identifier!r} {key!r} reconstructed from "
+                f"SYSVAR has shape {value.shape}, expected {expected_shape}."
+            )
 
 
 def _copy_for_runtime(saved, runtime_template):

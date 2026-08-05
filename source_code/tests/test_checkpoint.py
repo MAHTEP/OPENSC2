@@ -35,6 +35,7 @@ def make_simulation(base_path, *, force_next_tstep_flag=False):
     solid = SimpleNamespace(
         identifier="STACK_1",
         dict_node_pt={
+            "temperature": np.array([6.0, 14.0]),
             "EEXT": np.arange(6.0).reshape(3, 2),
             "EJHT": np.arange(6.0, 12.0).reshape(3, 2),
         },
@@ -44,6 +45,11 @@ def make_simulation(base_path, *, force_next_tstep_flag=False):
         time_evol_max_temperature={"time (s)": [0.0, 0.1]},
     )
     coolant = SimpleNamespace(
+        dict_node_pt={
+            "velocity": np.array([0.0, 8.0]),
+            "pressure": np.array([2.0, 10.0]),
+            "temperature": np.array([4.0, 12.0]),
+        },
         time_evol={"pressure": [1.0e5, 1.01e5]},
         time_evol_io={"time (s)": [0.0, 0.1]},
         time_evol_max_temperature={},
@@ -60,9 +66,18 @@ def make_simulation(base_path, *, force_next_tstep_flag=False):
         i_event=1,
         force_next_tstep_flag=force_next_tstep_flag,
         dict_Step={
-            "SYSVAR": np.arange(6.0).reshape(3, 2),
-            "SYSLOD": np.arange(12.0).reshape(3, 4),
+            "SYSVAR": np.arange(16.0).reshape(8, 2),
+            "SYSLOD": np.arange(32.0).reshape(8, 4),
             "AM4_AA": np.arange(24.0).reshape(4, 2, 3),
+        },
+        dict_N_equation={"NODOFS": 4},
+        equation_index={
+            "CHAN_1": SimpleNamespace(
+                velocity=0,
+                pressure=1,
+                temperature=2,
+            ),
+            "STACK_1": 3,
         },
         inputs={
             "METHOD": "AM4",
@@ -582,6 +597,10 @@ class CheckpointTests(unittest.TestCase):
         coolant = conductor.inventory["FluidComponent"].collection[0].coolant
 
         conductor.dict_Step["SYSVAR"][:] = -1.0
+        coolant.dict_node_pt["velocity"][:] = -5.0
+        coolant.dict_node_pt["pressure"][:] = -6.0
+        coolant.dict_node_pt["temperature"][:] = -7.0
+        solid.dict_node_pt["temperature"][:] = -8.0
         conductor.electric_solution[:] = -2.0
         conductor.enthalpy_balance = -3.0
         solid.dict_node_pt["EEXT"][:] = -4.0
@@ -603,6 +622,18 @@ class CheckpointTests(unittest.TestCase):
         np.testing.assert_allclose(
             conductor.dict_Step["SYSVAR"],
             checkpoint.conductors["COND_1"].th_history["SYSVAR"],
+        )
+        np.testing.assert_allclose(
+            coolant.dict_node_pt["velocity"], [0.0, 8.0]
+        )
+        np.testing.assert_allclose(
+            coolant.dict_node_pt["pressure"], [2.0, 10.0]
+        )
+        np.testing.assert_allclose(
+            coolant.dict_node_pt["temperature"], [4.0, 12.0]
+        )
+        np.testing.assert_allclose(
+            solid.dict_node_pt["temperature"], [6.0, 14.0]
         )
         np.testing.assert_allclose(conductor.electric_solution, [10.0, 20.0])
         self.assertEqual(conductor.enthalpy_balance, 1.0)
@@ -642,6 +673,23 @@ class CheckpointTests(unittest.TestCase):
 
         conductor = target.list_of_Conductors[0]
         saved = checkpoint.conductors["COND_1"]
+        coolant = conductor.inventory["FluidComponent"].collection[0].coolant
+        solid = conductor.inventory["SolidComponent"].collection[0]
+        restored_sysvar = conductor.dict_Step["SYSVAR"]
+
+        self.assertFalse(
+            np.shares_memory(coolant.dict_node_pt["velocity"], restored_sysvar)
+        )
+        self.assertFalse(
+            np.shares_memory(coolant.dict_node_pt["pressure"], restored_sysvar)
+        )
+        self.assertFalse(
+            np.shares_memory(coolant.dict_node_pt["temperature"], restored_sysvar)
+        )
+        self.assertFalse(
+            np.shares_memory(solid.dict_node_pt["temperature"], restored_sysvar)
+        )
+
         conductor.dict_Step["SYSVAR"][0, 0] = -99.0
         conductor.inventory["SolidComponent"].collection[0].dict_node_pt[
             "EEXT"
@@ -651,6 +699,7 @@ class CheckpointTests(unittest.TestCase):
         ][0] = -97.0
 
         self.assertEqual(saved.th_history["SYSVAR"][0, 0], 0.0)
+        self.assertEqual(coolant.dict_node_pt["velocity"][0], 0.0)
         self.assertEqual(
             saved.components["STACK_1"]["energy_history"]["EEXT"][0, 0],
             0.0,
@@ -694,6 +743,32 @@ class CheckpointTests(unittest.TestCase):
 
         self.assertEqual(target.simulation_time, [0.0])
         self.assertEqual(target.num_step, 0)
+
+    def test_checkpoint_application_rejects_invalid_sysvar_mapping_before_mutation(
+        self,
+    ):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        conductor = target.list_of_Conductors[0]
+        solid = conductor.inventory["SolidComponent"].collection[0]
+        conductor.equation_index["STACK_1"] = 7
+        original_sysvar = conductor.dict_Step["SYSVAR"].copy()
+        original_temperature = solid.dict_node_pt["temperature"].copy()
+
+        with self.assertRaisesRegex(
+            CheckpointValidationError,
+            "reconstructed from SYSVAR has shape",
+        ):
+            apply_checkpoint_to_runtime(checkpoint, target)
+
+        self.assertEqual(target.simulation_time, [0.0])
+        self.assertEqual(target.num_step, 0)
+        np.testing.assert_array_equal(
+            conductor.dict_Step["SYSVAR"], original_sysvar
+        )
+        np.testing.assert_array_equal(
+            solid.dict_node_pt["temperature"], original_temperature
+        )
 
     def test_runtime_validation_covers_mutating_restore_destinations(self):
         checkpoint = self._checkpoint_with_current_inputs()
