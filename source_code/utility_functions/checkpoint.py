@@ -484,6 +484,11 @@ def apply_checkpoint_to_runtime(checkpoint, simulation):
         for owner, attribute, value in output_buffers:
             setattr(owner, attribute, value)
 
+    # This flag is deliberately the last mutation. Invalid checkpoints and
+    # failures while preparing the replacement state must leave a fresh
+    # runtime on the normal t=0 path.
+    simulation.restored_from_checkpoint = True
+
 
 def _prepare_component_primary_state(conductor, th_history):
     """Prepare detached primary nodal state reconstructed from ``SYSVAR``."""

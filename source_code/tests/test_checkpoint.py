@@ -110,6 +110,7 @@ def make_simulation(base_path, *, force_next_tstep_flag=False):
         basePath=str(base_path),
         simulation_time=[0.0, 0.1],
         num_step=1,
+        restored_from_checkpoint=False,
         list_of_Conductors=[conductor],
     )
 
@@ -610,6 +611,7 @@ class CheckpointTests(unittest.TestCase):
         result = apply_checkpoint_to_runtime(checkpoint, target)
 
         self.assertIsNone(result)
+        self.assertIs(target.restored_from_checkpoint, True)
         self.assertEqual(target.simulation_time, [0.0, 0.1])
         self.assertEqual(target.num_step, 1)
         self.assertEqual(conductor.cond_time, [0.0, 0.1])
@@ -726,6 +728,7 @@ class CheckpointTests(unittest.TestCase):
 
         self.assertEqual(target.simulation_time, original_time)
         self.assertEqual(target.num_step, 7)
+        self.assertIs(target.restored_from_checkpoint, False)
         np.testing.assert_array_equal(
             target.list_of_Conductors[0].dict_Step["SYSVAR"], original_sysvar
         )
@@ -743,6 +746,7 @@ class CheckpointTests(unittest.TestCase):
 
         self.assertEqual(target.simulation_time, [0.0])
         self.assertEqual(target.num_step, 0)
+        self.assertIs(target.restored_from_checkpoint, False)
 
     def test_checkpoint_application_rejects_invalid_sysvar_mapping_before_mutation(
         self,
@@ -763,6 +767,7 @@ class CheckpointTests(unittest.TestCase):
 
         self.assertEqual(target.simulation_time, [0.0])
         self.assertEqual(target.num_step, 0)
+        self.assertIs(target.restored_from_checkpoint, False)
         np.testing.assert_array_equal(
             conductor.dict_Step["SYSVAR"], original_sysvar
         )

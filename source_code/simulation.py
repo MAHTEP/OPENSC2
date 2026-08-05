@@ -82,6 +82,8 @@ class Simulation:
             usecols=["Variable name", "Value"],
         )["Value"].to_dict()
         self.flag_start = False
+        # Set to True only after a checkpoint has been applied successfully.
+        self.restored_from_checkpoint = False
 
         # Check if user specified a valid value to flag IADAPTIME.
         check_flag_value(
@@ -393,21 +395,25 @@ class Simulation:
             # Compute radiative heat exchanged outer jacket and environment.
             conductor.compute_heat_exchange_jk_env(self.environment)
 
-            # Store values of selected quantities at 0.0 s. These stored 
-            # quantities will be saved in file as spatial distributions by 
-            # calling function save_simulation_space.
-            conductor.store_spatial_distributions_t0("t_save")
-            # get the times at which users saves the solution spatial distribution \
-            # (cdp, 10/2020)
-            # list_values = list(conductor.dict_Space_save.values())
-            # Save of the solution spatial distribution at 0.0 s (cdp, 12/2020)
-            save_simulation_space(
-                conductor,
-                self.dict_path[
-                    f"Output_Spatial_distribution_{conductor.identifier}_dir"
-                ]
-            )
-            conductor.i_save += 1
+            # The t=0 spatial output is part of fresh-run initialization. A
+            # restored runtime already contains the corresponding buffers and
+            # output counters from the checkpoint.
+            if not self.restored_from_checkpoint:
+                # Store values of selected quantities at 0.0 s. These stored
+                # quantities will be saved in file as spatial distributions by
+                # calling function save_simulation_space.
+                conductor.store_spatial_distributions_t0("t_save")
+                # get the times at which users saves the solution spatial distribution \
+                # (cdp, 10/2020)
+                # list_values = list(conductor.dict_Space_save.values())
+                # Save of the solution spatial distribution at 0.0 s (cdp, 12/2020)
+                save_simulation_space(
+                    conductor,
+                    self.dict_path[
+                        f"Output_Spatial_distribution_{conductor.identifier}_dir"
+                    ]
+                )
+                conductor.i_save += 1
         # end for ii (cdp, 10/2020)
         # while loop to solve transient at each timestep (cdp, 07/2020)
         while (
