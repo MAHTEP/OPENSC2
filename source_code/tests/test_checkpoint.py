@@ -667,6 +667,67 @@ class CheckpointTests(unittest.TestCase):
         conductor.cond_time.append(0.2)
         coolant.time_evol_io["time (s)"].append(0.2)
 
+    def test_checkpoint_application_uses_runtime_mapping_order(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        saved_coolant = checkpoint.conductors["COND_1"].output_state[
+            "buffers"
+        ]["components"]["CHAN_1"]["coolant"]
+        runtime_coolant = target.list_of_Conductors[0].inventory[
+            "FluidComponent"
+        ].collection[0].coolant
+        runtime_order = (
+            "time (s)",
+            "zcoord = 0.0 (m)",
+            "zcoord = 1.0 (m)",
+            "zcoord = 30.0 (m)",
+            "zcoord = 132.0 (m)",
+        )
+        saved_coolant["time_evol"]["temperature"] = {
+            "time (s)": [0.1],
+            "zcoord = 0.0 (m)": [4.2],
+            "zcoord = 1.0 (m)": [4.3],
+            "zcoord = 132.0 (m)": [4.6],
+            "zcoord = 30.0 (m)": [4.4],
+        }
+        runtime_coolant.time_evol["temperature"] = {
+            key: [] for key in runtime_order
+        }
+
+        apply_checkpoint_to_runtime(checkpoint, target)
+
+        restored = runtime_coolant.time_evol["temperature"]
+        self.assertEqual(tuple(restored), runtime_order)
+        self.assertEqual(restored["zcoord = 30.0 (m)"], [4.4])
+        self.assertEqual(restored["zcoord = 132.0 (m)"], [4.6])
+
+    def test_mapping_round_trip_preserves_insertion_order(self):
+        simulation = make_simulation(self.input_dir)
+        coolant = simulation.list_of_Conductors[0].inventory[
+            "FluidComponent"
+        ].collection[0].coolant
+        expected_order = (
+            "time (s)",
+            "zcoord = 0.0 (m)",
+            "zcoord = 1.0 (m)",
+            "zcoord = 30.0 (m)",
+            "zcoord = 132.0 (m)",
+        )
+        coolant.time_evol["temperature"] = {
+            key: [float(index)]
+            for index, key in enumerate(expected_order)
+        }
+        checkpoint_path = write_checkpoint(
+            simulation, self.root / "checkpoints", trigger="periodic"
+        )
+
+        loaded = read_checkpoint(checkpoint_path)
+
+        restored = loaded.conductors["COND_1"].output_state["buffers"][
+            "components"
+        ]["CHAN_1"]["coolant"]["time_evol"]["temperature"]
+        self.assertEqual(tuple(restored), expected_order)
+
     def test_checkpoint_application_uses_independent_deep_copies(self):
         checkpoint = self._checkpoint_with_current_inputs()
         target = make_restore_target(self.input_dir)

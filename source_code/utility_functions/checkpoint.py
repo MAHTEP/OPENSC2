@@ -577,14 +577,23 @@ def _copy_for_runtime(saved, runtime_template):
     """Deep-copy saved data while retaining mutable runtime container types."""
 
     if isinstance(runtime_template, Mapping):
-        return {
-            key: (
-                _copy_for_runtime(value, runtime_template[key])
-                if key in runtime_template
-                else copy.deepcopy(value)
-            )
-            for key, value in saved.items()
+        # Legacy schema-1.1 HDF5 groups may expose mapping keys in
+        # lexicographic order.  Rebuild shared entries in the order of the
+        # already initialized runtime mapping, then append saved-only keys
+        # that are legitimately created lazily during the transient.
+        restored = {
+            key: _copy_for_runtime(saved[key], value)
+            for key, value in runtime_template.items()
+            if key in saved
         }
+        restored.update(
+            {
+                key: copy.deepcopy(value)
+                for key, value in saved.items()
+                if key not in runtime_template
+            }
+        )
+        return restored
     if isinstance(runtime_template, list):
         values = saved.tolist() if isinstance(saved, np.ndarray) else list(saved)
         return copy.deepcopy(values)
@@ -1803,7 +1812,7 @@ def _iter_output_owners(conductor):
 def _write_value(parent, name, value):
     safe_name = _safe_name(name)
     if isinstance(value, Mapping):
-        child = parent.create_group(safe_name)
+        child = parent.create_group(safe_name, track_order=True)
         child.attrs["python_type"] = "mapping"
         child.attrs["original_name"] = str(name)
         for key, item in value.items():
