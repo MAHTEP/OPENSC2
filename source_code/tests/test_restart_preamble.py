@@ -48,6 +48,12 @@ def _load_simulation_module():
         "utility_functions.checkpoint": _module(
             "utility_functions.checkpoint",
             write_periodic_checkpoint_if_due=noop,
+            write_checkpoint_if_due=noop,
+        ),
+        "utility_functions.checkpoint_schedule": _module(
+            "utility_functions.checkpoint_schedule",
+            load_checkpoint_schedule=noop,
+            next_checkpoint_boundary=noop,
         ),
         "utility_functions.output": _module(
             "utility_functions.output",

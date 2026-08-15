@@ -19,6 +19,10 @@ from urllib.parse import quote
 import h5py
 import numpy as np
 
+from utility_functions.checkpoint_schedule import (
+    checkpoint_boundary_due,
+)
+
 
 SCHEMA_VERSION = "1.1"
 VALID_TRIGGERS = frozenset(("periodic", "requested", "final"))
@@ -1490,6 +1494,47 @@ def write_periodic_checkpoint_if_due(simulation):
         ) from exc
 
     return write_checkpoint(simulation, checkpoint_dir, trigger="periodic")
+
+
+def write_checkpoint_if_due(simulation):
+    """Write at most one checkpoint for all active trigger sources.
+
+    A due scheduled boundary takes precedence over a coincident periodic
+    trigger.  The schedule has already resolved requested-versus-final
+    precedence, so its trigger can be forwarded directly to the writer.
+    Runtimes created before user scheduling existed have no
+    ``checkpoint_schedule`` attribute and retain periodic-only behavior.
+    """
+
+    scheduled_boundary = None
+    schedule = getattr(simulation, "checkpoint_schedule", None)
+    if schedule is not None:
+        scheduled_boundary = checkpoint_boundary_due(
+            schedule,
+            simulation.simulation_time[-1],
+            epsilon=getattr(simulation, "epsilon", 1.0e-6),
+        )
+
+    if scheduled_boundary is not None:
+        trigger = scheduled_boundary.trigger
+    else:
+        interval = checkpoint_interval(simulation.transient_input)
+        if interval == 0 or simulation.num_step % interval != 0:
+            return None
+        trigger = "periodic"
+
+    try:
+        checkpoint_dir = simulation.dict_path["Checkpoint_dir"]
+    except KeyError as exc:
+        raise CheckpointValidationError(
+            "Missing simulation.dict_path['Checkpoint_dir']."
+        ) from exc
+
+    return write_checkpoint(
+        simulation,
+        checkpoint_dir,
+        trigger=trigger,
+    )
 
 
 def write_checkpoint(simulation, checkpoint_dir, trigger):

@@ -127,6 +127,120 @@ class PlanNextTimeStepTests(unittest.TestCase):
         self.assertEqual(conductor.cond_num_step, 6)
         self.assertEqual(conductor.i_event, 1)
 
+    def test_scheduled_boundary_inside_step_splits_and_restores_remainder(self):
+        conductor = make_conductor(time_step=0.3, events=(2.0,))
+
+        plan = plan_next_time_step(
+            conductor,
+            epsilon=1e-6,
+            t_step_min=0.05,
+            scheduled_boundary_time=1.2,
+        )
+        self.apply_plan(conductor, plan)
+
+        self.assertEqual(conductor.cond_time, [1.0, 1.2])
+        self.assertAlmostEqual(conductor.time_step, 0.2)
+        self.assertTrue(plan.time_step_forced)
+        self.assertFalse(plan.event_reached)
+        self.assertAlmostEqual(plan.following_time_step, 0.1)
+        self.assertTrue(conductor.force_next_tstep_flag)
+        self.assertAlmostEqual(conductor.next_time_step, 0.1)
+        self.assertEqual(conductor.i_event, 0)
+
+    def test_scheduled_boundary_within_epsilon_avoids_a_tiny_remainder(self):
+        conductor = make_conductor(time_step=0.3, events=(2.0,))
+
+        plan = plan_next_time_step(
+            conductor,
+            epsilon=1e-6,
+            t_step_min=0.05,
+            scheduled_boundary_time=1.3000005,
+        )
+        self.apply_plan(conductor, plan)
+
+        self.assertEqual(conductor.cond_time, [1.0, 1.3000005])
+        self.assertAlmostEqual(conductor.time_step, 0.3000005)
+        self.assertFalse(plan.time_step_forced)
+        self.assertFalse(plan.event_reached)
+        self.assertIsNone(plan.following_time_step)
+        self.assertFalse(conductor.force_next_tstep_flag)
+        self.assertEqual(conductor.i_event, 0)
+
+    def test_elapsed_scheduled_boundary_is_ignored(self):
+        conductor = make_conductor(time_step=0.2, events=(2.0,))
+        state_before = deepcopy(vars(conductor))
+
+        plan = plan_next_time_step(
+            conductor,
+            epsilon=1e-6,
+            t_step_min=0.05,
+            scheduled_boundary_time=0.9,
+        )
+
+        self.assertEqual(vars(conductor), state_before)
+        self.assertAlmostEqual(plan.target_time, 1.2)
+        self.assertEqual(plan.time_step, 0.2)
+        self.assertFalse(plan.time_step_forced)
+        self.assertFalse(plan.event_reached)
+        self.assertIsNone(plan.following_time_step)
+
+    def test_physical_event_before_scheduled_boundary_has_priority(self):
+        conductor = make_conductor(time_step=0.4, events=(1.2, 2.0))
+
+        plan = plan_next_time_step(
+            conductor,
+            epsilon=1e-6,
+            t_step_min=0.05,
+            scheduled_boundary_time=1.3,
+        )
+        self.apply_plan(conductor, plan)
+
+        self.assertEqual(conductor.cond_time, [1.0, 1.2])
+        self.assertAlmostEqual(conductor.time_step, 0.2)
+        self.assertTrue(plan.time_step_forced)
+        self.assertTrue(plan.event_reached)
+        self.assertEqual(conductor.next_time_step, 0.05)
+        self.assertEqual(conductor.i_event, 1)
+
+    def test_scheduled_boundary_before_physical_event_has_priority(self):
+        conductor = make_conductor(time_step=0.4, events=(1.3, 2.0))
+
+        plan = plan_next_time_step(
+            conductor,
+            epsilon=1e-6,
+            t_step_min=0.05,
+            scheduled_boundary_time=1.2,
+        )
+        self.apply_plan(conductor, plan)
+
+        self.assertEqual(conductor.cond_time, [1.0, 1.2])
+        self.assertAlmostEqual(conductor.time_step, 0.2)
+        self.assertTrue(plan.time_step_forced)
+        self.assertFalse(plan.event_reached)
+        self.assertAlmostEqual(conductor.next_time_step, 0.2)
+        self.assertEqual(conductor.i_event, 0)
+
+    def test_coincident_event_and_boundary_land_once_at_explicit_time(self):
+        conductor = make_conductor(
+            time_step=0.4,
+            events=(1.2000005, 2.0),
+        )
+
+        plan = plan_next_time_step(
+            conductor,
+            epsilon=1e-6,
+            t_step_min=0.05,
+            scheduled_boundary_time=1.2,
+        )
+        self.apply_plan(conductor, plan)
+
+        self.assertEqual(conductor.cond_time, [1.0, 1.2])
+        self.assertAlmostEqual(conductor.time_step, 0.2)
+        self.assertTrue(plan.time_step_forced)
+        self.assertTrue(plan.event_reached)
+        self.assertEqual(conductor.next_time_step, 0.05)
+        self.assertEqual(conductor.i_event, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

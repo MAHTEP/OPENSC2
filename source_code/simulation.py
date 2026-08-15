@@ -3,6 +3,7 @@ from openpyxl import load_workbook
 import numpy as np
 import pandas as pd
 import os
+from shutil import copy2
 from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
 from typing import Union
 import warnings
@@ -30,7 +31,11 @@ from utility_functions.time_step_planning import (
     apply_time_step_plan,
     plan_next_time_step,
 )
-from utility_functions.checkpoint import write_periodic_checkpoint_if_due
+from utility_functions.checkpoint import write_checkpoint_if_due
+from utility_functions.checkpoint_schedule import (
+    load_checkpoint_schedule,
+    next_checkpoint_boundary,
+)
 from utility_functions.output import (
     save_simulation_space,
     reorganize_spatial_distribution,
@@ -84,6 +89,15 @@ class Simulation:
         self.flag_start = False
         # Set to True only after a checkpoint has been applied successfully.
         self.restored_from_checkpoint = False
+        # Shared tolerance for physical events and requested checkpoints.
+        self.epsilon = 1e-6
+        # Validate user checkpoint input before constructing the environment
+        # or any conductor-related runtime state.
+        self.checkpoint_schedule = load_checkpoint_schedule(
+            self.starter_file_path,
+            self.transient_input,
+            epsilon=self.epsilon,
+        )
 
         # Check if user specified a valid value to flag IADAPTIME.
         check_flag_value(
@@ -138,9 +152,6 @@ class Simulation:
                 )
             }
         )
-
-        # Uncertainty associated to the time step
-        self.epsilon = 1e-6
 
     # end method __init__ (cdp, 06/2020)
 
@@ -422,6 +433,16 @@ class Simulation:
             and stoptime == 0
         ):
             self.num_step = self.num_step + 1
+            checkpoint_boundary = next_checkpoint_boundary(
+                self.checkpoint_schedule,
+                self.simulation_time[-1],
+                epsilon=self.epsilon,
+            )
+            scheduled_boundary_time = (
+                checkpoint_boundary.time
+                if checkpoint_boundary is not None
+                else None
+            )
             time_step = np.zeros(self.numObj)
             for ii, conductor in enumerate(self.list_of_Conductors):
 
@@ -431,6 +452,7 @@ class Simulation:
                     conductor,
                     self.epsilon,
                     self.transient_input["STPMIN"],
+                    scheduled_boundary_time=scheduled_boundary_time,
                 )
                 apply_time_step_plan(conductor, time_step_plan)
                 time_step[ii] = conductor.time_step
@@ -617,7 +639,7 @@ class Simulation:
                 )
 
             # End for conductor (cdp, 07/2020)
-            checkpoint_path = write_periodic_checkpoint_if_due(self)
+            checkpoint_path = write_checkpoint_if_due(self)
             if checkpoint_path is not None:
                 print(f"Checkpoint saved: {checkpoint_path}")
         # end while (cdp, 07/2020)
@@ -770,7 +792,7 @@ class Simulation:
     # End method Simulation_folders_manager.
 
     def save_input_files(self):
-        """Method that saves the input file of the simulation as .xlsx files in read only mode. These files are metadata for the simulation output."""
+        """Copy every simulation input byte-for-byte as read-only metadata."""
         load_paths = list()
         save_paths = list()
         filenames = list()
@@ -831,7 +853,7 @@ class Simulation:
         del conductors, transient_input
 
         # Complete load_paths list
-        for fname in default_files.union(aux_files):
+        for fname in sorted(default_files.union(aux_files)):
             load_paths.append(os.path.join(self.basePath, fname))
             filenames.append(fname)
 
@@ -842,7 +864,7 @@ class Simulation:
         # file comparison.
         filenames = ["meta_" + fname for fname in filenames]
 
-        for ii, fname in enumerate(filenames):
+        for load_path, fname in zip(load_paths, filenames):
             # Build save_paths from load_paths.
             save_paths.append(os.path.join(self.dict_path["Save_input"], fname))
             if os.path.exists(save_paths[-1]):
@@ -850,29 +872,10 @@ class Simulation:
                 # already exists
                 os.chmod(save_paths[-1], S_IWUSR | S_IREAD)
 
-            if (
-                "coupling" in fname
-                or "environment_input" in fname
-                or "transitory_input" in fname
-            ):
-                skip_rows = 1
-            elif fname in aux_files:
-                skip_rows = 0
-            else:
-                skip_rows = 2
-
-            # Load input file
-            dff = pd.read_excel(
-                load_paths[ii],
-                sheet_name=None,
-                header=0,
-                index_col=0,
-                skiprows=skip_rows,
-            )
-            # Save input file
-            with pd.ExcelWriter(save_paths[-1]) as writer:
-                for key, df in dff.items():
-                    df.to_excel(writer, sheet_name=key)
+            # Metadata must reproduce the exact input bytes. Re-reading and
+            # writing workbooks would lose formatting, workbook features, and
+            # sheet-specific header rows such as CHECKPOINTS!A1.
+            copy2(load_path, save_paths[-1])
 
         # Convert saved files to read only mode.
         for path in save_paths:
