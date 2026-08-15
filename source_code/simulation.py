@@ -654,6 +654,11 @@ class Simulation:
         for cond in self.list_of_Conductors:
             cond.post_processing(self)
 
+            # Refresh the output buffer from the actual final runtime state.
+            # Without this step, the files labelled as TEND can contain the
+            # most recently saved interior (or initial) spatial distribution.
+            cond.store_spatial_distributions(t_save_key="t_save")
+
             # save simulation spatial distribution at TEND.
             save_simulation_space(
                 cond,

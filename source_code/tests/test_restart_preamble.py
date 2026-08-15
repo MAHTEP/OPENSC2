@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 from types import ModuleType, SimpleNamespace
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 
 def _module(name, **attributes):
@@ -101,6 +101,8 @@ class RestartPreambleTests(unittest.TestCase):
             compute_radiative_heat_exhange_jk=Mock(),
             compute_heat_exchange_jk_env=Mock(),
             store_spatial_distributions_t0=Mock(),
+            store_spatial_distributions=Mock(),
+            post_processing=Mock(),
         )
         simulation = self.simulation_module.Simulation.__new__(
             self.simulation_module.Simulation
@@ -108,8 +110,10 @@ class RestartPreambleTests(unittest.TestCase):
         simulation.list_of_Conductors = [conductor]
         simulation.environment = object()
         simulation.dict_path = {
-            "Output_Spatial_distribution_COND_1_dir": "unused"
+            "Output_Spatial_distribution_COND_1_dir": "spatial",
+            "Output_Solution_COND_1_dir": "solution",
         }
+        simulation.n_digit_time = 6
         simulation.simulation_time = [0.5]
         simulation.transient_input = {
             "TEND": 0.5,
@@ -135,6 +139,32 @@ class RestartPreambleTests(unittest.TestCase):
         conductor.compute_heat_exchange_jk_env.assert_called_once_with(
             simulation.environment
         )
+
+    def test_post_processing_refreshes_tend_buffer_before_writing(self):
+        simulation, conductor = self.make_runtime(restored=True)
+        save_space = self.simulation_module.save_simulation_space
+        save_space.reset_mock()
+
+        ordered_calls = Mock()
+        ordered_calls.attach_mock(
+            conductor.store_spatial_distributions,
+            "refresh",
+        )
+        ordered_calls.attach_mock(save_space, "write")
+
+        simulation.conductor_post_processing()
+
+        conductor.post_processing.assert_called_once_with(simulation)
+        conductor.store_spatial_distributions.assert_called_once_with(
+            t_save_key="t_save"
+        )
+        ordered_calls.assert_has_calls(
+            [
+                call.refresh(t_save_key="t_save"),
+                call.write(conductor, "spatial"),
+            ]
+        )
+        conductor.store_spatial_distributions_t0.assert_not_called()
 
     def test_restart_skips_only_t0_output_preamble(self):
         simulation, conductor = self.make_runtime(restored=True)
