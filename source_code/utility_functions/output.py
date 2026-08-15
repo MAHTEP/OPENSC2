@@ -301,20 +301,49 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     # Round the time to save to n_digit_time digits only once
     time = np.around(cond.Space_save, n_digit_time)
 
+    fluid_components = cond.inventory["FluidComponent"].collection
+    solid_components = cond.inventory["SolidComponent"].collection
+    if fluid_components:
+        representative_component = fluid_components[0]
+    elif solid_components:
+        representative_component = solid_components[0]
+    else:
+        raise ValueError(
+            "Cannot reorganize spatial outputs for a conductor without "
+            "fluid or solid components."
+        )
+
+    # A restarted trajectory may write into a new output directory.  In that
+    # case, files produced before the checkpoint are intentionally absent.
+    # Select the available schedule entries once and reuse their ordered
+    # indices for every component so times and time steps remain aligned.
+    available_output_indices = tuple(
+        ii
+        for ii, _ in enumerate(cond.Space_save)
+        if os.path.isfile(
+            os.path.join(
+                f_path,
+                (
+                    f"{representative_component.identifier}_"
+                    f"({cond.num_step_save[ii]})_sd.tsv"
+                ),
+            )
+        )
+    )
+    if not available_output_indices:
+        raise FileNotFoundError(
+            "No raw spatial-distribution files are available for "
+            "reorganization."
+        )
+
     # declare dictionary to store the spatial diccretizations only once.
     dict_zcoord = dict()
     # Loop to save spatial coordinates.
-    for ii,_ in enumerate(cond.Space_save):
-        # Check if FluidComponent collection is not empty.
-        if cond.inventory["FluidComponent"].collection:
-            # FluidComponent collection is not empty.
-            comp = cond.inventory["FluidComponent"].collection[0]
-        else:
-            # FluidComponent collection is empty: use first item in 
-            # SolidComponent collection.
-            comp = cond.inventory["SolidComponent"].collection[0]
-
-        file_name = f"{comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
+    for ii in available_output_indices:
+        file_name = (
+            f"{representative_component.identifier}_"
+            f"({cond.num_step_save[ii]})_sd.tsv"
+        )
         file_load = os.path.join(f_path, file_name)
         # Load dataframe.
         df = pd.read_csv(file_load, delimiter="\t")
@@ -330,7 +359,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     df_zcoord.to_csv(path_save, sep="\t", index=False)
 
     # loop on FluidComponent (cdp, 11/2020)
-    for fluid_comp in cond.inventory["FluidComponent"].collection:
+    for fluid_comp in fluid_components:
         # create a list of files that have the fluid_comp.identifier and User in the name \
         # exploiting list compreension: these files are the ones that will be \
         # reorganized by this function (cdp, 11/2020)
@@ -338,7 +367,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
-        for ii, _ in enumerate(cond.Space_save):
+        for output_position, ii in enumerate(available_output_indices):
             file_name = f"{fluid_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
             file_load = os.path.join(f_path, file_name)
             # Load file file_name as data frame as a value of dictionary \
@@ -348,7 +377,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             )
             # Delete the old file format.
             os.remove(file_load)
-            if ii == 0:
+            if output_position == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
                 for jj, prop in enumerate(list_ch_key):
@@ -388,11 +417,11 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         # end for prop (cdp, 11/2020)
     # end for fluid_comp (cdp, 11/2020)
     # loop on SolidComponent (cdp, 11/2020)
-    for s_comp in cond.inventory["SolidComponent"].collection:
+    for s_comp in solid_components:
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
-        for ii, _ in enumerate(cond.Space_save):
+        for output_position, ii in enumerate(available_output_indices):
             file_name = f"{s_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
             file_name_gauss = (
                 f"{s_comp.identifier}_({cond.num_step_save[ii]})_gauss_sd.tsv"
@@ -410,7 +439,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             # Delete the old file format.
             os.remove(file_load)
             os.remove(file_load_gauss)
-            if ii == 0:
+            if output_position == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
                 if s_comp.KIND == "Mixed_sc_stab" or s_comp.KIND == "Stack":
@@ -541,7 +570,7 @@ def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit_time):
             old[file_name] = pd.read_csv(file_load, delimiter="\t")
             # Delete the old file format.
             os.remove(file_load)
-            if ii == 0:
+            if not cols:
                 # get columns names only the first time.
                 cols = old[file_name].columns.values.tolist()
                 for col in cols:

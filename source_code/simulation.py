@@ -3,6 +3,7 @@ from openpyxl import load_workbook
 import numpy as np
 import pandas as pd
 import os
+from shutil import copy2
 from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
 from typing import Union
 import warnings
@@ -25,8 +26,15 @@ from utility_functions.auxiliary_functions import (
 from utility_functions.transient_solution_functions import (
     get_time_step,
     step,
-    force_time_step,
-    time_and_event_synchronization,
+)
+from utility_functions.time_step_planning import (
+    apply_time_step_plan,
+    plan_next_time_step,
+)
+from utility_functions.checkpoint import write_checkpoint_if_due
+from utility_functions.checkpoint_schedule import (
+    load_checkpoint_schedule,
+    next_checkpoint_boundary,
 )
 from utility_functions.output import (
     save_simulation_space,
@@ -79,6 +87,17 @@ class Simulation:
             usecols=["Variable name", "Value"],
         )["Value"].to_dict()
         self.flag_start = False
+        # Set to True only after a checkpoint has been applied successfully.
+        self.restored_from_checkpoint = False
+        # Shared tolerance for physical events and requested checkpoints.
+        self.epsilon = 1e-6
+        # Validate user checkpoint input before constructing the environment
+        # or any conductor-related runtime state.
+        self.checkpoint_schedule = load_checkpoint_schedule(
+            self.starter_file_path,
+            self.transient_input,
+            epsilon=self.epsilon,
+        )
 
         # Check if user specified a valid value to flag IADAPTIME.
         check_flag_value(
@@ -133,9 +152,6 @@ class Simulation:
                 )
             }
         )
-
-        # Uncertainty associated to the time step
-        self.epsilon = 1e-6
 
     # end method __init__ (cdp, 06/2020)
 
@@ -377,8 +393,6 @@ class Simulation:
 
     def conductor_solution(self, gui):
         # ** TRANSIENT SOLUTION **
-        num_step_store = 100
-        count_store = 1
         stoptime = 0  # flag to stop simulation if some problems (like quench) \
         # arise (cdp, 07/2020)
         # Time step initialization (cdp, 08/2020)
@@ -392,21 +406,25 @@ class Simulation:
             # Compute radiative heat exchanged outer jacket and environment.
             conductor.compute_heat_exchange_jk_env(self.environment)
 
-            # Store values of selected quantities at 0.0 s. These stored 
-            # quantities will be saved in file as spatial distributions by 
-            # calling function save_simulation_space.
-            conductor.store_spatial_distributions_t0("t_save")
-            # get the times at which users saves the solution spatial distribution \
-            # (cdp, 10/2020)
-            # list_values = list(conductor.dict_Space_save.values())
-            # Save of the solution spatial distribution at 0.0 s (cdp, 12/2020)
-            save_simulation_space(
-                conductor,
-                self.dict_path[
-                    f"Output_Spatial_distribution_{conductor.identifier}_dir"
-                ]
-            )
-            conductor.i_save += 1
+            # The t=0 spatial output is part of fresh-run initialization. A
+            # restored runtime already contains the corresponding buffers and
+            # output counters from the checkpoint.
+            if not self.restored_from_checkpoint:
+                # Store values of selected quantities at 0.0 s. These stored
+                # quantities will be saved in file as spatial distributions by
+                # calling function save_simulation_space.
+                conductor.store_spatial_distributions_t0("t_save")
+                # get the times at which users saves the solution spatial distribution \
+                # (cdp, 10/2020)
+                # list_values = list(conductor.dict_Space_save.values())
+                # Save of the solution spatial distribution at 0.0 s (cdp, 12/2020)
+                save_simulation_space(
+                    conductor,
+                    self.dict_path[
+                        f"Output_Spatial_distribution_{conductor.identifier}_dir"
+                    ]
+                )
+                conductor.i_save += 1
         # end for ii (cdp, 10/2020)
         # while loop to solve transient at each timestep (cdp, 07/2020)
         while (
@@ -415,27 +433,29 @@ class Simulation:
             and stoptime == 0
         ):
             self.num_step = self.num_step + 1
+            checkpoint_boundary = next_checkpoint_boundary(
+                self.checkpoint_schedule,
+                self.simulation_time[-1],
+                epsilon=self.epsilon,
+            )
+            scheduled_boundary_time = (
+                checkpoint_boundary.time
+                if checkpoint_boundary is not None
+                else None
+            )
             time_step = np.zeros(self.numObj)
             for ii, conductor in enumerate(self.list_of_Conductors):
-                
-                time_step[ii] = conductor.time_step
 
-                # Check if time step is already appended to list cond_time.
-                if conductor.appended_time_flag:
-                    # Time step is already appended to list cond_time in 
-                    # function time_and_event_synchronization or 
-                    # force_time_step calling method conductor.append_time.
-                    # Set conductor.appended_time_flag = False to append 
-                    # the next time to list cond_time according to the standard 
-                    # procedure.
-                    conductor.appended_time_flag = False
-                else:
-                    # Append time according to the standard procedure.
-                    conductor.cond_time.append(
-                        conductor.cond_time[-1] + conductor.time_step
-                    )
-                    # Update time step.
-                    conductor.cond_num_step = conductor.cond_num_step + 1
+                # Plan and commit the imminent time step without placing an
+                # unresolved future time in the completed conductor history.
+                time_step_plan = plan_next_time_step(
+                    conductor,
+                    self.epsilon,
+                    self.transient_input["STPMIN"],
+                    scheduled_boundary_time=scheduled_boundary_time,
+                )
+                apply_time_step_plan(conductor, time_step_plan)
+                time_step[ii] = conductor.time_step
 
                 # before calling Conductor method initialization adapt mesh if \
                 # necessary as foreseen by ITYMSH. To do later (cdp, 07/2020)
@@ -534,11 +554,6 @@ class Simulation:
 
                 update_real_time_plots(conductor)
 
-                if self.num_step == num_step_store * count_store:
-                    # Update counter to store the state of the simulation, still to come \
-                    # (cdp, 08/2020)
-                    count_store = count_store + 1
-                
                 # Boolean flag to identify if time is the neighborhood of the 
                 # user defined save time:
                 # t in [t_save - dt_max, t_save + dt_max]
@@ -623,24 +638,10 @@ class Simulation:
                     self.starter_file_path,
                 )
 
-                conductor = time_and_event_synchronization(
-                    conductor,
-                    self.epsilon,
-                    self.transient_input["STPMIN"],
-                )
-
-                # Check if I did not synchronize time and event. This can be 
-                # checked quering the state of flag conductr.appended_time_flag 
-                # that is set to True if the synchronization was performed.
-                if conductor.appended_time_flag == False:
-                    # Synchronization not performed, there could be the need to 
-                    # force the time step.
-                    conductor = force_time_step(
-                        conductor,
-                        self.transient_input["STPMIN"],
-                    )
-
             # End for conductor (cdp, 07/2020)
+            checkpoint_path = write_checkpoint_if_due(self)
+            if checkpoint_path is not None:
+                print(f"Checkpoint saved: {checkpoint_path}")
         # end while (cdp, 07/2020)
         print("End simulation called " + self.transient_input["SIMULATION"] + "\n")
 
@@ -652,6 +653,11 @@ class Simulation:
         # t_end = np.array([self.transient_input["TEND"]])
         for cond in self.list_of_Conductors:
             cond.post_processing(self)
+
+            # Refresh the output buffer from the actual final runtime state.
+            # Without this step, the files labelled as TEND can contain the
+            # most recently saved interior (or initial) spatial distribution.
+            cond.store_spatial_distributions(t_save_key="t_save")
 
             # save simulation spatial distribution at TEND.
             save_simulation_space(
@@ -782,10 +788,16 @@ class Simulation:
         )
         os.makedirs(self.dict_path["Save_input"], exist_ok=True)
 
+        self.dict_path["Checkpoint_dir"] = os.path.join(
+            self.dict_path["Sub_dir"],
+            self.transient_input["SIMULATION"],
+            "Checkpoints",
+        )
+
     # End method Simulation_folders_manager.
 
     def save_input_files(self):
-        """Method that saves the input file of the simulation as .xlsx files in read only mode. These files are metadata for the simulation output."""
+        """Copy every simulation input byte-for-byte as read-only metadata."""
         load_paths = list()
         save_paths = list()
         filenames = list()
@@ -846,7 +858,7 @@ class Simulation:
         del conductors, transient_input
 
         # Complete load_paths list
-        for fname in default_files.union(aux_files):
+        for fname in sorted(default_files.union(aux_files)):
             load_paths.append(os.path.join(self.basePath, fname))
             filenames.append(fname)
 
@@ -857,7 +869,7 @@ class Simulation:
         # file comparison.
         filenames = ["meta_" + fname for fname in filenames]
 
-        for ii, fname in enumerate(filenames):
+        for load_path, fname in zip(load_paths, filenames):
             # Build save_paths from load_paths.
             save_paths.append(os.path.join(self.dict_path["Save_input"], fname))
             if os.path.exists(save_paths[-1]):
@@ -865,29 +877,10 @@ class Simulation:
                 # already exists
                 os.chmod(save_paths[-1], S_IWUSR | S_IREAD)
 
-            if (
-                "coupling" in fname
-                or "environment_input" in fname
-                or "transitory_input" in fname
-            ):
-                skip_rows = 1
-            elif fname in aux_files:
-                skip_rows = 0
-            else:
-                skip_rows = 2
-
-            # Load input file
-            dff = pd.read_excel(
-                load_paths[ii],
-                sheet_name=None,
-                header=0,
-                index_col=0,
-                skiprows=skip_rows,
-            )
-            # Save input file
-            with pd.ExcelWriter(save_paths[-1]) as writer:
-                for key, df in dff.items():
-                    df.to_excel(writer, sheet_name=key)
+            # Metadata must reproduce the exact input bytes. Re-reading and
+            # writing workbooks would lose formatting, workbook features, and
+            # sheet-specific header rows such as CHECKPOINTS!A1.
+            copy2(load_path, save_paths[-1])
 
         # Convert saved files to read only mode.
         for path in save_paths:
