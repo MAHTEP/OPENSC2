@@ -8,8 +8,9 @@ reported before a live OPENSC2 object is mutated.
 import copy
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -18,16 +19,82 @@ from urllib.parse import quote
 
 import h5py
 import numpy as np
+from openpyxl import load_workbook
 
 from utility_functions.checkpoint_schedule import (
     checkpoint_boundary_due,
 )
 
 
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
+SUPPORTED_SCHEMA_VERSIONS = frozenset(("1.1", SCHEMA_VERSION))
+CONTINUATION_PROFILE_VERSION = "1.0"
 VALID_TRIGGERS = frozenset(("periodic", "requested", "final"))
 DEFAULT_CHECKPOINT_EVERY_N_STEPS = 100
 CHECKPOINT_INTERVAL_INPUT = "CHECKPOINT_EVERY_N_STEPS"
+
+_CONTINUATION_IMMUTABLE_TRANSIENT_KEYS = ("IADAPTIME",)
+_CONTINUATION_TIME_POLICY_KEYS = (
+    "TIME_STEP",
+    "STPMIN",
+    "STPMAX",
+    "MLT_INCREASE",
+    "MLT_DECREASE",
+    "TIMEREF",
+    "TAUREF",
+    "TEND",
+    "CHECKPOINT_EVERY_N_STEPS",
+    "USER_CHECKPOINTS",
+)
+
+_CONTINUATION_CONDUCTOR_TIME_POLICY_KEYS = ("ELECTRIC_TIME_STEP",)
+
+_CONTINUATION_CONDUCTOR_DRIVER_KEYS = (
+    "I0_OP_MODE",
+    "I0_OP_TOT",
+)
+
+_CONTINUATION_COMPONENT_DRIVER_KEYS = (
+    "IOP_MODE",
+    "IOP_INTERPOLATION",
+    "IBIFUN",
+    "BISS",
+    "BOSS",
+    "BITR",
+    "BOTR",
+    "B_INTERPOLATION",
+    "B_field_units",
+    "IALPHAB",
+    "ALPHAB_INTERPOLATION",
+    "IQFUN",
+    "Q_INTERPOLATION",
+    "XQBEG",
+    "XQEND",
+    "Q0",
+    "TQBEG",
+    "TQEND",
+)
+
+_CONTINUATION_DRIVER_FILE_KEYS = frozenset(
+    (
+        "EXTERNAL_CURRENT",
+        "EXTERNAL_BFIELD",
+        "EXTERNAL_ALPHAB",
+        "EXTERNAL_HEAT",
+    )
+)
+
+# The operation workbook contains both mutable driver definitions and fixed
+# component settings.  Its fixed semantics are captured from the initialized
+# runtime mappings, so hashing the whole workbook would incorrectly reject
+# legitimate driver changes.
+_CONTINUATION_MIXED_FILE_KEYS = frozenset(("OPERATION",))
+
+_CURRENT_FUNCTION = (
+    "utility_functions.electric_auxiliary_functions."
+    "custom_current_function"
+)
+_HEAT_FUNCTION = "solid_component.SolidComponent.user_heat_function"
 
 _BALANCE_ATTRIBUTES = (
     "enthalpy_balance",
@@ -105,6 +172,7 @@ class RestartCompatibilityReport:
     manifest_comparison: InputManifestComparison
     blocking_reasons: tuple[str, ...]
     warnings: tuple[str, ...]
+    continuation_comparison: "ContinuationProfileComparison | None"
 
 
 @dataclass(frozen=True)
@@ -132,6 +200,25 @@ class ConductorCheckpointData:
 
 
 @dataclass(frozen=True)
+class ContinuationProfile:
+    """Normalized input semantics required by continuation checks."""
+
+    immutable: dict
+    time_policy: dict
+    drivers: dict
+
+
+@dataclass(frozen=True)
+class ContinuationProfileComparison:
+    """Deterministic semantic differences between continuation profiles."""
+
+    is_compatible: bool
+    immutable_differences: tuple[str, ...]
+    time_policy_differences: tuple[str, ...]
+    driver_differences: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class CheckpointData:
     """Validated checkpoint contents, independent of an open HDF5 file."""
 
@@ -141,6 +228,7 @@ class CheckpointData:
     trigger: str
     git_commit: str
     input_manifest: tuple[InputManifestEntry, ...]
+    continuation_profile: ContinuationProfile | None
     simulation_time: np.ndarray
     num_step: int
     conductors: dict[str, ConductorCheckpointData]
@@ -220,14 +308,16 @@ def evaluate_restart_compatibility(
     checkpoint,
     input_directory,
     mode="recovery",
+    runtime_profile=None,
 ):
     """Evaluate restart compatibility without mutating runtime state.
 
     ``recovery`` is accepted only when the current input manifest is exactly
-    equal to the one persisted in the checkpoint.  ``continuation`` is kept as
-    an explicit interface value, but is blocked until semantic input
-    compatibility has been implemented.  Unknown modes are programming or
-    user-interface errors and are rejected immediately.
+    equal to the one persisted in the checkpoint.  ``continuation`` compares
+    the profile stored in schema 1.2 with the freshly initialized runtime
+    profile.  Time-policy and driver changes are reported but permitted;
+    immutable differences block the operation.  Unknown modes are programming
+    or user-interface errors and are rejected immediately.
     """
 
     valid_modes = ("recovery", "continuation")
@@ -238,11 +328,37 @@ def evaluate_restart_compatibility(
 
     comparison = compare_input_manifest(checkpoint, input_directory)
     blocking_reasons = []
+    warnings = []
+    continuation_comparison = None
 
     if mode == "continuation":
-        blocking_reasons.append(
-            "Restart mode 'continuation' is not supported yet."
-        )
+        if checkpoint.continuation_profile is None:
+            blocking_reasons.append(
+                f"Checkpoint schema {checkpoint.schema_version} does not "
+                "contain a continuation profile."
+            )
+        elif runtime_profile is None:
+            blocking_reasons.append(
+                "A current continuation profile is required before "
+                "continuation can be evaluated."
+            )
+        else:
+            continuation_comparison = compare_continuation_profiles(
+                checkpoint.continuation_profile,
+                runtime_profile,
+            )
+            blocking_reasons.extend(
+                f"Immutable continuation input differs: {path}."
+                for path in continuation_comparison.immutable_differences
+            )
+            warnings.extend(
+                f"Continuation time-policy input differs: {path}."
+                for path in continuation_comparison.time_policy_differences
+            )
+            warnings.extend(
+                f"Continuation driver input differs: {path}."
+                for path in continuation_comparison.driver_differences
+            )
     else:
         blocking_reasons.extend(
             f"Input file is missing: {entry.path}."
@@ -262,11 +378,12 @@ def evaluate_restart_compatibility(
         is_compatible=not blocking_reasons,
         manifest_comparison=comparison,
         blocking_reasons=tuple(blocking_reasons),
-        warnings=(),
+        warnings=tuple(warnings),
+        continuation_comparison=continuation_comparison,
     )
 
 
-def validate_runtime_restore_target(checkpoint, simulation):
+def validate_runtime_restore_target(checkpoint, simulation, mode="recovery"):
     """Validate a freshly initialized runtime before applying a checkpoint.
 
     The function checks identities, methods, component kinds, numerical-state
@@ -278,8 +395,20 @@ def validate_runtime_restore_target(checkpoint, simulation):
     if not isinstance(checkpoint, CheckpointData):
         raise TypeError("checkpoint must be a CheckpointData instance.")
 
+    valid_modes = ("recovery", "continuation")
+    if mode not in valid_modes:
+        raise ValueError(
+            f"Invalid restart mode {mode!r}; expected one of {valid_modes!r}."
+        )
+
     reasons = []
     _validate_fresh_runtime_clock(simulation, reasons)
+    if mode == "continuation":
+        _validate_continuation_time_policy(
+            checkpoint,
+            simulation,
+            reasons,
+        )
     runtime_conductors = list(
         getattr(simulation, "list_of_Conductors", ())
     )
@@ -313,6 +442,7 @@ def validate_runtime_restore_target(checkpoint, simulation):
             checkpoint.conductors[identifier],
             runtime_by_identifier[identifier],
             reasons,
+            mode=mode,
         )
 
     return RuntimeRestoreValidationReport(
@@ -322,7 +452,7 @@ def validate_runtime_restore_target(checkpoint, simulation):
     )
 
 
-def apply_checkpoint_to_runtime(checkpoint, simulation):
+def apply_checkpoint_to_runtime(checkpoint, simulation, mode="recovery"):
     """Apply validated checkpoint state to a freshly initialized runtime.
 
     This function restores state persisted in schema 1.1 and synchronizes the
@@ -336,20 +466,34 @@ def apply_checkpoint_to_runtime(checkpoint, simulation):
     next completed time.
     """
 
+    valid_modes = ("recovery", "continuation")
+    if mode not in valid_modes:
+        raise ValueError(
+            f"Invalid restart mode {mode!r}; expected one of {valid_modes!r}."
+        )
+
+    runtime_profile = (
+        build_continuation_profile(simulation)
+        if mode == "continuation"
+        else None
+    )
     compatibility = evaluate_restart_compatibility(
         checkpoint,
         getattr(simulation, "basePath", None),
-        mode="recovery",
+        mode=mode,
+        runtime_profile=runtime_profile,
     )
     if not compatibility.is_compatible:
         details = "\n".join(
             f"- {reason}" for reason in compatibility.blocking_reasons
         )
         raise CheckpointValidationError(
-            "Checkpoint inputs are not compatible with recovery:\n" + details
+            f"Checkpoint inputs are not compatible with {mode}:\n" + details
         )
 
-    report = validate_runtime_restore_target(checkpoint, simulation)
+    report = validate_runtime_restore_target(
+        checkpoint, simulation, mode=mode
+    )
     if not report.is_valid:
         details = "\n".join(f"- {reason}" for reason in report.blocking_reasons)
         raise CheckpointValidationError(
@@ -376,18 +520,28 @@ def apply_checkpoint_to_runtime(checkpoint, simulation):
             )
         }
 
+        clock_attributes = [
+            "cond_time",
+            "cond_num_step",
+            "EQTEIG",
+        ]
+        if mode == "recovery":
+            clock_attributes.extend(("time_step", "i_event"))
+
         clock = {
             attribute: _copy_for_runtime(
                 saved.clock[attribute], getattr(runtime, attribute)
             )
-            for attribute in (
-                "cond_time",
-                "cond_num_step",
-                "time_step",
-                "EQTEIG",
-                "i_event",
-            )
+            for attribute in clock_attributes
         }
+        if mode == "continuation":
+            checkpoint_time = float(
+                np.asarray(saved.clock["cond_time"])[-1]
+            )
+            clock["i_event"] = _continuation_event_index(
+                runtime.events_time,
+                checkpoint_time,
+            )
         for attribute in ("electric_time", "cond_el_num_step"):
             if attribute in saved.clock:
                 clock[attribute] = _copy_for_runtime(
@@ -648,6 +802,55 @@ def _validate_fresh_runtime_clock(simulation, reasons):
         reasons.append("Runtime simulation num_step must be zero before restore.")
 
 
+def _validate_continuation_time_policy(checkpoint, simulation, reasons):
+    """Validate the fixed-step policy selected for a continuation run."""
+
+    transient_input = getattr(simulation, "transient_input", None)
+    if not isinstance(transient_input, Mapping):
+        reasons.append("Continuation transient input is missing or invalid.")
+        return
+
+    if transient_input.get("IADAPTIME") != 0:
+        reasons.append("IADAPTIME must remain 0 during continuation.")
+
+    numeric_values = {}
+    for name in ("TIME_STEP", "STPMIN", "TEND"):
+        value = transient_input.get(name)
+        try:
+            array = np.asarray(value)
+            valid = (
+                array.ndim == 0
+                and not isinstance(value, (bool, np.bool_))
+                and np.issubdtype(array.dtype, np.number)
+                and np.isfinite(array)
+            )
+        except (TypeError, ValueError):
+            valid = False
+
+        if not valid:
+            reasons.append(
+                f"Continuation {name} must be a finite numeric scalar."
+            )
+            continue
+
+        numeric_values[name] = float(array)
+
+    for name in ("TIME_STEP", "STPMIN"):
+        if name in numeric_values and numeric_values[name] <= 0.0:
+            reasons.append(f"Continuation {name} must be positive.")
+
+    if "TEND" not in numeric_values or "STPMIN" not in numeric_values:
+        return
+
+    checkpoint_time = float(np.asarray(checkpoint.simulation_time)[-1])
+    minimum_remaining_time = 1.0e-5 * numeric_values["STPMIN"]
+    if numeric_values["TEND"] - checkpoint_time <= minimum_remaining_time:
+        reasons.append(
+            "Continuation TEND must be later than the checkpoint time by "
+            "more than the simulation time tolerance."
+        )
+
+
 def _validate_checkpoint_global_clock(checkpoint, reasons):
     simulation_time = np.asarray(checkpoint.simulation_time)
     if checkpoint.num_step != simulation_time.size - 1:
@@ -678,7 +881,7 @@ def _validate_checkpoint_global_clock(checkpoint, reasons):
         )
 
 
-def _validate_runtime_conductor_target(saved, runtime, reasons):
+def _validate_runtime_conductor_target(saved, runtime, reasons, mode="recovery"):
     label = f"Conductor {saved.identifier!r}"
     runtime_cond_time = np.asarray(
         getattr(runtime, "cond_time", ()), dtype=float
@@ -773,7 +976,10 @@ def _validate_runtime_conductor_target(saved, runtime, reasons):
         f"{label} EQTEIG",
         reasons,
     )
-    _validate_event_timeline(saved, runtime, label, reasons)
+    if mode == "recovery":
+        _validate_event_timeline(saved, runtime, label, reasons)
+    else:
+        _validate_continuation_event_timeline(runtime, label, reasons)
     _validate_electric_target(saved, runtime, label, reasons)
     for attribute in _BALANCE_ATTRIBUTES:
         if not hasattr(runtime, attribute):
@@ -842,6 +1048,47 @@ def _validate_event_timeline(saved, runtime, label, reasons):
         0 <= int(saved_i_event) < saved_events.size
     ):
         reasons.append(f"{label} saved i_event is outside the event timeline.")
+
+
+def _validate_continuation_event_timeline(runtime, label, reasons):
+    """Validate the freshly built event timeline used after continuation."""
+
+    runtime_events = getattr(runtime, "events_time", None)
+    if runtime_events is None:
+        reasons.append(f"{label} event timeline is missing from the runtime.")
+        return
+
+    try:
+        runtime_events = np.asarray(runtime_events, dtype=float)
+    except (TypeError, ValueError):
+        reasons.append(f"{label} runtime event timeline is not numeric.")
+        return
+
+    if runtime_events.ndim != 1 or runtime_events.size == 0:
+        reasons.append(
+            f"{label} runtime event timeline must be a non-empty 1-D array."
+        )
+        return
+    if not np.isfinite(runtime_events).all():
+        reasons.append(
+            f"{label} runtime event timeline contains non-finite values."
+        )
+    if runtime_events.size > 1 and np.any(np.diff(runtime_events) <= 0.0):
+        reasons.append(
+            f"{label} runtime event timeline must be strictly increasing."
+        )
+    if getattr(runtime, "i_event", None) != 0:
+        reasons.append(
+            f"{label} runtime event cursor must be zero before continuation."
+        )
+
+
+def _continuation_event_index(events, checkpoint_time):
+    """Return the first event strictly after the continuation boundary."""
+
+    events = np.asarray(events, dtype=float)
+    next_index = int(np.searchsorted(events, checkpoint_time, side="right"))
+    return min(next_index, events.size - 1)
 
 
 def _validate_electric_target(saved, runtime, label, reasons):
@@ -998,10 +1245,10 @@ def _read_checkpoint_file(h5file, checkpoint_path):
     )
 
     schema_version = _text(metadata.attrs["schema_version"], "schema_version")
-    if schema_version != SCHEMA_VERSION:
+    if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
         raise CheckpointReadError(
             f"Unsupported checkpoint schema {schema_version!r}; "
-            f"expected {SCHEMA_VERSION!r}."
+            f"expected one of {sorted(SUPPORTED_SCHEMA_VERSIONS)!r}."
         )
     if not _strict_bool(metadata.attrs["complete"], "metadata.complete"):
         raise CheckpointReadError("Checkpoint is incomplete.")
@@ -1026,6 +1273,10 @@ def _read_checkpoint_file(h5file, checkpoint_path):
     if not git_commit:
         raise CheckpointReadError("Checkpoint git commit metadata is empty.")
     manifest = _read_input_manifest(metadata)
+    continuation_profile = _read_continuation_profile(
+        metadata,
+        schema_version,
+    )
 
     simulation = h5file["simulation"]
     if not isinstance(simulation, h5py.Group):
@@ -1060,6 +1311,7 @@ def _read_checkpoint_file(h5file, checkpoint_path):
         trigger=trigger,
         git_commit=git_commit,
         input_manifest=manifest,
+        continuation_profile=continuation_profile,
         simulation_time=simulation_time,
         num_step=num_step,
         conductors=conductors,
@@ -1109,6 +1361,54 @@ def _read_input_manifest(metadata):
         seen_paths.add(path)
         entries.append(InputManifestEntry(path, sha256, int(size)))
     return tuple(entries)
+
+
+def _read_continuation_profile(metadata, schema_version):
+    if schema_version == "1.1":
+        return None
+
+    _require_members(
+        metadata,
+        ("continuation_profile",),
+        "metadata",
+    )
+    profile_group = metadata["continuation_profile"]
+    if not isinstance(profile_group, h5py.Group):
+        raise CheckpointReadError(
+            "metadata/continuation_profile must be a group."
+        )
+    _require_attributes(
+        profile_group,
+        ("profile_version",),
+        "metadata/continuation_profile",
+    )
+    profile_version = _text(
+        profile_group.attrs["profile_version"],
+        "continuation profile version",
+    )
+    if profile_version != CONTINUATION_PROFILE_VERSION:
+        raise CheckpointReadError(
+            f"Unsupported continuation profile {profile_version!r}; "
+            f"expected {CONTINUATION_PROFILE_VERSION!r}."
+        )
+
+    section_names = ("immutable", "time_policy", "drivers")
+    _require_members(
+        profile_group,
+        section_names,
+        "metadata/continuation_profile",
+    )
+    sections = {}
+    for section_name in section_names:
+        section = _read_node(profile_group[section_name])
+        if not isinstance(section, Mapping):
+            raise CheckpointReadError(
+                "Continuation profile section "
+                f"{section_name!r} must be a mapping."
+            )
+        sections[section_name] = section
+
+    return ContinuationProfile(**sections)
 
 
 def _read_conductor(group, group_name):
@@ -1620,6 +1920,762 @@ def build_input_manifest(simulation, excluded_dir=None):
     ]
 
 
+def build_continuation_profile(simulation):
+    """Build the normalized semantic profile stored in new checkpoints."""
+
+    transient_input = getattr(simulation, "transient_input", {})
+    if not isinstance(transient_input, Mapping):
+        raise CheckpointValidationError(
+            "simulation.transient_input must be a mapping when present."
+        )
+
+    immutable = _build_immutable_profile(simulation, transient_input)
+    time_policy = {
+        key: copy.deepcopy(transient_input[key])
+        for key in _CONTINUATION_TIME_POLICY_KEYS
+        if key in transient_input
+    }
+    conductor_time_policy = _build_conductor_time_policy(simulation)
+    if conductor_time_policy:
+        time_policy["conductors"] = conductor_time_policy
+
+    return ContinuationProfile(
+        immutable=immutable,
+        time_policy=time_policy,
+        drivers=_build_driver_profile(simulation),
+    )
+
+
+def _build_immutable_profile(simulation, transient_input):
+    """Return fixed input semantics that a continuation cannot change."""
+
+    immutable = {
+        key: copy.deepcopy(transient_input[key])
+        for key in _CONTINUATION_IMMUTABLE_TRANSIENT_KEYS
+        if key in transient_input
+    }
+
+    excluded_transient_keys = set(_CONTINUATION_TIME_POLICY_KEYS) | set(
+        _CONTINUATION_IMMUTABLE_TRANSIENT_KEYS
+    )
+    fixed_transient = _mapping_without_keys(
+        transient_input,
+        excluded_transient_keys,
+    )
+    if fixed_transient:
+        immutable["transient_input"] = fixed_transient
+
+    environment_inputs = getattr(
+        getattr(simulation, "environment", None),
+        "inputs",
+        None,
+    )
+    if isinstance(environment_inputs, Mapping):
+        immutable["environment"] = {
+            "inputs": _detached_mapping(environment_inputs),
+        }
+
+    conductors = {}
+    for conductor in _identified_conductors(simulation):
+        conductor_profile = _immutable_conductor_profile(
+            simulation,
+            conductor,
+        )
+        conductors[conductor.identifier] = conductor_profile
+    if conductors:
+        immutable["conductors"] = conductors
+
+    return immutable
+
+
+def _immutable_conductor_profile(simulation, conductor):
+    """Return fixed conductor, component, and structural-file semantics."""
+
+    profile = {}
+    inputs = getattr(conductor, "inputs", None)
+    if isinstance(inputs, Mapping):
+        excluded_input_keys = set(
+            _CONTINUATION_CONDUCTOR_TIME_POLICY_KEYS
+        ) | set(_CONTINUATION_CONDUCTOR_DRIVER_KEYS)
+        fixed_inputs = _mapping_without_keys(inputs, excluded_input_keys)
+        if fixed_inputs:
+            profile["inputs"] = fixed_inputs
+
+    operations = getattr(conductor, "operations", None)
+    if isinstance(operations, Mapping) and operations:
+        profile["operations"] = _detached_mapping(operations)
+
+    static_files = _build_static_file_profile(simulation, conductor)
+    if static_files:
+        profile["static_files"] = static_files
+
+    components = {}
+    for component, kind in _component_inventory(
+        conductor,
+        f"conductor {conductor.identifier!r}",
+    ):
+        identifier = getattr(component, "identifier", None)
+        if not identifier:
+            raise CheckpointValidationError(
+                f"Conductor {conductor.identifier!r} contains a component "
+                "without an identifier."
+            )
+        component_profile = {"kind": kind}
+        component_inputs = getattr(component, "inputs", None)
+        if isinstance(component_inputs, Mapping) and component_inputs:
+            component_profile["inputs"] = _detached_mapping(
+                component_inputs
+            )
+        component_operations = getattr(component, "operations", None)
+        if isinstance(component_operations, Mapping) and component_operations:
+            if kind == "solid":
+                fixed_operations = _mapping_without_keys(
+                    component_operations,
+                    _CONTINUATION_COMPONENT_DRIVER_KEYS,
+                )
+            else:
+                fixed_operations = _detached_mapping(
+                    component_operations
+                )
+            if fixed_operations:
+                component_profile["operations"] = fixed_operations
+        components[identifier] = component_profile
+    profile["components"] = components
+
+    return profile
+
+
+def _build_static_file_profile(simulation, conductor):
+    """Return content identities for input files containing fixed semantics."""
+
+    file_input = getattr(conductor, "file_input", None)
+    if not isinstance(file_input, Mapping):
+        return {}
+
+    excluded_keys = (
+        _CONTINUATION_DRIVER_FILE_KEYS
+        | _CONTINUATION_MIXED_FILE_KEYS
+    )
+    result = {}
+    for key in sorted(file_input, key=str):
+        if key in excluded_keys:
+            continue
+        raw_path = file_input[key]
+        if raw_path is None or (
+            isinstance(raw_path, str)
+            and raw_path.strip().lower() in ("", "none", "nan")
+        ):
+            continue
+        result[key] = _input_file_identity(
+            simulation,
+            raw_path,
+            key,
+        )
+    return result
+
+
+def _input_file_identity(simulation, raw_path, label):
+    """Return a portable path and deterministic content identity."""
+
+    if not isinstance(raw_path, (str, os.PathLike)):
+        raise CheckpointValidationError(
+            f"Invalid static input path for {label}."
+        )
+
+    base_path = Path(getattr(simulation, "basePath", "")).resolve()
+    path = Path(raw_path)
+    if not path.is_absolute():
+        path = base_path / path
+    path = path.resolve()
+    if not _is_relative_to(path, base_path):
+        raise CheckpointValidationError(
+            f"Static input {label} must be inside simulation.basePath."
+        )
+    if not path.is_file():
+        raise CheckpointValidationError(
+            f"Static input file does not exist: {path!s}."
+        )
+
+    if path.suffix.casefold() == ".xlsx":
+        identity_payload = _xlsx_semantic_payload(path, label)
+        sha256 = hashlib.sha256(identity_payload).hexdigest()
+        size = len(identity_payload)
+    else:
+        sha256 = _sha256(path)
+        size = path.stat().st_size
+
+    return {
+        "path": path.relative_to(base_path).as_posix(),
+        "sha256": sha256,
+        "size": size,
+    }
+
+
+def _xlsx_semantic_payload(path, label):
+    """Return canonical workbook semantics, excluding ZIP metadata."""
+
+    try:
+        workbook = load_workbook(
+            filename=path,
+            read_only=True,
+            data_only=False,
+            keep_links=True,
+        )
+    except Exception as error:
+        raise CheckpointValidationError(
+            f"Could not read static XLSX input {label}: {path!s}."
+        ) from error
+
+    try:
+        worksheets = []
+        for worksheet in workbook.worksheets:
+            cells = []
+            for row in worksheet.iter_rows():
+                for cell in row:
+                    if cell.value is None:
+                        continue
+                    cells.append(
+                        (
+                            cell.coordinate,
+                            cell.data_type,
+                            _canonical_xlsx_value(cell.value),
+                        )
+                    )
+            worksheets.append((worksheet.title, cells))
+
+        canonical = {
+            "format": "opensc2-xlsx-cells-v1",
+            "worksheets": worksheets,
+        }
+        return json.dumps(
+            canonical,
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    finally:
+        workbook.close()
+
+
+def _canonical_xlsx_value(value):
+    """Return a JSON-safe scalar while preserving its relevant type."""
+
+    if isinstance(value, datetime):
+        return {"type": "datetime", "value": value.isoformat()}
+    if isinstance(value, date):
+        return {"type": "date", "value": value.isoformat()}
+    if isinstance(value, time):
+        return {"type": "time", "value": value.isoformat()}
+    if isinstance(value, timedelta):
+        return {
+            "type": "timedelta",
+            "seconds": value.total_seconds(),
+        }
+    if isinstance(value, bytes):
+        return {"type": "bytes", "value": value.hex()}
+    if isinstance(value, float) and not np.isfinite(value):
+        return {"type": "float", "value": repr(value)}
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return {
+        "type": f"{type(value).__module__}.{type(value).__qualname__}",
+        "value": str(value),
+    }
+
+
+def _mapping_without_keys(mapping, excluded_keys):
+    """Return a sorted detached mapping without the selected semantic keys."""
+
+    excluded_keys = set(excluded_keys)
+    return {
+        key: copy.deepcopy(mapping[key])
+        for key in sorted(mapping, key=str)
+        if key not in excluded_keys
+    }
+
+
+def _detached_mapping(mapping):
+    """Return a deterministic deep copy of an input mapping."""
+
+    return {
+        key: copy.deepcopy(mapping[key])
+        for key in sorted(mapping, key=str)
+    }
+
+
+def compare_continuation_profiles(checkpoint_profile, runtime_profile):
+    """Compare saved and current semantics without mutating either profile.
+
+    Differences in the time policy and physical drivers are deliberately
+    permitted for continuation runs, but remain explicitly reported.
+    Differences in the immutable section are blocking.
+    """
+
+    for name, profile in (
+        ("checkpoint_profile", checkpoint_profile),
+        ("runtime_profile", runtime_profile),
+    ):
+        if not isinstance(profile, ContinuationProfile):
+            raise TypeError(f"{name} must be a ContinuationProfile instance.")
+
+    immutable_differences = tuple(
+        _continuation_difference_paths(
+            checkpoint_profile.immutable,
+            runtime_profile.immutable,
+            "immutable",
+        )
+    )
+    time_policy_differences = tuple(
+        _continuation_difference_paths(
+            checkpoint_profile.time_policy,
+            runtime_profile.time_policy,
+            "time_policy",
+        )
+    )
+    driver_differences = tuple(
+        _continuation_difference_paths(
+            checkpoint_profile.drivers,
+            runtime_profile.drivers,
+            "drivers",
+        )
+    )
+    return ContinuationProfileComparison(
+        is_compatible=not immutable_differences,
+        immutable_differences=immutable_differences,
+        time_policy_differences=time_policy_differences,
+        driver_differences=driver_differences,
+    )
+
+
+def _build_conductor_time_policy(simulation):
+    """Return conductor-local integration settings keyed by identifier."""
+
+    result = {}
+    for conductor in _identified_conductors(simulation):
+        inputs = getattr(conductor, "inputs", {})
+        if not isinstance(inputs, Mapping):
+            continue
+        parameters = _selected_parameters(
+            inputs,
+            _CONTINUATION_CONDUCTOR_TIME_POLICY_KEYS,
+        )
+        if parameters:
+            result[conductor.identifier] = parameters
+    return result
+
+
+def _build_driver_profile(simulation):
+    """Normalize current, magnetic, and heating driver definitions."""
+
+    result = {}
+    for conductor in _identified_conductors(simulation):
+        components = _solid_component_operations(conductor)
+        if not components:
+            continue
+
+        driver_families = {}
+        current = _current_driver_profile(simulation, conductor, components)
+        if current is not None:
+            driver_families["current"] = current
+
+        family_builders = (
+            ("magnetic_field", _magnetic_field_profile),
+            ("magnetic_field_gradient", _magnetic_gradient_profile),
+            ("external_heat", _external_heat_profile),
+        )
+        for family_name, builder in family_builders:
+            family_components = {}
+            for component, operations in components:
+                profile = builder(
+                    simulation,
+                    conductor,
+                    operations,
+                )
+                if profile is not None:
+                    family_components[component.identifier] = profile
+            if family_components:
+                driver_families[family_name] = {
+                    "components": family_components,
+                }
+
+        if driver_families:
+            result[conductor.identifier] = driver_families
+    return result
+
+
+def _identified_conductors(simulation):
+    """Return conductors in deterministic identifier order."""
+
+    conductors = list(getattr(simulation, "list_of_Conductors", ()))
+    identified = [
+        conductor
+        for conductor in conductors
+        if getattr(conductor, "identifier", None)
+    ]
+    return sorted(identified, key=lambda item: item.identifier)
+
+
+def _solid_component_operations(conductor):
+    """Return solid components having operation mappings."""
+
+    components = []
+    for component in _collection(conductor, "SolidComponent"):
+        identifier = getattr(component, "identifier", None)
+        operations = getattr(component, "operations", None)
+        if identifier and isinstance(operations, Mapping):
+            components.append((component, operations))
+    return sorted(components, key=lambda item: item[0].identifier)
+
+
+def _current_driver_profile(simulation, conductor, components):
+    """Return the conductor-global current source and component settings."""
+
+    inputs = getattr(conductor, "inputs", {})
+    if not isinstance(inputs, Mapping) or "I0_OP_MODE" not in inputs:
+        return None
+
+    mode = inputs["I0_OP_MODE"]
+    source = _driver_source(
+        simulation,
+        conductor,
+        mode,
+        auxiliary_key="EXTERNAL_CURRENT",
+        function_path=_CURRENT_FUNCTION,
+        canonical_modes=(0,),
+        disabled_modes=(None,),
+        auxiliary_modes=(-1,),
+        function_modes=(-2,),
+        label="current",
+    )
+    component_profiles = {}
+    for component, operations in components:
+        if "IOP_MODE" not in operations:
+            continue
+        keys = ["IOP_MODE"]
+        if mode == -1:
+            keys.append("IOP_INTERPOLATION")
+        component_profiles[component.identifier] = _selected_parameters(
+            operations,
+            keys,
+        )
+
+    return {
+        "source": source,
+        "parameters": _selected_parameters(
+            inputs,
+            ("I0_OP_MODE", "I0_OP_TOT"),
+        ),
+        "components": component_profiles,
+    }
+
+
+def _magnetic_field_profile(simulation, conductor, operations):
+    """Return one component magnetic-field driver definition."""
+
+    if "IBIFUN" not in operations:
+        return None
+    mode = operations["IBIFUN"]
+    source = _driver_source(
+        simulation,
+        conductor,
+        mode,
+        auxiliary_key="EXTERNAL_BFIELD",
+        canonical_modes=(0, 1),
+        auxiliary_predicate=lambda value: value is not None and value < 0,
+        label="magnetic field",
+    )
+    keys = ["IBIFUN"]
+    if mode is not None and mode < 0:
+        keys.extend(("B_INTERPOLATION", "B_field_units"))
+    elif mode == 0:
+        keys.extend(("BISS", "BOSS"))
+    elif mode == 1:
+        keys.extend(("BISS", "BOSS", "BITR", "BOTR"))
+    return {
+        "source": source,
+        "parameters": _selected_parameters(operations, keys),
+    }
+
+
+def _magnetic_gradient_profile(simulation, conductor, operations):
+    """Return one component magnetic-field-gradient definition."""
+
+    if "IALPHAB" not in operations:
+        return None
+    mode = operations["IALPHAB"]
+    source = _driver_source(
+        simulation,
+        conductor,
+        mode,
+        auxiliary_key="EXTERNAL_ALPHAB",
+        disabled_modes=(0, None),
+        auxiliary_predicate=lambda value: value is not None and value <= -1,
+        label="magnetic field gradient",
+    )
+    keys = ["IALPHAB"]
+    if mode is not None and mode <= -1:
+        keys.append("ALPHAB_INTERPOLATION")
+    return {
+        "source": source,
+        "parameters": _selected_parameters(operations, keys),
+    }
+
+
+def _external_heat_profile(simulation, conductor, operations):
+    """Return one component external-heating driver definition."""
+
+    if "IQFUN" not in operations:
+        return None
+    mode = operations["IQFUN"]
+    source = _driver_source(
+        simulation,
+        conductor,
+        mode,
+        auxiliary_key="EXTERNAL_HEAT",
+        function_path=_HEAT_FUNCTION,
+        disabled_modes=(0, None),
+        auxiliary_modes=(-1,),
+        function_modes=(-2,),
+        canonical_predicate=lambda value: value is not None and value > 0,
+        label="external heat",
+    )
+    keys = ["IQFUN"]
+    if mode is not None and mode > 0:
+        keys.extend(("XQBEG", "XQEND", "Q0", "TQBEG", "TQEND"))
+    elif mode == -1:
+        keys.extend(("Q_INTERPOLATION", "TQBEG", "TQEND"))
+    return {
+        "source": source,
+        "parameters": _selected_parameters(operations, keys),
+    }
+
+
+def _driver_source(
+    simulation,
+    conductor,
+    mode,
+    *,
+    auxiliary_key,
+    label,
+    function_path=None,
+    canonical_modes=(),
+    disabled_modes=(),
+    auxiliary_modes=(),
+    function_modes=(),
+    canonical_predicate=None,
+    auxiliary_predicate=None,
+):
+    """Return a detached descriptor for one selected driver source."""
+
+    if mode in disabled_modes:
+        return {"kind": "disabled"}
+    if mode in canonical_modes or (
+        canonical_predicate is not None and canonical_predicate(mode)
+    ):
+        return {"kind": "canonical_input"}
+    if mode in auxiliary_modes or (
+        auxiliary_predicate is not None and auxiliary_predicate(mode)
+    ):
+        return _auxiliary_file_source(simulation, conductor, auxiliary_key)
+    if mode in function_modes:
+        return {
+            "kind": "python_function",
+            "callable": function_path,
+        }
+    raise CheckpointValidationError(
+        f"Unsupported {label} mode in continuation profile: {mode!r}."
+    )
+
+
+def _auxiliary_file_source(simulation, conductor, file_input_key):
+    """Describe an auxiliary input by portable path and content identity."""
+
+    file_input = getattr(conductor, "file_input", {})
+    if not isinstance(file_input, Mapping) or file_input_key not in file_input:
+        raise CheckpointValidationError(
+            f"Missing conductor.file_input[{file_input_key!r}]."
+        )
+
+    raw_path = file_input[file_input_key]
+    if not isinstance(raw_path, (str, os.PathLike)) or not str(raw_path).strip():
+        raise CheckpointValidationError(
+            f"Invalid auxiliary driver path for {file_input_key}."
+        )
+
+    base_path = Path(getattr(simulation, "basePath", "")).resolve()
+    path = Path(raw_path)
+    if not path.is_absolute():
+        path = base_path / path
+    path = path.resolve()
+    if not _is_relative_to(path, base_path):
+        raise CheckpointValidationError(
+            f"Auxiliary driver {file_input_key} must be inside "
+            "simulation.basePath."
+        )
+    if not path.is_file():
+        raise CheckpointValidationError(
+            f"Auxiliary driver file does not exist: {path!s}."
+        )
+
+    return {
+        "kind": "auxiliary_file",
+        "path": path.relative_to(base_path).as_posix(),
+        "sha256": _sha256(path),
+        "size": path.stat().st_size,
+    }
+
+
+def _selected_parameters(mapping, keys):
+    """Copy selected existing values while preserving key order."""
+
+    return {
+        key: copy.deepcopy(mapping[key])
+        for key in keys
+        if key in mapping
+    }
+
+
+def _continuation_difference_paths(checkpoint_value, runtime_value, path):
+    """Return sorted leaf paths whose detached semantic values differ."""
+
+    if isinstance(checkpoint_value, Mapping) and isinstance(
+        runtime_value,
+        Mapping,
+    ):
+        differences = []
+        keys = sorted(
+            set(checkpoint_value) | set(runtime_value),
+            key=str,
+        )
+        for key in keys:
+            child_path = f"{path}.{key}"
+            if key not in checkpoint_value:
+                differences.extend(
+                    _continuation_leaf_paths(
+                        runtime_value[key],
+                        child_path,
+                    )
+                )
+                continue
+            if key not in runtime_value:
+                differences.extend(
+                    _continuation_leaf_paths(
+                        checkpoint_value[key],
+                        child_path,
+                    )
+                )
+                continue
+            differences.extend(
+                _continuation_difference_paths(
+                    checkpoint_value[key],
+                    runtime_value[key],
+                    child_path,
+                )
+            )
+        return differences
+
+    if isinstance(checkpoint_value, Mapping) or isinstance(
+        runtime_value,
+        Mapping,
+    ):
+        return [path]
+
+    sequence_types = (list, tuple)
+    if isinstance(checkpoint_value, sequence_types) and isinstance(
+        runtime_value,
+        sequence_types,
+    ):
+        if len(checkpoint_value) != len(runtime_value):
+            return [path]
+        differences = []
+        for index, (checkpoint_item, runtime_item) in enumerate(
+            zip(checkpoint_value, runtime_value)
+        ):
+            differences.extend(
+                _continuation_difference_paths(
+                    checkpoint_item,
+                    runtime_item,
+                    f"{path}[{index}]",
+                )
+            )
+        return differences
+
+    if isinstance(checkpoint_value, sequence_types) or isinstance(
+        runtime_value,
+        sequence_types,
+    ):
+        return [path]
+
+    return [] if _continuation_values_equal(
+        checkpoint_value,
+        runtime_value,
+    ) else [path]
+
+
+def _continuation_leaf_paths(value, path):
+    """Return deterministic leaf paths for an added or missing subtree."""
+
+    if isinstance(value, Mapping):
+        if not value:
+            return [path]
+        leaves = []
+        for key in sorted(value, key=str):
+            leaves.extend(
+                _continuation_leaf_paths(
+                    value[key],
+                    f"{path}.{key}",
+                )
+            )
+        return leaves
+
+    if isinstance(value, (list, tuple)):
+        if not value:
+            return [path]
+        leaves = []
+        for index, item in enumerate(value):
+            leaves.extend(
+                _continuation_leaf_paths(
+                    item,
+                    f"{path}[{index}]",
+                )
+            )
+        return leaves
+
+    return [path]
+
+
+def _continuation_values_equal(checkpoint_value, runtime_value):
+    """Return a scalar Boolean for ordinary and NumPy semantic values."""
+
+    if isinstance(checkpoint_value, np.ndarray) or isinstance(
+        runtime_value,
+        np.ndarray,
+    ):
+        try:
+            return bool(
+                np.array_equal(
+                    np.asarray(checkpoint_value),
+                    np.asarray(runtime_value),
+                    equal_nan=True,
+                )
+            )
+        except TypeError:
+            return bool(
+                np.array_equal(
+                    np.asarray(checkpoint_value),
+                    np.asarray(runtime_value),
+                )
+            )
+
+    try:
+        equal = checkpoint_value == runtime_value
+    except (TypeError, ValueError):
+        return False
+    if isinstance(equal, np.ndarray):
+        return bool(np.all(equal))
+    return bool(equal)
+
+
 def _build_input_manifest_entries(input_directory, excluded_dir=None):
     """Build a deterministic, detached manifest for one input directory."""
 
@@ -1762,6 +2818,29 @@ def _write_metadata(h5file, simulation, trigger, manifest):
     )
     input_manifest.create_dataset(
         "sizes", data=np.asarray([entry["size"] for entry in manifest], dtype=np.int64)
+    )
+
+
+    continuation_profile = build_continuation_profile(simulation)
+    profile_group = metadata.create_group(
+        "continuation_profile",
+        track_order=True,
+    )
+    profile_group.attrs["profile_version"] = CONTINUATION_PROFILE_VERSION
+    _write_value(
+        profile_group,
+        "immutable",
+        continuation_profile.immutable,
+    )
+    _write_value(
+        profile_group,
+        "time_policy",
+        continuation_profile.time_policy,
+    )
+    _write_value(
+        profile_group,
+        "drivers",
+        continuation_profile.drivers,
     )
 
 
