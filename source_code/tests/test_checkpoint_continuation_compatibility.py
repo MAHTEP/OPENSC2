@@ -9,7 +9,6 @@ class CheckpointContinuationProfileCompatibilityTests(unittest.TestCase):
     def _profile(self):
         return ContinuationProfile(
             immutable={
-                "IADAPTIME": 0,
                 "conductors": {
                     "COND_1": {
                         "inputs": {
@@ -20,6 +19,7 @@ class CheckpointContinuationProfileCompatibilityTests(unittest.TestCase):
                 },
             },
             time_policy={
+                "IADAPTIME": 0,
                 "TIME_STEP": 0.025,
                 "STPMIN": 0.0025,
                 "TEND": 0.4,

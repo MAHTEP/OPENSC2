@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+from openpyxl import Workbook
 from simulation import Simulation
 from utility_functions.checkpoint_schedule import (
     CheckpointBoundary,
@@ -34,7 +35,13 @@ class CheckpointScheduleSimulationTests(unittest.TestCase):
         self.addCleanup(self.temporary_directory.cleanup)
         self.root = Path(self.temporary_directory.name)
         self.starter_path = self.root / "transitory_input.xlsx"
-        self.starter_path.write_bytes(b"test workbook placeholder")
+        workbook = Workbook()
+        transient = workbook.active
+        transient.title = "TRANSIENT"
+        transient["A1"] = "OPENSC2 transient input"
+        transient.append(("Variable name", "Value"))
+        workbook.save(self.starter_path)
+        workbook.close()
         self.transient_input = {
             "SIMULATION": "schedule-test",
             "MAGNET": "conductor_definition.xlsx",
@@ -123,6 +130,61 @@ class CheckpointScheduleSimulationTests(unittest.TestCase):
                 Simulation(str(self.root))
 
         environment.assert_not_called()
+
+    def test_initialization_preserves_boolean_with_iadaptime_one(self):
+        workbook = Workbook()
+        transient = workbook.active
+        transient.title = "TRANSIENT"
+        transient["A1"] = "OPENSC2 transient input"
+        transient.append(("Variable name", "Value"))
+        for name, value in (
+            ("SIMULATION", "boolean-type-test"),
+            ("MAGNET", "conductor_definition.xlsx"),
+            ("ENVIRONMENT", "environment_input.xlsx"),
+            ("TEND", 0.02),
+            ("IADAPTIME", 1),
+            ("TIME_STEP", 0.00125),
+            ("STPMIN", 0.000625),
+            ("STPMAX", 0.0025),
+            ("MLT_INCREASE", 1.2),
+            ("MLT_DECREASE", 0.5),
+            ("USER_CHECKPOINTS", True),
+        ):
+            transient.append((name, value))
+        checkpoints = workbook.create_sheet("CHECKPOINTS")
+        checkpoints["A1"] = "Time (s)"
+        workbook.save(self.starter_path)
+        workbook.close()
+
+        with (
+            patch.object(
+                Simulation,
+                "CWD",
+                str(self.root / "source_code"),
+            ),
+            patch("simulation.check_flag_value"),
+            patch(
+                "simulation.Environment",
+                return_value=SimpleNamespace(),
+            ),
+        ):
+            simulation = Simulation(str(self.root))
+
+        self.assertIs(
+            simulation.transient_input["USER_CHECKPOINTS"],
+            True,
+        )
+        self.assertIsInstance(
+            simulation.transient_input["USER_CHECKPOINTS"],
+            bool,
+        )
+        self.assertTrue(simulation.checkpoint_schedule.user_enabled)
+        self.assertEqual(
+            simulation.checkpoint_schedule.boundaries,
+            (
+                CheckpointBoundary(time=0.02, trigger="final"),
+            ),
+        )
 
     def _observe_first_planner_call(self, schedule, *, current_time=0.0):
         simulation = Simulation.__new__(Simulation)

@@ -24,17 +24,19 @@ from openpyxl import load_workbook
 from utility_functions.checkpoint_schedule import (
     checkpoint_boundary_due,
 )
+from utility_functions.utils_global_info import IADAPTIME_VALUES
 
 
 SCHEMA_VERSION = "1.1"
 SUPPORTED_SCHEMA_VERSIONS = frozenset((SCHEMA_VERSION,))
-CONTINUATION_PROFILE_VERSION = "1.0"
+CONTINUATION_PROFILE_VERSION = "1.1"
 VALID_TRIGGERS = frozenset(("periodic", "requested", "final"))
 DEFAULT_CHECKPOINT_EVERY_N_STEPS = 100
 CHECKPOINT_INTERVAL_INPUT = "CHECKPOINT_EVERY_N_STEPS"
 
-_CONTINUATION_IMMUTABLE_TRANSIENT_KEYS = ("IADAPTIME",)
+_CONTINUATION_IMMUTABLE_TRANSIENT_KEYS = ()
 _CONTINUATION_TIME_POLICY_KEYS = (
+    "IADAPTIME",
     "TIME_STEP",
     "STPMIN",
     "STPMAX",
@@ -799,18 +801,51 @@ def _validate_fresh_runtime_clock(simulation, reasons):
 
 
 def _validate_continuation_time_policy(checkpoint, simulation, reasons):
-    """Validate the fixed-step policy selected for a continuation run."""
+    """Validate the time policy selected for a continuation run."""
 
     transient_input = getattr(simulation, "transient_input", None)
     if not isinstance(transient_input, Mapping):
         reasons.append("Continuation transient input is missing or invalid.")
         return
 
-    if transient_input.get("IADAPTIME") != 0:
-        reasons.append("IADAPTIME must remain 0 during continuation.")
+    iadaptime_value = transient_input.get("IADAPTIME")
+    try:
+        iadaptime_array = np.asarray(iadaptime_value)
+        iadaptime_numeric = float(iadaptime_array)
+        valid_iadaptime = (
+            iadaptime_array.ndim == 0
+            and not isinstance(iadaptime_value, (bool, np.bool_))
+            and np.issubdtype(iadaptime_array.dtype, np.number)
+            and np.isfinite(iadaptime_array)
+            and iadaptime_numeric.is_integer()
+            and int(iadaptime_numeric) in IADAPTIME_VALUES
+        )
+    except (TypeError, ValueError):
+        valid_iadaptime = False
+
+    iadaptime = None
+    if not valid_iadaptime:
+        reasons.append(
+            "Continuation IADAPTIME must be one of "
+            f"{IADAPTIME_VALUES}."
+        )
+    else:
+        iadaptime = int(iadaptime_numeric)
+        if iadaptime == -1:
+            reasons.append(
+                "Continuation IADAPTIME=-1 is not implemented."
+            )
 
     numeric_values = {}
-    for name in ("TIME_STEP", "STPMIN", "TEND"):
+    numeric_names = ["TIME_STEP", "STPMIN", "TEND"]
+    if iadaptime in (-2, 1, 2):
+        numeric_names.append("STPMAX")
+    if iadaptime in (1, 2):
+        numeric_names.extend(("MLT_INCREASE", "MLT_DECREASE"))
+    if iadaptime == -2:
+        numeric_names.extend(("TIMEREF", "TAUREF"))
+
+    for name in numeric_names:
         value = transient_input.get(name)
         try:
             array = np.asarray(value)
@@ -831,9 +866,39 @@ def _validate_continuation_time_policy(checkpoint, simulation, reasons):
 
         numeric_values[name] = float(array)
 
-    for name in ("TIME_STEP", "STPMIN"):
+    positive_names = ["TIME_STEP", "STPMIN"]
+    if iadaptime in (-2, 1, 2):
+        positive_names.append("STPMAX")
+    if iadaptime in (1, 2):
+        positive_names.extend(("MLT_INCREASE", "MLT_DECREASE"))
+    if iadaptime == -2:
+        positive_names.append("TAUREF")
+
+    for name in positive_names:
         if name in numeric_values and numeric_values[name] <= 0.0:
             reasons.append(f"Continuation {name} must be positive.")
+
+    if (
+        iadaptime in (-2, 1, 2)
+        and "STPMIN" in numeric_values
+        and "STPMAX" in numeric_values
+    ):
+        if numeric_values["STPMIN"] > numeric_values["STPMAX"]:
+            reasons.append(
+                "Continuation STPMIN must not exceed STPMAX."
+            )
+        if (
+            "TIME_STEP" in numeric_values
+            and not (
+                numeric_values["STPMIN"]
+                <= numeric_values["TIME_STEP"]
+                <= numeric_values["STPMAX"]
+            )
+        ):
+            reasons.append(
+                "Continuation TIME_STEP must lie between STPMIN and "
+                "STPMAX for adaptive time stepping."
+            )
 
     if "TEND" not in numeric_values or "STPMIN" not in numeric_values:
         return

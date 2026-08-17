@@ -112,10 +112,10 @@ class CheckpointContinuationCompatibilityIntegrationTests(unittest.TestCase):
         self.assertIn("time_policy.TIME_STEP", warning_text)
         self.assertIn("drivers.COND_1.current", warning_text)
 
-    def test_immutable_change_blocks_continuation(self):
+    def test_iadaptime_change_is_allowed_and_reported(self):
         checkpoint = self._checkpoint()
         runtime_profile = copy.deepcopy(checkpoint.continuation_profile)
-        runtime_profile.immutable["IADAPTIME"] = 1
+        runtime_profile.time_policy["IADAPTIME"] = 1
 
         report = evaluate_restart_compatibility(
             checkpoint,
@@ -124,15 +124,20 @@ class CheckpointContinuationCompatibilityIntegrationTests(unittest.TestCase):
             runtime_profile=runtime_profile,
         )
 
-        self.assertFalse(report.is_compatible)
-        self.assertFalse(report.continuation_comparison.is_compatible)
+        self.assertTrue(report.is_compatible)
+        self.assertTrue(report.continuation_comparison.is_compatible)
+        self.assertEqual(report.blocking_reasons, ())
         self.assertEqual(
             report.continuation_comparison.immutable_differences,
-            ("immutable.IADAPTIME",),
+            (),
+        )
+        self.assertEqual(
+            report.continuation_comparison.time_policy_differences,
+            ("time_policy.IADAPTIME",),
         )
         self.assertIn(
-            "immutable.IADAPTIME",
-            "\n".join(report.blocking_reasons),
+            "time_policy.IADAPTIME",
+            "\n".join(report.warnings),
         )
 
     def test_missing_runtime_profile_blocks_without_fallback(self):

@@ -51,6 +51,60 @@ from utility_functions.plots import (
 from simulation_global_info import MLT_DEFAULT_VALUE
 from utility_functions.utils_global_info import VALID_FLAG_VALUES
 
+
+def _read_transient_input_preserving_excel_booleans(workbook_path):
+    """Read transient inputs without losing native Excel Boolean types.
+
+    ``pandas.read_excel`` can coerce an Excel Boolean to integer ``1`` or
+    ``0`` depending on the other numeric values in the same mixed-type
+    column. Read the table through pandas as before, then overlay only native
+    Boolean cells from openpyxl so all existing parsing semantics remain
+    unchanged.
+    """
+
+    transient_input = pd.read_excel(
+        workbook_path,
+        sheet_name="TRANSIENT",
+        skiprows=1,
+        header=0,
+        index_col=0,
+        usecols=["Variable name", "Value"],
+    )["Value"].to_dict()
+
+    workbook = load_workbook(
+        workbook_path,
+        read_only=True,
+        data_only=True,
+    )
+    try:
+        worksheet = workbook["TRANSIENT"]
+        name_column = None
+        value_column = None
+        header_row = None
+        for row in worksheet.iter_rows():
+            headings = {
+                cell.value: cell.column
+                for cell in row
+                if isinstance(cell.value, str)
+            }
+            if "Variable name" in headings and "Value" in headings:
+                name_column = headings["Variable name"]
+                value_column = headings["Value"]
+                header_row = row[0].row
+                break
+
+        if header_row is not None:
+            for row_index in range(header_row + 1, worksheet.max_row + 1):
+                name = worksheet.cell(row_index, name_column).value
+                value = worksheet.cell(row_index, value_column).value
+                if name in transient_input and isinstance(value, bool):
+                    transient_input[name] = value
+    finally:
+        workbook.close()
+
+    return transient_input
+
+
 class Simulation:
 
     # Current working directory
@@ -78,14 +132,11 @@ class Simulation:
         self.starter_file_path = os.path.join(self.basePath, self.starter_file)
     
         # Load input file transitory_input.xlsx and convert to a dictionary.
-        self.transient_input = pd.read_excel(
-            self.starter_file_path,
-            sheet_name="TRANSIENT",
-            skiprows=1,
-            header=0,
-            index_col=0,
-            usecols=["Variable name", "Value"],
-        )["Value"].to_dict()
+        self.transient_input = (
+            _read_transient_input_preserving_excel_booleans(
+                self.starter_file_path
+            )
+        )
         self.flag_start = False
         # Set to True only after a checkpoint has been applied successfully.
         self.restored_from_checkpoint = False

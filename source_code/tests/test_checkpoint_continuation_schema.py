@@ -74,8 +74,8 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
 
         with h5py.File(checkpoint_path, "r") as h5file:
             profile = h5file["metadata/continuation_profile"]
-            self.assertEqual(profile.attrs["profile_version"], "1.0")
-            self.assertEqual(profile["immutable/IADAPTIME"][()], 0)
+            self.assertEqual(profile.attrs["profile_version"], "1.1")
+            self.assertEqual(profile["time_policy/IADAPTIME"][()], 0)
             self.assertEqual(
                 profile["time_policy/TIME_STEP"][()],
                 0.025,
@@ -94,7 +94,6 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
         self.assertEqual(
             checkpoint.continuation_profile.immutable,
             {
-                "IADAPTIME": 0,
                 "conductors": {
                     "COND_1": {
                         "components": {
@@ -113,6 +112,7 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
             checkpoint.continuation_profile.time_policy,
             {
                 "CHECKPOINT_EVERY_N_STEPS": 50,
+                "IADAPTIME": 0,
                 "STPMIN": 0.0025,
                 "TEND": 0.4,
                 "TIME_STEP": 0.025,

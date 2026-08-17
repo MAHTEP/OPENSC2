@@ -137,7 +137,8 @@ class CheckpointContinuationImmutableProfileTests(unittest.TestCase):
         profile = build_continuation_profile(simulation)
         immutable = profile.immutable
 
-        self.assertEqual(immutable["IADAPTIME"], 0)
+        self.assertNotIn("IADAPTIME", immutable)
+        self.assertEqual(profile.time_policy["IADAPTIME"], 0)
         self.assertEqual(
             immutable["transient_input"],
             {
@@ -247,6 +248,7 @@ class CheckpointContinuationImmutableProfileTests(unittest.TestCase):
     def test_time_and_driver_changes_do_not_enter_immutable_profile(self):
         first, _, _, _, _ = self._simulation()
         second = copy.deepcopy(first)
+        second.transient_input["IADAPTIME"] = 1
         second.transient_input["TIME_STEP"] = 0.005
         second.transient_input["TEND"] = 1.0
         second_conductor = second.list_of_Conductors[0]
@@ -265,7 +267,10 @@ class CheckpointContinuationImmutableProfileTests(unittest.TestCase):
 
         self.assertEqual(first_profile.immutable, second_profile.immutable)
         self.assertTrue(comparison.is_compatible)
-        self.assertTrue(comparison.time_policy_differences)
+        self.assertIn(
+            "time_policy.IADAPTIME",
+            comparison.time_policy_differences,
+        )
         self.assertTrue(comparison.driver_differences)
 
     def test_profile_build_is_deterministic_and_non_mutating(self):

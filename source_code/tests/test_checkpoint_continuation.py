@@ -76,16 +76,20 @@ class CheckpointContinuationRestoreTests(unittest.TestCase):
         )
         self.assertEqual(conductor.i_event, 2)
 
-    def test_continuation_rejects_adaptive_time_policy_before_mutation(self):
+    def test_continuation_accepts_adaptive_time_policy(self):
         checkpoint = self._checkpoint_with_current_inputs()
         target = make_restore_target(self.input_dir)
         target.transient_input = {
             "IADAPTIME": 1,
             "TIME_STEP": 0.025,
             "STPMIN": 0.0025,
+            "STPMAX": 0.05,
+            "MLT_INCREASE": 1.2,
+            "MLT_DECREASE": 0.5,
             "TEND": 0.4,
         }
         conductor = target.list_of_Conductors[0]
+        conductor.time_step = 0.025
         conductor.i_event = 0
 
         compatibility = SimpleNamespace(
@@ -98,21 +102,18 @@ class CheckpointContinuationRestoreTests(unittest.TestCase):
             "utility_functions.checkpoint.evaluate_restart_compatibility",
             return_value=compatibility,
         ):
-            with self.assertRaisesRegex(
-                CheckpointValidationError,
-                "IADAPTIME.*0",
-            ):
-                apply_checkpoint_to_runtime(
-                    checkpoint,
-                    target,
-                    mode="continuation",
-                )
+            apply_checkpoint_to_runtime(
+                checkpoint,
+                target,
+                mode="continuation",
+            )
 
-        self.assertEqual(target.simulation_time, [0.0])
-        self.assertEqual(target.num_step, 0)
-        self.assertFalse(target.restored_from_checkpoint)
-        self.assertEqual(conductor.cond_time, [0.0])
-        self.assertEqual(conductor.cond_num_step, 0)
+        self.assertEqual(target.simulation_time, [0.0, 0.1])
+        self.assertEqual(target.num_step, 1)
+        self.assertTrue(target.restored_from_checkpoint)
+        self.assertEqual(conductor.time_step, 0.025)
+        self.assertEqual(conductor.cond_time, [0.0, 0.1])
+        self.assertEqual(conductor.cond_num_step, 1)
 
     def test_continuation_rejects_end_time_at_checkpoint_before_mutation(self):
         checkpoint = self._checkpoint_with_current_inputs()
