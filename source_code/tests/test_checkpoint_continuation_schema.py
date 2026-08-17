@@ -7,8 +7,9 @@ import h5py
 
 from test_checkpoint import make_simulation
 from utility_functions.checkpoint import (
+    CheckpointReadError,
     SCHEMA_VERSION,
-    evaluate_restart_compatibility,
+    SUPPORTED_SCHEMA_VERSIONS,
     read_checkpoint,
     write_checkpoint,
 )
@@ -37,7 +38,12 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
         }
         return simulation
 
-    def _write_legacy_schema_checkpoint(self):
+    def _write_checkpoint_with_schema(
+        self,
+        schema_version,
+        *,
+        remove_continuation_profile=False,
+    ):
         checkpoint_path = write_checkpoint(
             self._simulation_with_continuation_policy(),
             self.root / "checkpoints",
@@ -45,13 +51,20 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
         )
         with h5py.File(checkpoint_path, "r+") as h5file:
             metadata = h5file["metadata"]
-            metadata.attrs["schema_version"] = "1.1"
-            if "continuation_profile" in metadata:
+            metadata.attrs["schema_version"] = schema_version
+            if (
+                remove_continuation_profile
+                and "continuation_profile" in metadata
+            ):
                 del metadata["continuation_profile"]
         return checkpoint_path
 
-    def test_schema_1_2_persists_detached_continuation_profile(self):
-        self.assertEqual(SCHEMA_VERSION, "1.2")
+    def test_schema_1_1_persists_required_continuation_profile(self):
+        self.assertEqual(SCHEMA_VERSION, "1.1")
+        self.assertEqual(
+            SUPPORTED_SCHEMA_VERSIONS,
+            frozenset(("1.1",)),
+        )
 
         checkpoint_path = write_checkpoint(
             self._simulation_with_continuation_policy(),
@@ -77,7 +90,7 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
             self.assertEqual(len(profile["drivers"]), 0)
 
         checkpoint = read_checkpoint(checkpoint_path)
-        self.assertEqual(checkpoint.schema_version, "1.2")
+        self.assertEqual(checkpoint.schema_version, "1.1")
         self.assertEqual(
             checkpoint.continuation_profile.immutable,
             {
@@ -110,39 +123,26 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
         with self.assertRaises(FrozenInstanceError):
             checkpoint.continuation_profile.time_policy = {}
 
-    def test_reader_accepts_legacy_schema_1_1_for_recovery(self):
-        checkpoint = read_checkpoint(
-            self._write_legacy_schema_checkpoint()
+    def test_reader_rejects_development_schema_1_1_without_profile(self):
+        checkpoint_path = self._write_checkpoint_with_schema(
+            "1.1",
+            remove_continuation_profile=True,
         )
 
-        self.assertEqual(checkpoint.schema_version, "1.1")
-        self.assertIsNone(checkpoint.continuation_profile)
+        with self.assertRaisesRegex(
+            CheckpointReadError,
+            r"continuation_profile",
+        ):
+            read_checkpoint(checkpoint_path)
 
-        report = evaluate_restart_compatibility(
-            checkpoint,
-            self.input_dir,
-            mode="recovery",
-        )
-        self.assertTrue(report.is_compatible)
-        self.assertEqual(report.blocking_reasons, ())
+    def test_reader_rejects_development_schema_1_2(self):
+        checkpoint_path = self._write_checkpoint_with_schema("1.2")
 
-    def test_legacy_schema_1_1_cannot_start_continuation(self):
-        checkpoint = read_checkpoint(
-            self._write_legacy_schema_checkpoint()
-        )
-
-        report = evaluate_restart_compatibility(
-            checkpoint,
-            self.input_dir,
-            mode="continuation",
-        )
-
-        self.assertFalse(report.is_compatible)
-        self.assertEqual(len(report.blocking_reasons), 1)
-        self.assertRegex(
-            report.blocking_reasons[0],
-            r"schema 1\.1.*continuation profile",
-        )
+        with self.assertRaisesRegex(
+            CheckpointReadError,
+            r"Unsupported checkpoint schema '1\.2'",
+        ):
+            read_checkpoint(checkpoint_path)
 
 
 if __name__ == "__main__":

@@ -26,8 +26,8 @@ from utility_functions.checkpoint_schedule import (
 )
 
 
-SCHEMA_VERSION = "1.2"
-SUPPORTED_SCHEMA_VERSIONS = frozenset(("1.1", SCHEMA_VERSION))
+SCHEMA_VERSION = "1.1"
+SUPPORTED_SCHEMA_VERSIONS = frozenset((SCHEMA_VERSION,))
 CONTINUATION_PROFILE_VERSION = "1.0"
 VALID_TRIGGERS = frozenset(("periodic", "requested", "final"))
 DEFAULT_CHECKPOINT_EVERY_N_STEPS = 100
@@ -228,7 +228,7 @@ class CheckpointData:
     trigger: str
     git_commit: str
     input_manifest: tuple[InputManifestEntry, ...]
-    continuation_profile: ContinuationProfile | None
+    continuation_profile: ContinuationProfile
     simulation_time: np.ndarray
     num_step: int
     conductors: dict[str, ConductorCheckpointData]
@@ -314,7 +314,7 @@ def evaluate_restart_compatibility(
 
     ``recovery`` is accepted only when the current input manifest is exactly
     equal to the one persisted in the checkpoint.  ``continuation`` compares
-    the profile stored in schema 1.2 with the freshly initialized runtime
+    the profile stored in the checkpoint with the freshly initialized runtime
     profile.  Time-policy and driver changes are reported but permitted;
     immutable differences block the operation.  Unknown modes are programming
     or user-interface errors and are rejected immediately.
@@ -332,12 +332,7 @@ def evaluate_restart_compatibility(
     continuation_comparison = None
 
     if mode == "continuation":
-        if checkpoint.continuation_profile is None:
-            blocking_reasons.append(
-                f"Checkpoint schema {checkpoint.schema_version} does not "
-                "contain a continuation profile."
-            )
-        elif runtime_profile is None:
+        if runtime_profile is None:
             blocking_reasons.append(
                 "A current continuation profile is required before "
                 "continuation can be evaluated."
@@ -455,8 +450,9 @@ def validate_runtime_restore_target(checkpoint, simulation, mode="recovery"):
 def apply_checkpoint_to_runtime(checkpoint, simulation, mode="recovery"):
     """Apply validated checkpoint state to a freshly initialized runtime.
 
-    This function restores state persisted in schema 1.1 and synchronizes the
-    fluid and solid primary nodal variables from ``SYSVAR``.  It does not
+    This function restores state persisted in the current checkpoint schema
+    and synchronizes the fluid and solid primary nodal variables from
+    ``SYSVAR``.  It does not
     rebuild derived properties, touch output files, or enter the transient
     loop.
 
@@ -1273,10 +1269,7 @@ def _read_checkpoint_file(h5file, checkpoint_path):
     if not git_commit:
         raise CheckpointReadError("Checkpoint git commit metadata is empty.")
     manifest = _read_input_manifest(metadata)
-    continuation_profile = _read_continuation_profile(
-        metadata,
-        schema_version,
-    )
+    continuation_profile = _read_continuation_profile(metadata)
 
     simulation = h5file["simulation"]
     if not isinstance(simulation, h5py.Group):
@@ -1363,10 +1356,7 @@ def _read_input_manifest(metadata):
     return tuple(entries)
 
 
-def _read_continuation_profile(metadata, schema_version):
-    if schema_version == "1.1":
-        return None
-
+def _read_continuation_profile(metadata):
     _require_members(
         metadata,
         ("continuation_profile",),
