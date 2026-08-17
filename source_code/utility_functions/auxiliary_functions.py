@@ -189,10 +189,13 @@ def build_interpolator(df, interpolation_kind="linear"):
         # Values are constant in time but not in space.
         known_val = known_val.reshape(known_val.shape[0])
         if interpolation_kind == "linear":
-            interp_fun = np.interp(
-                    strand_space_points,
-                    known_val,
-                )
+            interp_fun = interpolate.interp1d(
+                strand_space_points,
+                known_val,
+                kind="linear",
+                bounds_error=False,
+                fill_value=(known_val[0], known_val[-1]),
+            )
         elif interpolation_kind == "cubic":
             # Build the spline object
             interp_fun = interpolate.make_interp_spline(
@@ -206,10 +209,13 @@ def build_interpolator(df, interpolation_kind="linear"):
         # Values are constant in space but not in time.
         known_val = known_val.reshape(known_val.shape[1])
         if interpolation_kind == "linear":
-            interp_fun = np.interp(
-                    strand_time_points,
-                    known_val,
-                )
+            interp_fun = interpolate.interp1d(
+                strand_time_points,
+                known_val,
+                kind="linear",
+                bounds_error=False,
+                fill_value=(known_val[0], known_val[-1]),
+            )
         elif interpolation_kind == "cubic":
             # Build the spline object
             interp_fun = interpolate.make_interp_spline(

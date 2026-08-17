@@ -389,7 +389,7 @@ class CheckpointTests(unittest.TestCase):
             ),
         )
 
-    def test_continuation_is_explicitly_blocked(self):
+    def test_continuation_requires_current_semantic_profile(self):
         checkpoint = self._checkpoint_with_current_inputs()
 
         report = evaluate_restart_compatibility(
@@ -398,9 +398,10 @@ class CheckpointTests(unittest.TestCase):
 
         self.assertFalse(report.is_compatible)
         self.assertTrue(report.manifest_comparison.is_match)
-        self.assertEqual(
-            report.blocking_reasons,
-            ("Restart mode 'continuation' is not supported yet.",),
+        self.assertIsNone(report.continuation_comparison)
+        self.assertIn(
+            "current continuation profile",
+            "\n".join(report.blocking_reasons).lower(),
         )
 
     def test_unknown_restart_mode_is_rejected(self):
