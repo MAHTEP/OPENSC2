@@ -84,12 +84,27 @@ python -m pytest -q
 
 ### Install requirements
 
-The selected Python version is [3.10.10](https://www.python.org/downloads/release/python-31010/). To install the requirements, create a virtual environment (suggested name _opensc2_) and activate it. In your terminal run the following command:
+The selected Python version is [3.10.10](https://www.python.org/downloads/release/python-31010/). From the `source_code` directory, create and activate a virtual environment before installing the dependencies. The suggested environment name is `opensc2_mkl`:
 
-    python -m pip install --upgrade pip \\ to update pip to the last version  
-    python -m pip install -r requirements.txt \\ to install the requirements  
+```powershell
+python -m venv opensc2_mkl
+.\opensc2_mkl\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip check
+```
 
-Among the dependences there is [CoolProp](http://www.coolprop.org/) that, according to the operative system you use, may require some other dependences and/or packages. To deal with this, please follow the [documentation](http://www.coolprop.org/coolprop/wrappers/Python/index.html) and [prerequisites](http://www.coolprop.org/coolprop/wrappers/index.html#wrapper-common-prereqs).
+The electrical model solves sparse linear systems with [PyPardiso](https://github.com/haasad/PyPardiso), a Python interface to the PARDISO solver provided by the [Intel oneAPI Math Kernel Library (oneMKL)](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html). The pinned PyPardiso and oneMKL runtime packages are included in `requirements.txt`; on supported Windows and Linux systems, the command above normally installs the required runtime libraries without a separate Intel oneAPI Toolkit installation.
+
+After installation, the OPENSC2 PyPardiso/oneMKL path can be checked with a small functional solve:
+
+```powershell
+python -c "import numpy as np; from scipy.sparse import eye; from utility_functions.electric_auxiliary_functions import pardiso_spsolve; x = pardiso_spsolve(eye(2, format='csr'), np.array([1.0, 2.0])); np.testing.assert_allclose(x, [1.0, 2.0]); print('OPENSC2 PyPardiso/oneMKL: OK')"
+```
+
+If PyPardiso cannot locate or load the oneMKL runtime on the target platform, consult the [PyPardiso installation documentation](https://github.com/haasad/PyPardiso#installation) and the official [Intel oneMKL installation options](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html). Avoid copying individual DLL files into the OPENSC2 source tree; use the supported package or runtime installation procedures instead.
+
+Among the dependencies there is [CoolProp](http://www.coolprop.org/), which may require additional packages depending on the operating system. Please refer to the [CoolProp Python documentation](http://www.coolprop.org/coolprop/wrappers/Python/index.html) and its [common prerequisites](http://www.coolprop.org/coolprop/wrappers/index.html#wrapper-common-prereqs).
 
 ## Help
 
