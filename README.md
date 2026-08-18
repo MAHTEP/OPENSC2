@@ -35,11 +35,56 @@ Users can benefit from several test cases to check the software functionalities:
 2. Heat slug propagation in a stacked-HTS slotted-core CICC for fusion applications
 3. Steady state operation for a double-cryostat HVDC cable for power transmission
 
-To run a simulation with one of the above test cases, download the repository and install the requirements (more informations in section [Install requirements](user-content-intall-requirements)). After that, you can run the software (the starting file is _simulation_starter.py_) and from the GUI you can navigate through the folder three until you enter directory _TDD_examples_ and then select one of the three folders contained with pre-compiled inpuput files. In the GUI window select **Add solution path** to select where to save the results (by default they are all collected in the directory _Simulation_results_, that is automatically created if does not already exist). User can create a new folder in this directory or open an existing one: the output (both .tsv files and .eps figures) will be saved in this folder.
+To run a simulation with one of the above test cases, download the repository and install the requirements (more information is provided in [Install requirements](#install-requirements)). Then enter the `source_code` directory and start OPENSC2 with `python opensc2.py`. From the GUI, navigate to the `TDD_examples` directory and select one of the folders containing pre-compiled input files. Select **Add solution path** to choose where the results will be saved. By default, they are collected in the `Simulation_results` directory, which is created automatically when needed. Both tabular output and figures are written below the selected results directory.
+
+### Headless simulations and checkpoint restoration
+
+OPENSC2 can also run without opening the GUI. Headless execution reads the input and output directories from a YAML file such as:
+
+```yaml
+input_dir: 'C:\path\to\input_files'
+output_dir: 'C:\path\to\simulation_results'
+```
+
+Run the following commands from the `source_code` directory. A normal headless simulation starts from the initial state:
+
+```powershell
+python opensc2.py `
+    --no-head `
+    --io-path "C:\path\to\io_path.yaml"
+```
+
+Checkpoint restoration is currently available only through this headless command-line interface. Strict recovery resumes the original trajectory and therefore requires an input directory whose files match the checkpoint manifest exactly. A new output directory may be selected in `io_path.yaml`:
+
+```powershell
+python opensc2.py `
+    --no-head `
+    --io-path "C:\path\to\io_path.yaml" `
+    --checkpoint "C:\path\to\checkpoint_step_000100.h5" `
+    --restart-mode recovery
+```
+
+Continuation branches from the saved physical state while retaining permitted definitions from a freshly initialized input configuration. The input directory should normally point to a copy of the original input set in which only the intended time-policy or driver values have been changed. Supported examples include the fixed/adaptive time-step policy and bounds, final time, checkpoint controls, conductor electric time step, current, magnetic field, axial magnetic-field gradient, and external heating. Immutable model changes are rejected before the checkpoint state is applied:
+
+```powershell
+python opensc2.py `
+    --no-head `
+    --io-path "C:\path\to\io_path.yaml" `
+    --checkpoint "C:\path\to\checkpoint_step_000100.h5" `
+    --restart-mode continuation
+```
+
+The `--checkpoint` and `--restart-mode` options must be provided together, and their use requires `--no-head`. In continuation mode, the new final time must be later than the checkpoint time. A separate output directory is recommended for every recovery or continuation branch.
+
+The headless normal, recovery, and continuation paths are covered by automated unit and integration tests and by real end-to-end smoke tests. Developers can run the complete automated suite from `source_code` after installing `pytest`:
+
+```powershell
+python -m pytest -q
+```
 
 ### Install requirements
 
-The selected Python version is [3.8.10](https://www.python.org/downloads/release/python-3810/). To install the requirements, create a virtual environment (suggested name _opensc2_) and activate it. In your terminal run the following command:
+The selected Python version is [3.10.10](https://www.python.org/downloads/release/python-31010/). To install the requirements, create a virtual environment (suggested name _opensc2_) and activate it. In your terminal run the following command:
 
     python -m pip install --upgrade pip \\ to update pip to the last version  
     python -m pip install -r requirements.txt \\ to install the requirements  
