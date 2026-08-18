@@ -8,6 +8,13 @@ import yaml
 
 from opensc2_gui import OPENSC2_GUI
 from simulation import Simulation
+from utility_functions.checkpoint import (
+    apply_checkpoint_to_runtime,
+    read_checkpoint,
+)
+
+
+RESTART_MODES = ("recovery", "continuation")
 
 
 class HeadlessGUI:
@@ -18,7 +25,7 @@ class HeadlessGUI:
         self.main_window = None
 
 
-def parse_command_line_arguments():
+def parse_command_line_arguments(argv=None):
     parser = argparse.ArgumentParser(
         description="Run OPENSC2 with or without the graphical user interface."
     )
@@ -32,7 +39,32 @@ def parse_command_line_arguments():
         default="io_path.yaml",
         help="Path to the YAML file used in --no-head mode.",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--checkpoint",
+        help="Checkpoint file to restore in headless mode.",
+    )
+    parser.add_argument(
+        "--restart-mode",
+        choices=RESTART_MODES,
+        help=(
+            "Checkpoint restore mode: 'recovery' resumes the original run, "
+            "while 'continuation' keeps the time policy and drivers from "
+            "the fresh input configuration."
+        ),
+    )
+
+    args = parser.parse_args(argv)
+
+    if bool(args.checkpoint) != bool(args.restart_mode):
+        parser.error(
+            "--checkpoint and --restart-mode must be provided together."
+        )
+    if args.checkpoint and not args.no_head:
+        parser.error(
+            "--checkpoint and --restart-mode can only be used with --no-head."
+        )
+
+    return args
 
 
 def load_io_path_from_yaml(io_path):
@@ -71,8 +103,21 @@ def format_elapsed_time(elapsed_time):
     return elapsed_time / 86400, "days"
 
 
-def run_headless_simulation(io_path):
+def run_headless_simulation(
+    io_path,
+    checkpoint_path=None,
+    restart_mode=None,
+):
     input_dir, output_dir = load_io_path_from_yaml(io_path)
+
+    checkpoint = None
+    if checkpoint_path is not None:
+        checkpoint_path = Path(checkpoint_path)
+        if not checkpoint_path.is_file():
+            raise FileNotFoundError(
+                f"Checkpoint file not found: {checkpoint_path}"
+            )
+        checkpoint = read_checkpoint(checkpoint_path)
 
     simulation = Simulation(str(input_dir))
     simulation.dict_path["Main_dir"] = str(output_dir)
@@ -84,6 +129,9 @@ def run_headless_simulation(io_path):
     print(f"Input directory: {input_dir}")
     print(f"Output directory: {output_dir}")
     print(f"Simulation: {simulation.transient_input['SIMULATION']}")
+    if checkpoint is not None:
+        print(f"Checkpoint: {checkpoint_path}")
+        print(f"Restart mode: {restart_mode}")
 
     tt = time.time()
 
@@ -91,6 +139,14 @@ def run_headless_simulation(io_path):
     simulation.simulation_folders_manager()
     simulation.save_input_files()
     simulation.conductor_initialization(headless_gui)
+
+    if checkpoint is not None:
+        apply_checkpoint_to_runtime(
+            checkpoint,
+            simulation,
+            mode=restart_mode,
+        )
+
     simulation.conductor_solution(headless_gui)
     simulation.conductor_post_processing()
 
@@ -105,13 +161,26 @@ def run_gui():
     gui.main_window.mainloop()
 
 
-logging.config.fileConfig(fname="logging_opensc2.conf", disable_existing_loggers=True)
+def main(argv=None):
+    args = parse_command_line_arguments(argv)
+
+    if args.no_head:
+        run_headless_simulation(
+            args.io_path,
+            checkpoint_path=args.checkpoint,
+            restart_mode=args.restart_mode,
+        )
+    else:
+        run_gui()
+
+
+logging.config.fileConfig(
+    fname="logging_opensc2.conf",
+    disable_existing_loggers=True,
+)
 
 logger = logging.getLogger("opensc2Logger")
 
-args = parse_command_line_arguments()
 
-if args.no_head:
-    run_headless_simulation(args.io_path)
-else:
-    run_gui()
+if __name__ == "__main__":
+    main()
