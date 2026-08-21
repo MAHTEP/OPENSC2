@@ -98,6 +98,9 @@ class CheckpointContinuationAdaptivePolicyTests(unittest.TestCase):
         conductor.time_step = target.transient_input["TIME_STEP"]
         conductor.events_time = np.array([0.05, 0.1, 0.15, 0.4])
         conductor.i_event = 0
+        conductor.Space_save = np.array([0.0, 0.1, 0.2, 0.4])
+        conductor.num_step_save = np.zeros(4, dtype=int)
+        conductor.i_save_max = 3
         conductor.EQTEIG[:] = -1.0
         conductor.dict_Step["SYSVAR"][:] = -1.0
 
@@ -123,6 +126,8 @@ class CheckpointContinuationAdaptivePolicyTests(unittest.TestCase):
             [0.05, 0.1, 0.15, 0.4],
         )
         self.assertEqual(conductor.i_event, 2)
+        np.testing.assert_allclose(conductor.Space_save, [0.2, 0.4])
+        np.testing.assert_array_equal(conductor.num_step_save, [0, 0])
         np.testing.assert_allclose(conductor.EQTEIG, [1.0, 2.0])
         np.testing.assert_allclose(
             conductor.dict_Step["SYSVAR"],

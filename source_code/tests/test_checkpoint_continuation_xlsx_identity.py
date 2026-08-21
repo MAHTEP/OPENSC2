@@ -37,7 +37,7 @@ class CheckpointContinuationXlsxIdentityTests(unittest.TestCase):
         path.write_bytes(content)
 
     @staticmethod
-    def _simulation(input_directory, static_name):
+    def _simulation(input_directory, static_name, file_key="OUTPUT"):
         simulation = make_simulation(input_directory)
         simulation.transient_input = {
             "IADAPTIME": 0,
@@ -46,10 +46,10 @@ class CheckpointContinuationXlsxIdentityTests(unittest.TestCase):
             "TEND": 0.4,
         }
         conductor = simulation.list_of_Conductors[0]
-        conductor.file_input = {"OUTPUT": static_name}
+        conductor.file_input = {file_key: static_name}
         return simulation
 
-    def test_semantically_equal_xlsx_rewrites_are_compatible(self):
+    def test_semantically_equal_static_xlsx_rewrites_are_compatible(self):
         first_dir = self.root / "first"
         second_dir = self.root / "second"
         first_path = first_dir / "diagnostic.xlsx"
@@ -68,17 +68,25 @@ class CheckpointContinuationXlsxIdentityTests(unittest.TestCase):
 
         comparison = compare_continuation_profiles(
             build_continuation_profile(
-                self._simulation(first_dir, "diagnostic.xlsx")
+                self._simulation(
+                    first_dir,
+                    "diagnostic.xlsx",
+                    file_key="GRID_DEFINITION",
+                )
             ),
             build_continuation_profile(
-                self._simulation(second_dir, "diagnostic.xlsx")
+                self._simulation(
+                    second_dir,
+                    "diagnostic.xlsx",
+                    file_key="GRID_DEFINITION",
+                )
             ),
         )
 
         self.assertTrue(comparison.is_compatible)
         self.assertEqual(comparison.immutable_differences, ())
 
-    def test_xlsx_cell_change_remains_blocking(self):
+    def test_static_xlsx_cell_change_remains_blocking(self):
         first_dir = self.root / "first_changed"
         second_dir = self.root / "second_changed"
         self._write_workbook(
@@ -94,6 +102,44 @@ class CheckpointContinuationXlsxIdentityTests(unittest.TestCase):
 
         comparison = compare_continuation_profiles(
             build_continuation_profile(
+                self._simulation(
+                    first_dir,
+                    "diagnostic.xlsx",
+                    file_key="GRID_DEFINITION",
+                )
+            ),
+            build_continuation_profile(
+                self._simulation(
+                    second_dir,
+                    "diagnostic.xlsx",
+                    file_key="GRID_DEFINITION",
+                )
+            ),
+        )
+
+        self.assertFalse(comparison.is_compatible)
+        self.assertIn(
+            "immutable.conductors.COND_1.static_files."
+            "GRID_DEFINITION.sha256",
+            comparison.immutable_differences,
+        )
+
+    def test_output_workbook_cell_change_is_compatible(self):
+        first_dir = self.root / "first_output"
+        second_dir = self.root / "second_output"
+        self._write_workbook(
+            first_dir / "diagnostic.xlsx",
+            value=610.0,
+            modified=datetime(2026, 8, 16, 10, 0, tzinfo=timezone.utc),
+        )
+        self._write_workbook(
+            second_dir / "diagnostic.xlsx",
+            value=610.25,
+            modified=datetime(2026, 8, 16, 20, 0, tzinfo=timezone.utc),
+        )
+
+        comparison = compare_continuation_profiles(
+            build_continuation_profile(
                 self._simulation(first_dir, "diagnostic.xlsx")
             ),
             build_continuation_profile(
@@ -101,11 +147,8 @@ class CheckpointContinuationXlsxIdentityTests(unittest.TestCase):
             ),
         )
 
-        self.assertFalse(comparison.is_compatible)
-        self.assertIn(
-            "immutable.conductors.COND_1.static_files.OUTPUT.sha256",
-            comparison.immutable_differences,
-        )
+        self.assertTrue(comparison.is_compatible)
+        self.assertEqual(comparison.immutable_differences, ())
 
     def test_non_xlsx_static_files_remain_byte_sensitive(self):
         first_dir = self.root / "first_binary"
@@ -115,16 +158,25 @@ class CheckpointContinuationXlsxIdentityTests(unittest.TestCase):
 
         comparison = compare_continuation_profiles(
             build_continuation_profile(
-                self._simulation(first_dir, "geometry.dat")
+                self._simulation(
+                    first_dir,
+                    "geometry.dat",
+                    file_key="GRID_DEFINITION",
+                )
             ),
             build_continuation_profile(
-                self._simulation(second_dir, "geometry.dat")
+                self._simulation(
+                    second_dir,
+                    "geometry.dat",
+                    file_key="GRID_DEFINITION",
+                )
             ),
         )
 
         self.assertFalse(comparison.is_compatible)
         self.assertIn(
-            "immutable.conductors.COND_1.static_files.OUTPUT.sha256",
+            "immutable.conductors.COND_1.static_files."
+            "GRID_DEFINITION.sha256",
             comparison.immutable_differences,
         )
 

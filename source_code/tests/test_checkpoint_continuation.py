@@ -49,6 +49,9 @@ class CheckpointContinuationRestoreTests(unittest.TestCase):
         conductor.time_step = 0.025
         conductor.events_time = np.array([0.05, 0.1, 0.15, 0.3])
         conductor.i_event = 0
+        conductor.Space_save = np.array([0.0, 0.1, 0.15, 0.3, 0.4])
+        conductor.num_step_save = np.zeros(5, dtype=int)
+        conductor.i_save_max = 4
 
         compatibility = SimpleNamespace(
             is_compatible=True,
@@ -75,6 +78,10 @@ class CheckpointContinuationRestoreTests(unittest.TestCase):
             [0.05, 0.1, 0.15, 0.3],
         )
         self.assertEqual(conductor.i_event, 2)
+        np.testing.assert_allclose(conductor.Space_save, [0.15, 0.3, 0.4])
+        np.testing.assert_array_equal(conductor.num_step_save, [0, 0, 0])
+        self.assertEqual(conductor.i_save, 0)
+        self.assertEqual(conductor.i_save_max, 2)
 
     def test_continuation_accepts_adaptive_time_policy(self):
         checkpoint = self._checkpoint_with_current_inputs()
@@ -91,6 +98,9 @@ class CheckpointContinuationRestoreTests(unittest.TestCase):
         conductor = target.list_of_Conductors[0]
         conductor.time_step = 0.025
         conductor.i_event = 0
+        conductor.Space_save = np.array([0.0, 0.1, 0.2, 0.4])
+        conductor.num_step_save = np.zeros(4, dtype=int)
+        conductor.i_save_max = 3
 
         compatibility = SimpleNamespace(
             is_compatible=True,
@@ -114,6 +124,89 @@ class CheckpointContinuationRestoreTests(unittest.TestCase):
         self.assertEqual(conductor.time_step, 0.025)
         self.assertEqual(conductor.cond_time, [0.0, 0.1])
         self.assertEqual(conductor.cond_num_step, 1)
+        np.testing.assert_allclose(conductor.Space_save, [0.2, 0.4])
+        np.testing.assert_array_equal(conductor.num_step_save, [0, 0])
+
+    def test_continuation_accepts_a_different_spatial_output_schedule(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        target.transient_input = {
+            "IADAPTIME": 0,
+            "TIME_STEP": 0.0025,
+            "STPMIN": 0.0025,
+            "TEND": 0.4,
+        }
+        conductor = target.list_of_Conductors[0]
+        conductor.time_step = 0.0025
+        conductor.i_event = 0
+        conductor.Space_save = np.array(
+            [0.0, 0.1, 0.15, 0.2, 0.25, 0.4]
+        )
+        conductor.num_step_save = np.zeros(6, dtype=np.int64)
+        conductor.i_save_max = 5
+
+        compatibility = SimpleNamespace(
+            is_compatible=True,
+            blocking_reasons=(),
+            warnings=(),
+        )
+
+        with patch(
+            "utility_functions.checkpoint.evaluate_restart_compatibility",
+            return_value=compatibility,
+        ):
+            apply_checkpoint_to_runtime(
+                checkpoint,
+                target,
+                mode="continuation",
+            )
+
+        np.testing.assert_allclose(
+            conductor.Space_save,
+            [0.15, 0.2, 0.25, 0.4],
+        )
+        np.testing.assert_array_equal(
+            conductor.num_step_save,
+            np.zeros(4, dtype=np.int64),
+        )
+        self.assertEqual(conductor.i_save, 0)
+        self.assertEqual(conductor.i_save_max, 3)
+        self.assertTrue(target.restored_from_checkpoint)
+
+    def test_continuation_rejects_output_schedule_without_future_times(self):
+        checkpoint = self._checkpoint_with_current_inputs()
+        target = make_restore_target(self.input_dir)
+        target.transient_input = {
+            "IADAPTIME": 0,
+            "TIME_STEP": 0.025,
+            "STPMIN": 0.0025,
+            "TEND": 0.4,
+        }
+        conductor = target.list_of_Conductors[0]
+        conductor.i_event = 0
+        conductor.Space_save = np.array([0.0, 0.1])
+
+        compatibility = SimpleNamespace(
+            is_compatible=True,
+            blocking_reasons=(),
+            warnings=(),
+        )
+
+        with patch(
+            "utility_functions.checkpoint.evaluate_restart_compatibility",
+            return_value=compatibility,
+        ):
+            with self.assertRaisesRegex(
+                CheckpointValidationError,
+                "Space_save contains no time after the checkpoint",
+            ):
+                apply_checkpoint_to_runtime(
+                    checkpoint,
+                    target,
+                    mode="continuation",
+                )
+
+        self.assertFalse(target.restored_from_checkpoint)
 
     def test_continuation_rejects_end_time_at_checkpoint_before_mutation(self):
         checkpoint = self._checkpoint_with_current_inputs()

@@ -457,9 +457,10 @@ class Simulation:
             # Compute radiative heat exchanged outer jacket and environment.
             conductor.compute_heat_exchange_jk_env(self.environment)
 
-            # The t=0 spatial output is part of fresh-run initialization. A
-            # restored runtime already contains the corresponding buffers and
-            # output counters from the checkpoint.
+            # The t=0 spatial output is part of fresh-run initialization.
+            # Recovery restores the saved output state, while continuation
+            # prepares a branch-local schedule after the checkpoint boundary;
+            # neither mode must emit a second t=0 distribution.
             if not self.restored_from_checkpoint:
                 # Store values of selected quantities at 0.0 s. These stored
                 # quantities will be saved in file as spatial distributions by

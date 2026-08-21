@@ -43,6 +43,10 @@ class CheckpointContinuationImmutableProfileTests(unittest.TestCase):
             "structure.dat",
             b"structure-content",
         )
+        output = self._write_input(
+            "diagnostic.dat",
+            b"output-policy-content",
+        )
         (self.input_dir / "operation.xlsx").write_bytes(
             b"mixed-driver-and-static-content"
         )
@@ -80,6 +84,7 @@ class CheckpointContinuationImmutableProfileTests(unittest.TestCase):
             "GRID_DEFINITION": grid["path"],
             "STRUCTURE_COUPLING": coupling["path"],
             "STRUCTURE_ELEMENTS": structure["path"],
+            "OUTPUT": output["path"],
             "OPERATION": "operation.xlsx",
             "EXTERNAL_CURRENT": "drivers/current.tsv",
             "EXTERNAL_BFIELD": "drivers/field.tsv",
@@ -144,7 +149,6 @@ class CheckpointContinuationImmutableProfileTests(unittest.TestCase):
             {
                 "ENVIRONMENT": "environment.xlsx",
                 "MAGNET": "magnet.xlsx",
-                "SIMULATION": "continuation_case",
             },
         )
         self.assertEqual(
@@ -217,6 +221,49 @@ class CheckpointContinuationImmutableProfileTests(unittest.TestCase):
         self.assertNotIn("EXTERNAL_ALPHAB", static_text)
         self.assertNotIn("EXTERNAL_HEAT", static_text)
         self.assertNotIn("OPERATION", static_text)
+        self.assertNotIn("OUTPUT", static_text)
+
+    def test_simulation_name_and_output_policy_changes_are_compatible(self):
+        first, _, _, _, _ = self._simulation()
+        second, second_conductor, _, _, _ = self._simulation()
+        second.transient_input["SIMULATION"] = "new_branch_name"
+        (self.input_dir / "new_diagnostic.dat").write_bytes(
+            b"new-output-policy"
+        )
+        second_conductor.file_input["OUTPUT"] = "new_diagnostic.dat"
+
+        comparison = compare_continuation_profiles(
+            build_continuation_profile(first),
+            build_continuation_profile(second),
+        )
+
+        self.assertTrue(comparison.is_compatible)
+        self.assertEqual(comparison.immutable_differences, ())
+
+    def test_existing_profile_1_1_output_metadata_is_ignored(self):
+        first, _, _, _, _ = self._simulation()
+        second, _, _, _, _ = self._simulation()
+        second.transient_input["SIMULATION"] = "new_branch_name"
+        legacy_profile = copy.deepcopy(build_continuation_profile(first))
+        legacy_profile.immutable["transient_input"][
+            "SIMULATION"
+        ] = "continuation_case"
+        legacy_profile.immutable["conductors"]["COND_1"].setdefault(
+            "static_files",
+            {},
+        )["OUTPUT"] = {
+            "path": "diagnostic.dat",
+            "sha256": "0" * 64,
+            "size": 21,
+        }
+
+        comparison = compare_continuation_profiles(
+            legacy_profile,
+            build_continuation_profile(second),
+        )
+
+        self.assertTrue(comparison.is_compatible)
+        self.assertEqual(comparison.immutable_differences, ())
 
     def test_fixed_parameter_changes_are_blocking(self):
         first, _, _, _, _ = self._simulation()

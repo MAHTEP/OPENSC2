@@ -163,6 +163,9 @@ class CheckpointContinuationCompatibilityIntegrationTests(unittest.TestCase):
         conductor = target.list_of_Conductors[0]
         conductor.events_time = np.array([0.05, 0.1, 0.2, 1.0])
         conductor.i_event = 0
+        conductor.Space_save = np.array([0.0, 0.1, 0.2, 1.0])
+        conductor.num_step_save = np.zeros(4, dtype=int)
+        conductor.i_save_max = 3
 
         apply_checkpoint_to_runtime(
             checkpoint,
@@ -179,6 +182,8 @@ class CheckpointContinuationCompatibilityIntegrationTests(unittest.TestCase):
             [0.05, 0.1, 0.2, 1.0],
         )
         self.assertEqual(conductor.i_event, 2)
+        np.testing.assert_allclose(conductor.Space_save, [0.2, 1.0])
+        np.testing.assert_array_equal(conductor.num_step_save, [0, 0])
 
 
 if __name__ == "__main__":

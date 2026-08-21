@@ -35,6 +35,7 @@ DEFAULT_CHECKPOINT_EVERY_N_STEPS = 100
 CHECKPOINT_INTERVAL_INPUT = "CHECKPOINT_EVERY_N_STEPS"
 
 _CONTINUATION_IMMUTABLE_TRANSIENT_KEYS = ()
+_CONTINUATION_RUN_METADATA_KEYS = ("SIMULATION",)
 _CONTINUATION_TIME_POLICY_KEYS = (
     "IADAPTIME",
     "TIME_STEP",
@@ -91,6 +92,11 @@ _CONTINUATION_DRIVER_FILE_KEYS = frozenset(
 # runtime mappings, so hashing the whole workbook would incorrectly reject
 # legitimate driver changes.
 _CONTINUATION_MIXED_FILE_KEYS = frozenset(("OPERATION",))
+
+# Output diagnostics belong to the new branch rather than to the physical
+# model restored from a checkpoint.  Keep them out of the immutable profile;
+# recovery mode remains protected by the complete input manifest.
+_CONTINUATION_OUTPUT_FILE_KEYS = frozenset(("OUTPUT",))
 
 _CURRENT_FUNCTION = (
     "utility_functions.electric_auxiliary_functions."
@@ -571,13 +577,19 @@ def apply_checkpoint_to_runtime(checkpoint, simulation, mode="recovery"):
                 for key, value in component_state["energy_history"].items()
             }
 
-        output_attributes = {
-            attribute: _copy_for_runtime(
-                value, getattr(runtime, attribute, None)
+        if mode == "continuation":
+            output_attributes = _prepare_continuation_output_state(
+                runtime,
+                checkpoint_time,
             )
-            for attribute, value in saved.output_state.items()
-            if attribute != "buffers"
-        }
+        else:
+            output_attributes = {
+                attribute: _copy_for_runtime(
+                    value, getattr(runtime, attribute, None)
+                )
+                for attribute, value in saved.output_state.items()
+                if attribute != "buffers"
+            }
         output_buffers = []
         for owner_path, owner in _runtime_output_owners(runtime):
             saved_owner = _mapping_path(
@@ -1051,6 +1063,7 @@ def _validate_runtime_conductor_target(saved, runtime, reasons, mode="recovery")
         runtime_components,
         label,
         reasons,
+        mode=mode,
     )
 
 
@@ -1152,6 +1165,89 @@ def _continuation_event_index(events, checkpoint_time):
     return min(next_index, events.size - 1)
 
 
+def _continuation_future_output_times(space_save, checkpoint_time):
+    """Return diagnostic times strictly after a continuation boundary."""
+
+    values = np.asarray(space_save, dtype=float)
+    at_boundary = np.isclose(
+        values,
+        checkpoint_time,
+        rtol=1.0e-12,
+        atol=1.0e-12,
+    )
+    return values[(values > checkpoint_time) & ~at_boundary]
+
+
+def _validate_continuation_output_schedule(
+    runtime,
+    checkpoint_time,
+    label,
+    reasons,
+):
+    """Validate the fresh spatial-output policy selected by a branch."""
+
+    runtime_space_save = getattr(runtime, "Space_save", None)
+    try:
+        space_save = np.asarray(runtime_space_save, dtype=float)
+    except (TypeError, ValueError):
+        reasons.append(f"{label} continuation Space_save is not numeric.")
+        return
+
+    if space_save.ndim != 1 or space_save.size == 0:
+        reasons.append(
+            f"{label} continuation Space_save must be a non-empty 1-D array."
+        )
+        return
+    if not np.isfinite(space_save).all():
+        reasons.append(
+            f"{label} continuation Space_save contains non-finite values."
+        )
+        return
+    if space_save.size > 1 and np.any(np.diff(space_save) <= 0.0):
+        reasons.append(
+            f"{label} continuation Space_save must be strictly increasing."
+        )
+        return
+    if _continuation_future_output_times(space_save, checkpoint_time).size == 0:
+        reasons.append(
+            f"{label} continuation Space_save contains no time after the "
+            "checkpoint."
+        )
+
+    runtime_num_step_save = getattr(runtime, "num_step_save", None)
+    if runtime_num_step_save is None:
+        reasons.append(f"{label} continuation num_step_save is missing.")
+    else:
+        runtime_num_step_save = np.asarray(runtime_num_step_save)
+        if (
+            runtime_num_step_save.ndim != 1
+            or not np.issubdtype(runtime_num_step_save.dtype, np.integer)
+        ):
+            reasons.append(
+                f"{label} continuation num_step_save must be a 1-D "
+                "integer array."
+            )
+
+
+def _prepare_continuation_output_state(runtime, checkpoint_time):
+    """Prepare branch-local spatial-output counters and future times."""
+
+    future_times = _continuation_future_output_times(
+        runtime.Space_save,
+        checkpoint_time,
+    ).copy()
+    runtime_num_step_save = np.asarray(runtime.num_step_save)
+    return {
+        "Space_save": future_times,
+        "i_save": 0,
+        "i_save_max": int(future_times.size - 1),
+        "num_step_save": np.zeros(
+            future_times.shape,
+            dtype=runtime_num_step_save.dtype,
+        ),
+    }
+
+
 def _validate_electric_target(saved, runtime, label, reasons):
     runtime_inputs = getattr(runtime, "inputs", {})
     runtime_active = (
@@ -1176,24 +1272,42 @@ def _validate_electric_target(saved, runtime, label, reasons):
         )
 
 
-def _validate_output_target(saved, runtime, runtime_components, label, reasons):
+def _validate_output_target(
+    saved,
+    runtime,
+    runtime_components,
+    label,
+    reasons,
+    mode="recovery",
+):
     saved_output = saved.output_state
-    runtime_num_step_save = getattr(runtime, "num_step_save", None)
-    _validate_matching_shape(
-        saved_output.get("num_step_save"),
-        runtime_num_step_save,
-        f"{label} num_step_save",
-        reasons,
-    )
+    if mode == "continuation":
+        checkpoint_time = float(np.asarray(saved.clock["cond_time"])[-1])
+        _validate_continuation_output_schedule(
+            runtime,
+            checkpoint_time,
+            label,
+            reasons,
+        )
+    else:
+        runtime_num_step_save = getattr(runtime, "num_step_save", None)
+        _validate_matching_shape(
+            saved_output.get("num_step_save"),
+            runtime_num_step_save,
+            f"{label} num_step_save",
+            reasons,
+        )
 
-    saved_i_save = saved_output.get("i_save")
-    runtime_space_save = getattr(runtime, "Space_save", None)
-    if runtime_space_save is None:
-        reasons.append(f"{label} Space_save is missing from the runtime.")
-    elif not isinstance(saved_i_save, (int, np.integer)) or not (
-        0 <= int(saved_i_save) < np.asarray(runtime_space_save).size
-    ):
-        reasons.append(f"{label} saved i_save is outside runtime Space_save.")
+        saved_i_save = saved_output.get("i_save")
+        runtime_space_save = getattr(runtime, "Space_save", None)
+        if runtime_space_save is None:
+            reasons.append(f"{label} Space_save is missing from the runtime.")
+        elif not isinstance(saved_i_save, (int, np.integer)) or not (
+            0 <= int(saved_i_save) < np.asarray(runtime_space_save).size
+        ):
+            reasons.append(
+                f"{label} saved i_save is outside runtime Space_save."
+            )
 
     saved_buffers = saved_output.get("buffers", {})
     saved_conductor_buffer = saved_buffers.get("conductor")
@@ -2010,8 +2124,10 @@ def _build_immutable_profile(simulation, transient_input):
         if key in transient_input
     }
 
-    excluded_transient_keys = set(_CONTINUATION_TIME_POLICY_KEYS) | set(
-        _CONTINUATION_IMMUTABLE_TRANSIENT_KEYS
+    excluded_transient_keys = (
+        set(_CONTINUATION_TIME_POLICY_KEYS)
+        | set(_CONTINUATION_IMMUTABLE_TRANSIENT_KEYS)
+        | set(_CONTINUATION_RUN_METADATA_KEYS)
     )
     fixed_transient = _mapping_without_keys(
         transient_input,
@@ -2110,6 +2226,7 @@ def _build_static_file_profile(simulation, conductor):
     excluded_keys = (
         _CONTINUATION_DRIVER_FILE_KEYS
         | _CONTINUATION_MIXED_FILE_KEYS
+        | _CONTINUATION_OUTPUT_FILE_KEYS
     )
     result = {}
     for key in sorted(file_input, key=str):
@@ -2258,6 +2375,37 @@ def _detached_mapping(mapping):
     }
 
 
+def _normalized_continuation_immutable(immutable):
+    """Ignore branch-local output metadata stored by profile version 1.1.
+
+    Existing schema-1.1 checkpoints contain ``SIMULATION`` and the ``OUTPUT``
+    workbook identity in their immutable section.  Removing them only while
+    building new runtime profiles would make those checkpoints unusable, so
+    both sides are normalized non-destructively before comparison.
+    """
+
+    normalized = copy.deepcopy(immutable)
+    transient_input = normalized.get("transient_input")
+    if isinstance(transient_input, Mapping):
+        transient_input.pop("SIMULATION", None)
+        if not transient_input:
+            normalized.pop("transient_input", None)
+
+    conductors = normalized.get("conductors")
+    if isinstance(conductors, Mapping):
+        for conductor in conductors.values():
+            if not isinstance(conductor, Mapping):
+                continue
+            static_files = conductor.get("static_files")
+            if not isinstance(static_files, Mapping):
+                continue
+            static_files.pop("OUTPUT", None)
+            if not static_files:
+                conductor.pop("static_files", None)
+
+    return normalized
+
+
 def compare_continuation_profiles(checkpoint_profile, runtime_profile):
     """Compare saved and current semantics without mutating either profile.
 
@@ -2275,8 +2423,10 @@ def compare_continuation_profiles(checkpoint_profile, runtime_profile):
 
     immutable_differences = tuple(
         _continuation_difference_paths(
-            checkpoint_profile.immutable,
-            runtime_profile.immutable,
+            _normalized_continuation_immutable(
+                checkpoint_profile.immutable
+            ),
+            _normalized_continuation_immutable(runtime_profile.immutable),
             "immutable",
         )
     )
