@@ -37,6 +37,9 @@ from properties_of_materials.magnesium_diboride import (
 )
 
 
+CURRENT_DIVIDER_BISECTION_ITERATIONS = 64
+
+
 class StrandComponent(SolidComponent):
 
     ### INPUT PARAMETERS
@@ -514,6 +517,243 @@ class StrandComponent(SolidComponent):
             * electric_resistances[:, 1]
             / (electric_resistances.sum(axis=1))
         )
+
+    def solve_current_divider(
+        self,
+        rho_el_stabilizer: np.ndarray,
+        critical_current: np.ndarray,
+        current: np.ndarray,
+        el_num_step=None,
+    ) -> tuple:
+        """Solve SC/stabilizer current sharing without evaluating ``I_c**n``.
+
+        ``el_num_step`` is retained for compatibility with existing callers.
+        With ``y = abs(I_sc) / I_c``, the dimensional current-divider equation
+        becomes ``y**n + kappa*y - lambda = 0``.  This monotone equation is
+        solved for every Gauss point by vectorized bisection.
+        """
+
+        rho_el_stabilizer = np.asarray(rho_el_stabilizer, dtype=float)
+        critical_current = np.asarray(critical_current, dtype=float)
+        current = np.asarray(current, dtype=float)
+
+        if rho_el_stabilizer.shape != critical_current.shape:
+            raise ValueError(
+                "Arrays rho_el_stabilizer and critical_current must have the "
+                "same shape.\n"
+                f"rho_el_stabilizer.shape = {rho_el_stabilizer.shape};\n"
+                f"critical_current.shape = {critical_current.shape}."
+            )
+        if rho_el_stabilizer.shape != current.shape:
+            raise ValueError(
+                "Arrays rho_el_stabilizer and current must have the same "
+                "shape.\n"
+                f"rho_el_stabilizer.shape = {rho_el_stabilizer.shape};\n"
+                f"current.shape = {current.shape}."
+            )
+        if not np.all(np.isfinite(rho_el_stabilizer)):
+            raise ValueError(
+                "rho_el_stabilizer must contain only finite values."
+            )
+        if not np.all(np.isfinite(critical_current)):
+            raise ValueError("critical_current must contain only finite values.")
+        if not np.all(np.isfinite(current)):
+            raise ValueError("current must contain only finite values.")
+        if np.any(rho_el_stabilizer <= 0.0):
+            raise ValueError("rho_el_stabilizer must be strictly positive.")
+        if np.any(critical_current < 0.0):
+            raise ValueError("critical_current must be non-negative.")
+
+        reference_electric_field = self.inputs["E0"]
+        stabilizer_cross_section = self.cross_section["stab"]
+        exponent = float(self.inputs["nn"])
+        if (
+            not np.isfinite(reference_electric_field)
+            or reference_electric_field <= 0.0
+        ):
+            raise ValueError("E0 must be finite and positive.")
+        if (
+            not np.isfinite(stabilizer_cross_section)
+            or stabilizer_cross_section <= 0.0
+        ):
+            raise ValueError(
+                "The stabilizer cross section must be finite and positive."
+            )
+        if (
+            not np.isfinite(exponent)
+            or exponent < 1.0
+            or not exponent.is_integer()
+        ):
+            raise ValueError("nn must be a positive integer.")
+        exponent = int(exponent)
+
+        sc_current = np.zeros_like(current)
+        active = (critical_current > 0.0) & (current != 0.0)
+        if not np.any(active):
+            return sc_current, current.copy()
+
+        rho = rho_el_stabilizer[active]
+        critical = critical_current[active]
+        current_magnitude = np.abs(current[active])
+        scale = rho / reference_electric_field / stabilizer_cross_section
+        kappa = scale * critical
+        lambda_value = scale * current_magnitude
+
+        if not np.all(np.isfinite(kappa)) or not np.all(
+            np.isfinite(lambda_value)
+        ):
+            raise ValueError(
+                "Non-finite dimensionless current-divider coefficients."
+            )
+
+        power_upper = np.power(lambda_value, 1.0 / exponent)
+        linear_upper = np.divide(
+            lambda_value,
+            kappa,
+            out=np.full_like(lambda_value, np.inf),
+            where=kappa > 0.0,
+        )
+        upper = np.minimum(power_upper, linear_upper)
+        lower = np.zeros_like(upper)
+
+        for _ in range(CURRENT_DIVIDER_BISECTION_ITERATIONS):
+            midpoint = 0.5 * (lower + upper)
+            residual = (
+                np.power(midpoint, exponent)
+                + kappa * midpoint
+                - lambda_value
+            )
+            positive = residual > 0.0
+            upper = np.where(positive, midpoint, upper)
+            lower = np.where(positive, lower, midpoint)
+
+        normalized_sc_current = 0.5 * (lower + upper)
+        sc_current[active] = (
+            np.sign(current[active]) * critical * normalized_sc_current
+        )
+        return sc_current, current - sc_current
+
+    def _evaluate_current_divider_voltage(
+        self,
+        rho_el_stabilizer: np.ndarray,
+        critical_current: np.ndarray,
+        sc_current: np.ndarray,
+        stab_current: np.ndarray,
+    ) -> tuple:
+        """Return voltage gradients in the parallel stabilizer and SC paths."""
+
+        normalized_sc_current = np.divide(sc_current, critical_current)
+        v_sc = (
+            np.sign(normalized_sc_current)
+            * self.inputs["E0"]
+            * np.power(
+                np.abs(normalized_sc_current),
+                self.inputs["nn"],
+            )
+        )
+        v_stab = (
+            rho_el_stabilizer
+            * stab_current
+            / self.cross_section["stab"]
+        )
+        return v_sc, v_stab
+
+    def _assert_current_divider_voltage_balance(
+        self,
+        rho_el_stabilizer: np.ndarray,
+        critical_current: np.ndarray,
+        total_current: np.ndarray,
+        sc_current: np.ndarray,
+        stab_current: np.ndarray,
+        *,
+        gauss_indices=None,
+        temperature=None,
+        thermal_hydraulic_time=None,
+        electric_time=None,
+    ) -> None:
+        """Keep the physical voltage check and report the worst mismatch."""
+
+        v_sc, v_stab = self._evaluate_current_divider_voltage(
+            rho_el_stabilizer,
+            critical_current,
+            sc_current,
+            stab_current,
+        )
+        close = np.isclose(v_stab, v_sc)
+        finite = np.isfinite(v_stab) & np.isfinite(v_sc)
+        failed = ~(close & finite)
+        if not np.any(failed):
+            return
+
+        absolute_difference = np.abs(v_stab - v_sc)
+        voltage_scale = np.maximum.reduce(
+            (
+                np.abs(v_stab),
+                np.abs(v_sc),
+                np.full_like(v_sc, np.finfo(float).tiny),
+            )
+        )
+        relative_difference = absolute_difference / voltage_scale
+        failed_indices = np.flatnonzero(failed)
+        worst_local_index = failed_indices[
+            np.argmax(relative_difference[failed_indices])
+        ]
+
+        normalized_sc_current = abs(
+            sc_current[worst_local_index]
+            / critical_current[worst_local_index]
+        )
+        scale = (
+            rho_el_stabilizer[worst_local_index]
+            / self.inputs["E0"]
+            / self.cross_section["stab"]
+        )
+        dimensionless_residual = (
+            normalized_sc_current ** self.inputs["nn"]
+            + scale
+            * critical_current[worst_local_index]
+            * normalized_sc_current
+            - scale * abs(total_current[worst_local_index])
+        )
+        gauss_index = (
+            int(gauss_indices[worst_local_index])
+            if gauss_indices is not None
+            else int(worst_local_index)
+        )
+
+        details = [
+            "Current-divider voltage consistency check failed.",
+            f"component = {self.identifier!r}",
+            f"gauss_index = {gauss_index}",
+            f"thermal_hydraulic_time = {thermal_hydraulic_time!r} s",
+            f"electric_time = {electric_time!r} s",
+        ]
+        if temperature is not None:
+            details.append(
+                f"temperature = {temperature[worst_local_index]:.16e} K"
+            )
+        details.extend(
+            (
+                "critical_current = "
+                f"{critical_current[worst_local_index]:.16e} A",
+                "total_current = "
+                f"{total_current[worst_local_index]:.16e} A",
+                "superconductor_current = "
+                f"{sc_current[worst_local_index]:.16e} A",
+                "stabilizer_current = "
+                f"{stab_current[worst_local_index]:.16e} A",
+                "superconductor_voltage_gradient = "
+                f"{v_sc[worst_local_index]:.16e} V/m",
+                "stabilizer_voltage_gradient = "
+                f"{v_stab[worst_local_index]:.16e} V/m",
+                "absolute_voltage_difference = "
+                f"{absolute_difference[worst_local_index]:.16e} V/m",
+                "relative_voltage_difference = "
+                f"{relative_difference[worst_local_index]:.16e}",
+                f"dimensionless_residual = {dimensionless_residual:.16e}",
+            )
+        )
+        raise ValueError("\n".join(details))
 
     def __manage_fixed_potental(self, length: float):
         """Method that deals with fixed potentials: converts fixed potential values to array if they are integers or strings and checks the coordinate where fixed potentials are assigned.

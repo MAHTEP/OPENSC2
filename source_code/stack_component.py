@@ -1,8 +1,7 @@
 # Import libraries
 import numpy as np
 import pandas as pd
-from scipy import optimize
-from typing import Tuple, Union
+from typing import Union
 
 # Import classes
 from solid_component import SolidComponent
@@ -600,219 +599,6 @@ class StackComponent(StrandComponent):
             * (current / critical_current) ** (self.inputs["nn"] - 1)
         )
 
-    def solve_current_divider(
-        self,
-        rho_el_stabilizer: np.ndarray,
-        critical_current: np.ndarray,
-        current: np.ndarray,
-        el_num_step
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """Method that solves the not linear system of the current divider between superconduting and stabilizer material in the case of current sharing regime.
-
-        Args:
-            rho_el_stabilizer (np.ndarray): array with stabilizer electrical resistivity in Ohm*m.
-            critical_current (np.ndarray): array with superconductor critical current in A.
-            current (np.ndarray): electric total current array in A.
-
-        Raises:
-            ValueError: if arrays rho_el_stabilizer and critical_current does not have the same shape.
-
-
-        Returns:
-            Tuple[np.ndarray, np.ndarray]: superconducting current array in A, stabilizer current array in A.
-        """
-        # Check array shape
-        if rho_el_stabilizer.shape != critical_current.shape:
-            raise ValueError(
-                f"Arrays rho_el_stabilizer and critical_current must have the same shape.\n {rho_el_stabilizer.shape = };\n{critical_current.shape}.\n"
-            )
-        if rho_el_stabilizer.shape != current.shape:
-            raise ValueError(
-                f"Arrays rho_el_stabilizer and current must have the same shape.\n {rho_el_stabilizer.shape = };\n{current.shape}.\n"
-            )
-        if critical_current.shape != current.shape:
-            raise ValueError(
-                f"Arrays critical_current and current must have the same shape.\n {critical_current.shape = };\n{current.shape}.\n"
-            )
-        
-        # Evaluate constant value:
-        # psi = rho_el_stab*I_c^n/(E_0*A_stab)
-        psi = (
-            rho_el_stabilizer
-            * critical_current ** self.inputs["nn"]
-            / self.inputs["E0"]
-            / self.cross_section["stab"]
-        )
-
-        # Initialize guess.
-        sc_current_guess = np.zeros(current.shape)
-        # print(f"{el_num_step = }")
-
-        # print("\nDEBUG inside solve_current_divider")
-        # arr = np.asarray(current)  # usa il nome reale dell’argomento
-        # print("received current")
-        # print("type:", type(current))
-        # print("dtype:", arr.dtype)
-        # print("shape:", arr.shape)
-        # print("first 10:", arr[:10])
-        # print("has_nan:", np.isnan(arr).any())
-        # print("nan indices:", np.where(np.isnan(arr))[0][:20])
-
-        for ii, val in enumerate(current):
-
-            fa = self.__sc_current_residual(0.0, psi[ii], val)
-            fb = self.__sc_current_residual(val, psi[ii], val)
-            # print("\nDEBUG bisect current divider")
-            # print(f"ii = {ii}")
-            # print(f"a = {0.0}")
-            # print(f"b = {val}")
-            # print(f"fa = {fa}")
-            # print(f"fb = {fb}")
-            # print(f"isnan fa = {np.isnan(fa)}")
-            # print(f"isnan fb = {np.isnan(fb)}")
-            # print(f"I_total = {current[ii]}")
-            # print(f"Jc = {critical_current[ii]}")
-
-            if not np.isfinite(fa) or not np.isfinite(fb):
-                raise ValueError(
-                    "\nInvalid current-divider residual before bisect:\n"
-                    f"ii = {ii}\n"
-                    f"a = {0.0}, f(a) = {fa}\n"
-                    f"b = {val}, f(b) = {fb}\n"
-                    f"I_total = {current[ii]}\n"
-                    f"Jc = {critical_current[ii]}\n"
-                )
-
-            # Evaluate superconducting current guess with bisection method.
-            # Set the maximum itaration to 10 and disp to False in order to not
-            # rise an error due to not reached convergence.
-            sc_current_guess[ii] = optimize.bisect(
-                self.__sc_current_residual,
-                0.0,
-                val,
-                args=(psi[ii], val),
-                maxiter=10,
-                disp=False,
-            )
-
-        # Tolerance on newton halley increased in case I_critical is very small,
-        # to avoid inaccuracies on the divider that could lead to voltage 
-        # differences between sc and stab that are not expected in the parallel
-        # of electric resistances
-        if min(critical_current)>1e-6:
-            # Default tolerance in optimize.newton method
-            tolerance = 1.48e-8
-        else:
-            # Value found trial and error iteration
-            # tollerance = 1e-12
-            # Other possible solution for the correct tolerance
-            tolerance = min(critical_current)/1e3
-
-        # Evaluate superconducting with Halley's method
-        sc_current = optimize.newton(
-            self.__sc_current_residual,
-            sc_current_guess,
-            args=(psi, current),
-            fprime=self.__d_sc_current_residual,
-            fprime2=self.__d2_sc_current_residual,
-            tol = tolerance,
-            maxiter=1000,
-        )
-
-        return sc_current, current - sc_current
-
-    def __sc_current_residual(
-        self,
-        sc_current: Union[float, np.ndarray],
-        psi: Union[float, np.ndarray],
-        so_current: Union[float, np.ndarray],
-    ) -> Union[float, np.ndarray]:
-        """Private method that defines the residual function for the evaluation of the superconducting current with bysection and/or Newton-Rampson methods.
-
-        Args:
-            sc_current (Union(float, np.ndarray)): superconducting current (guess).
-            psi (Union(float, np.ndarray)): costant value in the equation
-            so_current (Union[float, np.ndarray]): total current in A.
-
-        Raises:
-            ValueError: if arguments sc_current, psi and so_current are not of the same type (float).
-            ValueError: if arguments sc_current, psi and so_current are not of the same type (np.ndarray).
-            ValueError: if arrays sc_current and psi does not have the same shape.
-            ValueError: if arrays sc_current and so_current does not have the same shape.
-
-        Returns:
-           Union[float, np.ndarray]: residual value
-        """
-        # Checks on input arguments.
-        if isinstance(sc_current, float):
-            if (
-                isinstance(psi, float) == False
-                or isinstance(so_current, float) == False
-            ):
-                raise ValueError(
-                    f"Arguments sc_current, psi and so_current must be of the same type (float).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
-                )
-        if isinstance(sc_current, np.ndarray):
-            if (
-                isinstance(psi, np.ndarray) == False
-                or isinstance(so_current, np.ndarray) == False
-            ):
-                raise ValueError(
-                    f"Arguments sc_current, psi and so_current must be of the same type (np.ndarray).\n{type(sc_current) = };\n{type(psi) = };\n{type(so_current) = }.\n"
-                )
-            if sc_current.shape != psi.shape:
-                raise ValueError(
-                    f"Arrays sc_current and psi must have the same shape.\n {sc_current.shape = };\n{psi.shape}.\n"
-                )
-            if sc_current.shape != so_current.shape:
-                raise ValueError(
-                    f"Arrays sc_current and so_current must have the same shape.\n {sc_current.shape = };\n{so_current.shape}.\n"
-                )
-
-        return sc_current ** self.inputs["nn"] + (sc_current - so_current) * psi
-
-    def __d_sc_current_residual(
-        self,
-        sc_current: Union[float, np.ndarray],
-        psi: Union[float, np.ndarray],
-        so_current: Union[float, np.ndarray],
-    ) -> Union[float, np.ndarray]:
-        """Private method that defines the first derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
-
-        Args:
-            sc_current (Union(float, np.ndarray)): superconducting current (guess).
-            psi (Union(float, np.ndarray)): costant value in the equation.
-            so_current (Union[float, np.ndarray]): total current in A, not used but passed by function optimize.newton.
-
-        Returns:
-           Union[float, np.ndarray]: residual derivative value
-        """
-
-        return self.inputs["nn"] * sc_current ** (self.inputs["nn"] - 1) + psi
-
-    def __d2_sc_current_residual(
-        self,
-        sc_current: Union[float, np.ndarray],
-        psi: Union[float, np.ndarray],
-        so_current: Union[float, np.ndarray],
-    ) -> Union[float, np.ndarray]:
-        """Private method that defines the second derivative of residual function wrt sc_current for the evaluation of the superconducting current with Newton-Rampson or Halley's methods.
-
-        Args:
-            sc_current (Union(float, np.ndarray)): superconducting current (guess).
-            psi (Union(float, np.ndarray)): costant value in the equation, not needed for this fuction.
-            so_current (Union[float, np.ndarray]): total current in A, not used but passed by function optimize.newton
-
-        Returns:
-           Union[float, np.ndarray]: second derivative of the residual.
-        """
-
-        return (
-            self.inputs["nn"]
-            * (self.inputs["nn"] - 1)
-            * sc_current ** (self.inputs["nn"] - 2)
-        )
-
     def get_electric_resistance(self, conductor: object) -> np.ndarray:
         f"""Method that evaluate the electrical resistance in Gauss node only, used to build the electric_resistance_matrix.
 
@@ -851,7 +637,7 @@ class StackComponent(StrandComponent):
         ind_not_zero = np.nonzero(abs(critical_current_gauss) > 0)[0]
 
         # Check if np array ind_zero is not empty: NORMAL REGION BY DEFINITION
-        if ind_zero.any():
+        if ind_zero.size > 0:
             # Evaluate electic resistance in normal region (stabilizer only).
             self.dict_Gauss_pt["electric_resistance"][
                 ind_zero
@@ -862,7 +648,7 @@ class StackComponent(StrandComponent):
         # Check if np array ind_not_zero is not empty: deal with index that 
         # are outside normal zone by definition; however some of them could 
         # still identify a normal region.
-        if ind_not_zero.any():
+        if ind_not_zero.size > 0:
             
             # print(f"el_num_step = {conductor.cond_el_num_step}")
             # self.debug_current_state("before solve_current_divider")
@@ -892,17 +678,21 @@ class StackComponent(StrandComponent):
                 ind_not_zero,
             )
 
-            # Compute voltage along stabilizer.
-            v_stab = self.dict_Gauss_pt["electrical_resistivity_stabilizer"][
-                ind_not_zero
-            ] * stab_current_gauss / self.cross_section["stab"]
-            # Compute voltage along superconductor
-            v_sc = self.inputs["E0"] * (sc_current_gauss / critical_current_gauss[ind_not_zero]) ** self.inputs["nn"]
-            # Check that the voltage along stabilizer is equal to the 
-            # voltage along superconductor (i.e, check the reliability 
-            # of the current divider).
-            if all(np.isclose(v_stab,v_sc)) == False:
-                raise ValueError(f"Voltage difference along superconductor and stabilizer must be the same.")
+            self._assert_current_divider_voltage_balance(
+                self.dict_Gauss_pt["electrical_resistivity_stabilizer"][
+                    ind_not_zero
+                ],
+                critical_current_gauss[ind_not_zero],
+                self.dict_Gauss_pt["op_current"][ind_not_zero],
+                sc_current_gauss,
+                stab_current_gauss,
+                gauss_indices=ind_not_zero,
+                temperature=self.dict_Gauss_pt["temperature"][ind_not_zero],
+                thermal_hydraulic_time=(
+                    conductor.cond_time[-1] if conductor.cond_time else None
+                ),
+                electric_time=conductor.electric_time,
+            )
 
         return self.dict_Gauss_pt["electric_resistance"]
 
