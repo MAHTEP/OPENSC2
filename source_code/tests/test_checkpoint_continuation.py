@@ -258,6 +258,77 @@ class CheckpointContinuationRestoreTests(unittest.TestCase):
         self.assertEqual(conductor.i_event, 1)
         np.testing.assert_allclose(conductor.events_time, [0.01, 1.0])
 
+    def test_recovery_restores_checkpoint_written_after_continuation(self):
+        source_checkpoint = self._checkpoint_with_current_inputs()
+        continuation = make_restore_target(self.input_dir)
+        continuation.transient_input = {
+            "IADAPTIME": 0,
+            "TIME_STEP": 0.025,
+            "STPMIN": 0.0025,
+            "TEND": 0.4,
+        }
+        continuation_conductor = continuation.list_of_Conductors[0]
+        continuation_conductor.time_step = 0.025
+        continuation_conductor.i_event = 0
+        continuation_conductor.Space_save = np.array(
+            [0.0, 0.1, 0.15, 0.3, 0.4]
+        )
+        continuation_conductor.num_step_save = np.zeros(5, dtype=int)
+        continuation_conductor.i_save_max = 4
+
+        compatibility = SimpleNamespace(
+            is_compatible=True,
+            blocking_reasons=(),
+            warnings=(),
+        )
+        with patch(
+            "utility_functions.checkpoint.evaluate_restart_compatibility",
+            return_value=compatibility,
+        ):
+            apply_checkpoint_to_runtime(
+                source_checkpoint,
+                continuation,
+                mode="continuation",
+            )
+
+        continuation_conductor.i_save = 1
+        continuation_conductor.num_step_save[0] = 7
+
+        continuation_checkpoint_path = write_checkpoint(
+            continuation,
+            self.root / "continuation_checkpoints",
+            trigger="periodic",
+        )
+        continuation_checkpoint = read_checkpoint(
+            continuation_checkpoint_path
+        )
+
+        recovery = make_restore_target(self.input_dir)
+        recovery_conductor = recovery.list_of_Conductors[0]
+        original_space_save = np.array([0.0, 0.1, 0.15, 0.3, 0.4])
+        recovery_conductor.Space_save = original_space_save
+        recovery_conductor.num_step_save = np.zeros(5, dtype=int)
+        recovery_conductor.i_save_max = 4
+
+        apply_checkpoint_to_runtime(
+            continuation_checkpoint,
+            recovery,
+            mode="recovery",
+        )
+
+        self.assertTrue(recovery.restored_from_checkpoint)
+        np.testing.assert_allclose(
+            recovery_conductor.Space_save,
+            [0.15, 0.3, 0.4],
+        )
+        self.assertIsNot(recovery_conductor.Space_save, original_space_save)
+        np.testing.assert_array_equal(
+            recovery_conductor.num_step_save,
+            [7, 0, 0],
+        )
+        self.assertEqual(recovery_conductor.i_save, 1)
+        self.assertEqual(recovery_conductor.i_save_max, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

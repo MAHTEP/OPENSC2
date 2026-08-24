@@ -583,13 +583,10 @@ def apply_checkpoint_to_runtime(checkpoint, simulation, mode="recovery"):
                 checkpoint_time,
             )
         else:
-            output_attributes = {
-                attribute: _copy_for_runtime(
-                    value, getattr(runtime, attribute, None)
-                )
-                for attribute, value in saved.output_state.items()
-                if attribute != "buffers"
-            }
+            output_attributes = _prepare_recovery_output_state(
+                saved.output_state,
+                runtime,
+            )
         output_buffers = []
         for owner_path, owner in _runtime_output_owners(runtime):
             saved_owner = _mapping_path(
@@ -1248,6 +1245,120 @@ def _prepare_continuation_output_state(runtime, checkpoint_time):
     }
 
 
+def _validate_recovery_output_schedule(saved_output, runtime, label, reasons):
+    """Validate a saved spatial-output schedule against fresh inputs.
+
+    A continuation removes diagnostic times at or before its branch point.
+    Checkpoints written later therefore contain a ``num_step_save`` array
+    matching only a suffix of the schedule rebuilt from the unchanged input
+    files. Strict recovery may restore that suffix, but it must still reject
+    malformed arrays and schedules that cannot originate from the runtime
+    policy.
+    """
+
+    saved_num_step_save = saved_output.get("num_step_save")
+    runtime_num_step_save = getattr(runtime, "num_step_save", None)
+    runtime_space_save = getattr(runtime, "Space_save", None)
+
+    try:
+        saved_num_step_save = np.asarray(saved_num_step_save)
+    except (TypeError, ValueError):
+        reasons.append(f"{label} saved num_step_save is invalid.")
+        return
+    try:
+        runtime_num_step_save = np.asarray(runtime_num_step_save)
+    except (TypeError, ValueError):
+        reasons.append(f"{label} runtime num_step_save is invalid.")
+        return
+    try:
+        runtime_space_save = np.asarray(runtime_space_save, dtype=float)
+    except (TypeError, ValueError):
+        reasons.append(f"{label} Space_save is missing or non-numeric.")
+        return
+
+    if (
+        saved_num_step_save.ndim != 1
+        or saved_num_step_save.size == 0
+        or not np.issubdtype(saved_num_step_save.dtype, np.integer)
+    ):
+        reasons.append(
+            f"{label} saved num_step_save must be a non-empty 1-D "
+            "integer array."
+        )
+    if (
+        runtime_num_step_save.ndim != 1
+        or not np.issubdtype(runtime_num_step_save.dtype, np.integer)
+    ):
+        reasons.append(
+            f"{label} runtime num_step_save must be a 1-D integer array."
+        )
+    if runtime_space_save.ndim != 1 or runtime_space_save.size == 0:
+        reasons.append(
+            f"{label} runtime Space_save must be a non-empty 1-D array."
+        )
+    elif not np.isfinite(runtime_space_save).all():
+        reasons.append(
+            f"{label} runtime Space_save contains non-finite values."
+        )
+    elif runtime_space_save.size > 1 and np.any(
+        np.diff(runtime_space_save) <= 0.0
+    ):
+        reasons.append(
+            f"{label} runtime Space_save must be strictly increasing."
+        )
+
+    if (
+        runtime_num_step_save.ndim == 1
+        and runtime_space_save.ndim == 1
+        and runtime_num_step_save.size != runtime_space_save.size
+    ):
+        reasons.append(
+            f"{label} runtime num_step_save and Space_save shapes differ."
+        )
+    if (
+        saved_num_step_save.ndim == 1
+        and runtime_space_save.ndim == 1
+        and saved_num_step_save.size > runtime_space_save.size
+    ):
+        reasons.append(
+            f"{label} saved num_step_save cannot be aligned with runtime "
+            "Space_save."
+        )
+
+    saved_i_save = saved_output.get("i_save")
+    valid_i_save = isinstance(saved_i_save, (int, np.integer))
+    if valid_i_save and saved_num_step_save.ndim == 1:
+        valid_i_save = 0 <= int(saved_i_save) < saved_num_step_save.size
+    if valid_i_save and runtime_space_save.ndim == 1:
+        valid_i_save = int(saved_i_save) < runtime_space_save.size
+    if not valid_i_save:
+        reasons.append(
+            f"{label} saved i_save is outside runtime Space_save."
+        )
+
+
+def _prepare_recovery_output_state(saved_output, runtime):
+    """Prepare recovery counters and any continuation-pruned schedule."""
+
+    output_attributes = {
+        attribute: _copy_for_runtime(
+            value,
+            getattr(runtime, attribute, None),
+        )
+        for attribute, value in saved_output.items()
+        if attribute != "buffers"
+    }
+
+    saved_size = np.asarray(saved_output["num_step_save"]).size
+    runtime_space_save = np.asarray(runtime.Space_save)
+    if saved_size < runtime_space_save.size:
+        offset = runtime_space_save.size - saved_size
+        output_attributes["Space_save"] = runtime_space_save[offset:].copy()
+        output_attributes["i_save_max"] = int(saved_size - 1)
+
+    return output_attributes
+
+
 def _validate_electric_target(saved, runtime, label, reasons):
     runtime_inputs = getattr(runtime, "inputs", {})
     runtime_active = (
@@ -1290,24 +1401,12 @@ def _validate_output_target(
             reasons,
         )
     else:
-        runtime_num_step_save = getattr(runtime, "num_step_save", None)
-        _validate_matching_shape(
-            saved_output.get("num_step_save"),
-            runtime_num_step_save,
-            f"{label} num_step_save",
+        _validate_recovery_output_schedule(
+            saved_output,
+            runtime,
+            label,
             reasons,
         )
-
-        saved_i_save = saved_output.get("i_save")
-        runtime_space_save = getattr(runtime, "Space_save", None)
-        if runtime_space_save is None:
-            reasons.append(f"{label} Space_save is missing from the runtime.")
-        elif not isinstance(saved_i_save, (int, np.integer)) or not (
-            0 <= int(saved_i_save) < np.asarray(runtime_space_save).size
-        ):
-            reasons.append(
-                f"{label} saved i_save is outside runtime Space_save."
-            )
 
     saved_buffers = saved_output.get("buffers", {})
     saved_conductor_buffer = saved_buffers.get("conductor")
