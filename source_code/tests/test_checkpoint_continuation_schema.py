@@ -43,6 +43,7 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
         schema_version,
         *,
         remove_continuation_profile=False,
+        remove_spatial_schedule=False,
     ):
         checkpoint_path = write_checkpoint(
             self._simulation_with_continuation_policy(),
@@ -57,13 +58,17 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
                 and "continuation_profile" in metadata
             ):
                 del metadata["continuation_profile"]
+            if remove_spatial_schedule:
+                for output_state in h5file["conductors"].values():
+                    del output_state["output_state/Space_save"]
+                    del output_state["output_state/i_save_max"]
         return checkpoint_path
 
-    def test_schema_1_1_persists_required_continuation_profile(self):
-        self.assertEqual(SCHEMA_VERSION, "1.1")
+    def test_schema_1_2_persists_required_continuation_profile(self):
+        self.assertEqual(SCHEMA_VERSION, "1.2")
         self.assertEqual(
             SUPPORTED_SCHEMA_VERSIONS,
-            frozenset(("1.1",)),
+            frozenset(("1.1", "1.2")),
         )
 
         checkpoint_path = write_checkpoint(
@@ -90,7 +95,7 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
             self.assertEqual(len(profile["drivers"]), 0)
 
         checkpoint = read_checkpoint(checkpoint_path)
-        self.assertEqual(checkpoint.schema_version, "1.1")
+        self.assertEqual(checkpoint.schema_version, "1.2")
         self.assertEqual(
             checkpoint.continuation_profile.immutable,
             {
@@ -135,12 +140,34 @@ class CheckpointContinuationSchemaTests(unittest.TestCase):
         ):
             read_checkpoint(checkpoint_path)
 
-    def test_reader_rejects_development_schema_1_2(self):
-        checkpoint_path = self._write_checkpoint_with_schema("1.2")
+    def test_reader_accepts_schema_1_1_with_continuation_profile(self):
+        checkpoint_path = self._write_checkpoint_with_schema(
+            "1.1",
+            remove_spatial_schedule=True,
+        )
+
+        checkpoint = read_checkpoint(checkpoint_path)
+
+        self.assertEqual(checkpoint.schema_version, "1.1")
+
+    def test_reader_rejects_schema_1_2_without_spatial_schedule(self):
+        checkpoint_path = self._write_checkpoint_with_schema(
+            "1.2",
+            remove_spatial_schedule=True,
+        )
 
         with self.assertRaisesRegex(
             CheckpointReadError,
-            r"Unsupported checkpoint schema '1\.2'",
+            r"output state is missing 'Space_save'",
+        ):
+            read_checkpoint(checkpoint_path)
+
+    def test_reader_rejects_unknown_schema_1_3(self):
+        checkpoint_path = self._write_checkpoint_with_schema("1.3")
+
+        with self.assertRaisesRegex(
+            CheckpointReadError,
+            r"Unsupported checkpoint schema '1\.3'",
         ):
             read_checkpoint(checkpoint_path)
 

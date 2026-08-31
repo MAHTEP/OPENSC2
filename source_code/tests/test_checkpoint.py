@@ -95,6 +95,7 @@ def make_simulation(base_path, *, force_next_tstep_flag=False):
         E_str_ini=5.0,
         E_jk_ini=6.0,
         i_save=1,
+        i_save_max=1,
         num_step_save=np.array([0, 1]),
         Space_save=np.array([0.0, 0.1]),
         t_save_left=0.1,
@@ -190,6 +191,11 @@ class CheckpointTests(unittest.TestCase):
                 ][:],
                 [1.0e5, 1.01e5],
             )
+            np.testing.assert_allclose(
+                conductor["output_state/Space_save"][:],
+                [0.0, 0.1],
+            )
+            self.assertEqual(conductor["output_state/i_save_max"][()], 1)
 
     def test_manifest_is_deterministic_and_uses_relative_paths(self):
         nested = self.input_dir / "auxiliary"
@@ -663,7 +669,8 @@ class CheckpointTests(unittest.TestCase):
         self.assertIsInstance(coolant.time_evol["pressure"], list)
         self.assertIsInstance(coolant.time_evol_io["time (s)"], list)
         self.assertIs(conductor.events_time, original_events)
-        self.assertIs(conductor.Space_save, original_space_save)
+        self.assertIsNot(conductor.Space_save, original_space_save)
+        np.testing.assert_allclose(conductor.Space_save, original_space_save)
         target.simulation_time.append(0.2)
         conductor.cond_time.append(0.2)
         coolant.time_evol_io["time (s)"].append(0.2)

@@ -12,6 +12,7 @@ from utility_functions.checkpoint import (
     apply_checkpoint_to_runtime,
     read_checkpoint,
 )
+from utility_functions.recovery_output import seed_recovery_output_history
 
 
 RESTART_MODES = ("recovery", "continuation")
@@ -146,6 +147,18 @@ def run_headless_simulation(
             simulation,
             mode=restart_mode,
         )
+        if restart_mode == "recovery":
+            recovery_output_reports = seed_recovery_output_history(
+                checkpoint,
+                simulation,
+            )
+            for report in recovery_output_reports:
+                print(
+                    "Recovery output history restored: "
+                    f"{report['identifier']}, "
+                    f"{report['spatial_files']} spatial files and "
+                    f"{report['time_files']} time-evolution files."
+                )
 
     simulation.conductor_solution(headless_gui)
     simulation.conductor_post_processing()

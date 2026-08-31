@@ -27,8 +27,8 @@ from utility_functions.checkpoint_schedule import (
 from utility_functions.utils_global_info import IADAPTIME_VALUES
 
 
-SCHEMA_VERSION = "1.1"
-SUPPORTED_SCHEMA_VERSIONS = frozenset((SCHEMA_VERSION,))
+SCHEMA_VERSION = "1.2"
+SUPPORTED_SCHEMA_VERSIONS = frozenset(("1.1", SCHEMA_VERSION))
 CONTINUATION_PROFILE_VERSION = "1.1"
 VALID_TRIGGERS = frozenset(("periodic", "requested", "final"))
 DEFAULT_CHECKPOINT_EVERY_N_STEPS = 100
@@ -114,7 +114,9 @@ _BALANCE_ATTRIBUTES = (
 )
 
 _OUTPUT_STATE_ATTRIBUTES = (
+    "Space_save",
     "i_save",
+    "i_save_max",
     "num_step_save",
     "t_save_left",
 )
@@ -1325,6 +1327,66 @@ def _validate_recovery_output_schedule(saved_output, runtime, label, reasons):
             "Space_save."
         )
 
+    saved_space_save = saved_output.get("Space_save")
+    if saved_space_save is not None:
+        try:
+            saved_space_save = np.asarray(saved_space_save, dtype=float)
+        except (TypeError, ValueError):
+            reasons.append(f"{label} saved Space_save is non-numeric.")
+        else:
+            valid_saved_schedule = True
+            if saved_space_save.ndim != 1 or saved_space_save.size == 0:
+                reasons.append(
+                    f"{label} saved Space_save must be a non-empty 1-D array."
+                )
+                valid_saved_schedule = False
+            elif not np.isfinite(saved_space_save).all():
+                reasons.append(
+                    f"{label} saved Space_save contains non-finite values."
+                )
+                valid_saved_schedule = False
+            elif saved_space_save.size > 1 and np.any(
+                np.diff(saved_space_save) <= 0.0
+            ):
+                reasons.append(
+                    f"{label} saved Space_save must be strictly increasing."
+                )
+                valid_saved_schedule = False
+
+            if (
+                valid_saved_schedule
+                and saved_num_step_save.ndim == 1
+                and saved_space_save.size != saved_num_step_save.size
+            ):
+                reasons.append(
+                    f"{label} saved Space_save and num_step_save shapes differ."
+                )
+                valid_saved_schedule = False
+            if (
+                valid_saved_schedule
+                and runtime_space_save.ndim == 1
+                and saved_space_save.size <= runtime_space_save.size
+            ):
+                runtime_suffix = runtime_space_save[-saved_space_save.size :]
+                if not np.allclose(
+                    saved_space_save,
+                    runtime_suffix,
+                    rtol=1.0e-12,
+                    atol=1.0e-12,
+                ):
+                    reasons.append(
+                        f"{label} saved Space_save is not a suffix of the "
+                        "strict-recovery input schedule."
+                    )
+
+        saved_i_save_max = saved_output.get("i_save_max")
+        if not isinstance(saved_i_save_max, (int, np.integer)) or (
+            isinstance(saved_space_save, np.ndarray)
+            and saved_space_save.ndim == 1
+            and int(saved_i_save_max) != saved_space_save.size - 1
+        ):
+            reasons.append(f"{label} saved i_save_max is inconsistent.")
+
     saved_i_save = saved_output.get("i_save")
     valid_i_save = isinstance(saved_i_save, (int, np.integer))
     if valid_i_save and saved_num_step_save.ndim == 1:
@@ -1350,10 +1412,21 @@ def _prepare_recovery_output_state(saved_output, runtime):
     }
 
     saved_size = np.asarray(saved_output["num_step_save"]).size
-    runtime_space_save = np.asarray(runtime.Space_save)
-    if saved_size < runtime_space_save.size:
-        offset = runtime_space_save.size - saved_size
-        output_attributes["Space_save"] = runtime_space_save[offset:].copy()
+    if "Space_save" in saved_output:
+        output_attributes["Space_save"] = np.asarray(
+            saved_output["Space_save"],
+            dtype=np.asarray(runtime.Space_save).dtype,
+        ).copy()
+        output_attributes["i_save_max"] = int(
+            saved_output.get("i_save_max", saved_size - 1)
+        )
+    else:
+        # Backward compatibility for schema-1.1 checkpoints, which persisted
+        # the counters but not the continuation-local schedule itself.
+        runtime_space_save = np.asarray(runtime.Space_save)
+        if saved_size < runtime_space_save.size:
+            offset = runtime_space_save.size - saved_size
+            output_attributes["Space_save"] = runtime_space_save[offset:].copy()
         output_attributes["i_save_max"] = int(saved_size - 1)
 
     return output_attributes
@@ -1568,7 +1641,11 @@ def _read_checkpoint_file(h5file, checkpoint_path):
 
     conductors = {}
     for group_name in conductors_group:
-        conductor = _read_conductor(conductors_group[group_name], group_name)
+        conductor = _read_conductor(
+            conductors_group[group_name],
+            group_name,
+            schema_version,
+        )
         if conductor.identifier in conductors:
             raise CheckpointReadError(
                 f"Duplicate conductor identifier {conductor.identifier!r}."
@@ -1679,7 +1756,7 @@ def _read_continuation_profile(metadata):
     return ContinuationProfile(**sections)
 
 
-def _read_conductor(group, group_name):
+def _read_conductor(group, group_name, schema_version):
     if not isinstance(group, h5py.Group):
         raise CheckpointReadError(
             f"conductors/{group_name} must be a group."
@@ -1763,7 +1840,10 @@ def _read_conductor(group, group_name):
     components = _read_components(group["components"], identifier)
 
     output_state = _read_mapping(group["output_state"])
-    for key in ("i_save", "num_step_save", "buffers"):
+    required_output_state = ["i_save", "num_step_save", "buffers"]
+    if schema_version == "1.2":
+        required_output_state.extend(("Space_save", "i_save_max"))
+    for key in required_output_state:
         if key not in output_state:
             raise CheckpointReadError(
                 f"Conductor {identifier!r} output state is missing {key!r}."

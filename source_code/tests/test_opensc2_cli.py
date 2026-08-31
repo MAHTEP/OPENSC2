@@ -165,8 +165,15 @@ def test_checkpoint_is_applied_after_initialization_and_before_solution(
         assert mode == expected_mode
         events.append(f"apply_checkpoint:{mode}")
 
+    def seed(restored_checkpoint, simulation):
+        assert restored_checkpoint is checkpoint
+        assert simulation is holder["simulation"]
+        events.append("seed_recovery_output_history")
+        return ()
+
     monkeypatch.setattr(opensc2, "read_checkpoint", read)
     monkeypatch.setattr(opensc2, "apply_checkpoint_to_runtime", apply)
+    monkeypatch.setattr(opensc2, "seed_recovery_output_history", seed)
 
     opensc2.run_headless_simulation(
         "io.yaml",
@@ -174,13 +181,20 @@ def test_checkpoint_is_applied_after_initialization_and_before_solution(
         restart_mode=mode,
     )
 
-    assert events == [
+    expected_events = [
         "read_checkpoint",
         "conductor_instance",
         "simulation_folders_manager",
         "save_input_files",
         "conductor_initialization",
         f"apply_checkpoint:{mode}",
-        "conductor_solution",
-        "conductor_post_processing",
     ]
+    if mode == "recovery":
+        expected_events.append("seed_recovery_output_history")
+    expected_events.extend(
+        [
+            "conductor_solution",
+            "conductor_post_processing",
+        ]
+    )
+    assert events == expected_events
