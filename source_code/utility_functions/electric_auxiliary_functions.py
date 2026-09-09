@@ -1,9 +1,132 @@
+import logging
+
 import numpy as np
 from pypardiso import spsolve as pardiso_spsolve
+from pypardiso.scipy_aliases import pypardiso_solver
 from scipy import sparse
 from typing import Union
 
 from conductor_flags import ELECTRIC_TIME_STEP_NUMBER
+
+
+LOGGER = logging.getLogger(__name__)
+
+_ELECTRIC_SOLVER_RELATIVE_RESIDUAL_TOLERANCE = 1.0e-4
+_ELECTRIC_SOLVER_ABSOLUTE_RESIDUAL_TOLERANCE = 1.0e-10
+
+
+def _electric_linear_solution_diagnostics(matrix, right_hand_side, solution):
+    """Return residual diagnostics for a candidate electric solution."""
+    right_hand_side = np.asarray(right_hand_side).reshape(-1)
+    solution = np.asarray(solution).reshape(-1)
+    finite_solution = bool(np.all(np.isfinite(solution)))
+
+    if finite_solution:
+        with np.errstate(over="ignore", invalid="ignore"):
+            residual = np.asarray(matrix @ solution).reshape(-1) - right_hand_side
+        finite_residual = bool(np.all(np.isfinite(residual)))
+    else:
+        residual = np.array([np.inf])
+        finite_residual = False
+
+    residual_inf = (
+        float(np.max(np.abs(residual), initial=0.0))
+        if finite_residual
+        else float("inf")
+    )
+    rhs_inf = float(np.max(np.abs(right_hand_side), initial=0.0))
+    acceptance_limit = (
+        _ELECTRIC_SOLVER_ABSOLUTE_RESIDUAL_TOLERANCE
+        + _ELECTRIC_SOLVER_RELATIVE_RESIDUAL_TOLERANCE * rhs_inf
+    )
+
+    return {
+        "acceptable": finite_solution
+        and finite_residual
+        and residual_inf <= acceptance_limit,
+        "finite_solution": finite_solution,
+        "finite_residual": finite_residual,
+        "residual_inf": residual_inf,
+        "rhs_inf": rhs_inf,
+        "rhs_relative_residual": (
+            residual_inf / rhs_inf
+            if rhs_inf > 0.0
+            else (0.0 if residual_inf == 0.0 else float("inf"))
+        ),
+        "acceptance_limit": acceptance_limit,
+    }
+
+
+def _format_electric_solver_diagnostics(diagnostics):
+    return (
+        f"finite_solution={diagnostics['finite_solution']}, "
+        f"finite_residual={diagnostics['finite_residual']}, "
+        f"residual_inf={diagnostics['residual_inf']:.17g}, "
+        f"rhs_inf={diagnostics['rhs_inf']:.17g}, "
+        "rhs_relative_residual="
+        f"{diagnostics['rhs_relative_residual']:.17g}, "
+        f"acceptance_limit={diagnostics['acceptance_limit']:.17g}"
+    )
+
+
+def _solve_electric_linear_system(matrix, right_hand_side, *, context):
+    """Solve ``matrix @ x = right_hand_side`` and reject invalid results.
+
+    PyPardiso can rarely return a numerically unacceptable vector while its
+    native error code is zero.  In that case, release all native PARDISO state
+    and refactorize the same system once.  No invalid candidate is returned to
+    the conductor runtime.
+    """
+    solution = pardiso_spsolve(matrix, right_hand_side)
+    first_diagnostics = _electric_linear_solution_diagnostics(
+        matrix,
+        right_hand_side,
+        solution,
+    )
+    if first_diagnostics["acceptable"]:
+        return solution
+
+    LOGGER.warning(
+        "PARDISO returned an unacceptable electric solution; retrying the "
+        "identical linear system after releasing native solver state. %s; %s",
+        context,
+        _format_electric_solver_diagnostics(first_diagnostics),
+    )
+
+    try:
+        pypardiso_solver.free_memory(everything=True)
+    except Exception as error:
+        raise RuntimeError(
+            "PARDISO returned an unacceptable electric solution and its "
+            "native state could not be released before retry. "
+            f"{context}; first solve: "
+            f"{_format_electric_solver_diagnostics(first_diagnostics)}"
+        ) from error
+
+    retry_solution = pardiso_spsolve(matrix, right_hand_side)
+    retry_diagnostics = _electric_linear_solution_diagnostics(
+        matrix,
+        right_hand_side,
+        retry_solution,
+    )
+    if retry_diagnostics["acceptable"]:
+        LOGGER.warning(
+            "PARDISO electric solve recovered after one full native-state "
+            "reset and refactorization. %s; %s",
+            context,
+            _format_electric_solver_diagnostics(retry_diagnostics),
+        )
+        return retry_solution
+
+    raise RuntimeError(
+        "PARDISO electric solution remained unacceptable after one full "
+        "native-state reset and refactorization of the identical system. "
+        f"{context}; first solve: "
+        f"{_format_electric_solver_diagnostics(first_diagnostics)}; "
+        "retry: "
+        f"{_format_electric_solver_diagnostics(retry_diagnostics)}. "
+        "The invalid electric solution was not applied."
+    )
 
 def custom_current_function(time: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """User defined custom function for the current beavior in time (and maybe in space).
@@ -174,9 +297,10 @@ def electric_steady_state_solution(conductor: object):
     # Introduced alias to electric_known_term_vector to exploit the same
     # solution function in both the steady state and the transient case,
     conductor.electric_right_hand_side = conductor.electric_known_term_vector
-    electric_solution = pardiso_spsolve(
+    electric_solution = _solve_electric_linear_system(
         conductor.electric_stiffness_matrix,
         conductor.electric_right_hand_side,
+        context="steady-state electric solve",
     )
 
     solution_completion(conductor, idx, electric_solution)
@@ -309,9 +433,15 @@ def electric_transient_solution(conductor: object):
         conductor.build_right_hand_side(foo, electric_known_term_vector_reduced, idx)
 
         # Solution.
-        electric_solution = pardiso_spsolve(
+        electric_solution = _solve_electric_linear_system(
             conductor.electric_stiffness_matrix,
             conductor.electric_right_hand_side,
+            context=(
+                f"TH step={conductor.cond_num_step}, "
+                f"TH time={conductor.cond_time[-1]:.17g} s, "
+                f"electric step={conductor.cond_el_num_step}, "
+                f"electric time={conductor.electric_time:.17g} s"
+            ),
         )
 
         # Update old known therm vector.
