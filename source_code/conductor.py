@@ -6795,11 +6795,15 @@ class Conductor:
             # Compute difference tqend - tqbeg for each defined heating form 
             # main input file conductor_operation.xlsx.
             diff = tmp_event[i_tqend:] - tmp_event[:i_tqend]
-            # Check that tqend - tqbeg is >= 10*dt. If it is not the case an 
-            # error is raised.
-            if any(diff < 1e1 * dt):
-                # At least one difference tqend - tqbeg is < 10*dt: raise an 
-                # error.
+            # Check that tqend - tqbeg is >= 10*dt. Allow only the
+            # floating-point roundoff associated with subtracting absolute
+            # event times.
+            threshold = 1e1 * dt
+            time_scale = max(1.0, float(np.max(np.abs(tmp_event))))
+            roundoff_tol = 1e1 * np.finfo(float).eps * time_scale
+            if np.any(diff < threshold - roundoff_tol):
+                # At least one difference tqend - tqbeg is genuinely < 10*dt:
+                # raise an error.
                 raise ValueError(f"Selected {dt_label} is to large for suitably discretize all the defined heating period in file {f_path}.\n Please, reduce the {dt_label} such that each difference TQEND - TQBEG is discretized with at least 10 {dt_label}.")
 
     def __check_event_time_aux_input(
@@ -6832,11 +6836,15 @@ class Conductor:
             # Compute difference between each consecutive time value (event 
             # time) in array l_event (loaded from auxiliary input file).
             diff = l_event[1:] - l_event[:-1]
-            # Check that each difference is >= 10*dt. If it is not the case an 
-            # error is raised.
-            if any(diff < 1e1 * dt):
-                # At least one difference l_event[1:] - l_event[:-1] is < 
-                # 10*dt: raise an error.
+            # Check that each difference is >= 10*dt. Allow only the
+            # floating-point roundoff associated with subtracting absolute
+            # event times.
+            threshold = 1e1 * dt
+            time_scale = max(1.0, float(np.max(np.abs(l_event))))
+            roundoff_tol = 1e1 * np.finfo(float).eps * time_scale
+            if np.any(diff < threshold - roundoff_tol):
+                # At least one difference l_event[1:] - l_event[:-1] is
+                # genuinely < 10*dt: raise an error.
                 raise ValueError(f"Selected {dt_label} is to large for suitably discretize all the defined time ranges in file {f_path}.\n Please, reduce the {dt_label} such that each time range is discretized with at least 10 {dt_label}.")
 
     def __collect_event_time_aux_input(
