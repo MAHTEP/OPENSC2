@@ -118,7 +118,7 @@ def test_nonfinite_solution_is_retried(monkeypatch):
     assert reset_calls == [{"everything": True}]
 
 
-def test_two_bad_solutions_fail_before_returning_invalid_state(monkeypatch):
+def test_all_bad_solutions_fail_before_returning_invalid_state(monkeypatch):
     matrix, right_hand_side = _identity_system()
     bad_solution = np.array([1.0e12, -1.0e12])
     reset_calls = []
@@ -133,22 +133,26 @@ def test_two_bad_solutions_fail_before_returning_invalid_state(monkeypatch):
         "free_memory",
         lambda **kwargs: reset_calls.append(kwargs),
     )
+    monkeypatch.setattr(
+        electric_aux.sparse.linalg,
+        "spsolve",
+        lambda matrix, rhs: bad_solution.copy(),
+    )
 
     with pytest.raises(RuntimeError) as error:
         electric_aux._solve_electric_linear_system(
             matrix,
             right_hand_side,
-            context="TH step=1001, electric step=4",
+            context="unit-test",
         )
 
     message = str(error.value)
-    assert "remained unacceptable after one full" in message
-    assert "TH step=1001, electric step=4" in message
-    assert "first solve" in message
-    assert "retry" in message
-    assert "rhs_relative_residual" in message
-    assert "invalid electric solution was not applied" in message
-    assert reset_calls == [{"everything": True}]
+    assert "SciPy spsolve fallback" in message
+    assert "The invalid electric solution was not applied" in message
+    assert reset_calls == [
+        {"everything": True},
+        {"everything": True},
+    ]
 
 
 def test_zero_rhs_exact_solution_passes_validation():

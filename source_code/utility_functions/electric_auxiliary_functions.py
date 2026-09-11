@@ -73,9 +73,12 @@ def _solve_electric_linear_system(matrix, right_hand_side, *, context):
     """Solve ``matrix @ x = right_hand_side`` and reject invalid results.
 
     PyPardiso can rarely return a numerically unacceptable vector while its
-    native error code is zero.  In that case, release all native PARDISO state
-    and refactorize the same system once.  No invalid candidate is returned to
-    the conductor runtime.
+    native error code is zero. In that case, release all native PARDISO state
+    and refactorize the same system once. If the retry is still unacceptable,
+    release the PARDISO state again and solve the identical system with SciPy
+    ``spsolve`` as an independent fallback. Every candidate is validated using
+    the same residual criterion, and no invalid solution is returned to the
+    conductor runtime.
     """
     solution = pardiso_spsolve(matrix, right_hand_side)
     first_diagnostics = _electric_linear_solution_diagnostics(
@@ -118,13 +121,56 @@ def _solve_electric_linear_system(matrix, right_hand_side, *, context):
         )
         return retry_solution
 
-    raise RuntimeError(
+    LOGGER.warning(
         "PARDISO electric solution remained unacceptable after one full "
-        "native-state reset and refactorization of the identical system. "
-        f"{context}; first solve: "
+        "native-state reset and refactorization; falling back to SciPy "
+        "spsolve for the identical linear system. %s; first solve: %s; "
+        "retry: %s",
+        context,
+        _format_electric_solver_diagnostics(first_diagnostics),
+        _format_electric_solver_diagnostics(retry_diagnostics),
+    )
+
+    # The retry has created a new native PARDISO state. Release it before
+    # switching solver so that the following electric step starts from a clean
+    # PARDISO state if the SciPy fallback succeeds.
+    try:
+        pypardiso_solver.free_memory(everything=True)
+    except Exception as error:
+        raise RuntimeError(
+            "PARDISO remained unacceptable after retry and its native state "
+            "could not be released before the SciPy fallback. "
+            f"{context}; first solve: "
+            f"{_format_electric_solver_diagnostics(first_diagnostics)}; "
+            "retry: "
+            f"{_format_electric_solver_diagnostics(retry_diagnostics)}"
+        ) from error
+
+    scipy_solution = sparse.linalg.spsolve(matrix, right_hand_side)
+    scipy_diagnostics = _electric_linear_solution_diagnostics(
+        matrix,
+        right_hand_side,
+        scipy_solution,
+    )
+
+    if scipy_diagnostics["acceptable"]:
+        LOGGER.warning(
+            "SciPy spsolve recovered an electric linear system rejected by "
+            "PARDISO. %s; %s",
+            context,
+            _format_electric_solver_diagnostics(scipy_diagnostics),
+        )
+        return scipy_solution
+
+    raise RuntimeError(
+        "Electric linear system remained unacceptable after two PARDISO "
+        "attempts and the SciPy spsolve fallback. "
+        f"{context}; first PARDISO solve: "
         f"{_format_electric_solver_diagnostics(first_diagnostics)}; "
-        "retry: "
-        f"{_format_electric_solver_diagnostics(retry_diagnostics)}. "
+        "PARDISO retry: "
+        f"{_format_electric_solver_diagnostics(retry_diagnostics)}; "
+        "SciPy fallback: "
+        f"{_format_electric_solver_diagnostics(scipy_diagnostics)}. "
         "The invalid electric solution was not applied."
     )
 
