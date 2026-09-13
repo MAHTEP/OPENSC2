@@ -5,6 +5,14 @@ import numpy as np
 from typing import Union
 
 
+# Aluminium properties
+from properties_of_materials.aluminium import (
+    thermal_conductivity_al,
+    isobaric_specific_heat_al,
+    density_al,
+    electrical_resistivity_al,
+)
+
 # Stainless steel properties
 from properties_of_materials.stainless_steel import (
     thermal_conductivity_ss,
@@ -21,13 +29,21 @@ from properties_of_materials.glass_epoxy import (
     electrical_resistivity_ge,
 )
 
-DENSITY_FUNC = dict(ge=density_ge, ss=density_ss)
+DENSITY_FUNC = dict(al=density_al, ge=density_ge, ss=density_ss)
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
-    ge=isobaric_specific_heat_ge, ss=isobaric_specific_heat_ss
+    al=isobaric_specific_heat_al,
+    ge=isobaric_specific_heat_ge,
+    ss=isobaric_specific_heat_ss,
 )
-THERMAL_CONDUCTIVITY_FUNC = dict(ge=thermal_conductivity_ge, ss=thermal_conductivity_ss)
+THERMAL_CONDUCTIVITY_FUNC = dict(
+    al=thermal_conductivity_al,
+    ge=thermal_conductivity_ge,
+    ss=thermal_conductivity_ss,
+)
 ELECTRICAL_RESISTIVITY_FUNC = dict(
-    ge=electrical_resistivity_ge, ss=electrical_resistivity_ss
+    al=electrical_resistivity_al,
+    ge=electrical_resistivity_ge,
+    ss=electrical_resistivity_ss,
 )
 
 
