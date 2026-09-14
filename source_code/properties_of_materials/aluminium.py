@@ -341,3 +341,142 @@ def density_al(temperature: np.ndarray) -> np.ndarray:
 
 
 # end function rho_Al (cdp, 01/2021)
+
+# ---------------------------------------------------------------------------
+# CryoSoft aluminium properties (opt-in)
+# ---------------------------------------------------------------------------
+# Direct Python translation of the CryoSoft Al.f routines supplied for the
+# H4C benchmark audit. These functions intentionally coexist with the legacy
+# OPENSC2 functions so existing input files using material key "al" retain
+# the legacy property path.
+
+def _broadcast_al_cryosoft_inputs(temperature, magnetic_field, rrr):
+    """Broadcast and clamp CryoSoft aluminium inputs to the Fortran ranges."""
+    temperature, magnetic_field, rrr = np.broadcast_arrays(
+        np.asarray(temperature, dtype=float),
+        np.asarray(magnetic_field, dtype=float),
+        np.asarray(rrr, dtype=float),
+    )
+    temperature = np.clip(temperature, 0.1, 933.45)
+    magnetic_field = np.clip(magnetic_field, 0.0, 30.0)
+    rrr = np.clip(rrr, 1.5, 30000.0)
+    return temperature, magnetic_field, rrr
+
+
+def magnetoresistance_al_cryosoft(temperature, magnetic_field, rrr):
+    """CryoSoft transverse magnetoresistivity factor for pure aluminium."""
+    tt, bb, rr_input = _broadcast_al_cryosoft_inputs(
+        temperature, magnetic_field, rrr
+    )
+    rho273 = 2.48e-8
+    rho_rrr = 4.52e-8
+    p1, p2, p3, p4, p5, p6, p7 = (
+        0.09052e-16, 4.551, 5.173e10, -1.26, 13.64, 1.0, 0.7416
+    )
+    g1, g2, g3, g4, g5, g6, g7 = (
+        0.116587e-04, 0.776391e-01, 0.687100, 0.536580e-05,
+        0.135597e01, 0.534860e-05, 0.181991e01
+    )
+    rho_zero = rho273 / (rr_input - 1.0)
+    rho_ice = rho273 + rho_rrr / rr_input
+    arg = np.minimum((p5 / tt) ** p6, 30.0)
+    rho_i = p1 * tt**p2 / (
+        1.0 + p1 * p3 * tt ** (p2 + p4) * np.exp(-arg)
+    )
+    rho_i0 = p7 * rho_i * rho_zero / (rho_i + rho_zero)
+    rho0 = rho_zero + rho_i + rho_i0
+    rr = rho_ice / rho0
+    brr = np.clip(bb * rr, 0.0, 40.0e3)
+    increase = np.zeros_like(tt, dtype=float)
+    mask = brr > 1.0
+    increase[mask] = (
+        g1
+        * rr[mask] ** (g2 * tt[mask] ** g3)
+        * brr[mask] ** g7
+        * (1.0 + g4 * brr[mask])
+        / (tt[mask] ** g5 * (1.0 + g6 * brr[mask] ** g7))
+    )
+    return increase + 1.0
+
+
+def thermal_conductivity_al_cryosoft(temperature, magnetic_field, rrr):
+    """CryoSoft aluminium thermal conductivity k(T, B, RRR), W/(m K)."""
+    tt, bb, rr_input = _broadcast_al_cryosoft_inputs(
+        temperature, magnetic_field, rrr
+    )
+    rho273 = 2.48e-8
+    lorenz = 2.443e-8
+    p1, p2, p3, p4, p5, p6 = 4.716e-8, 2.446, 623.6, -0.16, 130.9, 2.5
+    rho_zero = rho273 / (rr_input - 1.0)
+    beta = rho_zero / lorenz
+    p7 = 0.8168 / (beta / 0.0003) ** 0.1661
+    arg_a = np.minimum((np.log(tt / 380.0) / 0.6) ** 2, 30.0)
+    arg_b = np.minimum((np.log(tt / 94.0) / 0.5) ** 2, 30.0)
+    arg_d = np.minimum((p5 / tt) ** p6, 30.0)
+    w_c = (
+        -0.0005 * np.log(tt / 330.0) * np.exp(-arg_a)
+        - 0.0013 * np.log(tt / 110.0) * np.exp(-arg_b)
+    )
+    w0 = beta / tt
+    wi = (
+        p1 * tt**p2
+        / (1.0 + p1 * p3 * tt ** (p2 + p4) * np.exp(-arg_d))
+        + w_c
+    )
+    wi0 = p7 * wi * w0 / (wi + w0)
+    wt = w0 + wi + wi0
+    return 1.0 / (wt * magnetoresistance_al_cryosoft(tt, bb, rr_input))
+
+
+def electrical_resistivity_al_cryosoft(temperature, magnetic_field, rrr):
+    """CryoSoft aluminium electrical resistivity rho(T, B, RRR), ohm m."""
+    tt, bb, rr_input = _broadcast_al_cryosoft_inputs(
+        temperature, magnetic_field, rrr
+    )
+    rho273 = 2.48e-8
+    p1, p2, p3, p4, p5, p6, p7 = (
+        0.09052e-16, 4.551, 5.173e10, -1.26, 13.64, 1.0, 0.7416
+    )
+    rho_zero = rho273 / (rr_input - 1.0)
+    arg = np.minimum((p5 / tt) ** p6, 30.0)
+    rho_i = p1 * tt**p2 / (
+        1.0 + p1 * p3 * tt ** (p2 + p4) * np.exp(-arg)
+    )
+    rho_i0 = p7 * rho_i * rho_zero / (rho_i + rho_zero)
+    rho0 = rho_zero + rho_i + rho_i0
+    return magnetoresistance_al_cryosoft(tt, bb, rr_input) * rho0
+
+
+def isobaric_specific_heat_al_cryosoft(temperature):
+    """CryoSoft aluminium specific heat cp(T), J/(kg K)."""
+    tt = np.clip(np.asarray(temperature, dtype=float), 1.0, 1000.0)
+    t0, t1 = 13.0300576, 54.4990277
+    a0, a1, a2, a3 = 0.012034041, 0.039172353, 0.002543257, 0.000771961
+    b0, b1, b2, b3, b4 = (
+        -4.797655015, 1.249154424, -0.105581366, 0.004593931, -3.65654e-05
+    )
+    aa, bb, cc, dd = 9143.27476, -417.10708, 400.787649, -7722.6604
+    a, b, c, d = -18.6481086, -25.7545827, -18.1481600, -5.44742024
+    na, nb, nc, nd = 0.73861474, 1.52610058, 2.48698565, 3.70977399
+    cp = np.empty_like(tt, dtype=float)
+    low = tt <= t0
+    mid = (tt > t0) & (tt <= t1)
+    high = tt > t1
+    cp[low] = a0 + a1 * tt[low] + a2 * tt[low] ** 2 + a3 * tt[low] ** 3
+    cp[mid] = (
+        b0 + b1 * tt[mid] + b2 * tt[mid] ** 2
+        + b3 * tt[mid] ** 3 + b4 * tt[mid] ** 4
+    )
+    cp[high] = (
+        aa * tt[high] / (a + tt[high]) ** na
+        + bb * tt[high] ** 2 / (b + tt[high]) ** nb
+        + cc * tt[high] ** 3 / (c + tt[high]) ** nc
+        + dd * tt[high] ** 4 / (d + tt[high]) ** nd
+    )
+    return cp
+
+
+def density_al_cryosoft(temperature):
+    """CryoSoft aluminium density, kg/m3 (constant)."""
+    temperature = np.asarray(temperature)
+    return 2700.0 * np.ones(temperature.shape)

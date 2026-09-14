@@ -11,6 +11,10 @@ from properties_of_materials.aluminium import (
     isobaric_specific_heat_al,
     density_al,
     electrical_resistivity_al,
+    thermal_conductivity_al_cryosoft,
+    isobaric_specific_heat_al_cryosoft,
+    density_al_cryosoft,
+    electrical_resistivity_al_cryosoft,
 )
 
 # Stainless steel properties
@@ -29,19 +33,22 @@ from properties_of_materials.glass_epoxy import (
     electrical_resistivity_ge,
 )
 
-DENSITY_FUNC = dict(al=density_al, ge=density_ge, ss=density_ss)
+DENSITY_FUNC = dict(al=density_al, al_cryosoft=density_al_cryosoft, ge=density_ge, ss=density_ss)
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
     al=isobaric_specific_heat_al,
+    al_cryosoft=isobaric_specific_heat_al_cryosoft,
     ge=isobaric_specific_heat_ge,
     ss=isobaric_specific_heat_ss,
 )
 THERMAL_CONDUCTIVITY_FUNC = dict(
     al=thermal_conductivity_al,
+    al_cryosoft=thermal_conductivity_al_cryosoft,
     ge=thermal_conductivity_ge,
     ss=thermal_conductivity_ss,
 )
 ELECTRICAL_RESISTIVITY_FUNC = dict(
     al=electrical_resistivity_al,
+    al_cryosoft=electrical_resistivity_al_cryosoft,
     ge=electrical_resistivity_ge,
     ss=electrical_resistivity_ss,
 )
@@ -433,6 +440,18 @@ class JacketComponent(SolidComponent):
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
             return isobaric_specific_heat[0]
 
+    def __evaluate_field_dependent_property(
+        self, material: str, func, property: dict
+    ) -> np.ndarray:
+        """Evaluate a jacket material property with the required inputs."""
+        if material == "al_cryosoft":
+            return func(
+                property["temperature"],
+                property["B_field"],
+                self.inputs["RRR"],
+            )
+        return func(property["temperature"])
+
     def jacket_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
 
@@ -444,8 +463,12 @@ class JacketComponent(SolidComponent):
         """
         thermal_conductivity = np.array(
             [
-                func(property["temperature"])
-                for func in self.thermal_conductivity_function
+                self.__evaluate_field_dependent_property(
+                    material, func, property
+                )
+                for material, func in zip(
+                    self.materials, self.thermal_conductivity_function
+                )
             ]
         )
         if self.inputs["NUM_MATERIAL_TYPES"] > 1:
@@ -469,8 +492,12 @@ class JacketComponent(SolidComponent):
 
         electrical_resistivity = np.array(
             [
-                func(property["temperature"])
-                for func in self.electrical_resistivity_function
+                self.__evaluate_field_dependent_property(
+                    material, func, property
+                )
+                for material, func in zip(
+                    self.materials, self.electrical_resistivity_function
+                )
             ]
         )
         if self.inputs["NUM_MATERIAL_TYPES"] > 1:
