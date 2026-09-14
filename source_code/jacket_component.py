@@ -15,6 +15,10 @@ from properties_of_materials.aluminium import (
     isobaric_specific_heat_al_cryosoft,
     density_al_cryosoft,
     electrical_resistivity_al_cryosoft,
+    thermal_conductivity_al6063_cryosoft,
+    isobaric_specific_heat_al6063_cryosoft,
+    density_al6063_cryosoft,
+    electrical_resistivity_al6063_cryosoft,
 )
 
 # Stainless steel properties
@@ -33,22 +37,25 @@ from properties_of_materials.glass_epoxy import (
     electrical_resistivity_ge,
 )
 
-DENSITY_FUNC = dict(al=density_al, al_cryosoft=density_al_cryosoft, ge=density_ge, ss=density_ss)
+DENSITY_FUNC = dict(al=density_al, al_cryosoft=density_al_cryosoft, al6063_cryosoft=density_al6063_cryosoft, ge=density_ge, ss=density_ss)
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
     al=isobaric_specific_heat_al,
     al_cryosoft=isobaric_specific_heat_al_cryosoft,
+    al6063_cryosoft=isobaric_specific_heat_al6063_cryosoft,
     ge=isobaric_specific_heat_ge,
     ss=isobaric_specific_heat_ss,
 )
 THERMAL_CONDUCTIVITY_FUNC = dict(
     al=thermal_conductivity_al,
     al_cryosoft=thermal_conductivity_al_cryosoft,
+    al6063_cryosoft=thermal_conductivity_al6063_cryosoft,
     ge=thermal_conductivity_ge,
     ss=thermal_conductivity_ss,
 )
 ELECTRICAL_RESISTIVITY_FUNC = dict(
     al=electrical_resistivity_al,
     al_cryosoft=electrical_resistivity_al_cryosoft,
+    al6063_cryosoft=electrical_resistivity_al6063_cryosoft,
     ge=electrical_resistivity_ge,
     ss=electrical_resistivity_ss,
 )

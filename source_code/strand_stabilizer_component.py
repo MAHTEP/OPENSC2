@@ -16,6 +16,10 @@ from properties_of_materials.aluminium import (
     isobaric_specific_heat_al_cryosoft,
     density_al_cryosoft,
     electrical_resistivity_al_cryosoft,
+    thermal_conductivity_al6063_cryosoft,
+    isobaric_specific_heat_al6063_cryosoft,
+    density_al6063_cryosoft,
+    electrical_resistivity_al6063_cryosoft,
 )
 
 # Cu properties
@@ -29,24 +33,28 @@ from properties_of_materials.copper import (
 DENSITY_FUNC = dict(
     al=density_al,
     al_cryosoft=density_al_cryosoft,
+    al6063_cryosoft=density_al6063_cryosoft,
     cu=density_cu,
 )
 
 THERMAL_CONDUCTIVITY_FUNC = dict(
     al=thermal_conductivity_al,
     al_cryosoft=thermal_conductivity_al_cryosoft,
+    al6063_cryosoft=thermal_conductivity_al6063_cryosoft,
     cu=thermal_conductivity_cu_nist,
 )
 
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
     al=isobaric_specific_heat_al,
     al_cryosoft=isobaric_specific_heat_al_cryosoft,
+    al6063_cryosoft=isobaric_specific_heat_al6063_cryosoft,
     cu=isobaric_specific_heat_cu_nist,
 )
 
 ELECTRICAL_RESISTIVITY_FUNC = dict(
     al=electrical_resistivity_al,
     al_cryosoft=electrical_resistivity_al_cryosoft,
+    al6063_cryosoft=electrical_resistivity_al6063_cryosoft,
     cu=electrical_resistivity_cu_nist,
 )
 

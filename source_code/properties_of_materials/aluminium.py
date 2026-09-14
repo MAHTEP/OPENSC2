@@ -480,3 +480,46 @@ def density_al_cryosoft(temperature):
     """CryoSoft aluminium density, kg/m3 (constant)."""
     temperature = np.asarray(temperature)
     return 2700.0 * np.ones(temperature.shape)
+
+# ---------------------------------------------------------------------------
+# CryoSoft Al-6063 properties (opt-in)
+# ---------------------------------------------------------------------------
+def density_al6063_cryosoft(temperature):
+    temperature = np.asarray(temperature)
+    return 2700.0 * np.ones(temperature.shape)
+
+
+def isobaric_specific_heat_al6063_cryosoft(temperature):
+    tt = np.clip(np.asarray(temperature, dtype=float), 1.0, 1000.0)
+    t0, t1 = 13.0300576, 54.4990277
+    a0, a1, a2, a3 = 0.012034041, 0.039172353, 0.002543257, 0.000771961
+    b0, b1, b2, b3, b4 = -4.797655015, 1.249154424, -0.105581366, 0.004593931, -3.65654e-05
+    aa, bb, cc, dd = 9143.27476, -417.10708, 400.787649, -7722.6604
+    a, b, c, d = -18.6481086, -25.7545827, -18.1481600, -5.44742024
+    na, nb, nc, nd = 0.73861474, 1.52610058, 2.48698565, 3.70977399
+    cp = np.empty_like(tt, dtype=float)
+    low = tt <= t0; mid = (tt > t0) & (tt <= t1); high = tt > t1
+    cp[low] = a0 + a1*tt[low] + a2*tt[low]**2 + a3*tt[low]**3
+    cp[mid] = b0 + b1*tt[mid] + b2*tt[mid]**2 + b3*tt[mid]**3 + b4*tt[mid]**4
+    cp[high] = (aa*tt[high]/(a+tt[high])**na + bb*tt[high]**2/(b+tt[high])**nb
+                + cc*tt[high]**3/(c+tt[high])**nc + dd*tt[high]**4/(d+tt[high])**nd)
+    return cp
+
+
+def thermal_conductivity_al6063_cryosoft(temperature):
+    tt = np.clip(np.asarray(temperature, dtype=float), 2.0, 1000.0)
+    k0, k1, k2 = 0.235849406, 1.453488276, -0.003823466
+    km, tm = 577.3864993, 5.282286082
+    alpha, beta, n, m = 1.030082721, 91.91507966, 0.602305758, 1.191691368
+    x = tt/tm
+    return k0 + k1*x + k2*x**2 + km*3.0/(alpha*x**n + beta/x**m)
+
+
+def electrical_resistivity_al6063_cryosoft(temperature):
+    tt = np.clip(np.asarray(temperature, dtype=float), 2.0, 1000.0)
+    rho0 = 5.76e-9
+    p1, p2, p3, p4, p5, p6 = 6.44e-16, 3.56, 1.28e10, -1.05, 84.0, 4.72
+    arg = np.minimum((p5/tt)**p6, 30.0)
+    rhoi = p1*tt**p2/(1.0 + p1*p3*tt**(p2+p4)*np.exp(-arg))
+    return rho0 + rhoi
+
