@@ -45,6 +45,10 @@ from properties_of_materials.silver import (
     isobaric_specific_heat_ag,
     density_ag,
     electrical_resistivity_ag,
+    thermal_conductivity_ag_cryosoft,
+    isobaric_specific_heat_ag_cryosoft,
+    density_ag_cryosoft,
+    electrical_resistivity_ag_cryosoft,
 )
 
 # HASTELLOY - C276 properties
@@ -73,6 +77,7 @@ from properties_of_materials.aluminium import (
 
 DENSITY_FUNC = dict(
     ag=density_ag,
+    ag_cryosoft=density_ag_cryosoft,
     al=density_al,
     cu=density_cu,
     ge=density_ge,
@@ -84,6 +89,7 @@ DENSITY_FUNC = dict(
 
 THERMAL_CONDUCTIVITY_FUNC = dict(
     ag=thermal_conductivity_ag,
+    ag_cryosoft=thermal_conductivity_ag_cryosoft,
     al=thermal_conductivity_al,
     cu=thermal_conductivity_cu_nist,
     ge=thermal_conductivity_ge,
@@ -95,6 +101,7 @@ THERMAL_CONDUCTIVITY_FUNC = dict(
 
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
     ag=isobaric_specific_heat_ag,
+    ag_cryosoft=isobaric_specific_heat_ag_cryosoft,
     al=isobaric_specific_heat_al,
     cu=isobaric_specific_heat_cu_nist,
     ge=isobaric_specific_heat_ge,
@@ -106,6 +113,7 @@ ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
 
 ELECTRICAL_RESISTIVITY_FUNC = dict(
     ag=electrical_resistivity_ag,
+    ag_cryosoft=electrical_resistivity_ag_cryosoft,
     al=electrical_resistivity_al,
     cu=electrical_resistivity_cu_nist,
     # ge=electrical_resistivity_ge, not defined
@@ -508,12 +516,24 @@ class StackComponent(StrandComponent):
         thermal_conductivity = np.zeros(
             (property["temperature"].size, self.inputs["Material_number"])
         )
-        for ii, func in enumerate(self.thermal_conductivity_function):
-            if "cu" in func.__name__:
+        for ii, (material, func) in enumerate(
+            zip(self.tape_material, self.thermal_conductivity_function)
+        ):
+            if material == "cu":
                 thermal_conductivity[:, ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
+                )
+            elif material == "ag_cryosoft":
+                if "RRR_Ag" not in self.inputs or pd.isna(self.inputs["RRR_Ag"]):
+                    raise ValueError(
+                        "Material 'ag_cryosoft' requires STACK input RRR_Ag."
+                    )
+                thermal_conductivity[:, ii] = func(
+                    property["temperature"],
+                    property["B_field"],
+                    self.inputs["RRR_Ag"],
                 )
             else:
                 thermal_conductivity[:, ii] = func(property["temperature"])
@@ -535,12 +555,27 @@ class StackComponent(StrandComponent):
         electrical_resistivity = np.zeros(
             (property["temperature"].size, self.inputs["Material_number"] - 1)
         )
-        for ii, func in enumerate(self.electrical_resistivity_function_not_sc):
-            if "cu" in func.__name__:
+        for ii, (material, func) in enumerate(
+            zip(
+                self.tape_material_not_sc,
+                self.electrical_resistivity_function_not_sc,
+            )
+        ):
+            if material == "cu":
                 electrical_resistivity[:, ii] = func(
                     property["temperature"],
                     property["B_field"],
                     self.inputs["RRR"],
+                )
+            elif material == "ag_cryosoft":
+                if "RRR_Ag" not in self.inputs or pd.isna(self.inputs["RRR_Ag"]):
+                    raise ValueError(
+                        "Material 'ag_cryosoft' requires STACK input RRR_Ag."
+                    )
+                electrical_resistivity[:, ii] = func(
+                    property["temperature"],
+                    property["B_field"],
+                    self.inputs["RRR_Ag"],
                 )
             else:
                 electrical_resistivity[:, ii] = func(property["temperature"])
