@@ -35,8 +35,6 @@ class CheckpointContinuationAdaptivePolicyTests(unittest.TestCase):
             "STPMAX": 0.05,
             "MLT_INCREASE": 1.2,
             "MLT_DECREASE": 0.5,
-            "TIMEREF": 0.2,
-            "TAUREF": 0.05,
             "TEND": 0.4,
         }
 
@@ -222,6 +220,14 @@ class CheckpointContinuationAdaptivePolicyTests(unittest.TestCase):
         self._assert_policy_rejected_before_mutation(
             policy,
             r"Continuation IADAPTIME=-1 is not implemented",
+        )
+
+    def test_archived_user_function_iadaptime_is_rejected(self):
+        policy = self._time_policy(-2)
+
+        self._assert_policy_rejected_before_mutation(
+            policy,
+            r"Continuation IADAPTIME must be one of",
         )
 
     def test_adaptive_policy_requires_stpmax_before_mutation(self):

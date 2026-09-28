@@ -36,6 +36,7 @@ CHECKPOINT_INTERVAL_INPUT = "CHECKPOINT_EVERY_N_STEPS"
 
 _CONTINUATION_IMMUTABLE_TRANSIENT_KEYS = ()
 _CONTINUATION_RUN_METADATA_KEYS = ("SIMULATION",)
+_CONTINUATION_ARCHIVED_TRANSIENT_KEYS = ("TIMEREF", "TAUREF")
 _CONTINUATION_TIME_POLICY_KEYS = (
     "IADAPTIME",
     "TIME_STEP",
@@ -43,14 +44,15 @@ _CONTINUATION_TIME_POLICY_KEYS = (
     "STPMAX",
     "MLT_INCREASE",
     "MLT_DECREASE",
-    "TIMEREF",
-    "TAUREF",
     "TEND",
     "CHECKPOINT_EVERY_N_STEPS",
     "USER_CHECKPOINTS",
 )
 
 _CONTINUATION_CONDUCTOR_TIME_POLICY_KEYS = ("ELECTRIC_TIME_STEP",)
+_CONTINUATION_ARCHIVED_CONDUCTOR_INPUT_KEYS = (
+    "external_free_convection_correlation",
+)
 
 _CONTINUATION_CONDUCTOR_DRIVER_KEYS = (
     "I0_OP_MODE",
@@ -63,6 +65,8 @@ _CONTINUATION_COMPONENT_DRIVER_KEYS = (
     "IBIFUN",
     "BISS",
     "BOSS",
+    # Archived legacy inputs: strip them from fixed component semantics so
+    # old workbooks do not create false continuation incompatibilities.
     "BITR",
     "BOTR",
     "B_INTERPOLATION",
@@ -849,12 +853,10 @@ def _validate_continuation_time_policy(checkpoint, simulation, reasons):
 
     numeric_values = {}
     numeric_names = ["TIME_STEP", "STPMIN", "TEND"]
-    if iadaptime in (-2, 1, 2):
+    if iadaptime in (1, 2):
         numeric_names.append("STPMAX")
     if iadaptime in (1, 2):
         numeric_names.extend(("MLT_INCREASE", "MLT_DECREASE"))
-    if iadaptime == -2:
-        numeric_names.extend(("TIMEREF", "TAUREF"))
 
     for name in numeric_names:
         value = transient_input.get(name)
@@ -878,19 +880,17 @@ def _validate_continuation_time_policy(checkpoint, simulation, reasons):
         numeric_values[name] = float(array)
 
     positive_names = ["TIME_STEP", "STPMIN"]
-    if iadaptime in (-2, 1, 2):
+    if iadaptime in (1, 2):
         positive_names.append("STPMAX")
     if iadaptime in (1, 2):
         positive_names.extend(("MLT_INCREASE", "MLT_DECREASE"))
-    if iadaptime == -2:
-        positive_names.append("TAUREF")
 
     for name in positive_names:
         if name in numeric_values and numeric_values[name] <= 0.0:
             reasons.append(f"Continuation {name} must be positive.")
 
     if (
-        iadaptime in (-2, 1, 2)
+        iadaptime in (1, 2)
         and "STPMIN" in numeric_values
         and "STPMAX" in numeric_values
     ):
@@ -2307,6 +2307,7 @@ def _build_immutable_profile(simulation, transient_input):
         set(_CONTINUATION_TIME_POLICY_KEYS)
         | set(_CONTINUATION_IMMUTABLE_TRANSIENT_KEYS)
         | set(_CONTINUATION_RUN_METADATA_KEYS)
+        | set(_CONTINUATION_ARCHIVED_TRANSIENT_KEYS)
     )
     fixed_transient = _mapping_without_keys(
         transient_input,
@@ -2346,7 +2347,9 @@ def _immutable_conductor_profile(simulation, conductor):
     if isinstance(inputs, Mapping):
         excluded_input_keys = set(
             _CONTINUATION_CONDUCTOR_TIME_POLICY_KEYS
-        ) | set(_CONTINUATION_CONDUCTOR_DRIVER_KEYS)
+        ) | set(_CONTINUATION_CONDUCTOR_DRIVER_KEYS) | set(
+            _CONTINUATION_ARCHIVED_CONDUCTOR_INPUT_KEYS
+        )
         fixed_inputs = _mapping_without_keys(inputs, excluded_input_keys)
         if fixed_inputs:
             profile["inputs"] = fixed_inputs
@@ -2774,7 +2777,7 @@ def _magnetic_field_profile(simulation, conductor, operations):
     elif mode == 0:
         keys.extend(("BISS", "BOSS"))
     elif mode == 1:
-        keys.extend(("BISS", "BOSS", "BITR", "BOTR"))
+        keys.extend(("BISS", "BOSS"))
     return {
         "source": source,
         "parameters": _selected_parameters(operations, keys),

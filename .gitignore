@@ -245,6 +245,8 @@ $RECYCLE.BIN/
 *.dat
 *.csv
 *.xlsx
+# Keep the official OPENSC2 XLSX input templates under version control.
+!source_code/input_files/input_file_template/*.xlsx
 *.ods
 
 # Temporary files #

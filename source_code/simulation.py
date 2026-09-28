@@ -93,12 +93,22 @@ def _read_transient_input_preserving_excel_booleans(workbook_path):
                 header_row = row[0].row
                 break
 
-        if header_row is not None:
-            for row_index in range(header_row + 1, worksheet.max_row + 1):
-                name = worksheet.cell(row_index, name_column).value
-                value = worksheet.cell(row_index, value_column).value
-                if name in transient_input and isinstance(value, bool):
-                    transient_input[name] = value
+        if header_row is None:
+            raise ValueError(
+                "Could not find the 'Variable name' and 'Value' columns "
+                f"in sheet 'TRANSIENT' of {workbook_path}."
+            )
+
+        # Do not rely on ``worksheet.max_row`` here.  In read-only mode,
+        # openpyxl legitimately returns ``None`` when an otherwise valid XLSX
+        # worksheet omits the optional OOXML ``dimension`` metadata.  Streaming
+        # the remaining rows works for both dimensioned and dimensionless
+        # worksheets and avoids random cell access in read-only mode.
+        for row in worksheet.iter_rows(min_row=header_row + 1):
+            name = row[name_column - 1].value
+            value = row[value_column - 1].value
+            if name in transient_input and isinstance(value, bool):
+                transient_input[name] = value
     finally:
         workbook.close()
 

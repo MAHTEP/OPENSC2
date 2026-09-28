@@ -6,7 +6,6 @@ from pypardiso.scipy_aliases import pypardiso_solver
 from scipy import sparse
 from typing import Union
 
-from conductor_flags import ELECTRIC_TIME_STEP_NUMBER
 
 
 LOGGER = logging.getLogger(__name__)
@@ -390,7 +389,7 @@ def electric_transient_solution(conductor: object):
     print("electric_time_step:", conductor.electric_time_step)
     print("electric_time:", conductor.electric_time)
     # Electric loop
-    for nn in range(1, ELECTRIC_TIME_STEP_NUMBER+1):
+    for nn in range(1, conductor.electric_time_step_number + 1):
 
         conductor.electric_time = (
             conductor.cond_time[-2] + nn * conductor.electric_time_step

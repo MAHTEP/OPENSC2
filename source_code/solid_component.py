@@ -413,16 +413,11 @@ class SolidComponent:
                     conductor.grid_features["N_nod"],
                 )
             elif self.operations["IBIFUN"] == 1:
-                self.dict_node_pt["B_field"] = np.linspace(
-                    self.operations["BISS"],
-                    self.operations["BOSS"],
-                    conductor.grid_features["N_nod"],
-                ) + conductor.inputs["I0_OP_TOT"] / conductor.inputs[
-                    "I0_OP_TOT"
-                ] * np.linspace(
-                    self.operations["BITR"],
-                    self.operations["BOTR"],
-                    conductor.grid_features["N_nod"],
+                raise NotImplementedError(
+                    "IBIFUN=1 is not supported: the legacy BITR/BOTR "
+                    "implementation did not define a time-dependent magnetic "
+                    "field. Use IBIFUN=0 for BISS/BOSS or IBIFUN=-1 with "
+                    "EXTERNAL_BFIELD."
                 )
         elif nodal == False:
             # compute B_field in each Gauss point (cdp, 07/2020)

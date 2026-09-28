@@ -370,7 +370,7 @@ class StrandComponent(SolidComponent):
                     )
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                     self.eps_interpolator, self.eps_interp_flag = build_interpolator(
-                        eps_df, self.operations["IOP_INTERPOLATION"]
+                        eps_df, self.operations["EPS_INTERPOLATION"]
                     )
 
                 # call load_user_defined_quantity on the component.

@@ -11,6 +11,12 @@ class Environment:
     """docstring for Environment."""
 
     KIND = "Environment"
+    # The correlation selector was exposed before the external-convection
+    # implementation had been verified.  Keep the legacy default internally
+    # while hiding that incomplete choice from user input.
+    EXTERNAL_FREE_CONVECTION_CORRELATION = (
+        "vertical_plate_churchill_chu_accurate"
+    )
 
     def __init__(self, f_path):
         """[summary]
@@ -143,9 +149,10 @@ class Environment:
             )
         else:
             # Non rectangular duct (cylinder).
+            correlation = self.EXTERNAL_FREE_CONVECTION_CORRELATION
             # Get the characterisctic length needed to evaluare Grashof and Rayleigh dimensionless numbers according to the selected external free convection correlation.
             characteristic_length = dict_characterisctic_length[
-                conductor.inputs["external_free_convection_correlation"]
+                correlation
             ]
             # Evaluate Grashof dimensionless numbers.
             grashof = self.grashof_number(
@@ -154,7 +161,7 @@ class Environment:
             # Evaluate Rayleigh number.
             rayleigh = self.rayleigh_number(grashof, dict_air_properties["prandtl"])
             nusselt = self.dict_nusselt_correlations[
-                conductor.inputs["external_free_convection_correlation"]
+                correlation
             ](rayleigh, dict_air_properties["prandtl"], grashof, conductor)
             # Evaluate external free convection heat transfer coefficient.
             return (
@@ -368,7 +375,10 @@ class Environment:
             > 35.0 / grashof ** (1.0 / 4.0)
         )
         dict_check[check](
-            f"External free convection heat transfer coefficient may be inaccurate since the selected correlation for its evaluation {conductor.inputs['external_free_convection_correlation']} can not be applied to the case of a vertical cylinder!\n"
+            "External free convection heat transfer coefficient may be "
+            "inaccurate since the internally selected correlation "
+            f"{self.EXTERNAL_FREE_CONVECTION_CORRELATION} cannot be applied "
+            "to the case of a vertical cylinder!\n"
         )
 
     # End method check_validity_vertical_cylinder.

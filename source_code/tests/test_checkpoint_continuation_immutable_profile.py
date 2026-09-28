@@ -57,6 +57,8 @@ class CheckpointContinuationImmutableProfileTests(unittest.TestCase):
             "TIME_STEP": 0.025,
             "STPMIN": 0.0025,
             "TEND": 0.4,
+            "TIMEREF": 0.2,
+            "TAUREF": 0.05,
             "MAGNET": "magnet.xlsx",
             "ENVIRONMENT": "environment.xlsx",
             "SIMULATION": "continuation_case",
@@ -75,6 +77,9 @@ class CheckpointContinuationImmutableProfileTests(unittest.TestCase):
             I0_OP_MODE=0,
             I0_OP_TOT=12000.0,
             ELECTRIC_TIME_STEP=0.001,
+            external_free_convection_correlation=(
+                "vertical_plate_churchill_chu_accurate"
+            ),
         )
         conductor.operations = {
             "ELECTRIC_SOLVER": 0,
@@ -113,7 +118,7 @@ class CheckpointContinuationImmutableProfileTests(unittest.TestCase):
             "FIX_POTENTIAL_FLAG": 0,
             "IOP_MODE": 0,
             "IOP_INTERPOLATION": "linear",
-            "IBIFUN": 1,
+            "IBIFUN": 0,
             "BISS": 2.0,
             "BOSS": 3.0,
             "BITR": 0.5,

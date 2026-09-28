@@ -35,7 +35,7 @@ APPROXIMATE_INDUCTANCE = 2
 # Flag to solve the electric problem in steady state conditions.
 STATIC_ELECTRIC_SOLVER = 0
 
-# Default number for electric time step
+# Default number of electric substeps in one thermal-hydraulic step.
 ELECTRIC_TIME_STEP_NUMBER = 10
 
 # Flags for contact perimeter

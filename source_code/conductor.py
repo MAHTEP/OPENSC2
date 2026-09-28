@@ -457,8 +457,28 @@ class Conductor:
             self (Self): conductor object."""
 
         self.__check_thermal_contact_resistance_values()
+        self.__check_transverse_transport_multiplier()
         # Add call to methods that perform cheks on file
         # conductor_coupling.xlsx below.
+
+    def __check_transverse_transport_multiplier(self:Self):
+        """Validate multipliers for transport through open fluid interfaces."""
+
+        multiplier = self.dict_df_coupling["trans_transp_multiplier"]
+        values = multiplier.to_numpy(dtype=float)
+        if not np.all(np.isfinite(values)):
+            raise ValueError(
+                "Values in sheet trans_transp_multiplier must be finite."
+            )
+        if np.any(values < 0.0):
+            raise ValueError(
+                "Values in sheet trans_transp_multiplier must be >= 0.0."
+            )
+        if multiplier.index.to_list() != multiplier.columns.to_list():
+            raise ValueError(
+                "Sheet trans_transp_multiplier must use identical row and "
+                "column component identifiers."
+            )
 
     def __check_thermal_contact_resistance_values(self:Self):
 
@@ -4393,13 +4413,33 @@ class Conductor:
                     f"Invalid ELECTRIC_TIME_STEP: {self.inputs['ELECTRIC_TIME_STEP']}"
                 )
 
-        # Rimuovere gli if.
+        maximum_substeps = self.operations["MAXIMUM_ITERATION_NUMBER"]
+        if isinstance(maximum_substeps, (bool, np.bool_)):
+            raise ValueError(
+                "MAXIMUM_ITERATION_NUMBER must be a positive integer."
+            )
+        try:
+            maximum_substeps_numeric = float(maximum_substeps)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "MAXIMUM_ITERATION_NUMBER must be a positive integer."
+            ) from exc
+        if (
+            not np.isfinite(maximum_substeps_numeric)
+            or maximum_substeps_numeric <= 0.0
+            or not maximum_substeps_numeric.is_integer()
+        ):
+            raise ValueError(
+                "MAXIMUM_ITERATION_NUMBER must be a positive integer."
+            )
+        maximum_substeps = int(maximum_substeps_numeric)
+
         electric_time_step_input = self.inputs["ELECTRIC_TIME_STEP"]
 
         if electric_time_step_input is None or pd.isna(electric_time_step_input):
-            self.electric_time_step = self.time_step / ELECTRIC_TIME_STEP_NUMBER
+            self.electric_time_step_number = ELECTRIC_TIME_STEP_NUMBER
         else:
-            if electric_time_step_input < 0.0:
+            if electric_time_step_input <= 0.0:
                 raise ValueError(
                     f"Electric time step must be > 0.0 s; "
                     f"current value is: {electric_time_step_input} s\n"
@@ -4410,14 +4450,39 @@ class Conductor:
                     f"time_step={self.time_step} s; "
                     f"ELECTRIC_TIME_STEP={electric_time_step_input} s\n"
                 )
-            self.electric_time_step = electric_time_step_input
+            substep_ratio = self.time_step / electric_time_step_input
+            nearest_integer = int(np.rint(substep_ratio))
+            if np.isclose(
+                substep_ratio,
+                nearest_integer,
+                rtol=1.0e-12,
+                atol=1.0e-12,
+            ):
+                self.electric_time_step_number = nearest_integer
+            else:
+                self.electric_time_step_number = int(np.ceil(substep_ratio))
+
+        if self.electric_time_step_number > maximum_substeps:
+            raise ValueError(
+                "The electric substep count exceeds "
+                "MAXIMUM_ITERATION_NUMBER: "
+                f"required={self.electric_time_step_number}, "
+                f"maximum={maximum_substeps}."
+            )
+
+        # Partition the thermal-hydraulic interval exactly.  When the user
+        # provides ELECTRIC_TIME_STEP, it is treated as the largest allowed
+        # electric step and the actual value can therefore be slightly lower.
+        self.electric_time_step = (
+            self.time_step / self.electric_time_step_number
+        )
 
         if not np.isfinite(self.electric_time_step):
             raise ValueError(
                 f"Invalid electric_time_step: {self.electric_time_step}\n"
                 f"time_step = {self.time_step}\n"
                 f"ELECTRIC_TIME_STEP = {self.inputs['ELECTRIC_TIME_STEP']}\n"
-                f"{ELECTRIC_TIME_STEP_NUMBER = }"
+                f"electric_time_step_number = {self.electric_time_step_number}"
             )
 
     def build_right_hand_side(self, foo: np.ndarray, bar: np.ndarray, idx: int):
