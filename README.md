@@ -84,17 +84,19 @@ python -m pytest -q
 
 ### Install requirements
 
-The selected Python version is [3.10.10](https://www.python.org/downloads/release/python-31010/). From the `source_code` directory, create and activate a virtual environment before installing the dependencies. The suggested environment name is `opensc2_mkl`:
+The selected Python version is [3.10.10](https://www.python.org/downloads/release/python-31010/). From the `source_code` directory, create and activate a virtual environment before installing the dependencies. The suggested environment name is `opensc2`:
 
 ```powershell
-python -m venv opensc2_mkl
-.\opensc2_mkl\Scripts\Activate.ps1
+python -m venv opensc2
+.\opensc2\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip check
 ```
 
 The electrical model solves sparse linear systems with [PyPardiso](https://github.com/haasad/PyPardiso), a Python interface to the PARDISO solver provided by the [Intel oneAPI Math Kernel Library (oneMKL)](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-download.html). The pinned PyPardiso and oneMKL runtime packages are included in `requirements.txt`; on supported Windows and Linux systems, the command above normally installs the required runtime libraries without a separate Intel oneAPI Toolkit installation.
+
+The virtual-environment name is only a local convention. The electrical model continues to use oneMKL through PyPardiso, whereas NumPy and SciPy use the numerical backends supplied by their installed wheels.
 
 After installation, the OPENSC2 PyPardiso/oneMKL path can be checked with a small functional solve:
 
