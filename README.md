@@ -34,8 +34,11 @@ Users can benefit from several test cases to check the software functionalities:
 1. Heat slug propagation in an ITER TF-like CICC
 2. Heat slug propagation in a stacked-HTS slotted-core CICC for fusion applications
 3. Steady state operation for a double-cryostat HVDC cable for power transmission
+4. Stabilization and transient continuation of the 4C electrical benchmark
 
-To run a simulation with one of the above test cases, download the repository and install the requirements (more information is provided in [Install requirements](#install-requirements)). Then enter the `source_code` directory and start OPENSC2 with `python opensc2.py`. From the GUI, navigate to the `TDD_examples` directory and select one of the folders containing pre-compiled input files. Select **Add solution path** to choose where the results will be saved. By default, they are collected in the `Simulation_results` directory, which is created automatically when needed. Both tabular output and figures are written below the selected results directory.
+Detailed execution instructions and validation guidance are provided in the [test-case guide](TDD_examples/README.md).
+
+To run a simulation with one of the above test cases, download the repository and install the requirements (more information is provided in [Install requirements](#install-requirements)). Then enter the `source_code` directory and start OPENSC2 with `python opensc2.py`. From the GUI, navigate to the `TDD_examples` directory and select one of the folders containing pre-compiled input files. Select **Add solution path** to choose where the results will be saved. By default, they are collected in the `Simulations_results` directory, which is created automatically when needed. Both tabular output and figures are written below the selected results directory.
 
 ### Headless simulations and checkpoint restoration
 
