@@ -684,10 +684,7 @@ class StackComponent(StrandComponent):
         # are outside normal zone by definition; however some of them could 
         # still identify a normal region.
         if ind_not_zero.size > 0:
-            
-            # print(f"el_num_step = {conductor.cond_el_num_step}")
-            # self.debug_current_state("before solve_current_divider")
-            
+
             sc_current_gauss, stab_current_gauss = self.solve_current_divider(
                 self.dict_Gauss_pt["electrical_resistivity_stabilizer"][ind_not_zero],
                 critical_current_gauss[ind_not_zero],

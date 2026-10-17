@@ -263,13 +263,13 @@ def fixed_value(conductor: object) -> np.ndarray:
     # REDUCTION of A and b.
     conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix[:, idx]
     conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix[idx, :]
-    
+
     if not sparse.isspmatrix_csr(conductor.electric_stiffness_matrix):
         # Convert to CSR only if the the electric_stiffness_matrix is nomore in CSR format
         conductor.electric_stiffness_matrix = conductor.electric_stiffness_matrix.tocsr()
     # Remove explicit zeros eventually introduced during matrix reduction.
     conductor.electric_stiffness_matrix.eliminate_zeros()
-    
+
     conductor.electric_known_term_vector = conductor.electric_known_term_vector[idx]
 
     return idx
@@ -384,10 +384,6 @@ def electric_transient_solution(conductor: object):
         conductor.electric_known_term_vector.copy()
     )
 
-    print("before electric loop")
-    print("time_step:", conductor.time_step)
-    print("electric_time_step:", conductor.electric_time_step)
-    print("electric_time:", conductor.electric_time)
     # Electric loop
     for nn in range(1, conductor.electric_time_step_number + 1):
 
@@ -409,25 +405,13 @@ def electric_transient_solution(conductor: object):
                 f"cond_num_step = {conductor.cond_num_step}\n"
                 f"cond_el_num_step = {conductor.cond_el_num_step}\n"
             )
-        print(
-            f"TH step={conductor.cond_num_step}, "
-            f"TH time={conductor.cond_time[-1]}, "
-            f"el_num_step={conductor.cond_el_num_step}, "
-            f"electric_time={conductor.electric_time}, "
-            f"electric_dt={conductor.electric_time_step}"
-        )
         # Evaluate electromagnetic properties and quantities in Gauss points, 
         # method __eval_Gauss_point_em is invoked inside method 
         # operating_conditions_em. Method operating_conditions_em is called at 
         # each time step before function step because the method for the 
         # integration in time is implicit.
-        
-        # for strand in conductor.inventory["StrandComponent"].collection:
-        #     strand.debug_current_state("before operating_conditions_em")
         conductor.operating_conditions_em()
-        # for strand in conductor.inventory["StrandComponent"].collection:
-        #     strand.debug_current_state("after operating_conditions_em")
-        
+
         # Call conductor method eval_total_operating_current after call to 
         # operating_condition_em that evaluates the operating current at the 
         # current electric time step for each conductor component.
@@ -440,12 +424,7 @@ def electric_transient_solution(conductor: object):
         # it depends also from the current, and the electrical resistivity of 
         # the copper since it also depends on the magnetic fields. Other 
         # materials should be updated only in the thermal loop.
-        
-        # for strand in conductor.inventory["StrandComponent"].collection:
-        #     strand.debug_current_state("before electric_preprocessing")
         conductor.electric_preprocessing()
-        # for strand in conductor.inventory["StrandComponent"].collection:
-        #     strand.debug_current_state("after electric_preprocessing")
 
         electric_stiffness_matrix = conductor.electric_stiffness_matrix.copy()
         # Final form of the electric stiffness matrix

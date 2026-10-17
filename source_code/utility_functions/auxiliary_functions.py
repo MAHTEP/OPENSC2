@@ -222,15 +222,10 @@ def build_interpolator(df, interpolation_kind="linear"):
                     strand_time_points,
                     known_val,
                 )
-        
+
         return (interp_fun,"time_only")
 
     elif strand_time_points.size > 1 and strand_space_points.size > 1:
-        # print("\nDEBUG build_interpolator")
-        # print("space points min/max:", strand_space_points.min(), strand_space_points.max())
-        # print("time points min/max:", strand_time_points.min(), strand_time_points.max())
-        # print("known_val shape:", known_val.shape)
-        # print("known_val has_nan:", np.isnan(known_val).any())
         points = (strand_space_points,strand_time_points)
         return (
             interpolate.RegularGridInterpolator(
@@ -268,21 +263,11 @@ def do_interpolation(interpolator, zcoord, time_step, kind):
         return interpolator(time_step)
 
     elif kind == "space_and_time":
-        # print("\nDEBUG do_interpolation space_and_time")
-        # print("zcoord min/max:", np.nanmin(zcoord), np.nanmax(zcoord))
-        # print("time_step:", time_step)
-        # print("isfinite time_step:", np.isfinite(time_step))
-
         ptz = np.zeros((len(zcoord), 2))
         ptz[:, 0] = zcoord
         ptz[:, 1] = time_step
 
-        # print("ptz has_nan:", np.isnan(ptz).any())
-
         out = interpolator(ptz)
-
-        # print("out has_nan:", np.isnan(out).any())
-        # print("out all_nan:", np.isnan(out).all())
 
         return out
 
@@ -428,7 +413,7 @@ def interpolation(conductor, comp, MM, tvec, f_path, sheet, *xvec, **options):
     # VARIABLE    I/O    TYPE                  DESCRIPTION                  UNIT
     # -------------------------------------------------------------------------
     # MM          I      np 2 dimensional      data to be interpolated
-    #                    array float           read from file .xlsx         T\W
+    #                    array float           read from file .xlsx         T\\W
     # tvec        I      np array float        time vector @ which data
     #                                          are available                s
     # xvec        I      np array float        space vector @ which data

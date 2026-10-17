@@ -221,12 +221,6 @@ class SolidComponent:
             if conductor.inputs["I0_OP_MODE"] == IOP_FROM_FILE:
 
                 if conductor.cond_time[-1] == 0:
-
-                    # print("\nDEBUG get_current internals")
-                    # print(f"component = {self.identifier}")
-                    # print(f"conductor.cond_time[-1] = {conductor.cond_time[-1]}")
-                    # print(f"conductor.cond_el_num_step = {conductor.cond_el_num_step}")
-
                     # Build file path.
                     file_path = os.path.join(
                         conductor.BASE_PATH, conductor.file_input["EXTERNAL_CURRENT"]

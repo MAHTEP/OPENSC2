@@ -522,4 +522,3 @@ def electrical_resistivity_al6063_cryosoft(temperature):
     arg = np.minimum((p5/tt)**p6, 30.0)
     rhoi = p1*tt**p2/(1.0 + p1*p3*tt**(p2+p4)*np.exp(-arg))
     return rho0 + rhoi
-

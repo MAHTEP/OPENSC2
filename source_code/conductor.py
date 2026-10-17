@@ -159,9 +159,6 @@ class Conductor:
         if self.inputs["UPWIND"] == True:
             self.inputs["UPWIND"] = 1
 
-        # print("DEBUG raw ELECTRIC_TIME_STEP")
-        # print(self.inputs["ELECTRIC_TIME_STEP"])
-        # print(type(self.inputs["ELECTRIC_TIME_STEP"]))
         for key in ("I0_OP_MODE", "ELECTRIC_TIME_STEP"):
             value = self.inputs[key]
 
@@ -3278,11 +3275,9 @@ class Conductor:
 
         resistance = np.zeros(self.total_elements_current_carriers)
         for ii, obj in enumerate(self.inventory["StrandComponent"].collection):
-            # obj.debug_current_state("before get_electric_resistance")
             resistance[
                 ii :: self.inventory["StrandComponent"].number
             ] = obj.get_electric_resistance(self)
-            # obj.debug_current_state("after get_electric_resistance")
 
         self.electric_resistance_matrix = diags(
             resistance,
@@ -4702,13 +4697,8 @@ class Conductor:
             self.__get_electric_time_step()
             # Always solve the electromagnetic problem as a transient problem. 
             # This is not general but edge cases are few and mostly "theoretic".
-            
-            # for strand in self.inventory["StrandComponent"].collection:
-            #     strand.debug_current_state("before electric_transient_solution")
             electric_transient_solution(self)
-            # for strand in self.inventory["StrandComponent"].collection:
-            #     strand.debug_current_state("after electric_transient_solution")
-        
+
         # Call method electric_solution_reorganization: reorganize electric
         # solution and computes useful quantities used in the Joule power
         # evaluation.
@@ -5102,11 +5092,7 @@ class Conductor:
         """Method that evaluates electromagnetic (em) operating conditions also in Gauss points."""
 
         for strand in self.inventory["StrandComponent"].collection:
-            # strand.debug_current_state("before get_current")
-            # print("DEBUG electric_time before get_current:", self.electric_time)
-            # print("DEBUG cond_el_num_step:", self.cond_el_num_step)
             strand.get_current(self)
-            # strand.debug_current_state("after get_current")
             strand.get_magnetic_field(self)
             strand.get_magnetic_field_gradient(self)
             
@@ -5130,7 +5116,7 @@ class Conductor:
                         # step (1).
                         strand.get_tcs()
             if self.cond_el_num_step <= 1:
-                # Evaluate properties only at initialization (0) and at 
+                # Evaluate properties only at initialization (0) and at
                 # the first electric time step (1).
                 strand.eval_sol_comp_properties(self.inventory)
 
