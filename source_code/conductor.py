@@ -31,6 +31,7 @@ from conductor_flags import (
     VARIABLE_CONTACT_PERIMETER,
     CONSTANT_CONTACT_PERIMETER,
     SHEET_NAME,
+    DYNAMIC_MESH_MODES
 )
 from fluid_component import FluidComponent
 from jacket_component import JacketComponent
@@ -158,8 +159,16 @@ class Conductor:
         if self.inputs["UPWIND"] == True:
             self.inputs["UPWIND"] = 1
 
-        for key in ["I0_OP_MODE","ELECTRIC_TIME_STEP"]:
-            if isinstance(self.inputs[key],str) and self.inputs[key].lower() == "none":
+        for key in ("I0_OP_MODE", "ELECTRIC_TIME_STEP"):
+            value = self.inputs[key]
+
+            if value is None:
+                self.inputs[key] = None
+
+            elif isinstance(value, str) and value.strip().lower() in ("none", "nan", ""):
+                self.inputs[key] = None
+
+            elif pd.isna(value):
                 self.inputs[key] = None
                 
         # Set total current to 0.0 A if user specifies no current with flag 
@@ -445,8 +454,28 @@ class Conductor:
             self (Self): conductor object."""
 
         self.__check_thermal_contact_resistance_values()
+        self.__check_transverse_transport_multiplier()
         # Add call to methods that perform cheks on file
         # conductor_coupling.xlsx below.
+
+    def __check_transverse_transport_multiplier(self:Self):
+        """Validate multipliers for transport through open fluid interfaces."""
+
+        multiplier = self.dict_df_coupling["trans_transp_multiplier"]
+        values = multiplier.to_numpy(dtype=float)
+        if not np.all(np.isfinite(values)):
+            raise ValueError(
+                "Values in sheet trans_transp_multiplier must be finite."
+            )
+        if np.any(values < 0.0):
+            raise ValueError(
+                "Values in sheet trans_transp_multiplier must be >= 0.0."
+            )
+        if multiplier.index.to_list() != multiplier.columns.to_list():
+            raise ValueError(
+                "Sheet trans_transp_multiplier must use identical row and "
+                "column component identifiers."
+            )
 
     def __check_thermal_contact_resistance_values(self:Self):
 
@@ -464,7 +493,7 @@ class Conductor:
         # Get index with negative values for thermal contact resistances.
         negative_idx = np.nonzero(therm_cont_res < 0.0)
         # Check if negative_idx is not empty.
-        if negative_idx[0]:
+        if negative_idx[0].size > 0:
             # negative_idx is not empty: raise ValueError.
             raise ValueError(f"Thermal contact resistance should be >= 0.0. Please check index {negative_idx} in sheet thermal_contact_resistance of input file {self.file_input['STRUCTURE_COUPLING']}")
 
@@ -1151,9 +1180,9 @@ class Conductor:
         # **NUMERICS**
         # evaluate value of theta_method according to flag METHOD (cdo, 08/2020)
         # Adams Moulton value is temporary and maybe non correct
-        _ = dict(BE=1.0, CE=0.5, AM4=1.0 / 24.0)
-        self.theta_method = _[self.inputs["ELECTRIC_METHOD"]]
-        self.electric_theta = _[self.inputs["ELECTRIC_METHOD"]]
+        dict_theta = dict(BE=1.0, CN=0.5, AM4=1.0 / 24.0)
+        self.theta_method = dict_theta[self.inputs["METHOD"]]
+        self.electric_theta = dict_theta[self.inputs["ELECTRIC_METHOD"]]
         conductorlogger.debug(f"Defined electric_theta\n")
         ## Evaluate parameters useful in function \
         # Transient_solution_functions.py\STEP (cdp, 07/2020)
@@ -1222,7 +1251,6 @@ class Conductor:
                 skiprows=2,
                 header=0,
                 usecols=[self.identifier],
-                squeeze=True,
             )
             .dropna()
             .to_numpy()
@@ -1256,7 +1284,6 @@ class Conductor:
                 skiprows=2,
                 header=0,
                 usecols=[self.identifier],
-                squeeze=True,
             )
             .dropna()
             .to_numpy()
@@ -1276,7 +1303,6 @@ class Conductor:
         # Initialize attributes events_time, i_event and i_event_max
         self.__collect_event_time(simulation)
         ## Attributes to deal with adaptive time step
-        self.appended_time_flag = False
         self.next_time_step = 0.0
         self.force_next_tstep_flag = False
 
@@ -1360,7 +1386,7 @@ class Conductor:
             dtype=float,
         )
 
-        self.build_electric_mass_matrix_flag = True
+        self.update_electric_quantities = True
         self.electric_mass_matrix = lil_matrix(
             (
                 self.total_elements_current_carriers
@@ -3497,140 +3523,140 @@ class Conductor:
         Builds nodal coordinates and connectiviy dataframes, the connectivity matrix only for StrandComponent, the inicidence matrices in both longitudinal and transversal directions, the resistance matrix (logitudinal) and the conductance matrix (transverse direction).
         """
 
-        nn = 0
+        if self.update_electric_quantities:
+            nn = 0
 
-        for key in ["FluidComponent", "StrandComponent", "JacketComponent"]:
-            # Build nodal coordinates
+            for key in ["FluidComponent", "StrandComponent", "JacketComponent"]:
+                # Build nodal coordinates
+                # conductorlogger.debug(
+                #     f"Before call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
+                # )
+                self.__build_nodal_coordinates(nn, key)
+                # conductorlogger.debug(
+                #     f"After call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
+                # )
+
+                # Build connectivity matrix
+                # conductorlogger.debug(
+                #     f"Before call method {self.__build_connectivity.__name__} for {key} objects.\n"
+                # )
+                self.__build_connectivity(nn, key)
+                # conductorlogger.debug(
+                #     f"After call method {self.__build_connectivity.__name__} for {key} objects.\n"
+                # )
+                nn += self.inventory[key].number
+                # End if
+            # End for key
+
+            # Build the connectivity matrix for the reduced system of components:
+            # keeps into account only the StrandComponent ones.
             # conductorlogger.debug(
-            #     f"Before call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
+            #     f"Before call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
             # )
-            self.__build_nodal_coordinates(nn, key)
+            self.__build_connectivity_current_carriers()
             # conductorlogger.debug(
-            #     f"After call method {self.__build_nodal_coordinates.__name__} for {key} objects.\n"
-            # )
-
-            # Build connectivity matrix
-            # conductorlogger.debug(
-            #     f"Before call method {self.__build_connectivity.__name__} for {key} objects.\n"
-            # )
-            self.__build_connectivity(nn, key)
-            # conductorlogger.debug(
-            #     f"After call method {self.__build_connectivity.__name__} for {key} objects.\n"
-            # )
-            nn += self.inventory[key].number
-            # End if
-        # End for key
-
-        # Build the connectivity matrix for the reduced system of components:
-        # keeps into account only the StrandComponent ones.
-        # conductorlogger.debug(
-        #     f"Before call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
-        # )
-        self.__build_connectivity_current_carriers()
-        # conductorlogger.debug(
-        #     f"After call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
-        # )
-
-        # Convert index to categorical
-        # conductorlogger.debug(
-        #     f"Before convert index of dataframe self.connectivity_matrix to categorical.\n"
-        # )
-        self.connectivity_matrix.loc[:, "identifiers"] = self.connectivity_matrix.loc[
-            :, "identifiers"
-        ].astype("category")
-        self.connectivity_matrix_current_carriers.loc[
-            :, "identifiers"
-        ] = self.connectivity_matrix_current_carriers.loc[:, "identifiers"].astype(
-            "category"
-        )
-        # conductorlogger.debug(
-        #     f"After convert index of dataframe self.connectivity_matrix to categorical.\n"
-        # )
-
-        # Compute node distance
-        # conductorlogger.debug(
-        #     f"Before call method {self.__compute_node_distance.__name__}.\n"
-        # )
-        self.__compute_node_distance()
-        # conductorlogger.debug(
-        #     f"After call method {self.__compute_node_distance.__name__}.\n"
-        # )
-
-        # conductorlogger.debug(
-        #     f"Before call method {self.__compute_gauss_node_distance.__name__}.\n"
-        # )
-
-        # Compute gauss node distance
-        self.__compute_gauss_node_distance()
-        # conductorlogger.debug(
-        #     f"After call method {self.__compute_gauss_node_distance.__name__}.\n"
-        # )
-
-        # conductorlogger.debug(
-        #     f"Before call method {self.__build_incidence_matrix.__name__}.\n"
-        # )
-        # Build incidence matrix only for StrandComponent
-        self.__build_incidence_matrix()
-        # conductorlogger.debug(
-        #     f"After call method {self.__build_incidence_matrix.__name__}.\n"
-        # )
-
-        # Build electric resistance matrix (for the first time)
-        # conductorlogger.debug(
-        #     f"Before call method {self.__build_electric_resistance_matrix.__name__}.\n"
-        # )
-        self.__build_electric_resistance_matrix()
-        # conductorlogger.debug(
-        #     f"After call method {self.__build_electric_resistance_matrix.__name__}.\n"
-        # )
-
-        if self.inventory["StrandComponent"].number > 1:
-            # There are more than 1 StrandComponent objects, therefore there
-            # are contacts between StrandComponent objects and matrices
-            # contact_incidence_matrix and electric_conductance_matix can be
-            # built. If there is only one StrandComponent object
-            # contact_incidence_matrix can not be defined while
-            # electric_conductance_matix is full of 0 from initialization.
-
-            # Find contacts between StrandComponent objects.
-            # conductorlogger.debug(
-            #     f"Before call method {self.__contact_current_carriers.__name__}.\n"
-            # )
-            self.__contact_current_carriers()
-            # conductorlogger.debug(
-            #     f"After call method {self.__contact_current_carriers.__name__}.\n"
+            #     f"After call method {self.__build_connectivity_current_carriers.__name__}, operates on StrandComponents only.\n"
             # )
 
-            # Build contact incidence matrix
+            # Convert index to categorical
             # conductorlogger.debug(
-            #     f"Before call method {self.__build_contact_incidence_matrix.__name__}.\n"
+            #     f"Before convert index of dataframe self.connectivity_matrix to categorical.\n"
             # )
-            # this method builds the contact incidence matrix for current carriers
-            # only
-            self.__build_contact_incidence_matrix()
+            self.connectivity_matrix.loc[:, "identifiers"] = self.connectivity_matrix.loc[
+                :, "identifiers"
+            ].astype("category")
+            self.connectivity_matrix_current_carriers.loc[
+                :, "identifiers"
+            ] = self.connectivity_matrix_current_carriers.loc[:, "identifiers"].astype(
+                "category"
+            )
             # conductorlogger.debug(
-            #     f"After call method {self.__build_contact_incidence_matrix.__name__}.\n"
-            # )
-
-            # Build electric conductance matrix
-            # conductorlogger.debug(
-            #     f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
-            # )
-            self.__build_electric_conductance_matrix()
-            # conductorlogger.debug(
-            #     f"After call method {self.__build_electric_conductance_matrix.__name__}.\n"
+            #     f"After convert index of dataframe self.connectivity_matrix to categorical.\n"
             # )
 
-        # Build electric stiffness matrix (for the first time)
-        # conductorlogger.debug(
-        #     f"Before call method {self.__build_electric_stiffness_matrix.__name__}.\n"
-        # )
-        self.__build_electric_stiffness_matrix()
-        # conductorlogger.debug(
-        #     f"After call method {self.__build_electric_stiffness_matrix.__name__}.\n"
-        # )
+            # Compute node distance
+            # conductorlogger.debug(
+            #     f"Before call method {self.__compute_node_distance.__name__}.\n"
+            # )
+            self.__compute_node_distance()
+            # conductorlogger.debug(
+            #     f"After call method {self.__compute_node_distance.__name__}.\n"
+            # )
 
-        if self.build_electric_mass_matrix_flag == True:
+            # conductorlogger.debug(
+            #     f"Before call method {self.__compute_gauss_node_distance.__name__}.\n"
+            # )
+
+            # Compute gauss node distance
+            self.__compute_gauss_node_distance()
+            # conductorlogger.debug(
+            #     f"After call method {self.__compute_gauss_node_distance.__name__}.\n"
+            # )
+
+            # conductorlogger.debug(
+            #     f"Before call method {self.__build_incidence_matrix.__name__}.\n"
+            # )
+            # Build incidence matrix only for StrandComponent
+            self.__build_incidence_matrix()
+            # conductorlogger.debug(
+            #     f"After call method {self.__build_incidence_matrix.__name__}.\n"
+            # )
+
+            # Build electric resistance matrix (for the first time)
+            # conductorlogger.debug(
+            #     f"Before call method {self.__build_electric_resistance_matrix.__name__}.\n"
+            # )
+            self.__build_electric_resistance_matrix()
+            # conductorlogger.debug(
+            #     f"After call method {self.__build_electric_resistance_matrix.__name__}.\n"
+            # )
+
+            if self.inventory["StrandComponent"].number > 1:
+                # There are more than 1 StrandComponent objects, therefore there
+                # are contacts between StrandComponent objects and matrices
+                # contact_incidence_matrix and electric_conductance_matix can be
+                # built. If there is only one StrandComponent object
+                # contact_incidence_matrix can not be defined while
+                # electric_conductance_matix is full of 0 from initialization.
+
+                # Find contacts between StrandComponent objects.
+                # conductorlogger.debug(
+                #     f"Before call method {self.__contact_current_carriers.__name__}.\n"
+                # )
+                self.__contact_current_carriers()
+                # conductorlogger.debug(
+                #     f"After call method {self.__contact_current_carriers.__name__}.\n"
+                # )
+
+                # Build contact incidence matrix
+                # conductorlogger.debug(
+                #     f"Before call method {self.__build_contact_incidence_matrix.__name__}.\n"
+                # )
+                # this method builds the contact incidence matrix for current carriers
+                # only
+                self.__build_contact_incidence_matrix()
+                # conductorlogger.debug(
+                #     f"After call method {self.__build_contact_incidence_matrix.__name__}.\n"
+                # )
+
+                # Build electric conductance matrix
+                # conductorlogger.debug(
+                #     f"Before call method {self.__build_electric_conductance_matrix.__name__}.\n"
+                # )
+                self.__build_electric_conductance_matrix()
+                # conductorlogger.debug(
+                #     f"After call method {self.__build_electric_conductance_matrix.__name__}.\n"
+                # )
+
+            # Build electric stiffness matrix (for the first time)
+            # conductorlogger.debug(
+            #     f"Before call method {self.__build_electric_stiffness_matrix.__name__}.\n"
+            # )
+            self.__build_electric_stiffness_matrix()
+            # conductorlogger.debug(
+            #     f"After call method {self.__build_electric_stiffness_matrix.__name__}.\n"
+            # )
+
             # Build electric mass matrix (for the first time)
             # conductorlogger.debug(
             #     f"Before call method {self.__build_electric_mass_matrix.__name__}.\n"
@@ -3640,35 +3666,41 @@ class Conductor:
             #     f"After call method {self.__build_electric_mass_matrix.__name__}.\n"
             # )
 
-        if (
-            self.grid_input["ITYMSH"]
-            != 3 | self.grid_input["ITYMSH"]
-            != -1 & self.build_electric_mass_matrix_flag
-            == True
-        ):
-            # Discretization grid does not change at each time step so there is
-            # no need to build electric mass matrix at each thermal time step
-            # because inductances will not change since they are evaluating
-            # starting from the coordinates which are constant in this case: flag build_electric_mass_matrix_flag is therefore set to False.
-            self.build_electric_mass_matrix_flag = False
+            # Assign equivalue surfaces
+            # conductorlogger.debug(
+            #     f"Before call method {self.__assign_equivalue_surfaces.__name__}.\n"
+            # )
+            self.__assign_equivalue_surfaces()
+            # conductorlogger.debug(
+            #     f"After call method {self.__assign_equivalue_surfaces.__name__}.\n"
+            # )
 
-        # Assign equivalue surfaces
-        # conductorlogger.debug(
-        #     f"Before call method {self.__assign_equivalue_surfaces.__name__}.\n"
-        # )
-        self.__assign_equivalue_surfaces()
-        # conductorlogger.debug(
-        #     f"After call method {self.__assign_equivalue_surfaces.__name__}.\n"
-        # )
+            # Assign fixed potential
+            # conductorlogger.debug(
+            #     f"Before call method {self.__assign_fix_potential.__name__}.\n"
+            # )
+            self.__assign_fix_potential()
+            # conductorlogger.debug(
+            #     f"After call method {self.__assign_fix_potential.__name__}.\n"
+            # )
 
-        # Assign fixed potential
-        # conductorlogger.debug(
-        #     f"Before call method {self.__assign_fix_potential.__name__}.\n"
-        # )
-        self.__assign_fix_potential()
-        # conductorlogger.debug(
-        #     f"After call method {self.__assign_fix_potential.__name__}.\n"
-        # )
+            if self.grid_input["ITYMSH"] not in DYNAMIC_MESH_MODES:
+                # The discretization grid is fixed throughout the simulation.
+                # Therefore, with the exception of the electric resitance matrix
+                # and the electric stiffness matrix, all the other quantities does
+                # not need to be evaluated at each electric time step after the initialization.
+                #
+                # For adaptive meshes and meshes read from file (dynamic mesh modes),
+                # the nodal coordinates may change during the transient;
+                # therefore all the electric quantities must remain rebuildable.
+                self.update_electric_quantities = False
+        else:
+            # Recompute the electric resistance matrix if the mesh is static
+            # at each electric time step.
+            self.__build_electric_resistance_matrix()
+            # Re-assemble the electric stiffness matrix if the mesh is static
+            # at each electric time step.
+            self.__build_electric_stiffness_matrix()
 
     def __build_electric_stiffness_matrix(self):
         """Private method that builds the electric stiffness matrix as a combination of the electric_resistance_matrix, incidence_matrix and electric_conductance_matrix. Exploit sparse matrix."""
@@ -4367,21 +4399,86 @@ class Conductor:
             ValueError: if electric time step is larger and or equal than thermal time step.
         """
 
-        # Rimuovere gli if.
-        if self.inputs["ELECTRIC_TIME_STEP"] == None:
-            self.electric_time_step = self.time_step / ELECTRIC_TIME_STEP_NUMBER
-        else:
-            if self.inputs["ELECTRIC_TIME_STEP"] < 0.0:
-                raise ValueError[
-                    f"Electric time step must be > 0.0 s; current value is: {self.inputs['ELECTRIC_TIME_STEP']=}s\n"
-                ]
-            if self.inputs["ELECTRIC_TIME_STEP"] > self.time_step:
-                raise ValueError[
-                    f"Electric time step must be < than thermal time step; current values are: {self.time_step=}s\n; {self.inputs['ELECTRIC_TIME_STEP']=}s\n"
-                ]
-            self.electric_time_step = self.inputs["ELECTRIC_TIME_STEP"]
+        if not np.isfinite(self.time_step):
+            raise ValueError(f"Invalid thermal time_step: {self.time_step}")
 
-        self.electric_time_end = self.time_step
+        if self.inputs["ELECTRIC_TIME_STEP"] is not None:
+            if not np.isfinite(self.inputs["ELECTRIC_TIME_STEP"]):
+                raise ValueError(
+                    f"Invalid ELECTRIC_TIME_STEP: {self.inputs['ELECTRIC_TIME_STEP']}"
+                )
+
+        maximum_substeps = self.operations["MAXIMUM_ITERATION_NUMBER"]
+        if isinstance(maximum_substeps, (bool, np.bool_)):
+            raise ValueError(
+                "MAXIMUM_ITERATION_NUMBER must be a positive integer."
+            )
+        try:
+            maximum_substeps_numeric = float(maximum_substeps)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "MAXIMUM_ITERATION_NUMBER must be a positive integer."
+            ) from exc
+        if (
+            not np.isfinite(maximum_substeps_numeric)
+            or maximum_substeps_numeric <= 0.0
+            or not maximum_substeps_numeric.is_integer()
+        ):
+            raise ValueError(
+                "MAXIMUM_ITERATION_NUMBER must be a positive integer."
+            )
+        maximum_substeps = int(maximum_substeps_numeric)
+
+        electric_time_step_input = self.inputs["ELECTRIC_TIME_STEP"]
+
+        if electric_time_step_input is None or pd.isna(electric_time_step_input):
+            self.electric_time_step_number = ELECTRIC_TIME_STEP_NUMBER
+        else:
+            if electric_time_step_input <= 0.0:
+                raise ValueError(
+                    f"Electric time step must be > 0.0 s; "
+                    f"current value is: {electric_time_step_input} s\n"
+                )
+            if electric_time_step_input > self.time_step:
+                raise ValueError(
+                    f"Electric time step must be < thermal time step; "
+                    f"time_step={self.time_step} s; "
+                    f"ELECTRIC_TIME_STEP={electric_time_step_input} s\n"
+                )
+            substep_ratio = self.time_step / electric_time_step_input
+            nearest_integer = int(np.rint(substep_ratio))
+            if np.isclose(
+                substep_ratio,
+                nearest_integer,
+                rtol=1.0e-12,
+                atol=1.0e-12,
+            ):
+                self.electric_time_step_number = nearest_integer
+            else:
+                self.electric_time_step_number = int(np.ceil(substep_ratio))
+
+        if self.electric_time_step_number > maximum_substeps:
+            raise ValueError(
+                "The electric substep count exceeds "
+                "MAXIMUM_ITERATION_NUMBER: "
+                f"required={self.electric_time_step_number}, "
+                f"maximum={maximum_substeps}."
+            )
+
+        # Partition the thermal-hydraulic interval exactly.  When the user
+        # provides ELECTRIC_TIME_STEP, it is treated as the largest allowed
+        # electric step and the actual value can therefore be slightly lower.
+        self.electric_time_step = (
+            self.time_step / self.electric_time_step_number
+        )
+
+        if not np.isfinite(self.electric_time_step):
+            raise ValueError(
+                f"Invalid electric_time_step: {self.electric_time_step}\n"
+                f"time_step = {self.time_step}\n"
+                f"ELECTRIC_TIME_STEP = {self.inputs['ELECTRIC_TIME_STEP']}\n"
+                f"electric_time_step_number = {self.electric_time_step_number}"
+            )
 
     def build_right_hand_side(self, foo: np.ndarray, bar: np.ndarray, idx: int):
         """Method that builds the right hand side of the transient electric equation.
@@ -4601,7 +4698,7 @@ class Conductor:
             # Always solve the electromagnetic problem as a transient problem. 
             # This is not general but edge cases are few and mostly "theoretic".
             electric_transient_solution(self)
-        
+
         # Call method electric_solution_reorganization: reorganize electric
         # solution and computes useful quantities used in the Joule power
         # evaluation.
@@ -4908,43 +5005,63 @@ class Conductor:
     
     def eval_integral_joule_power(self):
         
-        """Method that evaluates the numerator of the expression used to evaluate the integral value of the Joule power. The Joule power along the current carriers is computed as:
-            P_Joule = \Delta_Phi * I
-        with
-            * I electric current in A
-            * \Delta_Ph electric voltage potential difference along current carriers in V
-        This approach was discussed with prof. Zach Hartwig and Dr. Nicolò Riva and is more general and coservative that the evaluation that takes into account only the contribution of the electric resistance.
-        For the Joule power due to the electric conductances between current carriers it is exploited the power computed in method get_total_joule_power_electric_conductance
-        Regardless of the kind of Joule power, the integration can be performed as follows:
-            P_Joule = 1/Delta_t_TH * int_0^Delta_t_TH (dt P_{Joule,i})
-        The above integral could be approximated as
-            P_Joule ~= 1/Delta_t_TH * sum_1^N_em dt_em P_{Joule,i}
-        Where:
-        * P_Joule: integral value of the Joule power in W
-        * P_{Joule,i}: value of the Joule power computed with the electric 
-        soltution at the i-th electric time step in W
-        * Delta_t_TH: value of the thermal hydraulic time step in s (always >= 
-        electric time step)
-        * dt_em: electric time step in s
-        * N_em: number of electric time step required to cover a full thermal 
-        hydraulic time step.
+        """Method that evaluates the numerator of the expression used to compute
+        the time-averaged Joule power over one thermal-hydraulic time step.
 
-        This method computes the numerator of the above equation, i.e.
-            sum_1^N_em dt_em P_{Joule,i}
-        The final quantities is computed in other methods (get_joule_power_along, get_joule_power_across).
+        The Joule power generated along the current carriers is computed from the
+        electric resistance of each discretization element as:
+
+            P_Joule = R * I**2
+
+        with:
+            * I electric current in A
+            * R electric resistance of the discretization element in ohm
+
+        Therefore, only the resistive contribution to the voltage drop along the
+        current carriers is accounted for in the Joule power generation. Possible
+        non-dissipative contributions associated with the inductive term are not
+        included in the heat source.
+
+        For the Joule power due to the electric conductances between current carriers,
+        the power computed in method get_total_joule_power_electric_conductance is used.
+
+        Regardless of the kind of Joule power, the time-averaged value over one
+        thermal-hydraulic time step is evaluated as:
+
+            P_Joule = 1 / Delta_t_TH * int_0^Delta_t_TH P_{Joule,i} dt
+
+        The above integral is approximated as:
+
+            P_Joule ~= 1 / Delta_t_TH * sum_1^N_em dt_em * P_{Joule,i}
+
+        where:
+            * P_Joule: time-averaged Joule power in W
+            * P_{Joule,i}: Joule power computed from the electric solution at the
+            i-th electric time step in W
+            * Delta_t_TH: thermal-hydraulic time step in s, always greater than or
+            equal to the electric time step
+            * dt_em: electric time step in s
+            * N_em: number of electric time steps required to cover one full
+            thermal-hydraulic time step
+
+        This method computes the numerator of the above expression, i.e.:
+
+            sum_1^N_em dt_em * P_{Joule,i}
+
+        The final time-averaged quantities are computed in other methods
+        (get_joule_power_along, get_joule_power_across).
         """
 
         # Loop on StrandComponent objects.
         for strand in self.inventory["StrandComponent"].collection:
             
-            # Compute the numerator of the integral Joule power along the 
+            # Compute the numerator of the time-integrated Joule power along the
             # current carrier.
-            # N.B. this evaluation accounts aslo for the voltage due to the 
-            # inductance and is a conservative an more general approach.
-            # Discussed with prof. Zach Hartwig and Dr. Nicolò Riva.
+            # The electric resistance is defined on each discretization element:
+            # P_elem = R_elem * I_elem**2
             strand.dict_Gauss_pt["integral_power_el_res"] += (
-                strand.dict_Gauss_pt["current_along"]
-                * strand.dict_Gauss_pt["delta_voltage_along"]
+                strand.dict_Gauss_pt["electric_resistance"]
+                * strand.dict_Gauss_pt["current_along"]**2
                 * self.electric_time_step
             )
 
@@ -4995,28 +5112,13 @@ class Conductor:
                 elif strand.operations["TCS_EVALUATION"] == True:
                     if self.cond_el_num_step <= 1:
                         # Evaluate current sharing temperature only at 
-                        # initialization (0) and at the first electriC time 
+                        # initialization (0) and at the first electric time
                         # step (1).
                         strand.get_tcs()
             if self.cond_el_num_step <= 1:
-                # Evaluate properties only at initialization (0) and at 
+                # Evaluate properties only at initialization (0) and at
                 # the first electric time step (1).
                 strand.eval_sol_comp_properties(self.inventory)
-            else:
-                # Update only electrical resistivity (stabilizer) at each 
-                # electric time step.
-                if isinstance(strand,StrandMixedComponent):
-                    strand.dict_node_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity_not_sc(
-                            strand.dict_node_pt
-                        )
-                elif isinstance(strand,StackComponent):
-                    strand.dict_node_pt["electrical_resistivity_stabilizer"] = strand.stack_electrical_resistivity_not_sc(
-                            strand.dict_node_pt
-                        )
-                elif isinstance(strand, StrandStabilizerComponent):
-                    strand.dict_node_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity(
-                            strand.dict_node_pt
-                        )
 
         for jacket in self.inventory["JacketComponent"].collection:
             jacket.get_current(self)
@@ -5025,11 +5127,6 @@ class Conductor:
                 # Evaluate properties only at initialization (0) and at 
                 # the first electric time step (1).
                 jacket.eval_sol_comp_properties(self.inventory)
-            else:
-                # Update only electrical resistivity at each electri time step.
-                jacket.dict_node_pt["total_electrical_resistivity"] = jacket.jacket_electrical_resistivity(
-                        jacket.dict_node_pt
-                    )
 
         self.__eval_gauss_point_em()
 
@@ -5058,11 +5155,6 @@ class Conductor:
                 # Evaluate properties only at initialization (0) and at 
                 # the first electric time step (1).
                 jacket.eval_sol_comp_properties(self.inventory, nodal=False)
-            else:
-                # Update only electrical resistivity at each electri time step.
-                jacket.dict_Gauss_pt["total_electrical_resistivity"] = jacket.jacket_electrical_resistivity(
-                        jacket.dict_Gauss_pt
-                    )
 
         # StrandComponent
         for strand in self.inventory["StrandComponent"].collection:
@@ -5086,7 +5178,7 @@ class Conductor:
                 elif strand.operations["TCS_EVALUATION"] == True:
                     if self.cond_el_num_step <= 1:
                         # Evaluate current sharing temperature only at 
-                        # initialization (0) and at the first electric time 
+                        # initialization (0) and at the first electric time
                         # step (1)
                         strand.get_tcs(nodal=False)
             # end if strand.name != self.inventory["StrandStabilizerComponent"].
@@ -5096,21 +5188,6 @@ class Conductor:
                 # Evaluate properties only at initialization (0) and at 
                 # the first electric time step (1).
                 strand.eval_sol_comp_properties(self.inventory, nodal=False)
-            else:
-                # Update only electrical resistivity (stabilizer) at each 
-                # electric time step.
-                if isinstance(strand,StrandMixedComponent):
-                    strand.dict_Gauss_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity_not_sc(
-                            strand.dict_Gauss_pt
-                        )
-                elif isinstance(strand, StackComponent):
-                    strand.dict_Gauss_pt["electrical_resistivity_stabilizer"] = strand.stack_electrical_resistivity_not_sc(
-                        strand.dict_Gauss_pt
-                        )
-                elif isinstance(strand, StrandStabilizerComponent):
-                    strand.dict_Gauss_pt["electrical_resistivity_stabilizer"] = strand.strand_electrical_resistivity(
-                            strand.dict_Gauss_pt
-                        )
 
     def __eval_temperature_solids_gauss_point(self:Self):
         """Private method that evaluate temperature of SolidComponents in Gauss points.
@@ -6724,7 +6801,6 @@ class Conductor:
         The method updates the state of the following attributes:
             * self.cond_time
             * self.cond_num_step
-            * self.appended_time_flag
 
         Args:
             time (float): time to be appended to the list
@@ -6733,8 +6809,6 @@ class Conductor:
         self.cond_time.append(time)
         # Update the counter of time steps
         self.cond_num_step += 1
-        # Keep track of the already appended item in cond_time
-        self.appended_time_flag = True
 
 
     def __check_event_time_main_input(
@@ -6772,11 +6846,15 @@ class Conductor:
             # Compute difference tqend - tqbeg for each defined heating form 
             # main input file conductor_operation.xlsx.
             diff = tmp_event[i_tqend:] - tmp_event[:i_tqend]
-            # Check that tqend - tqbeg is >= 10*dt. If it is not the case an 
-            # error is raised.
-            if any(diff < 1e1 * dt):
-                # At least one difference tqend - tqbeg is < 10*dt: raise an 
-                # error.
+            # Check that tqend - tqbeg is >= 10*dt. Allow only the
+            # floating-point roundoff associated with subtracting absolute
+            # event times.
+            threshold = 1e1 * dt
+            time_scale = max(1.0, float(np.max(np.abs(tmp_event))))
+            roundoff_tol = 1e1 * np.finfo(float).eps * time_scale
+            if np.any(diff < threshold - roundoff_tol):
+                # At least one difference tqend - tqbeg is genuinely < 10*dt:
+                # raise an error.
                 raise ValueError(f"Selected {dt_label} is to large for suitably discretize all the defined heating period in file {f_path}.\n Please, reduce the {dt_label} such that each difference TQEND - TQBEG is discretized with at least 10 {dt_label}.")
 
     def __check_event_time_aux_input(
@@ -6809,11 +6887,15 @@ class Conductor:
             # Compute difference between each consecutive time value (event 
             # time) in array l_event (loaded from auxiliary input file).
             diff = l_event[1:] - l_event[:-1]
-            # Check that each difference is >= 10*dt. If it is not the case an 
-            # error is raised.
-            if any(diff < 1e1 * dt):
-                # At least one difference l_event[1:] - l_event[:-1] is < 
-                # 10*dt: raise an error.
+            # Check that each difference is >= 10*dt. Allow only the
+            # floating-point roundoff associated with subtracting absolute
+            # event times.
+            threshold = 1e1 * dt
+            time_scale = max(1.0, float(np.max(np.abs(l_event))))
+            roundoff_tol = 1e1 * np.finfo(float).eps * time_scale
+            if np.any(diff < threshold - roundoff_tol):
+                # At least one difference l_event[1:] - l_event[:-1] is
+                # genuinely < 10*dt: raise an error.
                 raise ValueError(f"Selected {dt_label} is to large for suitably discretize all the defined time ranges in file {f_path}.\n Please, reduce the {dt_label} such that each time range is discretized with at least 10 {dt_label}.")
 
     def __collect_event_time_aux_input(

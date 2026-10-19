@@ -3,13 +3,8 @@
 Description_of_Components/**/ # Input files
 GUI_icons/**/ # graphical user interface images
 
-# virtual environment
-# this does not work opensc2/**/ # virtual environment
-opensc2/**/*.exe
-opensc2/Scripts/*.exe
-opensc2/Scripts/*.bat
-opensc2/Scripts/*.ps1
-opensc2/Scripts/activate
-opensc2/share/**/*.gz
-opensc2/share/**/*.1
-opensc2/*.cfg
+# Local Python virtual environment
+opensc2/
+
+# Local YAML file used for headless OPENSC2 runs.
+io_path_test.yaml

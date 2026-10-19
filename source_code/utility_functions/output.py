@@ -301,20 +301,49 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     # Round the time to save to n_digit_time digits only once
     time = np.around(cond.Space_save, n_digit_time)
 
+    fluid_components = cond.inventory["FluidComponent"].collection
+    solid_components = cond.inventory["SolidComponent"].collection
+    if fluid_components:
+        representative_component = fluid_components[0]
+    elif solid_components:
+        representative_component = solid_components[0]
+    else:
+        raise ValueError(
+            "Cannot reorganize spatial outputs for a conductor without "
+            "fluid or solid components."
+        )
+
+    # A restarted trajectory may write into a new output directory.  In that
+    # case, files produced before the checkpoint are intentionally absent.
+    # Select the available schedule entries once and reuse their ordered
+    # indices for every component so times and time steps remain aligned.
+    available_output_indices = tuple(
+        ii
+        for ii, _ in enumerate(cond.Space_save)
+        if os.path.isfile(
+            os.path.join(
+                f_path,
+                (
+                    f"{representative_component.identifier}_"
+                    f"({cond.num_step_save[ii]})_sd.tsv"
+                ),
+            )
+        )
+    )
+    if not available_output_indices:
+        raise FileNotFoundError(
+            "No raw spatial-distribution files are available for "
+            "reorganization."
+        )
+
     # declare dictionary to store the spatial diccretizations only once.
     dict_zcoord = dict()
     # Loop to save spatial coordinates.
-    for ii,_ in enumerate(cond.Space_save):
-        # Check if FluidComponent collection is not empty.
-        if cond.inventory["FluidComponent"].collection:
-            # FluidComponent collection is not empty.
-            comp = cond.inventory["FluidComponent"].collection[0]
-        else:
-            # FluidComponent collection is empty: use first item in 
-            # SolidComponent collection.
-            comp = cond.inventory["SolidComponent"].collection[0]
-
-        file_name = f"{comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
+    for ii in available_output_indices:
+        file_name = (
+            f"{representative_component.identifier}_"
+            f"({cond.num_step_save[ii]})_sd.tsv"
+        )
         file_load = os.path.join(f_path, file_name)
         # Load dataframe.
         df = pd.read_csv(file_load, delimiter="\t")
@@ -330,7 +359,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
     df_zcoord.to_csv(path_save, sep="\t", index=False)
 
     # loop on FluidComponent (cdp, 11/2020)
-    for fluid_comp in cond.inventory["FluidComponent"].collection:
+    for fluid_comp in fluid_components:
         # create a list of files that have the fluid_comp.identifier and User in the name \
         # exploiting list compreension: these files are the ones that will be \
         # reorganized by this function (cdp, 11/2020)
@@ -338,7 +367,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
-        for ii, _ in enumerate(cond.Space_save):
+        for output_position, ii in enumerate(available_output_indices):
             file_name = f"{fluid_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
             file_load = os.path.join(f_path, file_name)
             # Load file file_name as data frame as a value of dictionary \
@@ -348,7 +377,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             )
             # Delete the old file format.
             os.remove(file_load)
-            if ii == 0:
+            if output_position == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
                 for jj, prop in enumerate(list_ch_key):
@@ -388,11 +417,11 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
         # end for prop (cdp, 11/2020)
     # end for fluid_comp (cdp, 11/2020)
     # loop on SolidComponent (cdp, 11/2020)
-    for s_comp in cond.inventory["SolidComponent"].collection:
+    for s_comp in solid_components:
         # declare the dictionary of data frame (cdp, 11/2020)
         dict_df = dict()
         dict_df_new = dict()
-        for ii, _ in enumerate(cond.Space_save):
+        for output_position, ii in enumerate(available_output_indices):
             file_name = f"{s_comp.identifier}_({cond.num_step_save[ii]})_sd.tsv"
             file_name_gauss = (
                 f"{s_comp.identifier}_({cond.num_step_save[ii]})_gauss_sd.tsv"
@@ -410,7 +439,7 @@ def reorganize_spatial_distribution(cond, f_path, n_digit_time):
             # Delete the old file format.
             os.remove(file_load)
             os.remove(file_load_gauss)
-            if ii == 0:
+            if output_position == 0:
                 # get columns names only the first time (cdp, 11/2020)
                 header = list(dict_df[file_name].columns.values.tolist())
                 if s_comp.KIND == "Mixed_sc_stab" or s_comp.KIND == "Stack":
@@ -541,7 +570,7 @@ def reorganize_heat_sd(cond, f_path, radix_old, radix_new, n_digit_time):
             old[file_name] = pd.read_csv(file_load, delimiter="\t")
             # Delete the old file format.
             os.remove(file_load)
-            if ii == 0:
+            if not cols:
                 # get columns names only the first time.
                 cols = old[file_name].columns.values.tolist()
                 for col in cols:
@@ -629,6 +658,11 @@ def save_simulation_time(simulation, conductor):
             "total_density_out (kg/m^3)",
             "mass_flow_rate_out (kg/s)",
         ]
+        headers_max_temperature = [
+            "time (s)",
+            "max_temperature (K)",
+            "zcoord_max_temperature (m)",
+        ]
         for f_comp in conductor.inventory["FluidComponent"].collection:
             # Loop on velocity, pressure, temperature and total density.
             for key, value in f_comp.coolant.time_evol.items():
@@ -677,6 +711,22 @@ def save_simulation_time(simulation, conductor):
                 index=False,
                 header=True,
             )
+
+            # Initialize maximum temperature time evolution.
+            f_comp.coolant.time_evol_max_temperature = initialize_max_temperature_te()
+
+            # Save the headings only once.
+            pd.DataFrame(columns=headers_max_temperature).to_csv(
+                os.path.join(
+                    simulation.dict_path[
+                        f"Output_Time_evolution_{conductor.identifier}_dir"
+                    ],
+                    f"{f_comp.identifier}_max_temperature_te.tsv",
+                ),
+                sep="\t",
+                index=False,
+                header=True,
+            )
         # End for f_comp.
         for s_comp in conductor.inventory["SolidComponent"].collection:
             # Loop on velocity, pressure, temperature and total density.
@@ -714,6 +764,21 @@ def save_simulation_time(simulation, conductor):
                     header=True,
                 )
             # End for key.
+            # Initialize maximum temperature time evolution.
+            s_comp.time_evol_max_temperature = initialize_max_temperature_te()
+
+            # Save the headings only once.
+            pd.DataFrame(columns=headers_max_temperature).to_csv(
+                os.path.join(
+                    simulation.dict_path[
+                        f"Output_Time_evolution_{conductor.identifier}_dir"
+                    ],
+                    f"{s_comp.identifier}_max_temperature_te.tsv",
+                ),
+                sep="\t",
+                index=False,
+                header=True,
+            )
         # End for s_comp.
     # End if simulation.num_step (cdp, 10/2020)
 
@@ -771,6 +836,26 @@ def save_simulation_time(simulation, conductor):
         elif fluid_comp.channel.flow_dir[0] == "backward":
             index_inl = -1
             index_out = 0
+
+        # Save maximum temperature time evolution.
+        fluid_comp.coolant.time_evol_max_temperature = update_max_temperature_te(
+            fluid_comp.coolant.time_evol_max_temperature,
+            fluid_comp.coolant.dict_node_pt["temperature"],
+            conductor.grid_features["zcoord"],
+            time,
+        )
+
+        fluid_comp.coolant.time_evol_max_temperature = save_max_temperature_te_on_file(
+            conductor,
+            fluid_comp.coolant.time_evol_max_temperature,
+            os.path.join(
+                simulation.dict_path[
+                    f"Output_Time_evolution_{conductor.identifier}_dir"
+                ],
+                f"{fluid_comp.identifier}_max_temperature_te.tsv",
+            ),
+            simulation.transient_input["TEND"],
+        )
 
         # Inlet and outlet quantities (cdp, 08/2020)
         file_name_io = os.path.join(
@@ -883,6 +968,27 @@ def save_simulation_time(simulation, conductor):
                 ind_zcoord_gauss,
             )
         # End for key.
+
+        # Save maximum temperature time evolution.
+        s_comp.time_evol_max_temperature = update_max_temperature_te(
+            s_comp.time_evol_max_temperature,
+            s_comp.dict_node_pt["temperature"],
+            conductor.grid_features["zcoord"],
+            time,
+        )
+
+        s_comp.time_evol_max_temperature = save_max_temperature_te_on_file(
+            conductor,
+            s_comp.time_evol_max_temperature,
+            os.path.join(
+                simulation.dict_path[
+                    f"Output_Time_evolution_{conductor.identifier}_dir"
+                ],
+                f"{s_comp.identifier}_max_temperature_te.tsv",
+            ),
+            simulation.transient_input["TEND"],
+        )
+
     # End for s_comp.
 
     if (
@@ -990,3 +1096,66 @@ def save_geometry_discretization(collection: list, file_path: str):
         )
         for comp in collection
     ]
+
+
+def initialize_max_temperature_te():
+    """Initialize dictionary used to store component maximum temperature time evolution."""
+    return {
+        "time": list(),
+        "max_temperature": list(),
+        "zcoord_max_temperature": list(),
+    }
+
+
+def update_max_temperature_te(val, temperature, zcoord, time):
+    """Update maximum temperature time-evolution dictionary.
+
+    The maximum temperature is evaluated on nodal values. The corresponding
+    z-coordinate is the nodal coordinate where the maximum temperature occurs.
+    """
+
+    temperature = np.asarray(temperature)
+    zcoord = np.asarray(zcoord)
+
+    if temperature.size != zcoord.size:
+        raise ValueError(
+            "Temperature and z-coordinate arrays must have the same size. "
+            f"Current sizes are: temperature.size={temperature.size}, "
+            f"zcoord.size={zcoord.size}."
+        )
+
+    idx_max = int(np.nanargmax(temperature))
+
+    val["time"].append(time)
+    val["max_temperature"].append(temperature[idx_max])
+    val["zcoord_max_temperature"].append(zcoord[idx_max])
+
+    return val
+
+
+def save_max_temperature_te_on_file(conductor, val, file_name, tend):
+    """Save component maximum temperature time evolution to file."""
+
+    if len(val["time"]) == conductor.CHUNCK_SIZE:
+        pd.DataFrame(val, columns=list(val.keys()), dtype=float).to_csv(
+            file_name,
+            sep="\t",
+            mode="a",
+            chunksize=conductor.CHUNCK_SIZE,
+            index=False,
+            header=False,
+        )
+        val = initialize_max_temperature_te()
+    elif len(val["time"]) > 0 and np.isclose(
+        conductor.cond_time[-1], tend, rtol=1e-6, atol=0.0
+    ):
+        pd.DataFrame(val, columns=list(val.keys()), dtype=float).to_csv(
+            file_name,
+            sep="\t",
+            mode="a",
+            chunksize=conductor.CHUNCK_SIZE,
+            index=False,
+            header=False,
+        )
+
+    return val

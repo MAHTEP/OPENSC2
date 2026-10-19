@@ -7,6 +7,7 @@ from tkinter import ttk
 from PIL import ImageTk, Image
 import os
 import subprocess
+import time
 
 from simulation import Simulation
 
@@ -51,6 +52,7 @@ class OPENSC2_GUI:
         self.main_window = tk.Toplevel(master=self.root_window)
         self.main_window.wm_iconbitmap(os.path.join(icons_dir, "MAHTEP_LOGO.ico"))
         self.main_window.title("OPENSC2 GUI Main Window")
+        self.main_window.protocol("WM_DELETE_WINDOW", self.close_simulation)
         # Start: Create images objects (cdp, 08/2020)
         # Simulation input cascade images (cdp, 08/2020)
         self.dict_input = dict(
@@ -453,6 +455,7 @@ class OPENSC2_GUI:
         tk.messagebox.showinfo(
             parent=self.main_window, title=f"Start Simulation", message=messaggio
         )
+        tt = time.time()
         # Create and instance of class Conductor for each user defined conductor \
         # (cdp, 08/2020)
         self.simulation.conductor_instance()
@@ -468,12 +471,28 @@ class OPENSC2_GUI:
         # Create plots of time evlustions and spatial distributions according to \
         # user requirements (cdp, 08/2020)
         self.simulation.conductor_post_processing()
+        elapsed_time = time.time() - tt
+        if elapsed_time < 60:
+            elapsed_time = elapsed_time
+            unit = "s"
+        elif elapsed_time < 3600:
+            elapsed_time = elapsed_time / 60
+            unit = "min"
+        elif elapsed_time < 86400:
+            elapsed_time = elapsed_time / 3600
+            unit = "h"
+        else:
+            elapsed_time = elapsed_time / 86400
+            unit = "days"
+        print(f"\nSimulation completed in {elapsed_time:.2f} " + unit)
         # End simulation message (cdp, 12/2020)
         messaggio = (
             "Simulation called "
             + self.simulation.transient_input["SIMULATION"]
             + " ends.\n"
             + "End of data processing and saving of figures.\n"
+            + f"\nSimulation completed in {elapsed_time:.2f} "
+            + unit
         )
         tk.messagebox.showinfo(
             parent=self.main_window, title=f"End Simulation", message=messaggio
@@ -497,6 +516,10 @@ class OPENSC2_GUI:
         """
         Method that closes the simulation session killing the simulation if in progress (cdp, 12/2020)
         """
+        if not getattr(self.simulation, "transient_input", None):
+            self.root_window.destroy()
+            return
+
         messaggio = (
             "Do you want to close the simulation called "
             + self.simulation.transient_input["SIMULATION"]

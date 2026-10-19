@@ -12,6 +12,14 @@ from properties_of_materials.aluminium import (
     isobaric_specific_heat_al,
     density_al,
     electrical_resistivity_al,
+    thermal_conductivity_al_cryosoft,
+    isobaric_specific_heat_al_cryosoft,
+    density_al_cryosoft,
+    electrical_resistivity_al_cryosoft,
+    thermal_conductivity_al6063_cryosoft,
+    isobaric_specific_heat_al6063_cryosoft,
+    density_al6063_cryosoft,
+    electrical_resistivity_al6063_cryosoft,
 )
 
 # Cu properties
@@ -24,21 +32,29 @@ from properties_of_materials.copper import (
 
 DENSITY_FUNC = dict(
     al=density_al,
+    al_cryosoft=density_al_cryosoft,
+    al6063_cryosoft=density_al6063_cryosoft,
     cu=density_cu,
 )
 
 THERMAL_CONDUCTIVITY_FUNC = dict(
     al=thermal_conductivity_al,
+    al_cryosoft=thermal_conductivity_al_cryosoft,
+    al6063_cryosoft=thermal_conductivity_al6063_cryosoft,
     cu=thermal_conductivity_cu_nist,
 )
 
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
     al=isobaric_specific_heat_al,
+    al_cryosoft=isobaric_specific_heat_al_cryosoft,
+    al6063_cryosoft=isobaric_specific_heat_al6063_cryosoft,
     cu=isobaric_specific_heat_cu_nist,
 )
 
 ELECTRICAL_RESISTIVITY_FUNC = dict(
     al=electrical_resistivity_al,
+    al_cryosoft=electrical_resistivity_al_cryosoft,
+    al6063_cryosoft=electrical_resistivity_al6063_cryosoft,
     cu=electrical_resistivity_cu_nist,
 )
 
@@ -103,6 +119,7 @@ class StrandStabilizerComponent(StrandComponent):
             linear_power_el_resistance=dict(),
             delta_voltage_along_sum=dict(),
         )
+        self.time_evol_max_temperature = dict()
         self.dict_scaling_input = dict()
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(
@@ -130,8 +147,9 @@ class StrandStabilizerComponent(StrandComponent):
         # steps for current, external heating and so on (cdp, 11/2020)
         SolidComponent(simulation, self)
         self.inputs["stabilizer_material"] = self.inputs["stabilizer_material"].lower()
-        if self.inputs["stabilizer_material"] != "cu":
-            # remove key RRR from inputs if stabilizer is not Cu (cdp, 07/2020)
+        if self.inputs["stabilizer_material"] not in {"cu", "al_cryosoft"}:
+            # Legacy non-Cu materials do not use RRR. The opt-in CryoSoft
+            # aluminium model retains it because k and rho_el depend on RRR.
             self.inputs.pop("RRR")
         if self.operations["IBIFUN"] != -1:
             # Remove key B_field_units.
@@ -187,7 +205,7 @@ class StrandStabilizerComponent(StrandComponent):
         Returns:
             np.ndarray: array with thermal conductivity of the stabilizer in W/m/K.
         """
-        if self.inputs["stabilizer_material"] == "cu":
+        if self.inputs["stabilizer_material"] in {"cu", "al_cryosoft"}:
             return THERMAL_CONDUCTIVITY_FUNC[self.inputs["stabilizer_material"]](
                 property["temperature"],
                 property["B_field"],
@@ -207,7 +225,7 @@ class StrandStabilizerComponent(StrandComponent):
         Returns:
             np.ndarray: array with electrical resistivity of the stabilizer in Ohm*m.
         """
-        if self.inputs["stabilizer_material"] == "cu":
+        if self.inputs["stabilizer_material"] in {"cu", "al_cryosoft"}:
             return ELECTRICAL_RESISTIVITY_FUNC[self.inputs["stabilizer_material"]](
                 property["temperature"],
                 property["B_field"],

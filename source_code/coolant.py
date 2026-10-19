@@ -48,6 +48,7 @@ class Coolant(FluidComponentInput):
         ]
         # Empty dictionary of list to save variable time evolutions at inlet and outlet spatial coordinates.
         self.time_evol_io = {key: list() for key in headers_inl_out}
+        self.time_evol_max_temperature = dict()
 
         # Remove key FLUID_TYPE from self.inputs (it becomes attribute of object coolant); removes also for object channel.
         del self.inputs["FLUID_TYPE"]

@@ -5,6 +5,22 @@ import numpy as np
 from typing import Union
 
 
+# Aluminium properties
+from properties_of_materials.aluminium import (
+    thermal_conductivity_al,
+    isobaric_specific_heat_al,
+    density_al,
+    electrical_resistivity_al,
+    thermal_conductivity_al_cryosoft,
+    isobaric_specific_heat_al_cryosoft,
+    density_al_cryosoft,
+    electrical_resistivity_al_cryosoft,
+    thermal_conductivity_al6063_cryosoft,
+    isobaric_specific_heat_al6063_cryosoft,
+    density_al6063_cryosoft,
+    electrical_resistivity_al6063_cryosoft,
+)
+
 # Stainless steel properties
 from properties_of_materials.stainless_steel import (
     thermal_conductivity_ss,
@@ -21,13 +37,27 @@ from properties_of_materials.glass_epoxy import (
     electrical_resistivity_ge,
 )
 
-DENSITY_FUNC = dict(ge=density_ge, ss=density_ss)
+DENSITY_FUNC = dict(al=density_al, al_cryosoft=density_al_cryosoft, al6063_cryosoft=density_al6063_cryosoft, ge=density_ge, ss=density_ss)
 ISOBARIC_SPECIFIC_HEAT_FUNC = dict(
-    ge=isobaric_specific_heat_ge, ss=isobaric_specific_heat_ss
+    al=isobaric_specific_heat_al,
+    al_cryosoft=isobaric_specific_heat_al_cryosoft,
+    al6063_cryosoft=isobaric_specific_heat_al6063_cryosoft,
+    ge=isobaric_specific_heat_ge,
+    ss=isobaric_specific_heat_ss,
 )
-THERMAL_CONDUCTIVITY_FUNC = dict(ge=thermal_conductivity_ge, ss=thermal_conductivity_ss)
+THERMAL_CONDUCTIVITY_FUNC = dict(
+    al=thermal_conductivity_al,
+    al_cryosoft=thermal_conductivity_al_cryosoft,
+    al6063_cryosoft=thermal_conductivity_al6063_cryosoft,
+    ge=thermal_conductivity_ge,
+    ss=thermal_conductivity_ss,
+)
 ELECTRICAL_RESISTIVITY_FUNC = dict(
-    ge=electrical_resistivity_ge, ss=electrical_resistivity_ss
+    al=electrical_resistivity_al,
+    al_cryosoft=electrical_resistivity_al_cryosoft,
+    al6063_cryosoft=electrical_resistivity_al6063_cryosoft,
+    ge=electrical_resistivity_ge,
+    ss=electrical_resistivity_ss,
 )
 
 
@@ -74,6 +104,7 @@ class JacketComponent(SolidComponent):
             delta_voltage_along=dict(),
             linear_power_el_resistance=dict(),
         )
+        self.time_evol_max_temperature = dict()
         # Dictionary initialization: inputs.
         self.inputs = pd.read_excel(
             dict_file_path["input"],
@@ -416,6 +447,18 @@ class JacketComponent(SolidComponent):
         elif self.inputs["NUM_MATERIAL_TYPES"] == 1:
             return isobaric_specific_heat[0]
 
+    def __evaluate_field_dependent_property(
+        self, material: str, func, property: dict
+    ) -> np.ndarray:
+        """Evaluate a jacket material property with the required inputs."""
+        if material == "al_cryosoft":
+            return func(
+                property["temperature"],
+                property["B_field"],
+                self.inputs["RRR"],
+            )
+        return func(property["temperature"])
+
     def jacket_thermal_conductivity(self, property: dict) -> np.ndarray:
         """Method that evaluates the homogenized thermal conductivity of the jacket, in the case it is made by at most by two materials (jacket and insulation). Homogenization is based on material cross sections.
 
@@ -427,8 +470,12 @@ class JacketComponent(SolidComponent):
         """
         thermal_conductivity = np.array(
             [
-                func(property["temperature"])
-                for func in self.thermal_conductivity_function
+                self.__evaluate_field_dependent_property(
+                    material, func, property
+                )
+                for material, func in zip(
+                    self.materials, self.thermal_conductivity_function
+                )
             ]
         )
         if self.inputs["NUM_MATERIAL_TYPES"] > 1:
@@ -452,8 +499,12 @@ class JacketComponent(SolidComponent):
 
         electrical_resistivity = np.array(
             [
-                func(property["temperature"])
-                for func in self.electrical_resistivity_function
+                self.__evaluate_field_dependent_property(
+                    material, func, property
+                )
+                for material, func in zip(
+                    self.materials, self.electrical_resistivity_function
+                )
             ]
         )
         if self.inputs["NUM_MATERIAL_TYPES"] > 1:

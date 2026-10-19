@@ -210,3 +210,165 @@ def density_ag(temperature: np.ndarray) -> np.ndarray:
 
 
 # end function rho_Ag (cdp, 01/2021)
+# ---------------------------------------------------------------------------
+# CryoSoft silver properties (opt-in)
+# ---------------------------------------------------------------------------
+# Direct Python translation of the CryoSoft Ag.f routines supplied for the
+# H4C benchmark audit. These functions intentionally coexist with the legacy
+# OPENSC2 functions above so input files using material key "ag" remain on
+# the historical property path.
+
+def _broadcast_ag_cryosoft_inputs(temperature, magnetic_field, rrr):
+    """Broadcast and clamp CryoSoft silver inputs to the Fortran ranges."""
+    temperature, magnetic_field, rrr = np.broadcast_arrays(
+        np.asarray(temperature, dtype=float),
+        np.asarray(magnetic_field, dtype=float),
+        np.asarray(rrr, dtype=float),
+    )
+    temperature = np.clip(temperature, 0.1, 1000.0)
+    magnetic_field = np.clip(magnetic_field, 0.0, 100.0)
+    rrr = np.clip(rrr, 1.5, 10000.0)
+    return temperature, magnetic_field, rrr
+
+
+def magnetoresistance_ag_cryosoft(temperature, magnetic_field, rrr):
+    """CryoSoft transverse magnetoresistivity factor for pure silver."""
+    tt, bb, rr = _broadcast_ag_cryosoft_inputs(
+        temperature, magnetic_field, rrr
+    )
+    bb = np.clip(bb, 0.0, 30.0)
+
+    rho273 = 1.48e-8
+    p1 = 1.474e-17
+    p2 = 4.82
+    p3 = 1.16e11
+    p4 = -1.33
+    p5 = 10.0
+    p6 = 1.0
+    p7 = 0.333
+    a1 = 6.5e-05
+    a2 = 1.8
+    a3 = 3.0e-3
+    a4 = 1.1
+
+    rhozero = rho273 / (rr - 1.0)
+    arg = np.minimum((p5 / tt) ** p6, 30.0)
+    rhoi = p1 * tt**p2 / (
+        1.0 + p1 * p3 * tt ** (p2 + p4) * np.exp(-arg)
+    )
+    rhoi0 = p7 * rhoi * rhozero / (rhoi + rhozero)
+    rho0 = rhozero + rhoi + rhoi0
+
+    brr = np.clip(bb * rho273 / rho0, 0.0, 10.0e3)
+    increase = np.zeros_like(tt, dtype=float)
+    mask = brr > 1.0
+    increase[mask] = (
+        a1 * brr[mask] ** a2 / (1.0 + a3 * brr[mask] ** a4)
+    )
+    return increase + 1.0
+
+
+def thermal_conductivity_ag_cryosoft(temperature, magnetic_field, rrr):
+    """CryoSoft silver thermal conductivity k(T, B, RRR), W/(m K)."""
+    tt, bb, rr = _broadcast_ag_cryosoft_inputs(
+        temperature, magnetic_field, rrr
+    )
+
+    rho273 = 1.48e-8
+    lorenz = 2.443e-8
+    alpha2 = 7.87561879e-8
+    m = 2.75
+    n = 2.3
+    ell = -2.5
+    t0 = 35.0
+    k0 = 408.59712205
+
+    rhozero = rho273 / (rr - 1.0)
+    beta = rhozero / lorenz
+    alpha = alpha2 * (beta / n / alpha2) ** ((m - n) * (m + ell))
+
+    w0 = beta / tt
+    wi = alpha * tt**n
+    wi0 = wi + w0
+
+    wt = wi0.copy()
+    mask = tt > t0
+    wt[mask] = wi0[mask] / (
+        1.0
+        + wi0[mask] * k0 * (1.0 - np.exp(-(tt[mask] - t0) / t0))
+    )
+
+    return 1.0 / (wt * magnetoresistance_ag_cryosoft(tt, bb, rr))
+
+
+def electrical_resistivity_ag_cryosoft(temperature, magnetic_field, rrr):
+    """CryoSoft silver electrical resistivity rho(T, B, RRR), ohm m."""
+    tt, bb, rr = _broadcast_ag_cryosoft_inputs(
+        temperature, magnetic_field, rrr
+    )
+
+    rho273 = 1.48e-8
+    p1 = 1.474e-17
+    p2 = 4.82
+    p3 = 1.16e11
+    p4 = -1.33
+    p5 = 10.0
+    p6 = 1.0
+    p7 = 0.333
+
+    rhozero = rho273 / (rr - 1.0)
+    arg = np.minimum((p5 / tt) ** p6, 30.0)
+    rhoi = p1 * tt**p2 / (
+        1.0 + p1 * p3 * tt ** (p2 + p4) * np.exp(-arg)
+    )
+    rhoi0 = p7 * rhoi * rhozero / (rhoi + rhozero)
+    rho0 = rhozero + rhoi + rhoi0
+
+    return magnetoresistance_ag_cryosoft(tt, bb, rr) * rho0
+
+
+def isobaric_specific_heat_ag_cryosoft(temperature):
+    """CryoSoft silver specific heat cp(T), J/(kg K)."""
+    tt = np.clip(np.asarray(temperature, dtype=float), 1.0, 300.0)
+
+    t0 = 9.785133189
+    t1 = 34.5580572
+    a1 = 6.14e-03
+    a2 = -9.09e-04
+    a3 = 1.79e-03
+    b0 = -3.515882063
+    b1 = 0.768177822
+    b2 = -0.072031
+    b3 = 5.59e-03
+    b4 = -7.55e-05
+    aa = -14331.2453
+    cc = 1415.969135
+    a = 217.2435636
+    c = 23.862111
+    na = 1.475372864
+    nc = 3.091515729
+
+    cp = np.empty_like(tt, dtype=float)
+    low = tt <= t0
+    mid = (tt > t0) & (tt <= t1)
+    high = tt > t1
+
+    cp[low] = a1 * tt[low] + a2 * tt[low] ** 2 + a3 * tt[low] ** 3
+    cp[mid] = (
+        b0
+        + b1 * tt[mid]
+        + b2 * tt[mid] ** 2
+        + b3 * tt[mid] ** 3
+        + b4 * tt[mid] ** 4
+    )
+    cp[high] = (
+        aa * tt[high] / (a + tt[high]) ** na
+        + cc * tt[high] ** 3 / (c + tt[high]) ** nc
+    )
+    return cp
+
+
+def density_ag_cryosoft(temperature):
+    """CryoSoft silver density, kg/m3 (constant)."""
+    temperature = np.asarray(temperature)
+    return 10490.0 * np.ones(temperature.shape)

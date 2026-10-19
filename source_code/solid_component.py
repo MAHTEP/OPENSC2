@@ -229,6 +229,7 @@ class SolidComponent:
                     current_df, self.flagSpecfield_current = load_auxiliary_files(
                         file_path, sheetname=self.identifier
                     )
+
                     # Build interpolator and get the interpolaion flag (space_only,time_only or space_and_time).
                     (
                         self.current_interpolator,
@@ -406,16 +407,11 @@ class SolidComponent:
                     conductor.grid_features["N_nod"],
                 )
             elif self.operations["IBIFUN"] == 1:
-                self.dict_node_pt["B_field"] = np.linspace(
-                    self.operations["BISS"],
-                    self.operations["BOSS"],
-                    conductor.grid_features["N_nod"],
-                ) + conductor.inputs["I0_OP_TOT"] / conductor.inputs[
-                    "I0_OP_TOT"
-                ] * np.linspace(
-                    self.operations["BITR"],
-                    self.operations["BOTR"],
-                    conductor.grid_features["N_nod"],
+                raise NotImplementedError(
+                    "IBIFUN=1 is not supported: the legacy BITR/BOTR "
+                    "implementation did not define a time-dependent magnetic "
+                    "field. Use IBIFUN=0 for BISS/BOSS or IBIFUN=-1 with "
+                    "EXTERNAL_BFIELD."
                 )
         elif nodal == False:
             # compute B_field in each Gauss point (cdp, 07/2020)
@@ -863,16 +859,16 @@ class SolidComponent:
 
         # Alias
         current = self.dict_Gauss_pt["current_along"]
-        voltage = self.dict_Gauss_pt["delta_voltage_along"]
+        electric_resistance = self.dict_Gauss_pt["electric_resistance"]
         d_z_tilde = conductor.grid_features["delta_z"] * self.inputs["COSTETA"]
 
-        # Evaluate Joule linear power along the strand in W, due
-        # to electric resistances only for current carriers:
-        # P_along = Delta_Phi_along * I_along
-        # N.B. this evaluation accounts aslo for the voltage due to the 
-        # inductance and is a conservative an more general approach. Discussed 
-        # with prof. Zach Hartwig and Dr. Nicolò Riva.
-        self.dict_Gauss_pt["integral_power_el_res"] = voltage * current
+        # Evaluate Joule power along the strand due to electric resistance only.
+        # The electric resistance is defined on each discretization element and is
+        # therefore not a linear resistance:
+        # P_elem = R_elem * I_elem**2
+        self.dict_Gauss_pt["integral_power_el_res"] = (
+            electric_resistance * current**2
+        )
 
         # Convert W in W/m keping into account the cos(theta).
         # This is independent of the time integration method since at the 

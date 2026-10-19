@@ -178,44 +178,61 @@ def build_interpolator(df, interpolation_kind="linear"):
     # Get the known values to be used in the interpolation, stored from the 
     # second row second column of the data frame.
     known_val = df.iloc[1:,1:].to_numpy(dtype=float)
+
+    # Check interpolation_kind values
+    if interpolation_kind not in ("linear","cubic"):
+        raise ValueError(f"Given not valid interpolation flag {interpolation_kind}, valid values are:\nlinear\ncubic")
     
     # Remark: value in position df.iloc[0,0] is not used; it is a kind of flag not well understood up to now.
 
     if strand_time_points.size == 1 and strand_space_points.size > 1:
         # Values are constant in time but not in space.
         known_val = known_val.reshape(known_val.shape[0])
-        return (
-            interpolate.interp1d(
+        if interpolation_kind == "linear":
+            interp_fun = interpolate.interp1d(
                 strand_space_points,
                 known_val,
+                kind="linear",
                 bounds_error=False,
-                fill_value=known_val[-1],
-                kind=interpolation_kind,
-            ),
-            "space_only",
-        )
+                fill_value=(known_val[0], known_val[-1]),
+            )
+        elif interpolation_kind == "cubic":
+            # Build the spline object
+            interp_fun = interpolate.make_interp_spline(
+                    strand_space_points,
+                    known_val,
+                )
+
+        return (interp_fun,"space_only")
 
     elif strand_time_points.size > 1 and strand_space_points.size == 1:
         # Values are constant in space but not in time.
         known_val = known_val.reshape(known_val.shape[1])
-        return (
-            interpolate.interp1d(
+        if interpolation_kind == "linear":
+            interp_fun = interpolate.interp1d(
                 strand_time_points,
                 known_val,
+                kind="linear",
                 bounds_error=False,
-                fill_value=known_val[-1],
-                kind=interpolation_kind,
-            ),
-            "time_only",
-        )
+                fill_value=(known_val[0], known_val[-1]),
+            )
+        elif interpolation_kind == "cubic":
+            # Build the spline object
+            interp_fun = interpolate.make_interp_spline(
+                    strand_time_points,
+                    known_val,
+                )
+
+        return (interp_fun,"time_only")
 
     elif strand_time_points.size > 1 and strand_space_points.size > 1:
+        points = (strand_space_points,strand_time_points)
         return (
-            interpolate.interp2d(
-                strand_time_points,
-                strand_space_points,
+            interpolate.RegularGridInterpolator(
+                points,
                 known_val,
-                kind=interpolation_kind,
+                method=interpolation_kind,
+                bounds_error=False,
             ),
             "space_and_time",
         )
@@ -246,7 +263,13 @@ def do_interpolation(interpolator, zcoord, time_step, kind):
         return interpolator(time_step)
 
     elif kind == "space_and_time":
-        return interpolator(time_step, zcoord).reshape(zcoord.shape)
+        ptz = np.zeros((len(zcoord), 2))
+        ptz[:, 0] = zcoord
+        ptz[:, 1] = time_step
+
+        out = interpolator(ptz)
+
+        return out
 
 
 # End function do_interpolation
@@ -390,7 +413,7 @@ def interpolation(conductor, comp, MM, tvec, f_path, sheet, *xvec, **options):
     # VARIABLE    I/O    TYPE                  DESCRIPTION                  UNIT
     # -------------------------------------------------------------------------
     # MM          I      np 2 dimensional      data to be interpolated
-    #                    array float           read from file .xlsx         T\W
+    #                    array float           read from file .xlsx         T\\W
     # tvec        I      np array float        time vector @ which data
     #                                          are available                s
     # xvec        I      np array float        space vector @ which data

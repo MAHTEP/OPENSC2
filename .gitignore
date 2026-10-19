@@ -245,6 +245,8 @@ $RECYCLE.BIN/
 *.dat
 *.csv
 *.xlsx
+# Keep the official OPENSC2 XLSX input templates under version control.
+!source_code/input_files/input_file_template/*.xlsx
 *.ods
 
 # Temporary files #
@@ -252,14 +254,18 @@ $RECYCLE.BIN/
 
 # Paths to be ignored #
 source_code/Description_of_Components/**/ # Input files
-Simulations_results/**/ # code output directory
+# Code output directory
+/Simulations_results/
 source_code/opensc2/**/ # virtual environment
 source_code/GUI_icons/**/ # graphical user interface images
 TDD_examples/**/ # input files template for the three selected cases used whitin the Test Driven Development approach
 
 
 # === Allow new validated and template TDD input folders ===
+# Retain only the versioned legacy input workbooks and their readme.
 !TDD_template_v3.7.2/
-!TDD_template_v3.7.2/**
+!TDD_template_v3.7.2/*.xlsx
 !validated_TDD_examples_v3.7.2/
-!validated_TDD_examples_v3.7.2/**
+!validated_TDD_examples_v3.7.2/**/
+!validated_TDD_examples_v3.7.2/**/*.xlsx
+!validated_TDD_examples_v3.7.2/readme.txt

@@ -184,11 +184,23 @@ def eval_transport_coefficients(conductor:Conductor,
     interf_peri = conductor.dict_interf_peri["ch_ch"]["Open"]["Gauss"][
         interf_name
     ]
+    # Component identifiers themselves contain an underscore (for example
+    # CHAN_1).  Recover the two identifiers from the interface inventory
+    # instead of relying on string splitting.
+    interface = next(
+        item
+        for item in conductor.interface.fluid_fluid
+        if item.interf_name == interf_name
+    )
+    transport_multiplier = conductor.dict_df_coupling[
+        "trans_transp_multiplier"
+    ].at[interface.comp_1.identifier, interface.comp_2.identifier]
 
     # K' evaluation [ms]:
     # K' = A_othogonal*sqrt(2*density/k_loc*abs(Delta_p))
     K1 = (
-        interf_peri[index]
+        transport_multiplier
+        * interf_peri[index]
         * np.sqrt(
             2.
             * comp.coolant.dict_Gauss_pt["total_density"][index]
