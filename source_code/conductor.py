@@ -5112,7 +5112,7 @@ class Conductor:
                 elif strand.operations["TCS_EVALUATION"] == True:
                     if self.cond_el_num_step <= 1:
                         # Evaluate current sharing temperature only at 
-                        # initialization (0) and at the first electric time 
+                        # initialization (0) and at the first electric time
                         # step (1).
                         strand.get_tcs()
             if self.cond_el_num_step <= 1:
@@ -5178,7 +5178,7 @@ class Conductor:
                 elif strand.operations["TCS_EVALUATION"] == True:
                     if self.cond_el_num_step <= 1:
                         # Evaluate current sharing temperature only at 
-                        # initialization (0) and at the first electric time 
+                        # initialization (0) and at the first electric time
                         # step (1)
                         strand.get_tcs(nodal=False)
             # end if strand.name != self.inventory["StrandStabilizerComponent"].
