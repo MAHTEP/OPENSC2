@@ -38,6 +38,8 @@ Users can benefit from several test cases to check the software functionalities:
 
 Detailed execution instructions and validation guidance are provided in the [test-case guide](TDD_examples/README.md).
 
+Complete numerical reference outputs for all maintained test cases are archived on [Zenodo](https://doi.org/10.5281/zenodo.23497333) and licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+
 To run a simulation with one of the above test cases, download the repository and install the requirements (more information is provided in [Install requirements](#install-requirements)). Then enter the `source_code` directory and start OPENSC2 with `python opensc2.py`. From the GUI, navigate to the `TDD_examples` directory and select one of the folders containing pre-compiled input files. Select **Add solution path** to choose where the results will be saved. By default, they are collected in the `Simulations_results` directory, which is created automatically when needed. Both tabular output and figures are written below the selected results directory.
 
 ### Headless simulations and checkpoint restoration

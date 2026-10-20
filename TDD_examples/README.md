@@ -158,13 +158,19 @@ final spatial distributions of selected variables. They are useful for a
 quick inspection, but they are not complete regression references because
 they do not contain the full simulation history.
 
-Complete reference outputs for Cases 1-4 are being prepared as a separate
-versioned dataset. The dataset is intended to be published on Zenodo so that
-a specific release can be cited through a DOI without adding large binary
-archives to the Git repository. The DOI and dataset license will be added
-here after publication.
+Complete reference outputs for Cases 1-4 are published as a versioned dataset
+on Zenodo: [OPENSC2 regression-test reference outputs for four
+superconducting-cable test cases](https://doi.org/10.5281/zenodo.23497333). The dataset contains five
+figure-free archives (one each for Cases 1-3 and two for Case 4), preserves the
+complete tabular histories, and is licensed under [CC BY-SA
+4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 
-When reference outputs are available, validate at least:
+The dataset's `README.md`, `LICENSE.txt`, `SHA256SUMS.txt`, and per-archive
+`manifest.csv` files document provenance and integrity. This dataset version
+was validated against OPENSC2 commit
+[`f78595b`](https://github.com/MAHTEP/OPENSC2/commit/f78595b564371aaa9e16c56fb2ff83620da7eb1b).
+
+When validating a new simulation against these reference outputs, check at least:
 
 1. successful completion without an exception;
 2. presence of the expected component-output files;
